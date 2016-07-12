@@ -1,0 +1,4 @@
+<classloading xmlns="urn:jboss:classloading:1.0" name="IdP.war"
+	domain="IdP_Domain" export-all="NON_EMPTY" import-all="true"
+	parent-first="false" top-level-classloader="true">
+</classloading>

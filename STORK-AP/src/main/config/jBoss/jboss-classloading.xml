@@ -1,0 +1,7 @@
+<classloading xmlns="urn:jboss:classloading:1.0"
+ name="AP.war"
+ domain="AP_Domain"
+ export-all="NON_EMPTY"
+ import-all="false"
+ parent-first="true">
+</classloading>

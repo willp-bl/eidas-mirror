@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<instances>
+
+	<!-- ******************** CPEPS ******************** -->
+	<!-- Configuration name -->
+	<instance name="CPEPS">
+		<!-- Configurations parameters StorkSamlEngine -->
+		<configuration name="SamlEngineConf">
+			<parameter name="fileConfiguration" value="StorkSamlEngine_CPEPS.xml" />
+		</configuration>
+
+		<!-- Settings module signature -->
+		<configuration name="SignatureConf">
+			<!-- Specific signature module -->
+			<parameter name="class"
+				value="eu.stork.peps.auth.engine.core.impl.SignSW" />
+			<!-- Settings specific module -->
+			<parameter name="fileConfiguration" value="SignModule_CPEPS.xml" />
+		</configuration>
+	</instance>
+	<instance name="METADATA">
+		<!-- Configurations parameters StorkSamlEngine -->
+		<configuration name="SamlEngineConf">
+			<parameter name="fileConfiguration" value="StorkSamlEngine_METADATA.xml" />
+		</configuration>
+
+		<!-- Settings module signature -->
+		<configuration name="SignatureConf">
+			<!-- Specific signature module -->
+			<parameter name="class"
+					   value="eu.stork.peps.auth.engine.core.impl.SignSW" />
+			<!-- Settings specific module -->
+			<parameter name="fileConfiguration" value="SignModule_METADATA.xml" />
+		</configuration>
+	</instance>
+</instances>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<instances>
+<!-- ******************** IdP ******************** -->
+	<!-- Configuration name-->
+	<instance name="IdP">
+		<!-- Configurations parameters StorkSamlEngine  -->
+		<configuration name="SamlEngineConf">			
+			<parameter name="fileConfiguration" value="StorkSamlEngine_IdP.xml" />
+		</configuration>
+
+		<!-- Settings module signature-->
+		<configuration name="SignatureConf">
+			<!-- Specific signature module -->
+			<parameter name="class" value="eu.stork.peps.auth.engine.core.impl.SignSW" />
+			<!-- Settings specific module -->
+			<parameter name="fileConfiguration" value="SignModule_IdP.xml" />
+		</configuration>
+
+        <configuration name="EncryptionConf">
+            <!-- Specific signature module -->
+            <parameter name="class"
+                       value="eu.stork.peps.auth.engine.core.impl.EncryptionSW" />
+            <!-- Settings specific module
+                 responseTo/FromPointAlias & requestTo/FromPointAlias parameters will be added -->
+            <parameter name="fileConfiguration" value="EncryptModule_IdP.xml" />
+
+        </configuration>
+	</instance>
+
+</instances>

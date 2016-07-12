@@ -1,0 +1,521 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PEPSMetadata>
+    <categories>
+        <category name="parameter.category.label.general">CPEPS parameters</category>
+        <category name="parameter.category.label.administer.speps">SPEPS parameters</category>
+        <category name="parameter.category.label.administer.cpeps">CPEPS parameters</category>
+        <category name="parameter.category.pepsutil">node specific parameters</category>
+        <category name="parameter.category.node.security">node security parameters</category>
+        <category name="parameter.category.metadata">metadata parameters</category>
+    </categories>
+    <files>
+        <file id="peps.xml" name="peps.xml" type="XML"/>
+        <file id="pepsUtil" name="pepsUtil.properties" type="properties"/>
+        <file id="specific" name="specific.properties" type="properties"/>
+    </files>
+    <parameters>
+        <parameter name="DEMO-SP.qaalevel">
+            <category>parameter.category.label.general</category>
+            <info>QAALevel of the Demo SP</info>
+            <label>SP QAA level</label>
+            <default>3</default>
+            <file>peps.xml</file>
+        </parameter>
+        <parameter name="max.requests.ip">
+            <category>parameter.category.label.general</category>
+            <info>limit of requests per IP during max.time.ip (-1 unlimited)</info>
+            <label>Max requests per IP</label>
+            <default>-1</default>
+            <file>peps.xml</file>
+        </parameter>
+        <parameter name="max.requests.sp">
+            <category>parameter.category.label.general</category>
+            <info>limit of requests per SP during max.time.ip (-1 unlimited)</info>
+            <label>Max requests per SP</label>
+            <default>-1</default>
+            <file>peps.xml</file>
+        </parameter>
+        <parameter name="max.time.ip">
+            <category>parameter.category.label.general</category>
+            <info>time frame for IP requests (seconds)</info>
+            <label>Time frame for IP</label>
+            <default>1</default>
+            <file>peps.xml</file>
+        </parameter>
+        <parameter name="max.time.sp">
+            <category>parameter.category.label.general</category>
+            <info>time frame for SP requests (seconds)</info>
+            <label>Time frame for SP</label>
+            <default>1</default>
+            <file>peps.xml</file>
+        </parameter>
+        <parameter name="trusted.sp.domain">
+            <category>parameter.category.label.general</category>
+            <info>allowed SP domains (none|all|list;Of;Domains)</info>
+            <label>Trusted SP domains</label>
+            <default>all</default>
+            <file>peps.xml</file>
+        </parameter>
+        <parameter name="validation.bypass">
+            <category>parameter.category.label.general</category>
+            <info>Bypass SP validation</info>
+            <label>Bypass SP validation</label>
+            <default>true</default>
+            <type>boolean</type>
+            <file>peps.xml</file>
+        </parameter>
+        <parameter name="validation.method">
+            <category>parameter.category.label.general</category>
+            <info>Validate SP by ID and Domain or only by Domain (spid|domain)</info>
+            <label>Validation method</label>
+            <default></default>
+            <file>peps.xml</file>
+        </parameter>
+        <parameter name="min.qaaLevel.value">
+            <category>parameter.category.label.general</category>
+            <info>min QAA level allowed</info>
+            <label>Minimum QAA level</label>
+            <default>1</default>
+            <file>peps.xml</file>
+        </parameter>
+        <parameter name="max.qaaLevel.value">
+            <category>parameter.category.label.general</category>
+            <info>max QAA level allowed</info>
+            <label>Maximum QAA level</label>
+            <default>4</default>
+            <file>peps.xml</file>
+        </parameter>
+
+        <parameter name="spId.qaalevel">
+            <category>parameter.category.label.general</category>
+            <info></info>
+            <label>QAA level of the Service Provider</label>
+            <default>all</default>
+            <file>peps.xml</file>
+        </parameter>
+        <parameter name="sp.default.parameters">
+            <category>parameter.category.label.general</category>
+            <info>IF a SP is not listed, the DEFAULT parameters it can access might be
+                (none|all|list;Of;Parameters)</info>
+            <label>Default allowed attributes</label>
+            <default>all</default>
+            <file>peps.xml</file>
+        </parameter>
+        <parameter name="speps.id">
+            <category>parameter.category.label.administer.speps</category>
+            <info>Id of this S-PEPS </info>
+            <label>SPEPS Id</label>
+            <default>CB</default>
+            <file>peps.xml</file>
+        </parameter>
+        <parameter name="speps.assertion.url">
+            <category>parameter.category.label.administer.speps</category>
+            <info>S-PEPS assertion URL</info>
+            <label>Assertion (return) URL</label>
+            <default>http://speps.ip.address/peps.deployment.name/ColleagueResponse</default>
+            <file>peps.xml</file>
+        </parameter>
+        <parameter name="speps.destination.url">
+            <category>parameter.category.label.administer.speps</category>
+            <info>SPEPS destination URL</info>
+            <label>SP request handler</label>
+            <default>http://speps.ip.address/peps.deployment.name/ServiceProvider</default>
+            <file>peps.xml</file>
+        </parameter>
+        <parameter name="saml.sp">
+            <category>parameter.category.label.administer.speps</category>
+            <info></info>
+            <label>SP-SPEPS SAML configuration </label>
+            <default></default>
+            <file>peps.xml</file>
+        </parameter>
+        <parameter name="saml.cpeps">
+            <category>parameter.category.label.administer.speps</category>
+            <info></info>
+            <label>SPEPS-SPEPS SAML configuration </label>
+            <default></default>
+            <file>peps.xml</file>
+        </parameter>
+
+
+        <parameter name="active.module.cpeps">
+            <category>parameter.category.label.administer.cpeps</category>
+            <info></info>
+            <label>Activate CPEPS Module</label>
+            <default>true</default>
+            <file>peps.xml</file>
+        </parameter>
+        <parameter name="cpeps.number">
+            <category>parameter.category.label.administer.cpeps</category>
+            <info>Number of known C-PEPS</info>
+            <label>Number of CPEPS partners</label>
+            <default>5</default>
+            <file>peps.xml</file>
+        </parameter>
+        <parameter name="cpeps.id">
+            <category>parameter.category.label.administer.cpeps</category>
+            <info>Id of this C-PEPS</info>
+            <label>This CPEPS id</label>
+            <default>5</default>
+            <file>peps.xml</file>
+        </parameter>
+        <parameter name="cpeps.countrycode">
+            <category>parameter.category.label.administer.cpeps</category>
+            <info>Country Code of this C-PEPS</info>
+            <label>CPEPS' country ISO code</label>
+            <default>BE</default>
+            <file>peps.xml</file>
+        </parameter>
+        <parameter name="cpeps.maxQAAlevel">
+            <category>parameter.category.label.administer.cpeps</category>
+            <info>QAALevel of this C-PEPS</info>
+            <label>Max QAA Level that C-PEPS can authenticate</label>
+            <default>8</default>
+            <file>peps.xml</file>
+        </parameter>
+        <parameter name="cpeps.askconsent.type">
+            <category>parameter.category.label.administer.cpeps</category>
+            <info>Present consent-type form? (true/false)</info>
+            <label>Display consent type form</label>
+            <default>true</default>
+            <file>peps.xml</file>
+        </parameter>
+        <parameter name="cpeps.askconsent.value">
+            <category>parameter.category.label.administer.cpeps</category>
+            <info>Present consent-value form? (true/false)</info>
+            <label>Display consent value form</label>
+            <default>true</default>
+            <file>peps.xml</file>
+        </parameter>
+        <parameter name="cpeps.specificidpredirect.url">
+            <category>parameter.category.label.administer.cpeps</category>
+            <info>Method to call after IdP</info>
+            <label>URL to be called by the IdP</label>
+            <default></default>
+            <file>peps.xml</file>
+        </parameter>
+        <parameter name="cpeps.specificapredirect.url">
+            <category>parameter.category.label.administer.cpeps</category>
+            <info>Method to call after AP</info>
+            <label>URL to be called by the AP</label>
+            <default></default>
+            <file>peps.xml</file>
+        </parameter>
+        <parameter name="cpeps.citizenConsentUrl">
+            <category>parameter.category.label.administer.cpeps</category>
+            <info>Action of Citizen Consent</info>
+            <label>Citizen consent URL</label>
+            <default></default>
+            <file>peps.xml</file>
+        </parameter>
+        <parameter name="max.spUrl.size">
+            <category>parameter.category.pepsutil</category>
+            <info></info>
+            <label>Max size for SP return URL</label>
+            <default></default>
+            <file>pepsUtil</file>
+        </parameter>
+        <parameter name="max.invalidAttributeList.size">
+            <category>parameter.category.pepsutil</category>
+            <info></info>
+            <label>Maximum Personal Attribute List size </label>
+            <default></default>
+            <file>pepsUtil</file>
+        </parameter>
+        <parameter name="max.attrList.size">
+            <category>parameter.category.pepsutil</category>
+            <info></info>
+            <label>Maximum Personal Attribute List HTTP parameter size</label>
+            <default></default>
+            <file>pepsUtil</file>
+        </parameter>
+        <parameter name="max.attrName.size">
+            <category>parameter.category.pepsutil</category>
+            <info></info>
+            <label>Maximum Personal Attribute Name size</label>
+            <default></default>
+            <file>pepsUtil</file>
+        </parameter>
+        <parameter name="max.attrValue.size">
+            <category>parameter.category.pepsutil</category>
+            <info></info>
+            <label>Maximum Personal Attribute Value size</label>
+            <default></default>
+            <file>pepsUtil</file>
+        </parameter>
+        <parameter name="max.attrType.size">
+            <category>parameter.category.pepsutil</category>
+            <info></info>
+            <label>Maximum Personal Attribute Type size</label>
+            <default></default>
+            <file>pepsUtil</file>
+        </parameter>
+        <parameter name="max.callback.size">
+            <category>parameter.category.pepsutil</category>
+            <info></info>
+            <label>Maximum C-PEPS callback URL size</label>
+            <default></default>
+            <file>pepsUtil</file>
+        </parameter>
+        <parameter name="max.idp.url.size">
+            <category>parameter.category.pepsutil</category>
+            <info></info>
+            <label>Maximum IdP URL size</label>
+            <default></default>
+            <file>pepsUtil</file>
+        </parameter>
+        <parameter name="max.spId.size">
+            <category>parameter.category.pepsutil</category>
+            <info></info>
+            <label>Maximum Service Provider ID size</label>
+            <default></default>
+            <file>pepsUtil</file>
+        </parameter>
+        <parameter name="max.providerName.size">
+            <category>parameter.category.pepsutil</category>
+            <info></info>
+            <label>Maximum Service Provider size</label>
+            <default></default>
+            <file>pepsUtil</file>
+        </parameter>
+        <parameter name="max.spName.size">
+            <category>parameter.category.pepsutil</category>
+            <info></info>
+            <label>Maximum Service Provider Name size</label>
+            <default></default>
+            <file>pepsUtil</file>
+        </parameter>
+        <parameter name="max.country.size">
+            <category>parameter.category.pepsutil</category>
+            <info></info>
+            <label>Maximum Country size</label>
+            <default></default>
+            <file>pepsUtil</file>
+        </parameter>
+        <parameter name="max.qaaLevel.size">
+            <category>parameter.category.pepsutil</category>
+            <info></info>
+            <label>Maximum QAA Level size</label>
+            <default></default>
+            <file>pepsUtil</file>
+        </parameter>
+        <parameter name="max.spQaaLevel.size">
+            <category>parameter.category.pepsutil</category>
+            <info></info>
+            <label>Maximum SP QAA Level size</label>
+            <default></default>
+            <file>pepsUtil</file>
+        </parameter>
+        <parameter name="max.errorCode.size">
+            <category>parameter.category.pepsutil</category>
+            <info></info>
+            <label>Maximum SAML Response error code size</label>
+            <default></default>
+            <file>pepsUtil</file>
+        </parameter>
+        <parameter name="max.errorMessage.size">
+            <category>parameter.category.pepsutil</category>
+            <info></info>
+            <label>Maximum SAML Response error message size</label>
+            <default></default>
+            <file>pepsUtil</file>
+        </parameter>
+        <parameter name="max.username.size">
+            <category>parameter.category.pepsutil</category>
+            <info></info>
+            <label>Maximum username (reference code) size</label>
+            <default></default>
+            <file>pepsUtil</file>
+        </parameter>
+        <parameter name="max.spepsRedirectUrl.size">
+            <category>parameter.category.pepsutil</category>
+            <info></info>
+            <label>Max SPEPS configuration AssertionConsumerURL size</label>
+            <default></default>
+            <file>pepsUtil</file>
+        </parameter>
+        <parameter name="max.speps.redirectUrl.size">
+            <category>parameter.category.pepsutil</category>
+            <info></info>
+            <label>Max SPEPS SAML Request (from S-PEPS to C-PEPS) AssertionConsumerURL</label>
+            <default></default>
+            <file>pepsUtil</file>
+        </parameter>
+        <parameter name="max.cpepsRedirectUrl.size">
+            <category>parameter.category.pepsutil</category>
+            <info></info>
+            <label>Max CPEPS configuration AssertionConsumerURL’s size</label>
+            <default></default>
+            <file>pepsUtil</file>
+        </parameter>
+        <parameter name="max.cpeps.redirectUrl.size">
+            <category>parameter.category.pepsutil</category>
+            <info></info>
+            <label>Max CPEPS SAML Request (from S-PEPS to C-PEPS)  AssertionConsumerURL size</label>
+            <default></default>
+            <file>pepsUtil</file>
+        </parameter>
+        <parameter name="max.SAMLRequest.size">
+            <category>parameter.category.pepsutil</category>
+            <info></info>
+            <label>Max SAML Request (from S-PEPS to C-PEPS)  HTTP Parameter</label>
+            <default></default>
+            <file>pepsUtil</file>
+        </parameter>
+        <parameter name="max.SAMLResponse.size">
+            <category>parameter.category.pepsutil</category>
+            <info></info>
+            <label>Max SAML Response HTTP Parameter size</label>
+            <default></default>
+            <file>pepsUtil</file>
+        </parameter>
+        <parameter name="max.RelayState.size">
+            <category>parameter.category.pepsutil</category>
+            <info></info>
+            <label>Max RelayState HTTP Parameter size</label>
+            <default></default>
+            <file>pepsUtil</file>
+        </parameter>
+        <parameter name="max.localAddr.size">
+            <category>parameter.category.pepsutil</category>
+            <info></info>
+            <label>Max Local Address HTTP header size</label>
+            <default></default>
+            <file>pepsUtil</file>
+        </parameter>
+        <parameter name="max.localHost.size">
+            <category>parameter.category.pepsutil</category>
+            <info></info>
+            <label>Max Local Host HTTP header size</label>
+            <default></default>
+            <file>pepsUtil</file>
+        </parameter>
+        <parameter name="max.remoteAddr.size">
+            <category>parameter.category.pepsutil</category>
+            <info></info>
+            <label>Max Remote Address HTTP header size</label>
+            <default></default>
+            <file>pepsUtil</file>
+        </parameter>
+        <parameter name="max.remoteHost.size">
+            <category>parameter.category.pepsutil</category>
+            <info></info>
+            <label>Max Remote Host HTTP header size</label>
+            <default></default>
+            <file>pepsUtil</file>
+        </parameter>
+        <parameter name="security.header.CSP.enabled">
+            <category>parameter.category.node.security</category>
+            <info></info>
+            <label>Enable Content Security Policy (CSP) header</label>
+            <default></default>
+            <type>boolean</type>
+            <file>peps.xml</file>
+        </parameter>
+        <parameter name="security.header.CSP.includeMozillaDirectives">
+            <category>parameter.category.node.security</category>
+            <info></info>
+            <label>Enable CSP backward compatibitlity for Mozilla</label>
+            <default></default>
+            <type>boolean</type>
+            <file>peps.xml</file>
+        </parameter>
+        <parameter name="security.header.XXssProtection.block">
+            <category>parameter.category.node.security</category>
+            <info></info>
+            <label>Enable the cross-site-scripting (XSS) filter</label>
+            <type>boolean</type>
+            <default></default>
+            <file>peps.xml</file>
+        </parameter>
+        <parameter name="security.header.XContentTypeOptions.noSniff">
+            <category>parameter.category.node.security</category>
+            <info></info>
+            <label>Prevent Internet Explorer and Google Chrome from 'MIME-sniffing'</label>
+            <default></default>
+            <type>boolean</type>
+            <file>peps.xml</file>
+        </parameter>
+        <parameter name="security.header.XFrameOptions.sameOrigin">
+            <category>parameter.category.node.security</category>
+            <info></info>
+            <label>Enforce same origin for PEPS</label>
+            <default></default>
+            <type>boolean</type>
+            <file>peps.xml</file>
+        </parameter>
+        <parameter name="security.header.HSTS.includeSubDomains">
+            <category>parameter.category.node.security</category>
+            <info></info>
+            <label>Prefer HTTP Strict-Transport-Security </label>
+            <default></default>
+            <file>peps.xml</file>
+            <type>boolean</type>
+        </parameter>
+        <parameter name="metadata.activate">
+            <category>parameter.category.metadata</category>
+            <info></info>
+            <label>Activate metadata retrieval and publishing</label>
+            <default></default>
+            <file>peps.xml</file>
+            <type>boolean</type>
+        </parameter>
+        <parameter name="speps.metadata.url">
+            <category>parameter.category.metadata</category>
+            <info></info>
+            <label>Metadata publishing URL (SPEPS)</label>
+            <default></default>
+            <file>peps.xml</file>
+        </parameter>
+        <parameter name="cpeps.metadata.url">
+            <category>parameter.category.metadata</category>
+            <info></info>
+            <label>Metadata publishing URL (CPEPS)</label>
+            <default></default>
+            <file>peps.xml</file>
+        </parameter>
+        <parameter name="speps.node.url">
+            <category>parameter.category.metadata</category>
+            <info></info>
+            <label>Issuer URL (SPEPS)</label>
+            <default></default>
+            <file>peps.xml</file>
+        </parameter>
+        <parameter name="cpeps.node.url">
+            <category>parameter.category.metadata</category>
+            <info></info>
+            <label>Issuer URL (CPEPS)</label>
+            <default></default>
+            <file>peps.xml</file>
+        </parameter>
+        <parameter name="speps.contact.email">
+            <category>parameter.category.metadata</category>
+            <info></info>
+            <label>Contact email (SPEPS)</label>
+            <default></default>
+            <file>peps.xml</file>
+        </parameter>
+        <parameter name="cpeps.contact.email">
+            <category>parameter.category.metadata</category>
+            <info></info>
+            <label>Contact email (CPEPS)</label>
+            <default></default>
+            <file>peps.xml</file>
+        </parameter>
+        <parameter name="metadata.http.retrieval">
+            <category>parameter.category.metadata</category>
+            <info></info>
+            <label>Retrieve metadata through http</label>
+            <default></default>
+            <file>peps.xml</file>
+            <type>boolean</type>
+        </parameter>
+        <parameter name="metadata.file.repository">
+            <category>parameter.category.metadata</category>
+            <info></info>
+            <label>Metadata repository</label>
+            <default></default>
+            <file>peps.xml</file>
+        </parameter>
+    </parameters>
+</PEPSMetadata>

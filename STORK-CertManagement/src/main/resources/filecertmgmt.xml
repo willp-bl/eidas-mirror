@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.1.xsd">
+	<bean id="configUtil" class="eu.stork.samlengineconfig.impl.tools.StorkConfigManagerUtil" scope="singleton">
+		<property name="fileService" ref="fileService"/>
+	</bean>
+	<bean id="fileService" class="eu.stork.impl.file.FileService" scope="singleton">
+		<property name="repositoryDir" value="${peps.engine.repo:}"/>
+		<property name="alternateLocation" ref="pepsConfigDirectory"/>
+	</bean>
+	<bean id="engineUnmarshaller" class="eu.stork.samlengineconfig.impl.marshaller.EngineInstanceUnmarshallerImpl" scope="singleton">
+		<property name="fileService" ref="fileService"/>
+	</bean>
+
+	<bean id="engineMarshaller" class="eu.stork.samlengineconfig.impl.marshaller.EngineInstanceMarshallerImpl" scope="singleton">
+		<property name="fileService" ref="fileService"/>
+	</bean>
+	<bean id="fileConfigurationRepository" class="eu.stork.config.impl.FileConfigurationRepository">
+		<property name="fileService" ref="fileService"/>
+	</bean>
+	<bean id="metaconfigProvider" class="eu.stork.config.impl.PEPSMetaconfigProviderImpl">
+	</bean>
+	<bean id="filePEPSConfiguration" class="eu.stork.config.impl.FilePEPSConfiguration">
+		<property name="metaconfigProvider" ref="metaconfigProvider"/>
+		<property name="samlMetadataRepository" ref="metadataRepository"/>
+	</bean>
+	<bean id="pepsMasterConfiguration" class="eu.stork.config.PEPSMasterConfiguration">
+		<property name="repository" ref="fileConfigurationRepository"/>
+		<property name="pepsConfiguration" ref="filePEPSConfiguration"/>
+	</bean>
+	<bean id="engineConfiguration" class="eu.stork.samlengineconfig.impl.CertificateManagerConfigurationImpl">
+		<property name="location" value="samlengine"/>
+		<property name="parentConfiguration" ref="filePEPSConfiguration"/>
+		<property name="configurationName" value="SamlEngine.xml"/><!-- to be externalized in props? -->
+		<property name="engineUnmarshaller" ref="engineUnmarshaller"/>
+	</bean>
+	<bean id="metadataFileService" class="eu.stork.impl.file.FileService" scope="singleton">
+	</bean>
+	<bean id="metadataRepository" class="eu.stork.config.impl.samlmetadata.MetadataRepositoryImpl">
+		<property name="fileService" ref="metadataFileService"/>
+	</bean>
+
+</beans>

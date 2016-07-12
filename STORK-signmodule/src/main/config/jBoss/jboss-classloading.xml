@@ -1,0 +1,4 @@
+<classloading xmlns="urn:jboss:classloading:1.0" name="SignModule.war"
+	domain="SignModule_Domain" export-all="NON_EMPTY" import-all="true"
+	parent-first="true">
+</classloading>
