@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<instances>
+
+	<!-- ******************** eidas Service ******************** -->
+	<!-- Configuration name -->
+	<instance name="Service">
+		<!-- Configurations parameters SamlEngine -->
+		<configuration name="SamlEngineConf">
+			<parameter name="fileConfiguration" value="SamlEngine_Service.xml" />
+		</configuration>
+
+		<!-- Settings module signature -->
+		<configuration name="SignatureConf">
+			<!-- Specific signature module -->
+			<parameter name="class"
+				value="eu.eidas.auth.engine.core.impl.SignSW" />
+			<!-- Settings specific module -->
+			<parameter name="fileConfiguration" value="SignModule_Service.xml" />
+		</configuration>
+	</instance>
+	<instance name="METADATA">
+		<!-- Configurations parameters SamlEngine -->
+		<configuration name="SamlEngineConf">
+			<parameter name="fileConfiguration" value="SamlEngine_METADATA.xml" />
+		</configuration>
+
+		<!-- Settings module signature -->
+		<configuration name="SignatureConf">
+			<!-- Specific signature module -->
+			<parameter name="class"
+					   value="eu.eidas.auth.engine.core.impl.SignSW" />
+			<!-- Settings specific module -->
+			<parameter name="fileConfiguration" value="SignModule_METADATA.xml" />
+		</configuration>
+	</instance>
+</instances>

@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<instances>
+
+	<!-- ******************** Service ******************** -->
+	<!-- Configuration name -->
+	<instance name="Service">
+		<!-- Configurations parameters SamlEngine -->
+		<configuration name="SamlEngineConf">
+			<parameter name="fileConfiguration" value="SamlEngine_Service.xml" />
+		</configuration>
+
+		<!-- Settings module signature -->
+		<configuration name="SignatureConf">
+			<!-- Specific signature module -->
+			<parameter name="class"
+				value="eu.eidas.auth.engine.core.impl.SignSW" />
+			<!-- Settings specific module -->
+			<parameter name="fileConfiguration" value="SignModule_Service.xml" />
+		</configuration>
+
+        <!-- Settings module encryption -->
+        <configuration name="EncryptionConf">
+            <!-- Specific signature module -->
+            <parameter name="class"
+                       value="eu.eidas.auth.engine.core.impl.EncryptionSW" />
+            <parameter name="fileConfiguration" value="EncryptModule_Service.xml" />
+        </configuration>
+	</instance>
+
+	<!-- ******************** SP-Connector ******************** -->
+
+	<instance name="SP-Connector">
+		<configuration name="SamlEngineConf">
+			<parameter name="fileConfiguration" value="SamlEngine_SP-Connector.xml" />
+		</configuration>
+
+		<configuration name="SignatureConf">
+			<parameter name="class"
+				value="eu.eidas.auth.engine.core.impl.SignSW" />
+			<parameter name="fileConfiguration" value="SignModule_SP-Connector.xml" />
+		</configuration>
+
+        <configuration name="EncryptionConf">
+            <!-- Specific signature module -->
+            <parameter name="class"
+                       value="eu.eidas.auth.engine.core.impl.EncryptionSW" />
+            <!-- Settings specific module
+                 responseTo/FromPointAlias & requestTo/FromPointAlias parameters will be added -->
+            <parameter name="fileConfiguration" value="EncryptModule_SP-Connector.xml" />
+        </configuration>
+	</instance>
+
+
+	<!-- ******************** Connector-Service ******************** -->
+
+	<instance name="Connector-Service">
+		<configuration name="SamlEngineConf">
+			<parameter name="fileConfiguration" value="SamlEngine_Connector-Service.xml" />
+		</configuration>
+
+		<configuration name="SignatureConf">
+			<parameter name="class"
+				value="eu.eidas.auth.engine.core.impl.SignSW" />
+			<parameter name="fileConfiguration" value="SignModule_Connector-Service.xml" />
+		</configuration>
+
+        <configuration name="EncryptionConf">
+            <!-- Specific signature module -->
+            <parameter name="class"
+                       value="eu.eidas.auth.engine.core.impl.EncryptionSW" />
+            <!-- Settings specific module
+                 responseTo/FromPointAlias & requestTo/FromPointAlias parameters will be added -->
+            <parameter name="fileConfiguration" value="EncryptModule_Connector-Service.xml" />
+        </configuration>
+	</instance>
+
+	<!-- ******************** Specific ******************** -->
+	<!-- Configuration name -->
+	<instance name="Specific">
+		<!-- Configurations parameters SamlEngine -->
+		<configuration name="SamlEngineConf">
+			<parameter name="fileConfiguration" value="SamlEngine_Specific.xml" />
+		</configuration>
+
+		<!-- Settings module signature -->
+		<configuration name="SignatureConf">
+			<!-- Specific signature module -->
+			<parameter name="class"
+				value="eu.eidas.auth.engine.core.impl.SignSW" />
+			<!-- Settings specific module -->
+			<parameter name="fileConfiguration" value="SignModule_Specific.xml" />
+		</configuration>
+
+        <configuration name="EncryptionConf">
+            <!-- Specific signature module -->
+            <parameter name="class"
+                       value="eu.eidas.auth.engine.core.impl.EncryptionSW" />
+            <!-- Settings specific module
+                 responseTo/FromPointAlias & requestTo/FromPointAlias parameters will be added -->
+            <parameter name="fileConfiguration" value="EncryptModule_Specific.xml" />
+        </configuration>
+	</instance>
+
+</instances>

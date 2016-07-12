@@ -1,3 +1,43 @@
+eIDAS Node Build 1.0 Content
+
+N.B: In a future release, it is intended to provide a major architectural improvement involving the Specific module.
+The Specific module is inherited from the STORK PEPS Pilot 1 application. 
+It provides a sample implementation of  a Member State Specific module to customise the communication between the Identity Provider and the eIDAS-Node Proxy Service. 
+Version 1.0 does not contain any improvements to or enhancements of the Specific module.
+                The architectural improvements of the Specific module will:
+- Provide abstraction and a correct placeholder for the Member State's specific implementation; 
+- Remove the dependency between the SAML Engine and the Specific module;
+- Extend the Specific module to cover communications between Service Provider and eIDAS-Node Connector as well as the communications between Identity Provider and the eIDAS-Node Proxy Service. 
+
+Version 1.0 includes the following:
++ Improvement of the software look and feel; 
++ Renaming of the STORK references to eIDAS terminology;
++ Modifications of the eIDAS-Node related to the technical specification:
+                Parametrisation of the signing certificate of the metadata;
+                Verification of the metadata expiration when processing it from the cache;
+                Check the certificate validity on metadata generation, no metadata published if certificate expired;
+                Suppression of EXACT implementation of the LoA (Level of Assurance); 
+                Support sector specific attributes;
+                Disable the support for STORK1 message format;
+                Change of message format (namespace from "stork" to "eidas").
++ Modification in the sample SP-IDP and AP:
+                Support eIDAS LoA  in the SP and IDP;
+                Support eIDAS attributes;
+                Extend eIDAS compliance to include communication between SP and the eIDAS-Node;
+Extend eIDAS compliance to include communication between IDP and the eIDAS-Node;
+                Improvement of the sample Service Provider to show the decrypted assertion.
+                
++ Security : Update of third party libraries to the latest version(Bouncycastle-XMLSec-XML Santuario-Xalan-Commons-httpClient); 
++ Migration from Maven 2 to Maven 3;
++ provide new sample of eIDAS Keystore (double key + metadata signature) provided for each  binary.
+                
+List of conformance documents and requirements:
+- eIDAS Interoperability Architecture v1.0
+- eIDAS Message Format v1.0
+- eIDAS SAML Attribute Profile v1.0
+- eIDAS - Crypto Requirements for the Interop Framework v1.0
+
+####################### previous releases #######################
 eIDAS Node Build 0.9 Content
 
 Version 0.9
@@ -10,9 +50,6 @@ Version 0.9
     Reflected Cross-site scripting mitigation: sanitisation of displayed values;
 + Removal of Middleware plugin;
 + Extension of the sample applications (SP, IDP, AP) to provide a sample of use of the eIDAS regulation features.
-
-
-####################### previous releases #######################
 
 Build 1.3.1 Content
 

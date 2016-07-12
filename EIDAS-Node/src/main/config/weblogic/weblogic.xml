@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- weblogic.xml -->
+<weblogic-web-app>
+    <container-descriptor>
+
+        <prefer-web-inf-classes>false</prefer-web-inf-classes>
+		<prefer-application-packages>
+            <package-name>org.bouncycastle.*</package-name>
+            <package-name>org.apache.commons.*</package-name>
+            <package-name>org.apache.log4j.*</package-name>
+            <!-- adding new preferred packages-->
+            <package-name>org.apache.jcp.xml.dsig.*</package-name>
+            <package-name>org.apache.xalan.*</package-name>
+            <package-name>org.apache.xerces.*</package-name>
+            <package-name>org.apache.xml.*</package-name>
+            <!--<package-name>org.apache.xml.security.*</package-name>-->
+            <package-name>org.apache.xmlcommons.*</package-name>
+            <package-name>org.apache.xpath.*</package-name>
+            <!-- end adding new preferred packages-->
+            <package-name>org.joda.time.*</package-name>
+            <package-name>org.opensaml.*</package-name>
+            <package-name>org.opensaml.common.*</package-name>
+            <package-name>org.opensaml.saml2.*</package-name>
+            <package-name>org.opensaml.xml.*</package-name>
+			<package-name>org.eu.eidas.*</package-name>
+        </prefer-application-packages>
+
+        <prefer-application-resources>
+            <resource-name>META-INF/services/javax.xml.*</resource-name>
+            <resource-name>META-INF/services/org.codehaus.stax2.*</resource-name>
+            <resource-name>META-INF/services/org.w3c.dom.*</resource-name>
+            <resource-name>META-INF/services/org.xml.sax.*</resource-name>
+            <resource-name>META-INF/services/org.apache.xalan.*</resource-name>
+            <resource-name>META-INF/services/org.apache.xml.*</resource-name>
+        </prefer-application-resources>
+
+    </container-descriptor>
+    <session-descriptor>
+		<!--cookies-enabled>false</cookies-enabled-->
+        <cookie-name>SESSIONID</cookie-name>
+		<cookie-path>/EidasNode</cookie-path>
+    </session-descriptor>
+</weblogic-web-app>

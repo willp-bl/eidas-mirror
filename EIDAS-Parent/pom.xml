@@ -1,0 +1,86 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>eu.eidas</groupId>
+    <artifactId>eidas-parent</artifactId>
+    <packaging>pom</packaging>
+    <name>Eidas Node Parent</name>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.version>eidas.1.0</project.version>
+        <saml.version>eidas.1.0</saml.version>
+		
+		<!-- java version targeted in the compile phase -->
+		<java.version>1.6</java.version>
+
+        <proj.name>EIDASParent</proj.name>
+        <proj.name.eidas>EidasNode</proj.name.eidas>
+		<spring.version>4.1.0.RELEASE</spring.version>
+		<opensaml.version>2.6.5</opensaml.version>
+		<commons.version>eidas.1.0</commons.version>
+        <app.packaging.type>war</app.packaging.type>
+        <mod.packaging.type>jar</mod.packaging.type>
+		<samlspec.version>0.5.2</samlspec.version>
+		<samlspecacept.version>0.5.1</samlspecacept.version>
+		
+		<!-- artefacts versions -->
+		<servlet.version>2.5</servlet.version>
+		<jsp.api>2.0</jsp.api>
+		<jstl.version>1.1.2</jstl.version>
+		<apache.taglibs>1.2.5</apache.taglibs>
+		<jersey.version>1.18</jersey.version>
+		<slf4j.version>1.7.10</slf4j.version>
+		<logback.version>1.1.2</logback.version>
+		<mockito.version>1.10.19</mockito.version>
+		<junit.version>4.12</junit.version>
+		<commons.codec>1.9</commons.codec>
+		<commons.io>2.4</commons.io>
+		<commons.lang>2.6</commons.lang>
+		<commons.logging>1.1.3</commons.logging>
+		<commons.httpclient>3.1</commons.httpclient>
+		<commons.lang3>3.1</commons.lang3>
+		<hazelcast.version>3.2</hazelcast.version>
+		<bouncycastle.version>1.52</bouncycastle.version>
+		<owasp.version>1.1.1</owasp.version>
+		<owasp.esapi.version>2.1.0</owasp.esapi.version>
+		<cglib.version>2.2.2</cglib.version>
+		<xmlapis.version>1.4.01</xmlapis.version>
+		<xerces.version>2.11.0</xerces.version>
+		<xalan.version>2.7.2</xalan.version>
+		<joda.time.version>2.6</joda.time.version>
+		<log4j.version>1.2.17</log4j.version>
+		<log4j.api>2.3</log4j.api>
+		<xmlunit.version>1.5</xmlunit.version>
+		<bdr.econnector.version>1.2.2</bdr.econnector.version>
+		<struts.version>2.3.16.2</struts.version>
+		<icu4j.version>55.1</icu4j.version>
+		<!-- maven plugin versions -->
+		<javadoc.plugin.version>2.8.1</javadoc.plugin.version>
+		<compile.plugin.version>2.3.2</compile.plugin.version>
+		<war.plugin.version>2.0.1</war.plugin.version>
+		<resources.plugin.version>2.3</resources.plugin.version>
+		<cobertura.plugin.version>2.6</cobertura.plugin.version>
+		<remote.resources.plugin.version>1.5</remote.resources.plugin.version>
+		<source.plugin.version>2.1.2</source.plugin.version>
+		<install.plugin.version>2.5.2</install.plugin.version>
+		<clean.plugin.version>2.6.1</clean.plugin.version>
+
+    	<timestamp>${maven.build.timestamp}</timestamp>
+    	
+		<vaadin.version>7.4.2</vaadin.version>
+		<vaadin.plugin.version>${vaadin.version}</vaadin.plugin.version>
+		<vaadin-spring.version>1.0.0.beta1</vaadin-spring.version>
+		<vaadin4spring.version>0.0.5.RELEASE</vaadin4spring.version>
+		<jetty.plugin.version>9.2.3.v20140905</jetty.plugin.version>
+    	<xmlsec.version>2.0.5</xmlsec.version>
+    	
+    </properties>
+    <version>eidas</version>
+    <description>
+        The EIDAS-Parent provides artefacts versions for Eidas Node components.
+    </description>
+    <dependencies/>
+
+
+</project>

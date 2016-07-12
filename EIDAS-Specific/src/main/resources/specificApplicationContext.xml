@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+						http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
+						http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.5.xsd">
+
+	<!-- MAP -->
+	<util:map id="derivedImpls" map-class="java.util.Hashtable">
+		<entry key="age" value-ref="deriveAge" />
+		<entry key="isAgeOver" value-ref="deriveIsAgeOver" />
+        <entry key="eIdentifier" value-ref="deriveEid" />
+        <entry key="PersonIdentifier" value-ref="deriveEidasEid" />
+        <entry key="LegalPersonIdentifier" value-ref="deriveEidasEid" />
+	</util:map>
+
+	<util:map id="normaliseImpls" map-class="java.util.Hashtable">
+		<entry key="dateOfBirth" value-ref="normaliseDateOfBirth" />
+	</util:map>
+
+	<util:map id="validateImpls" map-class="java.util.Hashtable">
+		<entry key="gender" value-ref="validateGender" />
+		<entry key="countryCodeOfBirth" value-ref="validateCountryCodeOfBirth" />
+		<entry key="nationalityCode" value-ref="validateNationalityCode" />
+		<entry key="maritalStatus" value-ref="validateMaritalStatus" />
+	</util:map>
+
+    <!-- Specific Bean -->
+    <bean id="specificNode" class="${specific.node}">
+        <property name="specificProps" ref="placeholderConfig" />
+        <property name="derivedImpls" ref="derivedImpls" />
+        <property name="normaliseImpls" ref="normaliseImpls" />
+        <property name="validateImpls" ref="validateImpls" />
+        <property name="samlEngineFactory" ref="samlEngineFactory" />
+        <property name="serviceProperties" ref="nodeProps" />
+        <property name="samlEngine" value="${service.saml.idp:Specific}" />
+        <property name="serviceMetadataUrl" value="${service.metadata.url}"/>
+        <property name="serviceRequesterMetadataUrl" value="${service.requester.metadata.url}"/>
+        <property name="serviceMetadataActive" value="${service.metadata.activate:true}"/>
+    </bean>
+
+    <!-- Attribute Value Derivation -->
+	<bean id="normaliseDateOfBirth" class="${dateOfBirth.implemention}">
+		<property name="pattern" value="${dateOfBirth.stork.format}" />
+		<property name="hasSeparator" value="${dateOfBirth.hasSeparator}" />
+		<property name="specificSeparator" value="${dateOfBirth.specific.separator}" />
+	</bean>
+
+	<!-- Derivation -->
+	<bean id="deriveAge" class="${derive.age.impl}">
+		<property name="pattern" value="${dateOfBirth.stork.format}" />
+		<property name="hasSeparator" value="${dateOfBirth.hasSeparator}" />
+		<property name="specificSeparator" value="${dateOfBirth.specific.separator}" />
+	</bean>
+
+	<bean id="deriveIsAgeOver" class="${derive.isAgeOver.impl}">
+		<property name="pattern" value="${dateOfBirth.stork.format}" />
+		<property name="hasSeparator" value="${dateOfBirth.hasSeparator}" />
+		<property name="specificSeparator" value="${dateOfBirth.specific.separator}" />
+	</bean>
+
+    <bean id="deriveEid" class="${derive.eId.impl}">
+        <property name="destCountry" value="${service.countrycode}" />
+    </bean>
+
+    <bean id="deriveEidasEid" class="${derive.eIDASID.impl}">
+        <property name="destCountry" value="${service.countrycode}" />
+    </bean>
+
+    <!-- Validation -->
+	<bean id="validateGender" class="${validate.gender.impl}" />
+	<bean id="validateCountryCodeOfBirth" class="${validate.countryCodeOfBirth.impl}" />
+	<bean id="validateNationalityCode" class="${validate.nationalityCode.impl}" />
+	<bean id="validateMaritalStatus" class="${validate.maritalStatus.impl}" />
+
+    <!-- IdP replies here -->
+    <bean id="springManagedSpecificIdPResponse" class="eu.eidas.node.SpecificIdPBean"
+          scope="prototype">
+        <property name="session" ref="serviceSession" />
+        <property name="specificNode" ref="specificNode" />
+    </bean>
+
+    <!-- Connect to AP -->
+    <bean id="springManagedAPSelector" class="eu.eidas.node.APSelectorBean"
+          scope="prototype">
+        <property name="specificEidasNode" ref="specificNode" />
+        <property name="session" ref="serviceSession" />
+        <property name="sigModuleExists" value="${sigModule.exists}" />
+        <property name="externalAP" value="${external.ap}" />
+        <property name="numberOfAps" value="${ap.number}" />
+        <property name="callbackURL" value="${service.specificapredirect.url}" />
+        <property name="sigCreatorModuleURL" value="${signedDoc.sigCreatorModuleURL}" />
+        <property name="dataURL" value="${signedDoc.DataURL}" />
+        <property name="attribute" value="signedDoc" />
+    </bean>
+
+    <!-- Connect to IdP -->
+    <bean id="springManagedCitizenAuthentication" class="eu.eidas.node.CitizenAuthenticationBean"
+          scope="prototype">
+        <property name="session" ref="serviceSession" />
+        <property name="specAuthenticationNode" ref="specificNode" />
+        <property name="externalAuth" value="${external.authentication}" />
+        <property name="idpUrl" value="${idp.url}" />
+    </bean>
+
+    <!-- Handles Signature Creator Response -->
+    <bean id="springManagedSigCreatorResp" class="eu.eidas.node.SignatureCreatorResponseBean"
+          scope="prototype">
+        <property name="session" ref="serviceSession" />
+        <property name="callbackURL" value="${signedDoc.returnURL}" />
+    </bean>
+
+    <!-- Signature Creator Return -->
+    <bean id="springManagedSigCreatorReturn" class="eu.eidas.node.SignatureCreatorReturnBean"
+          scope="prototype">
+        <property name="session" ref="serviceSession" />
+        <property name="attribute" value="signedDoc" />
+    </bean>
+
+
+</beans>
