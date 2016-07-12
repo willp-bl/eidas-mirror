@@ -1,15 +1,12 @@
 package eu.eidas.encryption;
 
-import eu.eidas.auth.engine.core.stork.*;
-import eu.eidas.auth.engine.core.stork.impl.*;
+import java.security.Security;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.opensaml.DefaultBootstrap;
 import org.opensaml.saml2.metadata.impl.RequestedAttributeBuilder;
 import org.opensaml.saml2.metadata.impl.RequestedAttributeMarshaller;
 import org.opensaml.saml2.metadata.impl.RequestedAttributeUnmarshaller;
 import org.opensaml.xml.Configuration;
-import org.opensaml.xml.ConfigurationException;
 import org.opensaml.xml.schema.XSAny;
 import org.opensaml.xml.schema.impl.XSAnyBuilder;
 import org.opensaml.xml.schema.impl.XSAnyMarshaller;
@@ -17,8 +14,63 @@ import org.opensaml.xml.schema.impl.XSAnyUnmarshaller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.security.Provider;
-import java.security.Security;
+import eu.eidas.auth.commons.xml.opensaml.OpenSamlHelper;
+import eu.eidas.auth.engine.core.stork.AuthenticationAttributes;
+import eu.eidas.auth.engine.core.stork.CitizenCountryCode;
+import eu.eidas.auth.engine.core.stork.EIDCrossBorderShare;
+import eu.eidas.auth.engine.core.stork.EIDCrossSectorShare;
+import eu.eidas.auth.engine.core.stork.EIDSectorShare;
+import eu.eidas.auth.engine.core.stork.QAAAttribute;
+import eu.eidas.auth.engine.core.stork.RequestedAttributes;
+import eu.eidas.auth.engine.core.stork.SPApplication;
+import eu.eidas.auth.engine.core.stork.SPCountry;
+import eu.eidas.auth.engine.core.stork.SPID;
+import eu.eidas.auth.engine.core.stork.SPInformation;
+import eu.eidas.auth.engine.core.stork.SPInstitution;
+import eu.eidas.auth.engine.core.stork.SPSector;
+import eu.eidas.auth.engine.core.stork.VIDPAuthenticationAttributes;
+import eu.eidas.auth.engine.core.stork.impl.AuthenticationAttributesBuilder;
+import eu.eidas.auth.engine.core.stork.impl.AuthenticationAttributesMarshaller;
+import eu.eidas.auth.engine.core.stork.impl.AuthenticationAttributesUnmarshaller;
+import eu.eidas.auth.engine.core.stork.impl.CitizenCountryCodeBuilder;
+import eu.eidas.auth.engine.core.stork.impl.CitizenCountryCodeMarshaller;
+import eu.eidas.auth.engine.core.stork.impl.CitizenCountryCodeUnmarshaller;
+import eu.eidas.auth.engine.core.stork.impl.EIDCrossBorderShareBuilder;
+import eu.eidas.auth.engine.core.stork.impl.EIDCrossBorderShareMarshaller;
+import eu.eidas.auth.engine.core.stork.impl.EIDCrossBorderShareUnmarshaller;
+import eu.eidas.auth.engine.core.stork.impl.EIDCrossSectorShareBuilder;
+import eu.eidas.auth.engine.core.stork.impl.EIDCrossSectorShareMarshaller;
+import eu.eidas.auth.engine.core.stork.impl.EIDCrossSectorShareUnmarshaller;
+import eu.eidas.auth.engine.core.stork.impl.EIDSectorShareBuilder;
+import eu.eidas.auth.engine.core.stork.impl.EIDSectorShareMarshaller;
+import eu.eidas.auth.engine.core.stork.impl.EIDSectorShareUnmarshaller;
+import eu.eidas.auth.engine.core.stork.impl.QAAAttributeBuilder;
+import eu.eidas.auth.engine.core.stork.impl.QAAAttributeMarshaller;
+import eu.eidas.auth.engine.core.stork.impl.QAAAttributeUnmarshaller;
+import eu.eidas.auth.engine.core.stork.impl.RequestedAttributesBuilder;
+import eu.eidas.auth.engine.core.stork.impl.RequestedAttributesMarshaller;
+import eu.eidas.auth.engine.core.stork.impl.RequestedAttributesUnmarshaller;
+import eu.eidas.auth.engine.core.stork.impl.SPApplicationBuilder;
+import eu.eidas.auth.engine.core.stork.impl.SPApplicationMarshaller;
+import eu.eidas.auth.engine.core.stork.impl.SPApplicationUnmarshaller;
+import eu.eidas.auth.engine.core.stork.impl.SPCountryBuilder;
+import eu.eidas.auth.engine.core.stork.impl.SPCountryMarshaller;
+import eu.eidas.auth.engine.core.stork.impl.SPCountryUnmarshaller;
+import eu.eidas.auth.engine.core.stork.impl.SPIDBuilder;
+import eu.eidas.auth.engine.core.stork.impl.SPIDMarshaller;
+import eu.eidas.auth.engine.core.stork.impl.SPIDUnmarshaller;
+import eu.eidas.auth.engine.core.stork.impl.SPInformationBuilder;
+import eu.eidas.auth.engine.core.stork.impl.SPInformationMarshaller;
+import eu.eidas.auth.engine.core.stork.impl.SPInformationUnmarshaller;
+import eu.eidas.auth.engine.core.stork.impl.SPInstitutionBuilder;
+import eu.eidas.auth.engine.core.stork.impl.SPInstitutionMarshaller;
+import eu.eidas.auth.engine.core.stork.impl.SPInstitutionUnmarshaller;
+import eu.eidas.auth.engine.core.stork.impl.SPSectorBuilder;
+import eu.eidas.auth.engine.core.stork.impl.SPSectorMarshaller;
+import eu.eidas.auth.engine.core.stork.impl.SPSectorUnmarshaller;
+import eu.eidas.auth.engine.core.stork.impl.VIDPAuthenticationAttributesBuilder;
+import eu.eidas.auth.engine.core.stork.impl.VIDPAuthenticationAttributesMarshaller;
+import eu.eidas.auth.engine.core.stork.impl.VIDPAuthenticationAttributesUnmarshaller;
 
 /**
  * Created by bodabel on 11/12/2014.
@@ -28,14 +80,11 @@ public class EncryptionTestUtils {
     private static final Logger log = LoggerFactory
             .getLogger(EncryptionTestUtils.class.getName());
 
-    public static void initXMLTolling() {
+    public static void initXMLTooling() {
 
         log.debug("Init XMLTooling... register SAML 2.0 providers");
-        try {
-            DefaultBootstrap.bootstrap();
-        } catch (ConfigurationException e) {
-            throw new RuntimeException(e);
-        }
+        // This will trigger DefaultBootstrap.bootstrap() in OpenSamlHelper
+        OpenSamlHelper.getSecuredParserPool();
 
         log.debug("Init XMLTooling... register STORK objects XML provider");
         Configuration.registerObjectProvider(QAAAttribute.DEF_ELEMENT_NAME,
@@ -122,18 +171,6 @@ public class EncryptionTestUtils {
 
         log.debug("Init XMLTooling... register security providers");
         // Dynamically register Bouncy Castle provider.
-        boolean found = false;
-        // Check if BouncyCastle is already registered as a provider
-        final Provider[] providers = Security.getProviders();
-        for (int i = 0; i < providers.length; i++) {
-            if (providers[i].getName().equals(
-                    BouncyCastleProvider.PROVIDER_NAME)) {
-                found = true;
-            }
-        }
-        // Register only if the provider has not been previously registered
-        if (!found) {
-            Security.insertProviderAt(new BouncyCastleProvider(), 0);
-        }
+        Security.addProvider(new BouncyCastleProvider());
     }
 }

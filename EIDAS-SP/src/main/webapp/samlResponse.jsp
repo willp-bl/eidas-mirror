@@ -37,7 +37,7 @@
 							<textarea class="form-control" name="SAMLResponse" id="SAMLResponse" rows="8"><s:property value="SAMLResponse"/></textarea>
 						</div>
 						<div class="button-group">
-							<button id="submit_saml" type="button" class="btn btn-default btn-lg btn-block" onclick="$('#countrySelector').submit();">Submit</button>
+							<button id="submit_saml" type="submit" class="btn btn-default btn-lg btn-block">Submit</button>
 						</div>
 					</form>
 					<form>

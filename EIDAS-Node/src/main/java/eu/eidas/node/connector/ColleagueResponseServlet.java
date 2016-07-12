@@ -22,60 +22,62 @@
 
 package eu.eidas.node.connector;
 
-import eu.eidas.auth.commons.*;
-import eu.eidas.auth.commons.exceptions.InvalidParameterEIDASException;
-import eu.eidas.node.NodeBeanNames;
-import eu.eidas.node.NodeViewNames;
+import java.io.IOException;
+import java.security.InvalidParameterException;
 
-import eu.eidas.node.utils.SessionHolder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.security.InvalidParameterException;
-import java.util.Map;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import eu.eidas.auth.commons.EidasParameterKeys;
+import eu.eidas.auth.commons.EIDASValues;
+import eu.eidas.auth.commons.IncomingRequest;
+import eu.eidas.auth.commons.WebRequest;
+import eu.eidas.auth.commons.light.ILightResponse;
+import eu.eidas.auth.commons.light.impl.LightResponse;
+import eu.eidas.auth.commons.validation.NormalParameterValidator;
+import eu.eidas.node.NodeBeanNames;
+import eu.eidas.auth.commons.tx.AuthenticationExchange;
+import eu.eidas.node.specificcommunication.ISpecificConnector;
+import eu.eidas.node.specificcommunication.exception.SpecificException;
+import eu.eidas.node.utils.SessionHolder;
 
 /**
  * Is invoked when ProxyService wants to pass control to the Connector.
  */
 public final class ColleagueResponseServlet extends AbstractConnectorServlet {
 
-  private static final long serialVersionUID = -2511363089207242981L;
-  /**
-   * Logger object.
-   */
-  private static final Logger LOG = LoggerFactory.getLogger(ColleagueResponseServlet.class.getName());
+    private static final long serialVersionUID = -2511363089207242981L;
 
-  @Override
-  protected Logger getLogger() {
-    return LOG;
-  }
+    /**
+     * Logger object.
+     */
+    private static final Logger LOG = LoggerFactory.getLogger(ColleagueResponseServlet.class.getName());
 
+    @Override
+    protected Logger getLogger() {
+        return LOG;
+    }
 
-  private boolean validateParameterAndIsNormalSAMLResponse(String sAMLResponse) {
-    // Validating the only HTTP parameter: sAMLResponse.
-    try {
-      LOG.trace("Validating Parameter SAMLResponse");
-      EIDASUtil.validateParameter(
-              ColleagueResponseServlet.class.getCanonicalName(),
-              EIDASParameters.SAML_RESPONSE.toString(), sAMLResponse,
-              EIDASErrors.COLLEAGUE_RESP_INVALID_SAML);
-      return true;
-    } catch (InvalidParameterEIDASException e) {
-        LOG.info("ERROR : SAMLResponse parameter is missing",e.getMessage());
-        LOG.debug("ERROR : SAMLResponse parameter is missing",e);
-        throw new InvalidParameterException("SAMLResponse parameter is missing");
-      }
-  }
+    private boolean validateParameterAndIsNormalSAMLResponse(String sAMLResponse) {
+        // Validating the only HTTP parameter: sAMLResponse.
+
+        LOG.trace("Validating Parameter SAMLResponse");
+
+        if (!NormalParameterValidator.paramName(EidasParameterKeys.SAML_RESPONSE).paramValue(sAMLResponse).isValid()) {
+            LOG.info("ERROR : SAMLResponse parameter is invalid or missing");
+            throw new InvalidParameterException("SAMLResponse parameter is invalid or missing");
+        }
+        return true;
+    }
 
     /**
      * This call is used for the moa/mocca get
+     *
      * @param request
      * @param response
      * @throws ServletException
@@ -86,88 +88,69 @@ public final class ColleagueResponseServlet extends AbstractConnectorServlet {
         doPost(request, response);
     }
 
-  /**
-   * Executes {@link eu.eidas.node.auth.connector.AUCONNECTOR#getAuthenticationResponse} and prepares the citizen
-   * to be redirected back to the SP.
-   * @param request
-   * @param response
-   * @return
-   * @throws Exception
-   */
-  @Override
-  public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-    String sAMLResponse;
-    String relayState = null;
-    String spUrl;
-    try {
-      // Prevent cookies from being accessed through client-side script with renew of session.
-      setHTTPOnlyHeaderToSession(false, request, response);
-      SessionHolder.setId(request.getSession());
-      request.getSession().setAttribute(EIDASParameters.SAML_PHASE.toString(), EIDASValues.EIDAS_CONNECTOR_RESPONSE);
+    /**
+     * Executes {@link eu.eidas.node.auth.connector.AUCONNECTOR#getAuthenticationResponse} and prepares the citizen to
+     * be redirected back to the SP.
+     *
+     * @param request
+     * @param response
+     * @return
+     * @throws Exception
+     */
+    @Override
+    public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException {
+        try {
+            // Prevent cookies from being accessed through client-side script with renew of session.
+            setHTTPOnlyHeaderToSession(false, request, response);
+            SessionHolder.setId(request.getSession());
+            request.getSession()
+                    .setAttribute(EidasParameterKeys.SAML_PHASE.toString(), EIDASValues.EIDAS_CONNECTOR_RESPONSE);
 
-      // Obtaining the assertion consumer url from SPRING context
-      ConnectorControllerService controllerService= (ConnectorControllerService) getApplicationContext().getBean(NodeBeanNames.EIDAS_CONNECTOR_CONTROLLER.toString());
-      LOG.trace("ConnectorControllerService {}", controllerService);
+            // Obtaining the assertion consumer url from SPRING context
+            ConnectorControllerService controllerService = (ConnectorControllerService) getApplicationContext().getBean(
+                    NodeBeanNames.EIDAS_CONNECTOR_CONTROLLER.toString());
+            LOG.trace("ConnectorControllerService {}", controllerService);
 
-      IEIDASSession eidasSession = controllerService.getSession();
-      LOG.debug("== SESSION : execute, size is " + eidasSession.size());
+            // Obtains the parameters from httpRequest
+            WebRequest webRequest = new IncomingRequest(request);
 
-      // Obtains the parameters from httpRequest
-      final Map<String, String> parameters = getHttpRequestParameters(request);
+            String samlResponseFromProxyService =
+                    webRequest.getEncodedLastParameterValue(EidasParameterKeys.SAML_RESPONSE);
+            if (null == samlResponseFromProxyService) {
+                samlResponseFromProxyService = StringUtils.EMPTY;
+            }
 
-      if(parameters.containsKey(EIDASParameters.SAML_RESPONSE.toString())) {
-          sAMLResponse = parameters.get(EIDASParameters.SAML_RESPONSE.toString());
-      } else {
-          sAMLResponse = "";
-      }
+            // Validating the only HTTP parameter: SAMLResponse or samlArtifact.
+            if (!validateParameterAndIsNormalSAMLResponse(samlResponseFromProxyService)) {
+                LOG.info("ERROR : Cannot validate parameter or abnormal SAML response");
+            }
+            LOG.trace("Normal SAML response decoding");
+            AuthenticationExchange
+                    authenticationExchange = controllerService.getConnectorService().getAuthenticationResponse(webRequest);
 
-      // Validating the only HTTP parameter: sAMLResponse or samlArtifact.
-    spUrl = (String) eidasSession.get(EIDASParameters.SP_URL.toString());
-    if(controllerService.getConnectorService().isPluginResponse(request)){
-        sAMLResponse=controllerService.getConnectorService().processPluginResponse(request, response, getServletContext(), eidasSession, parameters);
-        if(sAMLResponse == null){
-            return;//the plugin performed the dispatching itself
+            // Build the LightResponse
+            LightResponse lightResponse =
+                    LightResponse.builder(authenticationExchange.getConnectorResponse()).build();
+            // Call the specific module
+            sendResponse(lightResponse, request, response, controllerService);
+
+        } catch (ServletException se) {
+            LOG.info("BUSINESS EXCEPTION : ServletException", se.getMessage());
+            LOG.debug("BUSINESS EXCEPTION : ServletException", se);
+            throw se;
         }
-    } else {
-        if (!validateParameterAndIsNormalSAMLResponse(sAMLResponse)) {
-            LOG.info("ERROR : Cannot validate parameter or abnormal SAML response");
-        }
-        LOG.trace("Normal SAML response decoding");
-        final EIDASAuthnRequest authData = controllerService.getConnectorService().getAuthenticationResponse(parameters, eidasSession);
-
-        EIDASUtil.validateParameter(
-                ColleagueResponseServlet.class.getCanonicalName(),
-                EIDASParameters.SP_URL.toString(), spUrl);
-
-        // Setting internal variables
-        LOG.trace("Setting internal variables");
-
-        if (eidasSession.containsKey(EIDASParameters.RELAY_STATE.toString())) {
-          relayState = ((String) eidasSession.get(EIDASParameters.RELAY_STATE.toString()));
-        }
-
-        sAMLResponse = new String(authData.getTokenSaml(), Charset.forName("UTF-8"));
-        EIDASUtil.validateParameter(  ColleagueResponseServlet.class.getCanonicalName(),
-                EIDASParameters.SAML_RESPONSE.toString(), sAMLResponse);
-
-        eidasSession.clear();
     }
 
-      request.setAttribute(NodeBeanNames.SAML_RESPONSE.toString(), sAMLResponse);
-      request.setAttribute(NodeBeanNames.RELAY_STATE.toString(), relayState);
-      request.setAttribute(NodeBeanNames.SP_URL.toString(),spUrl);
+    private void sendResponse(ILightResponse lightResponse, HttpServletRequest request, HttpServletResponse response, ConnectorControllerService connectorController) throws ServletException {
+        try {
+            ISpecificConnector specificConnector = connectorController.getSpecificConnector();
+            specificConnector.sendResponse(lightResponse, request, response);
 
-      RequestDispatcher dispatcher = getServletContext().getRequestDispatcher(NodeViewNames.EIDAS_CONNECTOR_COLLEAGUE_RESPONSE_REDIRECT.toString());
-      dispatcher.forward(request,response);
-    }catch (ServletException se){
-      LOG.info("BUSINESS EXCEPTION : ServletException", se.getMessage());
-      LOG.debug("BUSINESS EXCEPTION : ServletException", se);
-      throw se;
-    }catch (IOException ie){
-      LOG.info("BUSINESS EXCEPTION : IOException", ie.getMessage());
-      LOG.debug("BUSINESS EXCEPTION : IOException", ie);
-      throw ie;
+        } catch (SpecificException e) {
+            getLogger().error("SpecificException" + e, e);
+            // Illegal state: exception received from the specific module
+            throw new ServletException("Unable to send specific response: " + e, e);
+        }
     }
-  }
 
 }

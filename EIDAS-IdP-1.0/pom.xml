@@ -1,61 +1,39 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>eu.eidas</groupId>
     <artifactId>eidas-idp</artifactId>
     <packaging>war</packaging>
     <name>eidas Idp</name>
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <proj.name>IdP</proj.name>
-    </properties>
-    <version>${project.version}</version>
+    <version>1.1.0</version>
+    <description>eIDAS Identity Provider</description>
     <parent>
         <groupId>eu.eidas</groupId>
         <artifactId>eidas-parent</artifactId>
-        <version>eidas</version>
+        <version>1.1.0</version>
         <relativePath>../EIDAS-Parent/pom.xml</relativePath>
     </parent>
+    <properties>
+        <proj.name>IdP</proj.name>
+    </properties>
     <dependencies>
-
+        <!-- 1) Dependencies on other modules: -->
         <dependency>
             <groupId>eu.eidas</groupId>
             <artifactId>eidas-commons</artifactId>
-            <version>${project.version}</version>
             <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
                 <exclusion>
                     <groupId>log4j</groupId>
                     <artifactId>log4j</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
-
-        <!-- Servlet & JSP-->
-        <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>servlet-api</artifactId>
-            <version>${servlet.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>jsp-api</artifactId>
-            <version>${jsp.api}</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <!-- Struts2 -->
-        <dependency>
-            <groupId>org.apache.struts</groupId>
-            <artifactId>struts2-core</artifactId>
-            <version>${struts.version}</version>
-        </dependency>
-
- 
         <dependency>
             <groupId>eu.eidas</groupId>
-            <artifactId>saml-engine</artifactId>
-            <version>${saml.version}</version>
+            <artifactId>eidas-saml-engine</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>xalan</groupId>
@@ -77,75 +55,71 @@
                     <groupId>xml-apis</groupId>
                     <artifactId>xml-apis</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
-		<dependency>
-			<groupId>org.owasp.encoder</groupId>
-			<artifactId>encoder-jsp</artifactId>
-			<version>${owasp.version}</version>
-			<exclusions>
-				<exclusion>
-					<groupId>org.slf4j</groupId>
-					<artifactId>slf4j-log4j12</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>log4j</groupId>
-					<artifactId>log4j</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
+
+        <!-- 2) Dependencies on libraries: -->
+        <!-- Servlet & JSP-->
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>servlet-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>jsp-api</artifactId>
+        </dependency>
+
+        <!-- Struts2 -->
+        <dependency>
+            <groupId>org.apache.struts</groupId>
+            <artifactId>struts2-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.owasp.encoder</groupId>
+            <artifactId>encoder-jsp</artifactId>
+        </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>${logback.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-web</artifactId>
-            <version>${spring.version}</version>
         </dependency>
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>jstl</artifactId>
-            <version>${jstl.version}</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>taglibs</groupId>
             <artifactId>standard</artifactId>
             <scope>runtime</scope>
-            <version>${jstl.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.ibm.icu</groupId>
+            <artifactId>icu4j</artifactId>
+            <version>57.1</version>
         </dependency>
 
     </dependencies>
     <build>
         <finalName>${proj.name}</finalName>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-compiler-plugin</artifactId>
-                    <version>${compile.plugin.version}</version>
-                    <configuration>
-                        <source>${java.version}</source>
-                        <target>${java.version}</target>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-surefire-plugin</artifactId>
-                    <configuration>
-                        <skip>true</skip>
-                    </configuration>
-                </plugin>
-            </plugins>
-        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>
-                <version>${war.plugin.version}</version>
             </plugin>
         </plugins>
     </build>
@@ -165,15 +139,15 @@
         </profile>
         <profile>
             <id>encryptionProvider</id>
-			<activation>
-				<jdk>[1.6,)</jdk>
-			</activation>
+            <activation>
+                <jdk>[1.6,)</jdk>
+            </activation>
             <dependencies>
-				<dependency>
-					<groupId>org.bouncycastle</groupId>
-					<artifactId>bcprov-jdk15on</artifactId>
-					<version>${bouncycastle.version}</version>
-				</dependency>
+                <dependency>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcprov-jdk15on</artifactId>
+                    <scope>compile</scope>
+                </dependency>
             </dependencies>
         </profile>
         <profile>
@@ -246,69 +220,33 @@
         <profile>
             <id>jBoss7</id>
             <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-resources-plugin</artifactId>
-                            <version>${resources.plugin.version}</version>
-                            <executions>
-                                <execution>
-                                    <id>copy-jboss-resources</id>
-                                    <phase>process-resources</phase>
-                                    <goals>
-                                        <goal>copy-resources</goal>
-                                    </goals>
-                                    <configuration>
-                                        <outputDirectory>
-                                            ${project.build.directory}/${proj.name}/WEB-INF
-                                        </outputDirectory>
-                                        <resources>
-                                            <resource>
-                                                <directory>${project.basedir}/src/main/config/jBoss7</directory>
-                                                <filtering>true</filtering>
-                                            </resource>
-                                        </resources>
-                                    </configuration>
-                                </execution>
-                            </executions>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
-        <profile>
-            <id>websphere</id>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-resources-plugin</artifactId>
-                            <version>${resources.plugin.version}</version>
-                            <executions>
-                                <execution>
-                                    <id>copy-websphere-resources</id>
-                                    <phase>process-resources</phase>
-                                    <goals>
-                                        <goal>copy-resources</goal>
-                                    </goals>
-                                    <configuration>
-                                        <outputDirectory>
-                                            ${project.build.directory}/${proj.name}/WEB-INF/classes
-                                        </outputDirectory>
-                                        <resources>
-                                            <resource>
-                                                <directory>${project.basedir}/src/main/config/websphere</directory>
-                                                <filtering>true</filtering>
-                                            </resource>
-                                        </resources>
-                                    </configuration>
-                                </execution>
-                            </executions>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <version>${resources.plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>copy-jboss-resources</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>
+                                        ${project.build.directory}/${proj.name}/WEB-INF
+                                    </outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.basedir}/src/main/config/jBoss7</directory>
+                                            <filtering>true</filtering>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
             </build>
         </profile>
     </profiles>

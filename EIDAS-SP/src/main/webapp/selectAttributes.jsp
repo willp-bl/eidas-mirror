@@ -104,24 +104,24 @@
 								<s:iterator value="storkAttributeList">
 									<div class="form-group">
 										<s:if test="%{value[0]!=''}">
-											<input type="text" name="<s:property value="name"/>" value="<s:property value="name"/>" id="input" class="form-control"/>
-											<input type="text" name="<s:property value="name"/>Value" value="<s:property value="value[0]"/>" id="input" class="form-control"/>
+											<input type="text" name="<s:property value="nameUri"/>" value="<s:property value="friendlyName"/>" id="input" class="form-control"/>
+											<input type="text" name="<s:property value="nameUri"/>Value" value="<s:property value="value[0]"/>" id="input" class="form-control"/>
 										</s:if>
 										<s:else>
-											<input type="text" name="<s:property value="name"/>" value="<s:property value="name"/>" id="input" class="form-control"/>
+											<input type="text" name="<s:property value="nameUri"/>" value="<s:property value="name"/>" id="input" class="form-control"/>
 										</s:else>
 										<div class="radio-inline-group">
 											<div class="radio radio-info radio-inline">
-												<input type="radio" name="<s:property value="name" />Type" id="Mandatory_<s:property value="name" />" value="true" />
-												<label for="Mandatory_<s:property value="name" />"><s:property value="%{getText('mandatoryId')}"/></label>
+												<input type="radio" name="<s:property value="nameUri" />Type" id="Mandatory_<s:property value="friendlyName" />" value="true" />
+												<label for="Mandatory_<s:property value="nameUri" />"><s:property value="%{getText('mandatoryId')}"/></label>
 											</div>
 											<div class="radio radio-info radio-inline">
-												<input type="radio" name="<s:property value="name" />Type" id="Optional_<s:property value="name" />" value="false" checked="checked" />
-												<label for="Optional_<s:property value="name" />"><s:property value="%{getText('optionalId')}"/></label>
+												<input type="radio" name="<s:property value="nameUri" />Type" id="Optional_<s:property value="friendlyName" />" value="false" checked="checked" />
+												<label for="Optional_<s:property value="nameUri" />"><s:property value="%{getText('optionalId')}"/></label>
 											</div>
 											<div class="radio radio-info radio-inline">
-												<input type="radio" name="<s:property value="name" />Type" id="NoRequest_<s:property value="name" />" value="none" />
-												<label for="NoRequest_<s:property value="name" />"><s:property value="%{getText('doNotRequestId')}"/></label>
+												<input type="radio" name="<s:property value="nameUri" />Type" id="NoRequest_<s:property value="friendlyName" />" value="none" />
+												<label for="NoRequest_<s:property value="nameUri" />"><s:property value="%{getText('doNotRequestId')}"/></label>
 											</div>
 										</div>
 									</div>
@@ -153,14 +153,14 @@
 							<select name="eidasconnector" id="eidasconnector" class="form-control">
 								<option data-description="Choose an option"></option>
 								<s:iterator value="countries">
-									<option value="<s:property value="url"/>" data-image="img/flags/<s:property value="name"/>.gif"><s:property
+									<option value="<s:property value="metadataUrl"/>" data-image="img/flags/<s:property value="name"/>.gif"><s:property
 											value="name" /></option>
 								</s:iterator>
 							</select>
-							<input type="text" name="nodeUrl" value="" id="inputEidas" class="form-control"/>
+							<input type="text" name="nodeMetadataUrl" value="" id="inputEidas" class="form-control"/>
 						</div>
 						<div class="form-group" id="citizenCountryDivEidas">
-							<label for="citizenSelect"><s:property value="%{getText('citizenCountryId')}"/></label>
+							<label for="citizenEidas"><s:property value="%{getText('citizenCountryId')}"/></label>
 							<select name="citizenEidas" id="citizeneidas" class="form-control">
 								<option data-description="Choose an option"></option>
 								<s:iterator value="countries">
@@ -228,63 +228,65 @@
 							<span class="text-error">(*) eIDAS minimum data set</span>
 						</div>
 						<h4><s:property value="%{getText('eidasNaturalPersonAttributes')}"/> <a class="toggle" id="tab2_toggle1"></a></h4>
-                        <div class="content" id="tab2_toggle1_content">
-                            <s:iterator value="eidasAttributeList">
-                                <s:if test="%{eidasNaturalPersonAttr}">
-                                    <div class="form-group">
-                                        <s:if test="%{value[0]!=''}">
-                                            <input type="text" name="<s:property value="name"/>" value="<s:property value="name"/>" id="input" class="form-control"/>
-                                            <input type="text" name="<s:property value="name"/>Value" value="<s:property value="value[0]"/>" id="input" class="form-control"/>
-                                        </s:if>
-                                        <s:else>
-                                            <input type="text" name="<s:property value="name"/>" value="<s:property value="name"/>" id="input" class="form-control"/>
-                                        </s:else>
-                                        <div class="radio-inline-group">
-                                            <div class="radio radio-info radio-inline">
-                                                <input type="radio" name="<s:property value="name" />Type" id="Mandatory_<s:property value="name" />Eidas" value="true" />
-                                                <label for="Mandatory_<s:property value="name" />Eidas"><s:property value="%{getText('mandatoryId')}"/></label>
-                                            </div>
-                                            <div class="radio radio-info radio-inline">
-                                                <input type="radio" name="<s:property value="name" />Type" id="Optional_<s:property value="name" />Eidas" value="false" checked="checked" />
-                                                <label for="Optional_<s:property value="name" />Eidas"><s:property value="%{getText('optionalId')}"/></label>
-                                            </div>
-                                            <div class="radio radio-info radio-inline">
-                                                <input type="radio" name="<s:property value="name" />Type" id="NoRequest_<s:property value="name" />Eidas" value="none" />
-                                                <label for="NoRequest_<s:property value="name" />Eidas"><s:property value="%{getText('doNotRequestId')}"/></label>
-                                            </div>
-                                            <s:if test="%{required}"><span class="text-error">(*)</span></s:if>
-                                        </div>
-                                    </div>
-                                </s:if>
-                            </s:iterator>
-                        </div>
+						<div class="content" id="tab2_toggle1_content">
+							<s:set var="NaturalPerson">NaturalPerson</s:set>
+							<s:iterator value="eidasAttributeList" >
+								<s:if test="%{#NaturalPerson.equalsIgnoreCase(PersonType)}">
+									<div class="form-group">
+										<s:if test="%{value[0]!=''}">
+											<input type="text" name="<s:property value="nameUri"/>" value="<s:property value="nameUri"/>" id="input" class="form-control"/>
+											<input type="text" name="<s:property value="nameUri"/>Value" value="<s:property value="value[0]"/>" id="input" class="form-control"/>
+										</s:if>
+										<s:else>
+											<input type="text" name="<s:property value="nameUri"/>" value="<s:property value="nameUri"/>" id="input" class="form-control"/>
+										</s:else>
+										<div class="radio-inline-group">
+											<div class="radio radio-info radio-inline">
+												<input type="radio" name="<s:property value="nameUri" />Type" id="Mandatory_<s:property value="friendlyName" />Eidas" value="true" <s:if test="required">checked="checked"</s:if>/>
+												<label for="Mandatory_<s:property value="nameUri" />Eidas"><s:property value="%{getText('mandatoryId')}"/></label>
+											</div>
+											<div class="radio radio-info radio-inline">
+												<input type="radio" name="<s:property value="nameUri" />Type" id="Optional_<s:property value="friendlyName" />Eidas" value="false" <s:if test="!required">checked="checked"</s:if>/>
+												<label for="Optional_<s:property value="nameUri" />Eidas"><s:property value="%{getText('optionalId')}"/></label>
+											</div>
+											<div class="radio radio-info radio-inline">
+												<input type="radio" name="<s:property value="nameUri" />Type" id="NoRequest_<s:property value="friendlyName" />Eidas" value="none" />
+												<label for="NoRequest_<s:property value="nameUri" />Eidas"><s:property value="%{getText('doNotRequestId')}"/></label>
+											</div>
+											<s:if test="%{isRequired()}"><span class="text-error">(*)</span></s:if>
+										</div>
+									</div>
+								</s:if>
+							</s:iterator>
+						</div>
 						<h4><s:property value="%{getText('eidasLegalPersonAttributes')}"/> <a class="toggle" id="tab2_toggle2"></a></h4>
                         <div class="content" id="tab2_toggle2_content">
+							<s:set var="LegalPerson">LegalPerson</s:set>
                             <s:iterator value="eidasAttributeList">
-                                <s:if test="%{eidasLegalPersonAttr}">
+								<s:if test="%{#LegalPerson.equalsIgnoreCase(PersonType)}">
                                     <div class="form-group">
                                         <s:if test="%{value[0]!=''}">
-                                            <input type="text" name="<s:property value="name"/>" value="<s:property value="name"/>" id="input" class="form-control"/>
-                                            <input type="text" name="<s:property value="name"/>Value" value="<s:property value="value[0]"/>" id="input" class="form-control"/>
+                                            <input type="text" name="<s:property value="nameUri"/>" value="<s:property value="nameUri"/>" id="input" class="form-control"/>
+                                            <input type="text" name="<s:property value="nameUri"/>Value" value="<s:property value="value[0]"/>" id="input" class="form-control"/>
                                             <s:if test="%{required}"><span class="text-error">(*)</span></s:if>
                                         </s:if>
                                         <s:else>
-                                            <input type="text" name="<s:property value="name"/>" value="<s:property value="name"/>" id="input" class="form-control"/>
+                                            <input type="text" name="<s:property value="nameUri"/>" value="<s:property value="nameUri"/>" id="input" class="form-control"/>
                                         </s:else>
                                         <div class="radio-inline-group">
                                             <div class="radio radio-info radio-inline">
-                                                <input type="radio" name="<s:property value="name" />Type" id="Mandatory_<s:property value="name" />Eidas" value="true" />
-                                                <label for="Mandatory_<s:property value="name" />Eidas"><s:property value="%{getText('mandatoryId')}"/></label>
+                                                <input type="radio" name="<s:property value="nameUri" />Type" id="Mandatory_<s:property value="friendlyName" />Eidas" value="true" <s:if test="required">checked="checked"</s:if>/>
+                                                <label for="Mandatory_<s:property value="nameUri" />Eidas"><s:property value="%{getText('mandatoryId')}"/></label>
                                             </div>
                                             <div class="radio radio-info radio-inline">
-                                                <input type="radio" name="<s:property value="name" />Type" id="Optional_<s:property value="name" />Eidas" value="false" checked="checked" />
-                                                <label for="Optional_<s:property value="name" />Eidas"><s:property value="%{getText('optionalId')}"/></label>
+                                                <input type="radio" name="<s:property value="nameUri" />Type" id="Optional_<s:property value="friendlyName" />Eidas" value="false" <s:if test="!required">checked="checked"</s:if>/>
+                                                <label for="Optional_<s:property value="nameUri" />Eidas"><s:property value="%{getText('optionalId')}"/></label>
                                             </div>
                                             <div class="radio radio-info radio-inline">
-                                                <input type="radio" name="<s:property value="name" />Type" id="NoRequest_<s:property value="name" />Eidas" value="none" />
-                                                <label for="NoRequest_<s:property value="name" />Eidas"><s:property value="%{getText('doNotRequestId')}"/></label>
+                                                <input type="radio" name="<s:property value="nameUri" />Type" id="NoRequest_<s:property value="friendlyName" />Eidas" value="none" />
+                                                <label for="NoRequest_<s:property value="nameUri" />Eidas"><s:property value="%{getText('doNotRequestId')}"/></label>
                                             </div>
-                                            <s:if test="%{required}"><span class="text-error">(*)</span></s:if>
+                                            <s:if test="%{isRequired()}"><span class="text-error">(*)</span></s:if>
                                         </div>
                                     </div>
                                 </s:if>
@@ -307,7 +309,7 @@
 					</div>
 					<jsp:include page="leftColumnStork.jsp"/>
 					<div class="col-md-6">
-						<s:form action="IndexPage" id="formTab3">
+						<s:form action="redirectIndexPage" id="formTab3">
 							<h3 class="m-top-0">Detail messages</h3>
 
 							<div class="form-group" id="spCountryDiv">
@@ -315,7 +317,7 @@
 								<select name="connector2" id="connector2" class="form-control">
                                     <option data-description="Choose an option"></option>
                                     <s:iterator value="countries">
-                                        <option value="<s:property value="url"/>" data-image="img/flags/<s:property value="name"/>.gif"><s:property
+                                        <option value="<s:property value="countrySelector"/>" data-image="img/flags/<s:property value="name"/>.gif"><s:property
                                                 value="name" /></option>
                                     </s:iterator>
 								</select>
@@ -349,24 +351,24 @@
                                 <s:iterator value="storkAttributeList">
                                     <div class="form-group">
                                         <s:if test="%{value[0]!=''}">
-                                            <input type="text" name="<s:property value="name"/>" value="<s:property value="name"/>" id="input" class="form-control"/>
-                                            <input type="text" name="<s:property value="name"/>Value" value="<s:property value="value[0]"/>" id="input" class="form-control"/>
+                                            <input type="text" name="<s:property value="nameUri"/>" value="<s:property value="friendlyName"/>" id="input" class="form-control"/>
+                                            <input type="text" name="<s:property value="nameUri"/>Value" value="<s:property value="value[0]"/>" id="input" class="form-control"/>
                                         </s:if>
                                         <s:else>
-                                            <input type="text" name="<s:property value="name"/>" value="<s:property value="name"/>" id="input" class="form-control"/>
+                                            <input type="text" name="<s:property value="name"/>" value="<s:property value="friendlyName"/>" id="input" class="form-control"/>
                                         </s:else>
                                         <div class="radio-inline-group">
                                             <div class="radio radio-info radio-inline">
-                                                <input type="radio" name="<s:property value="name" />Type" id="2Mandatory_<s:property value="name" />" value="true" />
-                                                <label for=2"Mandatory_<s:property value="name" />"><s:property value="%{getText('mandatoryId')}"/></label>
+                                                <input type="radio" name="<s:property value="nameUri" />Type" id="2Mandatory_<s:property value="friendlyName" />" value="true" />
+                                                <label for=2"Mandatory_<s:property value="nameUri" />"><s:property value="%{getText('mandatoryId')}"/></label>
                                             </div>
                                             <div class="radio radio-info radio-inline">
-                                                <input type="radio" name="<s:property value="name" />Type" id="2Optional_<s:property value="name" />" value="false" checked="checked" />
-                                                <label for="2Optional_<s:property value="name" />"><s:property value="%{getText('optionalId')}"/></label>
+                                                <input type="radio" name="<s:property value="nameUri" />Type" id="2Optional_<s:property value="friendlyName" />" value="false" checked="checked" />
+                                                <label for="2Optional_<s:property value="nameUri" />"><s:property value="%{getText('optionalId')}"/></label>
                                             </div>
                                             <div class="radio radio-info radio-inline">
-                                                <input type="radio" name="<s:property value="name" />Type" id="2NoRequest_<s:property value="name" />" value="none" />
-                                                <label for="2NoRequest_<s:property value="name" />"><s:property value="%{getText('doNotRequestId')}"/></label>
+                                                <input type="radio" name="<s:property value="nameUri" />Type" id="2NoRequest_<s:property value="friendlyName" />" value="none" />
+                                                <label for="2NoRequest_<s:property value="nameUri" />"><s:property value="%{getText('doNotRequestId')}"/></label>
                                             </div>
                                         </div>
                                     </div>

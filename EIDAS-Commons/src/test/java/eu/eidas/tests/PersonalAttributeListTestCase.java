@@ -1,74 +1,77 @@
 /*
  * This work is Open Source and licensed by the European Commission under the
- * conditions of the European Public License v1.1 
- *  
- * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1); 
- * 
- * any use of this file implies acceptance of the conditions of this license. 
- * Unless required by applicable law or agreed to in writing, software 
- * distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT 
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the 
- * License for the specific language governing permissions and limitations 
+ * conditions of the European Public License v1.1
+ *
+ * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1);
+ *
+ * any use of this file implies acceptance of the conditions of this license.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
  * under the License.
  */
 package eu.eidas.tests;
+
+import eu.eidas.auth.commons.IPersonalAttributeList;
+import eu.eidas.auth.commons.PersonalAttribute;
+import eu.eidas.auth.commons.PersonalAttributeList;
+import eu.eidas.auth.commons.PersonalAttributeString;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import eu.eidas.auth.commons.PersonalAttribute;
-import eu.eidas.auth.commons.PersonalAttributeList;
-import eu.eidas.auth.commons.EIDASStatusCode;
+import static org.junit.Assert.fail;
 
 /**
  * The PersonalAttributeList's Test Case.
- * 
+ *
  * @author ricardo.ferreira@multicert.com, renato.portela@multicert.com,
  *         luis.felix@multicert.com, hugo.magalhaes@multicert.com,
  *         paulo.ribeiro@multicert.com
  * @version $Revision: 1.5 $, $Date: 2010-11-17 05:17:02 $
  */
 public final class PersonalAttributeListTestCase {
-  
+
   /**
    * isAgeOver constant value.
    */
-  private static final String ISAGEOVER_CONS = "isAgeOver";
-  
+  private static final String ISAGEOVER_CONS = "http://www.stork.gov.eu/1.0/isAgeOver";
+
   /**
    * An empty attribute.
    */
   @SuppressWarnings("unused")
   private static final PersonalAttributeList EMPTY_ATTR_LIST =
     new PersonalAttributeList(0);
-  
+
   /**
    * An attribute with a complex value (canonicalResidenceAddress).
    */
   private static PersonalAttribute complexAttrValue = null;
-  
+
   /**
    * Simple attribute value list string.
    */
   private static final String SIMPLE_ATTRLIST =
-    "isAgeOver:true:[15,]:Available;";
-  
+    "http://www.stork.gov.eu/1.0/isAgeOver:true:[15,]:Available;";
+
   /**
    * Simple attribute value list string.
    */
   private static final String SIMPLE_ATTRLIST2 =
-    "isAgeOver:true:[18,]:Available;";
-  
+    "http://www.stork.gov.eu/1.0/isAgeOver:true:[18,]:Available;";
+
   /**
    * Simple attribute value list string.
    **/
-    private static final String SIMPLE_ATTRLIST3 = "isAgeOver:true:[15,]:Available;isAgeOver:true:[18,]:Available;";
+    private static final String SIMPLE_ATTRLIST3 = "http://www.stork.gov.eu/1.0/isAgeOver:true:[15,]:Available;http://www.stork.gov.eu/1.0/isAgeOver:true:[18,]:Available;";
 
   /**
    * Simple attribute value list string.
@@ -85,18 +88,18 @@ public final class PersonalAttributeListTestCase {
     + "postalCode=4100,apartmentNumber=Ed.B,state=Porto,countryCodeAddress=PT,"
     + "streetNumber=379,streetName=Avenida Sidonio Pais,town=Porto,]:"
     + "Available;";
-  
+
   /**
    * Attribute List example.
    */
   @SuppressWarnings({ "serial" })
-  private static final PersonalAttribute ATTR_VALUE = new PersonalAttribute(
+  private static final PersonalAttribute ATTR_VALUE = new PersonalAttribute("age",
     "age", true, new ArrayList<String>() {
       {
         add("15");
       }
-    }, EIDASStatusCode.STATUS_AVAILABLE.toString());
-  
+    });
+
   /**
    * Init PersonalAttributeListTestCase class.
    */
@@ -114,13 +117,12 @@ public final class PersonalAttributeListTestCase {
         put("apartmentNumber", "Ed. B");
       }
     };
-    
+
     complexAttrValue =
-      new PersonalAttribute("canonicalResidenceAddress", true, values,
-        EIDASStatusCode.STATUS_AVAILABLE.toString());
-    
+      new PersonalAttribute("canonicalResidenceAddress", "Address", true, values);
+
   }
-  
+
   /**
    * Testing Personal Attribute List add method. Personal Attribute list must be
    * size 1 - Simple attribute.
@@ -129,9 +131,9 @@ public final class PersonalAttributeListTestCase {
   public void testAddSimpleAttr() {
     final PersonalAttributeList attrList = new PersonalAttributeList(1);
     attrList.add(ATTR_VALUE);
-    Assert.assertTrue(attrList.size() == 1);
+    Assert.assertEquals(1, attrList.size());
   }
-  
+
   /**
    * Testing Personal Attribute List add method. Personal Attribute list must be
    * size 1 - Complex attribute.
@@ -140,9 +142,9 @@ public final class PersonalAttributeListTestCase {
   public void testAddCompleAttr() {
     final PersonalAttributeList attrList = new PersonalAttributeList(1);
     attrList.add(complexAttrValue);
-    Assert.assertTrue(attrList.size() == 1);
+    Assert.assertEquals(1, attrList.size());
   }
-  
+
   /**
    * Testing Personal Attribute List add method. Personal Attribute list must be
    * size 0 - no attribute.
@@ -151,9 +153,9 @@ public final class PersonalAttributeListTestCase {
   public void testAddNull() {
     final PersonalAttributeList attrList = new PersonalAttributeList(1);
     attrList.add(null);
-    Assert.assertTrue(attrList.size() == 0);
+    Assert.assertEquals(0, attrList.size());
   }
-  
+
   /**
    * Testing Personal Attribute List add method. Same attribute name added
    * twice. Personal Attribute list must be size 2 - IsAgeOver attribute added
@@ -163,24 +165,24 @@ public final class PersonalAttributeListTestCase {
   @Test
   public void testAddSameAttrName() {
     final PersonalAttribute attrValueUnder =
-      new PersonalAttribute(ISAGEOVER_CONS, true, new ArrayList<String>() {
+      new PersonalAttribute(ISAGEOVER_CONS, ISAGEOVER_CONS, true, new ArrayList<String>() {
         {
           add("15");
         }
-      }, EIDASStatusCode.STATUS_AVAILABLE.toString());
-    
+      });
+
     final PersonalAttribute attrValueOver =
-      new PersonalAttribute(ISAGEOVER_CONS, true, new ArrayList<String>() {
+      new PersonalAttribute(ISAGEOVER_CONS, ISAGEOVER_CONS, true, new ArrayList<String>() {
         {
           add("18");
         }
-      }, EIDASStatusCode.STATUS_AVAILABLE.toString());
+      });
     final PersonalAttributeList attrList = new PersonalAttributeList(1);
     attrList.add(attrValueUnder);
     attrList.add(attrValueOver);
-    Assert.assertTrue(attrList.size() == 2);
+    Assert.assertEquals(2, attrList.size());
   }
-  
+
   /**
    * Testing Personal Attribute List add method. Same attribute name added
    * twice. Personal Attribute list must be size 2 - IsAgeOver attribute added
@@ -190,24 +192,24 @@ public final class PersonalAttributeListTestCase {
   @Test
   public void testAddSameAttrNameEmpty() {
     final PersonalAttribute attrValueUnder =
-      new PersonalAttribute(ISAGEOVER_CONS, true, new ArrayList<String>() {
+      new PersonalAttribute(ISAGEOVER_CONS, ISAGEOVER_CONS, true, new ArrayList<String>() {
         {
           add("15");
         }
-      }, EIDASStatusCode.STATUS_AVAILABLE.toString());
-    
+      });
+
     final PersonalAttribute attrValueOver =
-      new PersonalAttribute(ISAGEOVER_CONS, true, new ArrayList<String>() {
+      new PersonalAttribute(ISAGEOVER_CONS, ISAGEOVER_CONS, true, new ArrayList<String>() {
         {
           add("");
         }
-      }, EIDASStatusCode.STATUS_AVAILABLE.toString());
+      });
     final PersonalAttributeList attrList = new PersonalAttributeList(1);
     attrList.add(attrValueUnder);
     attrList.add(attrValueOver);
-    Assert.assertTrue(attrList.size() == 2);
+    Assert.assertEquals(2, attrList.size());
   }
-  
+
   /**
    * Testing Personal Attribute List put method. Personal Attribute list must be
    * size 1 - Simple Value.
@@ -215,10 +217,10 @@ public final class PersonalAttributeListTestCase {
   @Test
   public void testPutSimpleAttr() {
     final PersonalAttributeList attrList = new PersonalAttributeList(1);
-    attrList.put(ATTR_VALUE.getName(), ATTR_VALUE);
-    Assert.assertTrue(attrList.size() == 1);
+    attrList.add(ATTR_VALUE);
+    Assert.assertEquals(1, attrList.size());
   }
-  
+
   /**
    * Testing Personal Attribute List put method. Personal Attribute list must be
    * size 1 - Complex Value.
@@ -226,10 +228,10 @@ public final class PersonalAttributeListTestCase {
   @Test
   public void testPutComplexAttr() {
     final PersonalAttributeList attrList = new PersonalAttributeList(1);
-    attrList.put(ATTR_VALUE.getName(), complexAttrValue);
-    Assert.assertTrue(attrList.size() == 1);
+    attrList.add(complexAttrValue);
+    Assert.assertEquals(1, attrList.size());
   }
-  
+
   /**
    * Testing Personal Attribute List put method. Personal Attribute list must be
    * size 0 - no attribute.
@@ -237,10 +239,10 @@ public final class PersonalAttributeListTestCase {
   @Test
   public void testPutNull() {
     final PersonalAttributeList attrList = new PersonalAttributeList(1);
-    attrList.put("", null);
-    Assert.assertTrue(attrList.size() == 0);
+    attrList.add(null);
+    Assert.assertEquals(0, attrList.size());
   }
-  
+
   /**
    * Testing Personal Attribute List put method. Personal Attribute list must be
    * size 2 - IsAgeOver attribute added twice.
@@ -249,25 +251,25 @@ public final class PersonalAttributeListTestCase {
   @Test
   public void testPutSameAttrName() {
     final PersonalAttribute attrValueUnder =
-      new PersonalAttribute(ISAGEOVER_CONS, true, new ArrayList<String>() {
+      new PersonalAttribute(ISAGEOVER_CONS, ISAGEOVER_CONS, true, new ArrayList<String>() {
         {
           add("15");
         }
-      }, EIDASStatusCode.STATUS_AVAILABLE.toString());
-    
+      });
+
     final PersonalAttribute attrValueOver =
-      new PersonalAttribute(ISAGEOVER_CONS, true, new ArrayList<String>() {
+      new PersonalAttribute(ISAGEOVER_CONS, ISAGEOVER_CONS, true, new ArrayList<String>() {
         {
           add("18");
         }
-      }, EIDASStatusCode.STATUS_AVAILABLE.toString());
-    
+      });
+
     final PersonalAttributeList attrList = new PersonalAttributeList(1);
-    attrList.put(attrValueUnder.getName(), attrValueUnder);
-    attrList.put(attrValueOver.getName(), attrValueOver);
-    Assert.assertTrue(attrList.size() == 2);
+    attrList.add(attrValueUnder);
+    attrList.add(attrValueOver);
+    Assert.assertEquals(2, attrList.size());
   }
-  
+
   /**
    * Testing Personal Attribute List put method. Personal Attribute list must be
    * size 2 - IsAgeOver attribute added twice.
@@ -276,25 +278,25 @@ public final class PersonalAttributeListTestCase {
   @Test
   public void testPutSameAttrNameEmpty() {
     final PersonalAttribute attrValueUnder =
-      new PersonalAttribute(ISAGEOVER_CONS, true, new ArrayList<String>() {
+      new PersonalAttribute(ISAGEOVER_CONS, ISAGEOVER_CONS, true, new ArrayList<String>() {
         {
           add("15");
         }
-      }, EIDASStatusCode.STATUS_AVAILABLE.toString());
-    
+      });
+
     final PersonalAttribute attrValueOver =
-      new PersonalAttribute(ISAGEOVER_CONS, true, new ArrayList<String>() {
+      new PersonalAttribute(ISAGEOVER_CONS, ISAGEOVER_CONS, true, new ArrayList<String>() {
         {
           add("");
         }
-      }, EIDASStatusCode.STATUS_AVAILABLE.toString());
-    
+      });
+
     final PersonalAttributeList attrList = new PersonalAttributeList(1);
-    attrList.put(attrValueUnder.getName(), attrValueUnder);
-    attrList.put(attrValueOver.getName(), attrValueOver);
-    Assert.assertTrue(attrList.size() == 2);
+    attrList.add(attrValueUnder);
+    attrList.add(attrValueOver);
+    Assert.assertEquals(2, attrList.size());
   }
-  
+
   /**
    * Testing Personal Attribute List get method. Personal Attribute list must be
    * size 1 - Simple attribute.
@@ -303,9 +305,9 @@ public final class PersonalAttributeListTestCase {
   public void testGetSimpleAttr() {
     final PersonalAttributeList attrList = new PersonalAttributeList(1);
     attrList.add(ATTR_VALUE);
-    Assert.assertEquals(ATTR_VALUE, attrList.get(ATTR_VALUE.getName()));
+    Assert.assertEquals(ATTR_VALUE, attrList.getByFriendlyName(ATTR_VALUE.getFriendlyName()));
   }
-  
+
   /**
    * Testing Personal Attribute List add method. Personal Attribute list must be
    * size 1 - Complex attribute.
@@ -315,9 +317,9 @@ public final class PersonalAttributeListTestCase {
     final PersonalAttributeList attrList = new PersonalAttributeList(1);
     attrList.add(complexAttrValue);
     Assert.assertEquals(complexAttrValue.toString(),
-      attrList.get(complexAttrValue.getName()).toString());
+      attrList.getByFriendlyName(complexAttrValue.getFriendlyName()).toString());
   }
-  
+
   /**
    * Testing Personal Attribute List get method. Personal Attribute list must be
    * size 2 - IsAgeOver attribute.
@@ -326,60 +328,64 @@ public final class PersonalAttributeListTestCase {
   @Test
   public void testGetIsAgeOverAttr() {
     final PersonalAttribute attrValueUnder =
-      new PersonalAttribute(ISAGEOVER_CONS, true, new ArrayList<String>() {
+      new PersonalAttribute(ISAGEOVER_CONS, ISAGEOVER_CONS, true, new ArrayList<String>() {
         {
           add("15");
         }
-      }, EIDASStatusCode.STATUS_AVAILABLE.toString());
-    
+      });
+
     final PersonalAttribute attrValueOver =
-      new PersonalAttribute(ISAGEOVER_CONS, true, new ArrayList<String>() {
+      new PersonalAttribute(ISAGEOVER_CONS, ISAGEOVER_CONS, true, new ArrayList<String>() {
         {
           add("18");
         }
-      }, EIDASStatusCode.STATUS_AVAILABLE.toString());
+      });
     final PersonalAttributeList attrList = new PersonalAttributeList(1);
     attrList.add(attrValueUnder);
     attrList.add(attrValueOver);
+    Assert.assertEquals(2, attrList.size());
     Assert.assertEquals(SIMPLE_ATTRLIST,
-      attrList.get(attrValueUnder.getName()).toString());
-    Assert.assertEquals(SIMPLE_ATTRLIST2,
-      attrList.get(attrValueOver.getName()).toString());
+      attrList.getByFriendlyName(attrValueUnder.getFriendlyName()).toString());
+    Assert.assertEquals(SIMPLE_ATTRLIST,
+      attrList.getByFriendlyName(attrValueOver.getFriendlyName()).toString());
   }
-  
+
   /**
    * Testing Personal Attribute List populate method. Personal Attribute list
    * must be size 1 - Simple attribute.
    */
   @Test
   public void testPopulateSimpleAttr() {
-    final PersonalAttributeList attrList = new PersonalAttributeList(1);
-    attrList.populate(SIMPLE_ATTRLIST);
-    Assert.assertTrue(attrList.size() == 1);
+    String strAttrList = SIMPLE_ATTRLIST;
+    final IPersonalAttributeList attrList = PersonalAttributeString.fromStringList( strAttrList);
+
+    Assert.assertEquals(1, attrList.size());
   }
-  
+
   /**
    * Testing Personal Attribute List populate method. Personal Attribute list
    * must be size 1 - Complex attribute.
    */
   @Test
   public void testPopulateComplexAttr() {
-    final PersonalAttributeList attrList = new PersonalAttributeList(1);
-    attrList.populate(COMPLEX_ATTRLIST);
-    Assert.assertTrue(attrList.size() == 1);
+    String strAttrList = COMPLEX_ATTRLIST;
+    final IPersonalAttributeList attrList = PersonalAttributeString.fromStringList( strAttrList);
+
+    Assert.assertEquals(1, attrList.size());
   }
-  
+
   /**
    * Testing Personal Attribute List populate method. Personal Attribute list
    * must be size 1 - Simple and Complex attribute.
    */
   @Test
   public void testPopulateMixAttrs() {
-    final PersonalAttributeList attrList = new PersonalAttributeList(1);
-    attrList.populate(STR_MIX_ATTR_LIST);
-    Assert.assertTrue(attrList.size() == 2);
+    String strAttrList = STR_MIX_ATTR_LIST;
+    final IPersonalAttributeList attrList = PersonalAttributeString.fromStringList( strAttrList);
+
+    Assert.assertEquals(2, attrList.size());
   }
-  
+
   /**
    * Testing Personal Attribute List toString method using add.
    */
@@ -387,94 +393,106 @@ public final class PersonalAttributeListTestCase {
   @Test
   public void testToStringFromAdd() {
     final PersonalAttribute attrValueUnder =
-      new PersonalAttribute(ISAGEOVER_CONS, true, new ArrayList<String>() {
+      new PersonalAttribute(ISAGEOVER_CONS, ISAGEOVER_CONS, true, new ArrayList<String>() {
         {
           add("15");
         }
-      }, EIDASStatusCode.STATUS_AVAILABLE.toString());
-    
+      });
+
     final PersonalAttribute attrValueOver =
-      new PersonalAttribute(ISAGEOVER_CONS, true, new ArrayList<String>() {
+      new PersonalAttribute(ISAGEOVER_CONS, ISAGEOVER_CONS, true, new ArrayList<String>() {
         {
           add("18");
         }
-      }, EIDASStatusCode.STATUS_AVAILABLE.toString());
+      });
     final PersonalAttributeList attrList = new PersonalAttributeList(1);
     attrList.add(attrValueUnder);
     attrList.add(attrValueOver);
-    Assert.assertTrue(attrList.toString().contains(SIMPLE_ATTRLIST));
-    Assert.assertTrue(attrList.toString().contains(SIMPLE_ATTRLIST2));
+    String stringList = PersonalAttributeString.toStringList(attrList);
+    Assert.assertTrue(stringList.contains(SIMPLE_ATTRLIST));
+    Assert.assertTrue(stringList.contains(SIMPLE_ATTRLIST2));
   }
-  
+
   /**
    * Testing Personal Attribute List toString method using put.
-   * 
+   *
    */
   @SuppressWarnings("serial")
   @Test
   public void testToStringFromPut() {
     final PersonalAttribute attrValueUnder =
-      new PersonalAttribute(ISAGEOVER_CONS, true, new ArrayList<String>() {
+      new PersonalAttribute(ISAGEOVER_CONS, ISAGEOVER_CONS, true, new ArrayList<String>() {
         {
           add("15");
         }
-      }, EIDASStatusCode.STATUS_AVAILABLE.toString());
-    
+      });
+
     final PersonalAttribute attrValueOver =
-      new PersonalAttribute(ISAGEOVER_CONS, true, new ArrayList<String>() {
+      new PersonalAttribute(ISAGEOVER_CONS, ISAGEOVER_CONS, true, new ArrayList<String>() {
         {
           add("18");
         }
-      }, EIDASStatusCode.STATUS_AVAILABLE.toString());
+      });
     final PersonalAttributeList attrList = new PersonalAttributeList(1);
-    attrList.put(attrValueUnder.getName(), attrValueUnder);
-    attrList.put(attrValueOver.getName(), attrValueOver);
-      Assert.assertTrue(attrList.toString().contains(SIMPLE_ATTRLIST));
-      Assert.assertTrue(attrList.toString().contains(SIMPLE_ATTRLIST2));
+    attrList.add(attrValueUnder);
+    attrList.add(attrValueOver);
+    String stringList = PersonalAttributeString.toStringList(attrList);
+      Assert.assertTrue(stringList.contains(SIMPLE_ATTRLIST));
+      Assert.assertTrue(stringList.contains(SIMPLE_ATTRLIST2));
   }
-  
+
   /**
    * Testing Personal Attribute List toString method using populate.
    */
   @Test
   public void testToStringFromSimplePopulate() {
     final String strAttrList = "isAgeOver:true";
-    final PersonalAttributeList attrList = new PersonalAttributeList(1);
-    attrList.populate(strAttrList);
-    Assert.assertEquals("isAgeOver:true:[]:;", attrList.toString());
+    final IPersonalAttributeList attrList = PersonalAttributeString.fromStringList( strAttrList);
+
+    Assert.assertEquals("isAgeOver:true:[]:NotAvailable;", attrList.toString());
   }
-  
+
   /**
    * Testing Personal Attribute List toString method using populate.
    */
   @Test
   public void testToStringFromPopulate() {
-    final PersonalAttributeList attrList = new PersonalAttributeList(1);
-    attrList.populate(SIMPLE_ATTRLIST3);
+    String strAttrList = SIMPLE_ATTRLIST3;
+    final IPersonalAttributeList attrList = PersonalAttributeString.fromStringList( strAttrList);
+
     Assert.assertEquals(SIMPLE_ATTRLIST3, attrList.toString());
   }
-  
+
   /**
    * Testing Personal Attribute List populate method, with invalid values.
    */
   @Test
   public void testPopulateWithInvalidValuesFormat() {
-    final PersonalAttributeList pal = new PersonalAttributeList();
-    pal.populate("name:type:values:status;");
-    Assert.assertEquals(pal, new PersonalAttributeList());
+    final IPersonalAttributeList attrList;
+    try {
+      String strAttrList = "name:type:values:status;";
+      attrList = PersonalAttributeString.fromStringList( strAttrList);
+      fail("expected IllegalArgumentException");
+    } catch (IllegalArgumentException expected) {
+      // expected
+    }
   }
-  
+
   /**
    * Testing Personal Attribute List populate method, with invalid format.
    */
   @Test
   public void testPopulateWithInvalidFormat() {
-    
-    final PersonalAttributeList pal = new PersonalAttributeList();
-    pal.populate("name:type::status;");
-    Assert.assertEquals(pal, new PersonalAttributeList());
+    try {
+      String strAttrList = "name:type::status;";
+      final IPersonalAttributeList attrList = PersonalAttributeString.fromStringList( strAttrList);
+
+      fail("expected IllegalArgumentException");
+    } catch (IllegalArgumentException expected) {
+      // expected
+    }
   }
-  
+
   /**
    * Testing Personal Attribute List clone method using add.
    */
@@ -482,24 +500,24 @@ public final class PersonalAttributeListTestCase {
   @Test
   public void testCloneFromAdd() {
     final PersonalAttribute attrValueUnder =
-      new PersonalAttribute(ISAGEOVER_CONS, true, new ArrayList<String>() {
+      new PersonalAttribute(ISAGEOVER_CONS, ISAGEOVER_CONS, true, new ArrayList<String>() {
         {
           add("15");
         }
-      }, EIDASStatusCode.STATUS_AVAILABLE.toString());
-    
+      });
+
     final PersonalAttribute attrValueOver =
-      new PersonalAttribute(ISAGEOVER_CONS, true, new ArrayList<String>() {
+      new PersonalAttribute(ISAGEOVER_CONS, ISAGEOVER_CONS, true, new ArrayList<String>() {
         {
           add("18");
         }
-      }, EIDASStatusCode.STATUS_AVAILABLE.toString());
+      });
     final PersonalAttributeList attrList = new PersonalAttributeList(1);
     attrList.add(attrValueUnder);
     attrList.add(attrValueOver);
-    Assert.assertNotSame(attrList, attrList.clone());
+    Assert.assertNotSame(attrList, PersonalAttributeList.copyOf(attrList));
   }
-  
+
   /**
    * Testing Personal Attribute List clone method using put.
    */
@@ -507,45 +525,65 @@ public final class PersonalAttributeListTestCase {
   @Test
   public void testCloneFromPut() {
     final PersonalAttribute attrValueUnder =
-      new PersonalAttribute(ISAGEOVER_CONS, true, new ArrayList<String>() {
+      new PersonalAttribute(ISAGEOVER_CONS, ISAGEOVER_CONS, true, new ArrayList<String>() {
         {
           add("15");
         }
-      }, EIDASStatusCode.STATUS_AVAILABLE.toString());
-    
+      });
+
     final PersonalAttribute attrValueOver =
-      new PersonalAttribute(ISAGEOVER_CONS, true, new ArrayList<String>() {
+      new PersonalAttribute(ISAGEOVER_CONS, ISAGEOVER_CONS, true, new ArrayList<String>() {
         {
           add("18");
         }
-      }, EIDASStatusCode.STATUS_AVAILABLE.toString());
+      });
     final PersonalAttributeList attrList = new PersonalAttributeList(1);
-    attrList.put(attrValueUnder.getName(), attrValueUnder);
-    attrList.put(attrValueOver.getName(), attrValueOver);
-    Assert.assertNotSame(attrList, attrList.clone());
+    attrList.add(attrValueUnder);
+    attrList.add(attrValueOver);
+    Assert.assertNotSame(attrList, PersonalAttributeList.copyOf(attrList));
   }
-  
+
   /**
    * Testing Personal Attribute List clone method using populate.
    */
   @Test
   public void testCloneFromPopulate() {
-    final PersonalAttributeList pal = new PersonalAttributeList();
-    pal.populate(SIMPLE_ATTRLIST3);
-    Assert.assertNotSame(pal, pal.clone());
+    String strAttrList = SIMPLE_ATTRLIST3;
+    final IPersonalAttributeList attrList = PersonalAttributeString.fromStringList( strAttrList);
+
+    Assert.assertNotSame(attrList, PersonalAttributeList.copyOf(attrList));
   }
-  
+
   /**
    * Testing Personal Attribute List iterator.
    */
   @Test
   public void testIterator() {
-    final PersonalAttributeList pal = new PersonalAttributeList();
-    pal.populate(SIMPLE_ATTRLIST3);
-    final Iterator<PersonalAttribute> itAttr = pal.iterator();
+    String strAttrList = SIMPLE_ATTRLIST3;
+    final IPersonalAttributeList attrList = PersonalAttributeString.fromStringList( strAttrList);
+
+    final Iterator<PersonalAttribute> itAttr = attrList.iterator();
     while (itAttr.hasNext()) {
       final PersonalAttribute attr = itAttr.next();
       Assert.assertEquals(ISAGEOVER_CONS, attr.getName());
     }
+  }
+
+  @Test
+  public void testCopyOf() {
+    String strAttrList = "http://www.stork.gov.eu/1.0/isAgeOver:true:[15,]:Available;http://www.stork.gov.eu/1.0/age:false:[,]:;";
+    final IPersonalAttributeList attrList = PersonalAttributeString.fromStringList( strAttrList);
+
+    PersonalAttributeList attrList2 = PersonalAttributeList.copyOf(attrList);
+    Assert.assertEquals(attrList, attrList2);
+  }
+
+  @Test
+  @Ignore //TODO STORK related test should be removed or moved elsewhere
+  public void testToString() {
+    String strAttrList = "http://www.stork.gov.eu/1.0/isAgeOver:true:[15,]:Available;http://www.stork.gov.eu/1.0/age:false:[15,]:Available;";
+    final IPersonalAttributeList attrList = PersonalAttributeString.fromStringList( strAttrList);
+
+    Assert.assertEquals("http://www.stork.gov.eu/1.0/isAgeOver:true:[15,]:Available;http://www.stork.gov.eu/1.0/age:false:[15,]:Available;", attrList.toString());
   }
 }

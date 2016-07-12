@@ -12,7 +12,7 @@
  */
 package eu.eidas.node;
 
-import eu.eidas.auth.commons.EIDASParameters;
+import eu.eidas.auth.commons.EidasParameterKeys;
 import eu.eidas.auth.commons.exceptions.AbstractEIDASException;
 import eu.eidas.auth.commons.exceptions.EidasNodeException;
 
@@ -75,13 +75,13 @@ public final class SignatureCreatorResponseServlet extends AbstractSpecificServl
 
       // obtain XML response from MOCCA
       final String createXMLSignatureResponse =
-              request.getParameter(EIDASParameters.XML_RESPONSE.toString());
+              request.getParameter(EidasParameterKeys.XML_RESPONSE.toString());
 
       // store response to session
       if ( !StringUtilities.isEmpty(createXMLSignatureResponse)) {
         final List<String> values = new ArrayList<String>(1);
         values.add(createXMLSignatureResponse);
-        sigCreatorResp.getSession().put(EIDASParameters.SIGNATURE_RESPONSE.toString(), values);
+        sigCreatorResp.getSession().put(EidasParameterKeys.SIGNATURE_RESPONSE.toString(), values);
       } else {
         LOG.info("ERROR : [execute] No createXMLSignatureResponse found!");
       }

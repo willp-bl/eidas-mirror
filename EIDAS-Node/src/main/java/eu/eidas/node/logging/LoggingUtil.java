@@ -32,7 +32,6 @@ import javax.servlet.http.HttpServletRequest;
 
 /**
  * Central class used to associate logging marker to the functionality.
- * @author vanegdi
  */
 public class LoggingUtil {
 
@@ -44,8 +43,8 @@ public class LoggingUtil {
         }
         MDC.put(LoggingMarkerMDC.MDC_SESSIONID, request.getSession().getId());
         logger.info(LoggingMarkerMDC.WEB_EVENT, "**** CALL to servlet " + className
-                + "FROM " + request.getRemoteAddr()
-                + "HTTP " + request.getMethod()
+                + " FROM " + request.getRemoteAddr()
+                + " HTTP " + request.getMethod()
                 + " SESSIONID " + request.getSession().getId() + "****");
 
     }

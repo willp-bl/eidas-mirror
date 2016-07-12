@@ -1,134 +1,66 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>eu.eidas</groupId>
-  <artifactId>eidas-configmodule</artifactId>
-  <packaging>jar</packaging>
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>eidas-configmodule</artifactId>
+    <packaging>jar</packaging>
     <name>EIDAS Configuration Management Module</name>
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
+    <version>1.1.0</version>
     <description>
-        handling of Eidas configuration 
+        Handling of Eidas configuration
     </description>
     <parent>
         <groupId>eu.eidas</groupId>
         <artifactId>eidas-parent</artifactId>
-        <version>eidas</version>
+        <version>1.1.0</version>
         <relativePath>../EIDAS-Parent/pom.xml</relativePath>
     </parent>
-    <version>${project.version}</version>
-  <dependencies>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>log4j-over-slf4j</artifactId>
-            <version>${slf4j.version}</version>
-        </dependency>
-		<!-- Log4J -->
-		<dependency>
-			<groupId>log4j</groupId>
-			<artifactId>log4j</artifactId>
-			<version>${log4j.version}</version>
-			<exclusions>
-				<exclusion>
-					<groupId>javax.jms</groupId>
-					<artifactId>jms</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>com.sun.jdmk</groupId>
-					<artifactId>jmxtools</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>com.sun.jmx</groupId>
-					<artifactId>jmxri</artifactId>
-				</exclusion>
-				<exclusion>
-					<artifactId>mail</artifactId>
-					<groupId>javax.mail</groupId>
-				</exclusion>
-			</exclusions>
-            <!--scope>provided</scope--> <!-- for jboss build-->
-		</dependency>
-		<dependency>
-			<groupId>commons-lang</groupId>
-			<artifactId>commons-lang</artifactId>
-			<version>${commons.lang}</version>
-			<type>jar</type>
-			<scope>compile</scope>
-		</dependency>
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>${junit.version}</version>
-			<scope>test</scope>
-		</dependency>
+    <dependencies>
+        <!-- 1) Dependencies on other modules: -->
         <dependency>
             <groupId>eu.eidas</groupId>
             <artifactId>eidas-commons</artifactId>
-            <version>${project.version}</version>
         </dependency>
-      <dependency>
-          <groupId>org.mockito</groupId>
-          <artifactId>mockito-core</artifactId>
-          <version>${mockito.version}</version>
-          <scope>test</scope>
-          <exclusions>
-              <exclusion>
-                  <groupId>org.slf4j</groupId>
-                  <artifactId>slf4j-log4j12</artifactId>
-              </exclusion>
-              <exclusion>
-                  <groupId>log4j</groupId>
-                  <artifactId>log4j</artifactId>
-              </exclusion>
-          </exclusions>
-      </dependency>
-      <dependency>
-          <groupId>org.springframework</groupId>
-          <artifactId>spring-beans</artifactId>
-          <version>${spring.version}</version>
-      </dependency>
-      <dependency>
-          <groupId>org.springframework</groupId>
-          <artifactId>spring-context</artifactId>
-          <version>${spring.version}</version>
-      </dependency>
-      <dependency>
-          <groupId>org.springframework</groupId>
-          <artifactId>spring-context-support</artifactId>
-          <version>${spring.version}</version>
-      </dependency>
-      <dependency>
-          <groupId>org.springframework</groupId>
-          <artifactId>spring-test</artifactId>
-          <version>${spring.version}</version>
-          <scope>test</scope>
-      </dependency>
-      <dependency>
-          <groupId>xerces</groupId>
-          <artifactId>xercesImpl</artifactId>
-          <version>${xerces.version}</version>
-          <scope>test</scope>
-      </dependency>
-  </dependencies>
-    <build>
-    <finalName>EIDAS-configmodule</finalName>
-    <pluginManagement>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>${compile.plugin.version}</version>
-                <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
-                </configuration>
-            </plugin>
-        </plugins>
-    </pluginManagement>
-    </build>
+
+        <!-- 2) Dependencies on libraries: -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>log4j-over-slf4j</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>commons-lang</groupId>
+            <artifactId>commons-lang</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-beans</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context-support</artifactId>
+        </dependency>
+
+        <!-- UNIT TEST Dependencies -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-test</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>xerces</groupId>
+            <artifactId>xercesImpl</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>xml-apis</groupId>
+            <artifactId>xml-apis</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
     <profiles>
-	<profile>
+        <profile>
             <id>metrics</id>
             <build>
                 <plugins>

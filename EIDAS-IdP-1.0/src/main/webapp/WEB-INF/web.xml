@@ -15,4 +15,17 @@
 		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
 	</listener>
 
+	<context-param>
+		<param-name>buildDate</param-name>
+		<param-value>${timestamp}</param-value>
+	</context-param>
+	<context-param>
+		<param-name>projectVersion</param-name>
+		<param-value>${project.version}</param-value>
+	</context-param>
+	<context-param>
+		<param-name>samlVersion</param-name>
+		<param-value>${saml.version}</param-value>
+	</context-param>
+
 </web-app>

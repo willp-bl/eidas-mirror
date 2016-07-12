@@ -15,23 +15,33 @@ package eu.eidas.node.auth.metadata;
 
 import java.io.Serializable;
 
+import com.google.common.annotations.Beta;
+
 /**
  * a serialized image of a metadata EntityDescriptor
+ *
+ * @deprecated this is probably the worst Java serialized form one can choose regarding space (the java.lang.String of
+ * an XML).
  */
-public class SerializedEntityDescriptor implements Serializable{
+@Deprecated
+@Beta
+public class SerializedEntityDescriptor implements Serializable {
+
     /**
      * the entitydescriptor serialized as xml
      */
     private String serializedEntityDescriptor;
+
     /**
      * the type/origin (either statically loaded or retrieved from the network)
      */
     private EntityDescriptorType type;
 
-    public SerializedEntityDescriptor(String descriptor, EntityDescriptorType type){
+    public SerializedEntityDescriptor(String descriptor, EntityDescriptorType type) {
         setSerializedEntityDescriptor(descriptor);
         setType(type);
     }
+
     public String getSerializedEntityDescriptor() {
         return serializedEntityDescriptor;
     }

@@ -1,17 +1,6 @@
-
 package eu.eidas.engine.test.simple.eidas;
 
-import eu.eidas.auth.commons.IPersonalAttributeList;
-import eu.eidas.auth.commons.PersonalAttribute;
-import eu.eidas.auth.commons.PersonalAttributeList;
-import eu.eidas.auth.commons.EIDASAuthnRequest;
-import eu.eidas.auth.engine.AbstractSAMLEngine;
-import eu.eidas.auth.engine.EIDASSAMLEngine;
-import eu.eidas.auth.engine.core.SAMLEngineSignI;
-import eu.eidas.auth.engine.core.SAMLExtensionFormat;
-import eu.eidas.auth.engine.core.eidas.EidasExtensionProcessor;
-import eu.eidas.engine.exceptions.SAMLEngineException;
-import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
+import javax.annotation.Nonnull;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -19,36 +8,62 @@ import org.opensaml.saml2.core.AuthnRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.*;
+import eu.eidas.auth.commons.EidasStringUtil;
+import eu.eidas.auth.commons.PersonalAttribute;
+import eu.eidas.auth.commons.attribute.AttributeDefinition;
+import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
+import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.IRequestMessage;
+import eu.eidas.auth.commons.protocol.eidas.IEidasAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.eidas.LevelOfAssurance;
+import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.impl.SamlNameIdFormat;
+import eu.eidas.auth.engine.AbstractProtocolEngine;
+import eu.eidas.auth.engine.ProtocolEngine;
+import eu.eidas.auth.engine.ProtocolEngineFactory;
+import eu.eidas.auth.engine.configuration.ProtocolConfigurationAccessor;
+import eu.eidas.auth.engine.configuration.ProtocolEngineConfiguration;
+import eu.eidas.auth.engine.configuration.SamlEngineConfigurationException;
+import eu.eidas.auth.engine.configuration.dom.DefaultProtocolEngineConfigurationFactory;
+import eu.eidas.auth.engine.core.SAMLCore;
+import eu.eidas.auth.engine.core.SAMLExtensionFormat;
+import eu.eidas.auth.engine.core.eidas.spec.NaturalPersonSpec;
+import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
+
+import static eu.eidas.engine.EidasAttributeTestUtil.newEidasAttributeDefinition;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 public class EidasAuthRequestSignatureTest {
-	private static final String NAMEID_FORMAT="urn:oasis:names:tc:SAML:2.0:nameid-format:transient";
-	private static final String LOA_LOW="http://eidas.europa.eu/LoA/low";
-    private final static String SAML_ENGINE_NAME="CONF1";
+
+    private static final String SAML_ENGINE_NAME = "CONF1";
+
     /**
      * The engine.
      */
 
     @Before
-    public void setUp(){
+    public void setUp() {
     }
 
+    private static PersonalAttribute newStorkPersonalAttribute(String friendlyName) {
+        return new PersonalAttribute(SAMLCore.STORK10_BASE_URI.getValue() + friendlyName, friendlyName);
+    }
+
+    private static PersonalAttribute newEidasPersonalAttribute(String canoniclaName, String friendlyName) {
+        return new PersonalAttribute(NaturalPersonSpec.Namespace.URI + "/" + canoniclaName, friendlyName);
+    }
 
     /**
      * Instantiates a new EIDAS authentication request test.
      */
     public EidasAuthRequestSignatureTest() {
-        pal = new PersonalAttributeList();
 
-        final PersonalAttribute dateOfBirth = new PersonalAttribute();
-        dateOfBirth.setName("DateOfBirth");
-        dateOfBirth.setIsRequired(false);
-        pal.add(dateOfBirth);
+        final AttributeDefinition dateOfBirth = newEidasAttributeDefinition("DateOfBirth", "DateOfBirth", true);
+        final AttributeDefinition eIDNumber = newEidasAttributeDefinition("PersonIdentifier", "PersonIdentifier", true, true, false);
 
-        final PersonalAttribute eIDNumber = new PersonalAttribute();
-        eIDNumber.setName("PersonIdentifier");
-        eIDNumber.setIsRequired(true);
-        pal.add(eIDNumber);
+        immutableAttributeMap= new ImmutableAttributeMap.Builder().put(dateOfBirth).put(eIDNumber).build();
 
         destination = "http://EidasService.gov.xx/EIDASNODE/ColleagueRequest";
         assertConsumerUrl = "http://EidasConnector.gov.xx/EIDASNODE/ColleagueResponse";
@@ -100,7 +115,7 @@ public class EidasAuthRequestSignatureTest {
     /**
      * The List of Personal Attributes.
      */
-    private IPersonalAttributeList pal;
+    private ImmutableAttributeMap immutableAttributeMap;
 
     /**
      * The assertion consumer URL.
@@ -110,121 +125,99 @@ public class EidasAuthRequestSignatureTest {
     /**
      * The Constant LOG.
      */
-    private static final Logger LOG = LoggerFactory
-            .getLogger(EidasAuthRequestSignatureTest.class.getName());
-
+    private static final Logger LOG = LoggerFactory.getLogger(EidasAuthRequestSignatureTest.class.getName());
 
     /**
      * Test generate authentication request error personal attribute name error.
      */
     @Test
-    public final void testGenerateAuthnRequest() {
-        final EIDASAuthnRequest request = new EIDASAuthnRequest();
+    public final void testGenerateAuthnRequest() throws Exception {
+        IEidasAuthenticationRequest request = new EidasAuthenticationRequest.Builder().destination(destination)
+                .id("f5e7e0f5-b9b8-4256-a7d0-4090141b326d")
+                .issuer("http://localhost:7001/SP/metadata")
+                .providerName(spName)
+                .requestedAttributes(immutableAttributeMap)
+                .assertionConsumerServiceURL(assertConsumerUrl)
+                .serviceProviderCountryCode(spCountry)
+                .spType("public")
+                .levelOfAssurance(LevelOfAssurance.LOW.stringValue())
+                .nameIdFormat(SamlNameIdFormat.TRANSIENT.getNameIdFormat())
+                .citizenCountryCode("ES")
+                .build();
 
-        request.setDestination(destination);
-        request.setProviderName(spName);
-        request.setQaa(QAAL);
-        request.setPersonalAttributeList(pal);
-        request.setAssertionConsumerServiceURL(assertConsumerUrl);
-
-        // news parameters
-        request.setSpSector(spSector);
-        request.setSpInstitution(null);
-        request.setSpApplication(spApplication);
-        request.setSpCountry(spCountry);
-        request.setSPID(spId);
-        request.setCitizenCountryCode("BE");
-        request.setMessageFormatName("eidas");
-        request.setSPType("public");
-        request.setEidasLoA(LOA_LOW);
-        request.setEidasNameidFormat(NAMEID_FORMAT);
-
-        SamlEngineInterceptor engineInterceptor=null;
+        ProtocolEngineInterceptor engineInterceptor = null;
         try {
-            engineInterceptor = new SamlEngineInterceptor();
-        }catch(EIDASSAMLEngineException exc){
-            fail("error while initializing samlengine "+exc);
+            engineInterceptor = new ProtocolEngineInterceptor();
+        } catch (EIDASSAMLEngineException exc) {
+            fail("error while initializing samlengine " + exc);
         }
         assertNotNull(engineInterceptor);
-        engineInterceptor.setSignerProperty(SAMLEngineSignI.SIGNATURE_ALGORITHM, "http://www.w3.org/2001/04/xmldsig-more#rsa-sha384");
-        EIDASAuthnRequest authReq=null;
+        /*
+        engineInterceptor.setSignerProperty(SamlEngineSignI.SIGNATURE_ALGORITHM,
+                                            "http://www.w3.org/2001/04/xmldsig-more#rsa-sha384");
+                                            */
+        IRequestMessage binaryRequestMessage = engineInterceptor.generateAuthnRequest(request);
+        assertNotNull(binaryRequestMessage);
+        byte[] tokenSaml = binaryRequestMessage.getMessageBytes();
+        String requestXML = EidasStringUtil.toString(tokenSaml);
         try {
-
-            authReq = engineInterceptor.generateAuthnRequest(request);
-        } catch (EIDASSAMLEngineException e) {
+            String signingAlgo = engineInterceptor.getSigningAlgo(tokenSaml);
+            assertEquals(signingAlgo, "http://www.w3.org/2001/04/xmldsig-more#rsa-sha512");
+            IAuthenticationRequest authenticationRequest = engineInterceptor.validateAuthnRequest(tokenSaml);
+            assertNotNull(authenticationRequest);
+        } catch (EIDASSAMLEngineException exc) {
+            LOG.error("Error: " + requestXML);
+            fail("error while validating request " + exc);
+        }
+/*
+        engineInterceptor.setSignerProperty(SamlEngineSignI.SIGNATURE_ALGORITHM,
+                                            "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256");
+                                            */
+        try {
+            binaryRequestMessage = engineInterceptor.generateAuthnRequest(request);
+            tokenSaml = binaryRequestMessage.getMessageBytes();
+            String signingAlgo = engineInterceptor.getSigningAlgo(tokenSaml);
+            assertEquals(signingAlgo, "http://www.w3.org/2001/04/xmldsig-more#rsa-sha512");
+            IAuthenticationRequest authenticationRequest = engineInterceptor.validateAuthnRequest(tokenSaml);
+            assertNotNull(authenticationRequest);
+        } catch (EIDASSAMLEngineException exc) {
             LOG.error("Error");
+            fail("error while validating request " + exc);
         }
-        assertNotNull(authReq);
-        byte[] tokenSaml=authReq.getTokenSaml();
-        String requestXML=new String(tokenSaml);
-        authReq=null;
-        try {
-            String signingAlgo=engineInterceptor.getSigningAlgo(tokenSaml);
-            assertEquals(signingAlgo, "http://www.w3.org/2001/04/xmldsig-more#rsa-sha384");
-            authReq = engineInterceptor.validateAuthnRequest(tokenSaml);
-        }catch (EIDASSAMLEngineException exc){
-            LOG.error("Error: "+requestXML);
-            fail("error while validating request "+exc);
-        }
-        assertNotNull(authReq);
-
-        engineInterceptor.setSignerProperty(SAMLEngineSignI.SIGNATURE_ALGORITHM, "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256");
-        authReq=null;
-        try {
-
-            authReq = engineInterceptor.generateAuthnRequest(request);
-        } catch (EIDASSAMLEngineException e) {
-            LOG.error("Error");
-        }
-        assertNotNull(authReq);
-        tokenSaml=authReq.getTokenSaml();
-        authReq=null;
-        try {
-            String signingAlgo=engineInterceptor.getSigningAlgo(tokenSaml);
-            assertEquals(signingAlgo, "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256");
-            authReq = engineInterceptor.validateAuthnRequest(tokenSaml);
-        }catch (EIDASSAMLEngineException exc){
-            LOG.error("Error");
-            fail("error while validating request "+exc);
-        }
-        assertNotNull(authReq);
-
     }
 
-    private class SamlEngineInterceptor extends AbstractSAMLEngine{
-        EIDASSAMLEngine samlEngine=null;
-        public SamlEngineInterceptor() throws EIDASSAMLEngineException{
-            super(SAML_ENGINE_NAME);
-            samlEngine = EIDASSAMLEngine.createSAMLEngine(SAML_ENGINE_NAME);
-            samlEngine.setExtensionProcessor(new EidasExtensionProcessor());
-        }
-        public EIDASAuthnRequest generateAuthnRequest(
-                final EIDASAuthnRequest request) throws EIDASSAMLEngineException {
-            return samlEngine.generateEIDASAuthnRequest(request);
+    private class ProtocolEngineInterceptor extends AbstractProtocolEngine {
+
+        private final ProtocolEngine samlEngine;
+
+        ProtocolEngineInterceptor() throws EIDASSAMLEngineException {
+            super(new ProtocolConfigurationAccessor() {
+
+                @Nonnull
+                @Override
+                public ProtocolEngineConfiguration get() throws SamlEngineConfigurationException {
+                    return DefaultProtocolEngineConfigurationFactory.getInstance().getConfiguration(SAML_ENGINE_NAME);
+                }
+            });
+            samlEngine = (ProtocolEngine) ProtocolEngineFactory.getDefaultProtocolEngine(SAML_ENGINE_NAME);
         }
 
-        public EIDASAuthnRequest validateAuthnRequest(final byte[] tokenSaml)
-                throws EIDASSAMLEngineException {
-            return samlEngine.validateEIDASAuthnRequest(tokenSaml);
-        }
-        public void setSignerProperty(String propName, String propValue){
-             samlEngine.setSignerProperty(propName, propValue);
+        public IRequestMessage generateAuthnRequest(final IAuthenticationRequest request) throws EIDASSAMLEngineException {
+            return samlEngine.generateRequestMessage(request, null);
         }
 
-        public String getSigningAlgo(
-                final byte[] token) throws EIDASSAMLEngineException {
-            AuthnRequest unmarshalled=null;
-            try {
-                unmarshalled = (AuthnRequest)this.unmarshall(token);
-            }catch(SAMLEngineException exc){
-                fail("error unmarshalling token: "+exc);
-            }
+        public IAuthenticationRequest validateAuthnRequest(final byte[] tokenSaml) throws EIDASSAMLEngineException {
+            return samlEngine.unmarshallRequestAndValidate(tokenSaml, "ES");
+        }
+
+        public String getSigningAlgo(final byte[] token) throws EIDASSAMLEngineException {
+            AuthnRequest unmarshalled = samlEngine.unmarshallRequest(token);
             return unmarshalled.getSignature().getSignatureAlgorithm();
         }
-        public SAMLExtensionFormat getMessageFormat(){
+
+        public SAMLExtensionFormat getMessageFormat() {
             return SAMLExtensionFormat.EIDAS10;
         }
-
 
     }
 }

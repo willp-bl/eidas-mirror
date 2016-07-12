@@ -1,244 +1,334 @@
 package eu.eidas.idp;
 
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import eu.eidas.auth.commons.IPersonalAttributeList;
-import eu.eidas.auth.commons.EIDASErrors;
-import eu.eidas.auth.commons.EIDASParameters;
-import eu.eidas.auth.commons.EIDASUtil;
-import eu.eidas.auth.commons.PersonalAttribute;
-import eu.eidas.auth.commons.PersonalAttributeList;
-import eu.eidas.auth.commons.EIDASAuthnRequest;
-import eu.eidas.auth.commons.EIDASAuthnResponse;
-import eu.eidas.auth.commons.EIDASStatusCode;
-import eu.eidas.auth.commons.EIDASSubStatusCode;
-import eu.eidas.auth.commons.exceptions.InternalErrorEIDASException;
-import eu.eidas.auth.commons.exceptions.InvalidParameterEIDASException;
-import eu.eidas.auth.commons.exceptions.SecurityEIDASException;
-import eu.eidas.auth.engine.EIDASSAMLEngine;
-import eu.eidas.auth.engine.core.SAMLEngineEncryptionI;
-import eu.eidas.auth.engine.metadata.MetadataUtil;
-import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
+import com.google.common.collect.ImmutableSet;
+import com.ibm.icu.text.Transliterator;
 
 import org.apache.log4j.Logger;
 
+import eu.eidas.auth.commons.EIDASStatusCode;
+import eu.eidas.auth.commons.EIDASSubStatusCode;
+import eu.eidas.auth.commons.EIDASUtil;
+import eu.eidas.auth.commons.EidasErrorKey;
+import eu.eidas.auth.commons.EidasErrors;
+import eu.eidas.auth.commons.EidasParameterKeys;
+import eu.eidas.auth.commons.EidasStringUtil;
+import eu.eidas.auth.commons.attribute.AttributeDefinition;
+import eu.eidas.auth.commons.attribute.AttributeValue;
+import eu.eidas.auth.commons.attribute.AttributeValueMarshaller;
+import eu.eidas.auth.commons.attribute.AttributeValueMarshallingException;
+import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
+import eu.eidas.auth.commons.exceptions.InternalErrorEIDASException;
+import eu.eidas.auth.commons.exceptions.InvalidParameterEIDASException;
+import eu.eidas.auth.commons.exceptions.SecurityEIDASException;
+import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.IResponseMessage;
+import eu.eidas.auth.commons.protocol.eidas.IEidasAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.impl.AuthenticationResponse;
+import eu.eidas.auth.engine.ProtocolEngineFactory;
+import eu.eidas.auth.engine.ProtocolEngineI;
+import eu.eidas.auth.engine.metadata.MetadataSignerI;
+import eu.eidas.auth.engine.metadata.MetadataUtil;
+import eu.eidas.auth.engine.xml.opensaml.SAMLEngineUtils;
+import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
+
 public class ProcessLogin {
 
-	private static final Logger logger = Logger.getLogger(ProcessLogin.class.getName());
-    private static final String SIGN_ASSERTION_PARAM="signAssertion";
+    private static final Logger logger = Logger.getLogger(ProcessLogin.class.getName());
+
+    private static final String SIGN_ASSERTION_PARAM = "signAssertion";
+
     private String samlToken;
+
     private String username;
+
     private String callback;
-	private String signAssertion;
-	private String encryptAssertion;
-	private String eidasLoa;
-	private Properties idpProperties = EIDASUtil.loadConfigs(Constants.IDP_PROPERTIES);
+
+    private String signAssertion;
+
+    private String encryptAssertion;
+
+    private String eidasLoa;
+
+    private Properties idpProperties = EIDASUtil.loadConfigs(Constants.IDP_PROPERTIES);
+
+    private final IdpMetadataFetcher idpMetadataFetcher = new IdpMetadataFetcher();
 
     private Properties loadConfigs(String path) {
         return EIDASUtil.loadConfigs(path);
     }
 
-	public boolean processAuthentication(HttpServletRequest request, HttpServletResponse response){
-		
-		EIDASUtil.createInstance(loadConfigs("eidasUtil.properties"));
-		
-		String username = request.getParameter("username");
-		String password = request.getParameter("password");
-		String samlToken = request.getParameter("samlToken");
-		encryptAssertion = request.getParameter("encryptAssertion");
-		eidasLoa = request.getParameter("eidasloa");
+    private static final String TRANLITERATOR_ID = "Latin; NFD; [:Nonspacing Mark:] Remove; NFC;";
 
-		EIDASAuthnRequest authnRequest = validateRequest(samlToken);
-		this.callback = authnRequest.getAssertionConsumerServiceURL();
-		
-		if( username==null || password==null ){
-			sendErrorRedirect(authnRequest, request);
-			return false;
-		}
-		
-		Properties users = null;
-		String pass = null;
-		try {
-			users = loadConfigs("user.properties");
-			pass = users.getProperty(username);
-		} catch (SecurityEIDASException e) {
-			sendErrorRedirect(authnRequest, request);
-		}			
-		
-		if(  pass == null || (!pass.equals(password)) ){
-			sendErrorRedirect(authnRequest, request);
-			return false;
-		}
-		
-		this.username = username;
-		
-		IPersonalAttributeList attrList = authnRequest.getPersonalAttributeList();
-        for (PersonalAttribute pa : attrList){
-            String attrName = pa.getName();
+    private static Transliterator T = Transliterator.getInstance(TRANLITERATOR_ID);
 
-            String value = users.getProperty(username + "." + attrName);
-            if (value != null) {
-                if(pa.isEmptyValue()) {
-                    logger.trace("[processAuthentication] Setting: " + attrName + "=>" + value);
-                    ArrayList<String> tmp = new ArrayList<String>();
-                    tmp.add(value);
-                    pa.setValue(tmp);
-                    pa.setStatus(EIDASStatusCode.STATUS_AVAILABLE.toString());
-                }
-            }
-            else {
-                if(!pa.isEmptyStatus()) {
-                    pa.setStatus(EIDASStatusCode.STATUS_NOT_AVAILABLE.toString());
-                }
-            }
-            //attrList.put(attrName, pa);
+    public static String transliterate(String value) {
+        return T == null ? value : T.transliterate(value);
+    }
+
+    static CharsetEncoder encoder = Charset.forName("ISO-8859-1").newEncoder();
+
+    public static boolean needsTransliteration(String v) {
+        return !encoder.canEncode(v);
+    }
+
+    public static List<String> getValuesOfAttribute(String attrName, String value) {
+        logger.trace("[processAuthentication] Setting: " + attrName + "=>" + value);
+        ArrayList<String> tmp = new ArrayList<String>();
+        tmp.add(value);
+        if (needsTransliteration(value)) {
+            String trValue = transliterate(value);
+            tmp.add(trValue);
+            logger.trace("[processAuthentication] Setting transliterated: " + attrName + "=>" + trValue);
+        }
+        return tmp;
+    }
+
+    public boolean processAuthentication(HttpServletRequest request, HttpServletResponse response) {
+
+        EIDASUtil.createInstance(loadConfigs("eidasUtil.properties"));
+
+        String username = request.getParameter("username");
+        String password = request.getParameter("password");
+        String samlToken = request.getParameter("samlToken");
+        encryptAssertion = request.getParameter("encryptAssertion");
+        eidasLoa = request.getParameter("eidasloa");
+
+        IAuthenticationRequest authnRequest = validateRequest(samlToken);
+        this.callback = authnRequest.getAssertionConsumerServiceURL();
+
+        if (username == null || password == null) {
+            sendErrorRedirect(authnRequest, request, EIDASSubStatusCode.AUTHN_FAILED_URI,
+                              EidasErrorKey.AUTHENTICATION_FAILED_ERROR.toString());
+            return false;
         }
 
-		sendRedirect(authnRequest, (PersonalAttributeList) attrList, request);
-		
-		return true;
-	}
-	
-	private EIDASAuthnRequest validateRequest(String samlToken){
-		EIDASAuthnRequest authnRequest;
-		try {
-			EIDASSAMLEngine engine = getSamlEngineInstance();
-			authnRequest = engine.validateEIDASAuthnRequest(EIDASUtil.decodeSAMLToken(samlToken));
-		} catch (Exception e) {
-			throw new InvalidParameterEIDASException(EIDASUtil
-				.getConfig(EIDASErrors.COLLEAGUE_REQ_INVALID_SAML.errorCode()),
-				EIDASUtil.getConfig(EIDASErrors.COLLEAGUE_REQ_INVALID_SAML
-					.errorMessage()));
-		}
-		return authnRequest;
-	}
-	
-	private void sendRedirect(EIDASAuthnRequest authnRequest,
-			PersonalAttributeList attrList, HttpServletRequest request) {
-		try {
-			String remoteAddress = request.getRemoteAddr();
-			if (request.getHeader(EIDASParameters.HTTP_X_FORWARDED_FOR.toString()) != null)
-				remoteAddress = request
-						.getHeader(EIDASParameters.HTTP_X_FORWARDED_FOR.toString());
-			else {
-				if (request.getHeader(EIDASParameters.X_FORWARDED_FOR.toString()) != null)
-					remoteAddress = request
-							.getHeader(EIDASParameters.X_FORWARDED_FOR.toString());
-			}
+        Properties users = null;
+        String pass = null;
+        try {
+            users = loadConfigs("user.properties");
+            pass = users.getProperty(username);
+        } catch (SecurityEIDASException e) {
+            sendErrorRedirect(authnRequest, request, EIDASSubStatusCode.AUTHN_FAILED_URI,
+                              EidasErrorKey.AUTHENTICATION_FAILED_ERROR.toString());
+        }
 
-			EIDASSAMLEngine engine = getSamlEngineInstance();
-			EIDASAuthnResponse responseAuthReq = new EIDASAuthnResponse();
-			for(PersonalAttribute pa:attrList){
-				if(pa.isEmptyValue() && pa.isRequired()){
-					pa.setStatus(EIDASStatusCode.STATUS_NOT_AVAILABLE.toString());
-				}
-			}
-			responseAuthReq.setPersonalAttributeList(attrList);
-			responseAuthReq.setInResponseTo(authnRequest.getSamlId());
-			if(callback==null){
-				authnRequest.setAssertionConsumerServiceURL(MetadataUtil.getAssertionUrlFromMetadata(new IdPMetadataProcessor(), engine, authnRequest));
-				callback=authnRequest.getAssertionConsumerServiceURL();
-			}
-			String metadataUrl=idpProperties==null?null:idpProperties.getProperty(Constants.IDP_METADATA_URL);
-			if(metadataUrl!=null && !metadataUrl.isEmpty()) {
-				responseAuthReq.setIssuer(metadataUrl);
-			}
-			engine.setRequestIssuer(authnRequest.getIssuer());
-			responseAuthReq.setAssuranceLevel(eidasLoa);
-			EIDASAuthnResponse samlToken = engine.generateEIDASAuthnResponse(authnRequest, responseAuthReq, remoteAddress, false, Boolean.parseBoolean(request.getParameter(SIGN_ASSERTION_PARAM)));
+        if (pass == null || (!pass.equals(password))) {
+            sendErrorRedirect(authnRequest, request, EIDASSubStatusCode.AUTHN_FAILED_URI,
+                              EidasErrorKey.AUTHENTICATION_FAILED_ERROR.toString());
+            return false;
+        }
 
-			this.samlToken = EIDASUtil.encodeSAMLToken(samlToken.getTokenSaml());
-		} catch (Exception e) {
-			throw new InternalErrorEIDASException("0",
-					"Error generating SAMLToken");
-		}
-	}
+        this.username = username;
 
-	private EIDASSAMLEngine getSamlEngineInstance() throws EIDASSAMLEngineException{
-		EIDASSAMLEngine engine = IDPUtil.createSAMLEngine(Constants.SAMLENGINE_NAME);
-		Properties userProps = EIDASUtil.loadConfigs("samlengine.properties", false);
-		if(userProps!=null && userProps.containsKey(SAMLEngineEncryptionI.DATA_ENCRYPTION_ALGORITHM)){
-			engine.setEncrypterProperty(SAMLEngineEncryptionI.DATA_ENCRYPTION_ALGORITHM, userProps.getProperty(SAMLEngineEncryptionI.DATA_ENCRYPTION_ALGORITHM));
-		}
-		if(Boolean.parseBoolean(encryptAssertion)){
-			engine.setEncrypterProperty(SAMLEngineEncryptionI.RESPONSE_ENCRYPTION_MANDATORY, encryptAssertion);
-		}
-		if(Boolean.parseBoolean(idpProperties.getProperty(IDPUtil.ACTIVE_METADATA_CHECK))) {
-			engine.setMetadataProcessor(new IdPMetadataProcessor());
-		}
-		return engine;
-	}
+        ImmutableAttributeMap recvAttrMap = authnRequest.getRequestedAttributes();
+        ImmutableAttributeMap sendAttrMap;
+        ImmutableAttributeMap.Builder mapBuilder = ImmutableAttributeMap.builder();
 
-	private void sendErrorRedirect(EIDASAuthnRequest authnRequest, HttpServletRequest request){
-		EIDASAuthnResponse samlTokenFail = new EIDASAuthnResponse();
-		try {
-			samlTokenFail.setStatusCode(EIDASStatusCode.RESPONDER_URI.toString());
-			samlTokenFail.setSubStatusCode(EIDASSubStatusCode.AUTHN_FAILED_URI.toString());
-			samlTokenFail.setMessage("Credenciais inválidas!");
-			EIDASSAMLEngine engine = getSamlEngineInstance();
-			engine.setRequestIssuer(authnRequest.getIssuer());
-			String metadataUrl=idpProperties==null?null:idpProperties.getProperty(Constants.IDP_METADATA_URL);
-			if(metadataUrl!=null && !metadataUrl.isEmpty()) {
-				samlTokenFail.setIssuer(metadataUrl);
-			}
-			if(callback==null){
-				authnRequest.setAssertionConsumerServiceURL(MetadataUtil.getAssertionUrlFromMetadata(new IdPMetadataProcessor(), engine, authnRequest));
-				callback=authnRequest.getAssertionConsumerServiceURL();
-			}
-			samlTokenFail.setAssuranceLevel(eidasLoa);
-			samlTokenFail = engine.generateEIDASAuthnResponseFail(authnRequest, samlTokenFail, request.getRemoteAddr(), false);
-		} catch (Exception e) {
-			throw new InternalErrorEIDASException("0", "Error generating SAMLToken");
-		}
-		this.samlToken = EIDASUtil.encodeSAMLToken(samlTokenFail.getTokenSaml());
-	}
+        for (AttributeDefinition<?> attr : recvAttrMap.getDefinitions()) {
+            String attrName = attr.getNameUri().toASCIIString();
+            //lookup in properties file
+            String key = username + "." + attrName.replaceFirst("[Hh][Tt][Tt][Pp]://", "");
+            String value = users.getProperty(key);
+            ArrayList<String> values = new ArrayList<String>();
+            if (value != null && !value.isEmpty()) {
+                values.addAll(getValuesOfAttribute(attrName, value));
+            } else {
+                String multivalues = users.getProperty(key + ".multivalue");
+                if (null != multivalues && "true".equalsIgnoreCase(multivalues)) {
+                    for (int i = 1; null != users.getProperty(key + "." + i); i++) {
+                        values.addAll(getValuesOfAttribute(attrName, users.getProperty(key + "." + i)));
+                    }
+                }
+            }
+            if (!values.isEmpty()) {
+                AttributeValueMarshaller<?> attributeValueMarshaller = attr.getAttributeValueMarshaller();
+                ImmutableSet.Builder<AttributeValue<?>> builder = ImmutableSet.builder();
+                for (final String val : values) {
+                    AttributeValue<?> attributeValue = null;
+                    try {
+                        attributeValue = attributeValueMarshaller.unmarshal(val, false);
+                    } catch (AttributeValueMarshallingException e) {
+                        throw new IllegalStateException(e);
+                    }
+                    builder.add(attributeValue);
+                }
+                mapBuilder.put((AttributeDefinition) attr, (ImmutableSet) builder.build());
+            }
+        }
+        sendAttrMap = mapBuilder.build();
+        sendRedirect(authnRequest, sendAttrMap, request);
+        return true;
+    }
 
-	
-	/**
-	 * @param samlToken the samlToken to set
-	 */
-	public void setSamlToken(String samlToken) {
-		this.samlToken = samlToken;
-	}
+    private IAuthenticationRequest validateRequest(String samlToken) {
+        IAuthenticationRequest authnRequest;
+        try {
+            ProtocolEngineI engine = getSamlEngineInstance();
+            authnRequest =
+                    engine.unmarshallRequestAndValidate(EidasStringUtil.decodeBytesFromBase64(samlToken), getCountry());
+        } catch (Exception e) {
+            throw new InvalidParameterEIDASException(
+                    EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INVALID_SAML.errorCode()),
+                    EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INVALID_SAML.errorMessage()));
+        }
+        return authnRequest;
+    }
 
-	/**
-	 * @return the samlToken
-	 */
-	public String getSamlToken() {
-		return samlToken;
-	}
+    private String getCountry() {
+        return idpProperties == null ? null : idpProperties.getProperty(Constants.IDP_COUNTRY);
+    }
 
-	/**
-	 * @param username the username to set
-	 */
-	public void setUsername(String username) {
-		this.username = username;
-	}
+    private void sendRedirect(IAuthenticationRequest authnRequest,
+                              ImmutableAttributeMap attrMap,
+                              HttpServletRequest request) {
+        try {
+            String remoteAddress = request.getRemoteAddr();
+            if (request.getHeader(EidasParameterKeys.HTTP_X_FORWARDED_FOR.toString()) != null) {
+                remoteAddress = request.getHeader(EidasParameterKeys.HTTP_X_FORWARDED_FOR.toString());
+            } else {
+                if (request.getHeader(EidasParameterKeys.X_FORWARDED_FOR.toString()) != null) {
+                    remoteAddress = request.getHeader(EidasParameterKeys.X_FORWARDED_FOR.toString());
+                }
+            }
 
-	/**
-	 * @return the username
-	 */
-	public String getUsername() {
-		return username;
-	}
+            ProtocolEngineI engine = getSamlEngineInstance();
+            AuthenticationResponse.Builder responseAuthReq = new AuthenticationResponse.Builder();
 
-	/**
-	 * @param callback the callback to set
-	 */
-	public void setCallback(String callback) {
-		this.callback = callback;
-	}
+            responseAuthReq.attributes(attrMap);
+            responseAuthReq.inResponseTo(authnRequest.getId());
+            authnRequest = processRequestCallback(authnRequest, engine);
+            String metadataUrl = idpProperties == null ? null : idpProperties.getProperty(Constants.IDP_METADATA_URL);
+            if (metadataUrl != null && !metadataUrl.isEmpty()) {
+                responseAuthReq.issuer(metadataUrl);
+            }
+            responseAuthReq.levelOfAssurance(eidasLoa);
 
-	/**
-	 * @return the callback
-	 */
-	public String getCallback() {
-		return callback;
-	}
+            responseAuthReq.id(SAMLEngineUtils.generateNCName());
+            responseAuthReq.statusCode(EIDASStatusCode.SUCCESS_URI.toString());
+
+            AuthenticationResponse response = responseAuthReq.build();
+
+            IResponseMessage responseMessage = null;
+            try {
+                responseMessage = engine.generateResponseMessage(authnRequest, response, Boolean.parseBoolean(
+                        request.getParameter(SIGN_ASSERTION_PARAM)), remoteAddress);
+                samlToken = EidasStringUtil.encodeToBase64(responseMessage.getMessageBytes());
+
+            } catch (EIDASSAMLEngineException se) {
+                if (se.getErrorDetail().startsWith("Unique Identifier not found:") || se.getErrorDetail()
+                        .startsWith("No attribute values in response.")) {
+                    // special IdP case when subject cannot be constructed due to missing unique identifier
+                    sendErrorRedirect(authnRequest, request, EIDASSubStatusCode.INVALID_ATTR_NAME_VALUE_URI,
+                                      EidasErrorKey.ATT_VERIFICATION_MANDATORY.toString());
+                } else {
+                    throw se;
+                }
+            }
+        } catch (Exception ex) {
+            throw new InternalErrorEIDASException("0", "Error generating SAMLToken", ex);
+        }
+    }
+
+    private ProtocolEngineI getSamlEngineInstance() throws EIDASSAMLEngineException {
+        // ProtocolEngine engine = IDPUtil.createSAMLEngine(Constants.SAMLENGINE_NAME);
+        return ProtocolEngineFactory.getDefaultProtocolEngine(Constants.SAMLENGINE_NAME);
+    }
+
+    private void sendErrorRedirect(IAuthenticationRequest authnRequest,
+                                   HttpServletRequest request,
+                                   EIDASSubStatusCode subStatusCode,
+                                   String message) {
+        byte[] failureBytes;
+        try {
+            AuthenticationResponse.Builder samlTokenFail = new AuthenticationResponse.Builder();
+            samlTokenFail.statusCode(EIDASStatusCode.RESPONDER_URI.toString());
+            samlTokenFail.subStatusCode(subStatusCode.toString());
+            samlTokenFail.statusMessage(message);
+            ProtocolEngineI engine = getSamlEngineInstance();
+            samlTokenFail.id(SAMLEngineUtils.generateNCName());
+            samlTokenFail.inResponseTo(authnRequest.getId());
+            String metadataUrl = idpProperties == null ? null : idpProperties.getProperty(Constants.IDP_METADATA_URL);
+            if (metadataUrl != null && !metadataUrl.isEmpty()) {
+                samlTokenFail.issuer(metadataUrl);
+            }
+            authnRequest = processRequestCallback(authnRequest, engine);
+            samlTokenFail.levelOfAssurance(eidasLoa);
+            AuthenticationResponse token = samlTokenFail.build();
+            IResponseMessage responseMessage =
+                    engine.generateResponseErrorMessage(authnRequest, token, request.getRemoteAddr());
+            failureBytes = responseMessage.getMessageBytes();
+        } catch (Exception ex) {
+            throw new InternalErrorEIDASException("0", "Error generating SAMLToken", ex);
+        }
+        this.samlToken = EidasStringUtil.encodeToBase64(failureBytes);
+    }
+
+    private IAuthenticationRequest processRequestCallback(IAuthenticationRequest authnRequest, ProtocolEngineI engine)
+            throws EIDASSAMLEngineException {
+        if (callback == null) {
+            EidasAuthenticationRequest.Builder builder =
+                    EidasAuthenticationRequest.builder((IEidasAuthenticationRequest) authnRequest);
+            callback = MetadataUtil.getAssertionConsumerUrlFromMetadata(idpMetadataFetcher,
+                                                                        (MetadataSignerI) engine.getSigner(),
+                                                                        authnRequest);
+
+            builder.assertionConsumerServiceURL(callback);
+            authnRequest = builder.build();
+        }
+        return authnRequest;
+    }
+
+    /**
+     * @param samlToken the samlToken to set
+     */
+    public void setSamlToken(String samlToken) {
+        this.samlToken = samlToken;
+    }
+
+    /**
+     * @return the samlToken
+     */
+    public String getSamlToken() {
+        return samlToken;
+    }
+
+    /**
+     * @param username the username to set
+     */
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    /**
+     * @return the username
+     */
+    public String getUsername() {
+        return username;
+    }
+
+    /**
+     * @param callback the callback to set
+     */
+    public void setCallback(String callback) {
+        this.callback = callback;
+    }
+
+    /**
+     * @return the callback
+     */
+    public String getCallback() {
+        return callback;
+    }
 
     /**
      * @param signAssertion the signAssertion to set
@@ -254,11 +344,11 @@ public class ProcessLogin {
         return signAssertion;
     }
 
-	public String getEncryptAssertion() {
-		return encryptAssertion;
-	}
+    public String getEncryptAssertion() {
+        return encryptAssertion;
+    }
 
-	public void setEncryptAssertion(String encryptAssertion) {
-		this.encryptAssertion = encryptAssertion;
-	}
+    public void setEncryptAssertion(String encryptAssertion) {
+        this.encryptAssertion = encryptAssertion;
+    }
 }

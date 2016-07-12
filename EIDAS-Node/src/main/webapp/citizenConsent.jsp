@@ -12,6 +12,7 @@
 <head>
 	<jsp:include page="htmlHead.jsp"/>
 	<title><fmt:message key="consent.page.title" bundle="${i18n_eng}"/></title>
+	<script type="text/javascript" src="js/base64.js"></script>
 </head>
 <% /* Page displayed when going back from IDP-AP, after user's consent, will redirect to Connector.ColleagueResponse */%>
 <body>
@@ -35,8 +36,11 @@
 							<c:if test="${eidasAttributes}">
 								<div class="col-sm-6"> <% /** Natural person */ %>
 									<c:set var="categoryIsDisplayed" value="false"/>
-									<c:forEach items="${pal}" var="palItem">
-										<c:if test="${!fn:startsWith(fn:toLowerCase(displayAttr), 'false') && palItem.eidasNaturalPersonAttr}">
+									<c:forEach items="${pal}" var="palItemVar">
+										<c:set var="personType" value="${palItemVar.key.personType}" />
+										<c:set var="friendlyName" value="${palItemVar.key.friendlyName}" />
+										<c:set var="attrValue" value="${palItemVar.value}" />
+										<c:if test="${!fn:startsWith(fn:toLowerCase(displayAttr), 'false') && fn:startsWith(fn:toLowerCase(personType), 'natural_person')}">
 											<c:if test="${categoryIsDisplayed=='false'}">
 												<h3><fmt:message key="citizenConsent.natural" bundle="${i18n_eng}"/>
 													<span><fmt:message key="citizenConsent.person" bundle="${i18n_eng}"/></span>
@@ -45,31 +49,24 @@
 												<ul class="resume list-unstyled">
 											</c:if>
 											<li>
-												<fmt:message key="${palItem.name}" bundle="${i18n_eng}"/>
+												<fmt:message key="${friendlyName}" bundle="${i18n_eng}"/>
 												<strong>
-													<c:if test="${not empty palItem.value[0]}">
-														${e:forHtml(palItem.displayValue)}
-													</c:if>
-													<c:if test="${empty palItem.value[0]}">
-														<table>
-															<c:forEach items="${palItem.complexValue}" var="complexValue">
-																<tr>
-																	<td align="left"><i>${e:forHtml(complexValue.key)}</i>:&nbsp;</td>
-																	<td align="center">${e:forHtml(complexValue.value)}</td>
-																</tr>
-															</c:forEach>
-														</table>
-													</c:if>
+													<c:forEach items="${attrValue}" var="aVal">
+														${e:forHtml(aVal)}
+													</c:forEach>
 												</strong>
 											</li>
-										</c:if>
+										 </c:if>
 									</c:forEach>
 									<c:if test="${categoryIsDisplayed=='true'}"></ul></c:if>
 								</div>
 								<div class="col-sm-6"> <% /** Legal person */ %>
 									<c:set var="categoryIsDisplayed" value="false"/>
-									<c:forEach items="${pal}" var="palItem">
-										<c:if test="${!fn:startsWith(fn:toLowerCase(displayAttr), 'false') && palItem.eidasLegalPersonAttr}">
+									<c:forEach items="${pal}" var="palItemVar">
+										<c:set var="personType" value="${palItemVar.key.personType}" />
+										<c:set var="friendlyName" value="${palItemVar.key.friendlyName}" />
+										<c:set var="attrValue" value="${palItemVar.value}" />
+									<c:if test="${!fn:startsWith(fn:toLowerCase(displayAttr), 'false') && fn:startsWith(fn:toLowerCase(personType), 'legal_person')}">
 											<c:if test="${categoryIsDisplayed=='false'}">
 												<h3><fmt:message key="citizenConsent.legal" bundle="${i18n_eng}"/>
 													<span><fmt:message key="citizenConsent.person" bundle="${i18n_eng}"/></span>
@@ -78,55 +75,16 @@
 												<ul class="resume list-unstyled">
 											</c:if>
 											<li>
-												<fmt:message key="${palItem.name}" bundle="${i18n_eng}"/>
+												<fmt:message key="${friendlyName}" bundle="${i18n_eng}"/>
 												<strong>
-													<c:if test="${not empty palItem.value[0]}">
-														${e:forHtml(palItem.displayValue)}
-													</c:if>
-													<c:if test="${empty palItem.value[0]}">
-														<table>
-															<c:forEach items="${palItem.complexValue}" var="complexValue">
-																<tr>
-																	<td align="left"><i>${e:forHtml(complexValue.key)}</i>:&nbsp;</td>
-																	<td align="center">${e:forHtml(complexValue.value)}</td>
-																</tr>
-															</c:forEach>
-														</table>
-													</c:if>
+													<c:forEach items="${attrValue}" var="aVal">
+														${e:forHtml(aVal)}
+													</c:forEach>
 												</strong>
 											</li>
 										</c:if>
 									</c:forEach>
 									<c:if test="${categoryIsDisplayed=='true'}"></ul></c:if>
-								</div>
-							</c:if>
-							<% /** STORK */ %>
-							<c:if test="${!eidasAttributes}">
-								<div class="col-sm-6">
-									<ul class="resume list-unstyled">
-										<c:forEach items="${pal}" var="palItem">
-											<c:if test="${!fn:startsWith(fn:toLowerCase(displayAttr), 'false')}">
-												<li>
-													<fmt:message key="${palItem.name}" bundle="${i18n_eng}"/>
-													<strong>
-														<c:if test="${not empty palItem.value[0]}">
-															${e:forHtml(palItem.displayValue)}
-														</c:if>
-														<c:if test="${empty palItem.value[0]}">
-															<table>
-																<c:forEach items="${palItem.complexValue}" var="complexValue">
-																	<tr>
-																		<td align="left"><i>${e:forHtml(complexValue.key)}</i>:&nbsp;</td>
-																		<td align="center">${e:forHtml(complexValue.value)}</td>
-																	</tr>
-																</c:forEach>
-															</table>
-														</c:if>
-													</strong>
-												</li>
-											</c:if>
-										</c:forEach>
-									</ul>
 								</div>
 							</c:if>
 						</div>
@@ -150,7 +108,7 @@
 							</p>
 						</noscript>
 					</form>
-					<p id="buttongroupjsjs" name="buttongroupjsjs" class="box-btn">
+					<p id="buttongroupjsjs" name="buttongroupjsjs" class="box-btn jsOK">
 						<button type="button" id="buttonCancel" class="btn btn-opposite"><span><fmt:message key="common.cancel" bundle="${i18n_eng}"/></span></button>
 						<button type="button" id="buttonNext" class="btn btn-next btn-submit"><span><fmt:message key="common.submit" bundle="${i18n_eng}"/></span></button>
 					</p>

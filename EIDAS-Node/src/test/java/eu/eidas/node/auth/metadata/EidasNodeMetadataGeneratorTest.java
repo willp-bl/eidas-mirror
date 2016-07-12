@@ -1,61 +1,76 @@
 /*
- * Licensed under the EUPL, Version 1.1 or – as soon they will be approved by
- * the European Commission - subsequent versions of the EUPL (the "Licence");
- * You may not use this work except in compliance with the Licence. You may
- * obtain a copy of the Licence at:
+ * Copyright (c) 2016 by European Commission
  *
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
+ * the European Commission - subsequent versions of the EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
  * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the Licence is distributed on an "AS IS" basis, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * Licence for the specific language governing permissions and limitations under
- * the Licence.
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
+ *
+ * This product combines work with different licenses. See the "NOTICE" text
+ * file for details on the various modules and licenses.
+ * The "NOTICE" text file is part of the distribution. Any derivative works
+ * that you distribute must include a readable copy of the "NOTICE" text file.
+ *
  */
+
 package eu.eidas.node.auth.metadata;
-
-import eu.eidas.engine.exceptions.SAMLEngineException;
-import eu.eidas.node.auth.metadata.NODEFileMetadataProcessor;
-import eu.eidas.node.auth.metadata.NODEMetadataProcessor;
-import eu.eidas.node.auth.metadata.SimpleMetadataCaching;
-import eu.eidas.node.init.EidasSamlEngineFactory;
-import eu.eidas.node.utils.EidasNodeMetadataGenerator;
-import eu.eidas.node.utils.PropertiesUtil;
-
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.opensaml.DefaultBootstrap;
-import org.opensaml.saml2.metadata.EntityDescriptor;
-import org.opensaml.xml.ConfigurationException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.util.FileSystemUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
 import java.util.Properties;
 
-import static org.junit.Assert.*;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.opensaml.common.xml.SAMLConstants;
+import org.opensaml.saml2.metadata.EntityDescriptor;
+import org.opensaml.saml2.metadata.IDPSSODescriptor;
+import org.opensaml.saml2.metadata.SingleSignOnService;
+import org.opensaml.xml.ConfigurationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.util.FileSystemUtils;
+
+import eu.eidas.auth.commons.EidasStringUtil;
+import eu.eidas.auth.commons.exceptions.EIDASServiceException;
+import eu.eidas.auth.engine.DefaultProtocolEngineFactory;
+import eu.eidas.auth.engine.xml.opensaml.SAMLBootstrap;
+import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
+import eu.eidas.engine.exceptions.SAMLEngineException;
+import eu.eidas.node.utils.EidasNodeMetadataGenerator;
 
 public class EidasNodeMetadataGeneratorTest {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(TestEidasNodeFileMetadataProcessor.class.getName());
+    private static final String SERVICE_METADATA_REPO="src/test/resources/ServiceMetadataRepo/";
     private static final String FILEREPO_DIR_WRITE="target/test/EntityDescriptors1/";
     private static final String ENTITY_ID="http://connectorasIdpurl";
+    private static final String SERVICE_METADATA_URL="http://localhost:8080/EidasNode/ServiceMetadata";
+    private static final String CONNECTOR_COUNTRY_B = "CB";
+
+    private static final String SAML_CONNECTOR_IDP = "METADATA";
+    private static final String BINDING_LOCATION_URL = "http://localhost:8080/EidasNode/ServiceProvider";
+    private static final String BINDING_LOCATION_URL_NOT_IN_PROPERTIES = "${ssos.serviceMetadataGeneratorIDP.redirect.location}";
 
     @BeforeClass
     public static void setUp(){
         LOGGER.debug("initializing directory " + FILEREPO_DIR_WRITE);
         new File(FILEREPO_DIR_WRITE).mkdirs();
         try {
-            DefaultBootstrap.bootstrap();
+            SAMLBootstrap.bootstrap();
         } catch (ConfigurationException ce) {
-            assertTrue("opensaml configuration exception", false);
+            Assert.assertTrue("opensaml configuration exception", false);
         }
     }
     @AfterClass
@@ -70,21 +85,18 @@ public class EidasNodeMetadataGeneratorTest {
             fw.append(metadataContent);
             fw.close();
         }catch(IOException ioe){
-            fail("error writing metadata contents: "+ioe);
+            Assert.fail("error writing metadata contents: "+ioe);
         }
     }
 
     @Test
     public void testGenerateMetadataConnectorasIdP() throws Exception {
-        EidasNodeMetadataGenerator generator = new EidasNodeMetadataGenerator();
-        generator.setSamlConnectorIDP("METADATA");
-        generator.setConnectorMetadataUrl(ENTITY_ID);
-        generator.setSamlEngineFactory(new EidasSamlEngineFactory());
-        generator.setConnectorCountry("CB");
-        generator.setConnectorUrl(ENTITY_ID);
+        EidasNodeMetadataGenerator generator = buildEidasNodeMetadataGenerator();
+        generator.setSingleSignOnServicePostLocation(BINDING_LOCATION_URL);
+        generator.setSingleSignOnServiceRedirectLocation(BINDING_LOCATION_URL);
 
         String metadata = generator.generateConnectorMetadata();
-        assertTrue(metadata.contains("<?xml"));
+        Assert.assertTrue(metadata.contains("<?xml"));
 
         putMetadataInFile(FILEREPO_DIR_WRITE+"/test.xml", metadata);
         NODEMetadataProcessor processor=new NODEMetadataProcessor();
@@ -92,14 +104,30 @@ public class EidasNodeMetadataGeneratorTest {
         processor.getFileMetadataLoader().setRepositoryPath(FILEREPO_DIR_WRITE);
         processor.setCache(new SimpleMetadataCaching());
         processor.initProcessor();
-        EntityDescriptor ed=null;
-        try{
-            ed = processor.getEntityDescriptor(ENTITY_ID);
-            assertTrue(ed.isValid());
-        }catch(SAMLEngineException exc){
-            fail("expect exactly one expired entity descriptor");
+
+        EntityDescriptor ed = processor.getEntityDescriptor(ENTITY_ID);
+        Assert.assertTrue(ed.isValid());
+    }
+
+    @Test
+    public void testParseMetadataSSOSBindingLocation() throws SAMLEngineException, EIDASSAMLEngineException {
+        final NODEMetadataProcessor processor = new NODEMetadataProcessor();
+        processor.setFileMetadataLoader(new NODEFileMetadataProcessor());
+        processor.getFileMetadataLoader().setRepositoryPath(SERVICE_METADATA_REPO);
+        processor.setCache(new SimpleMetadataCaching());
+        processor.initProcessor();
+
+        final IDPSSODescriptor idPSSODescriptor = processor.getIDPSSODescriptor(SERVICE_METADATA_URL);
+        for (SingleSignOnService singleSignOnService : idPSSODescriptor.getSingleSignOnServices()) {
+            final boolean isPostBinding = SAMLConstants.SAML2_POST_BINDING_URI.equalsIgnoreCase(singleSignOnService.getBinding());
+            final boolean isRedirectBinding = SAMLConstants.SAML2_REDIRECT_BINDING_URI.equalsIgnoreCase(singleSignOnService.getBinding());
+            Assert.assertTrue(isPostBinding || isRedirectBinding);
+
+            final String location = singleSignOnService.getLocation();
+            Assert.assertFalse(location == null);
         }
     }
+
     private final static String CONTACT_SOURCE="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
             "<!DOCTYPE properties SYSTEM \"http://java.sun.com/dtd/properties.dtd\">\n" +
             "<properties>" +
@@ -150,37 +178,72 @@ public class EidasNodeMetadataGeneratorTest {
 
     @Test
     public void testGenerateMetadataWithContacts() throws Exception {
-        EidasNodeMetadataGenerator generator = new EidasNodeMetadataGenerator();
-        generator.setSamlConnectorIDP("METADATA");
-        generator.setConnectorMetadataUrl(ENTITY_ID);
-        generator.setSamlEngineFactory(new EidasSamlEngineFactory());
-        generator.setConnectorCountry("CB");
-        generator.setConnectorUrl(ENTITY_ID);
+        EidasNodeMetadataGenerator generator = buildEidasNodeMetadataGenerator();
         Properties contactProps=loadContactProps(CONTACT_SOURCE);
         generator.setNodeProps(contactProps);
+        generator.setSingleSignOnServicePostLocation(BINDING_LOCATION_URL);
+        generator.setSingleSignOnServiceRedirectLocation(BINDING_LOCATION_URL);
 
         String metadata = generator.generateConnectorMetadata();
-        assertTrue(metadata.contains("<?xml"));
-        assertTrue(metadata.contains(EXPECTED_METADATA_CONTACT));
+        Assert.assertTrue(metadata.contains("<?xml"));
+        Assert.assertTrue(metadata.contains(EXPECTED_METADATA_CONTACT));
 
         contactProps=loadContactProps(CONTACT_SOURCE_INCOMPLETE);
         generator.setNodeProps(contactProps);
 
         metadata = generator.generateConnectorMetadata();
-        assertTrue(metadata.contains("<?xml"));
-        assertTrue(metadata.contains(EXPECTED_METADATA_CONTACT));
+        Assert.assertTrue(metadata.contains("<?xml"));
+        Assert.assertTrue(metadata.contains(EXPECTED_METADATA_CONTACT));
+    }
+
+    @Test (expected = EIDASServiceException.class)
+    public void testGenerateMetadataWithOutSSOSPostLocation() throws Exception {
+        EidasNodeMetadataGenerator generator = buildEidasNodeMetadataGenerator();
+        generator.setSingleSignOnServicePostLocation(BINDING_LOCATION_URL);
+        generator.generateConnectorMetadata();
+    }
+
+    @Test (expected = EIDASServiceException.class)
+    public void testGenerateMetadataWithOutSSOSRedirectLocation() throws Exception {
+        EidasNodeMetadataGenerator generator = buildEidasNodeMetadataGenerator();
+        generator.setSingleSignOnServiceRedirectLocation(BINDING_LOCATION_URL);
+        generator.generateConnectorMetadata();
+    }
+
+    @Test (expected = EIDASServiceException.class)
+    public void testGenerateMetadataWithoutSSOSRedirectLocationInpPropertiesFile() throws Exception {
+        EidasNodeMetadataGenerator generator = buildEidasNodeMetadataGenerator();
+        generator.setSingleSignOnServicePostLocation(BINDING_LOCATION_URL);
+        generator.setSingleSignOnServiceRedirectLocation(BINDING_LOCATION_URL_NOT_IN_PROPERTIES);
+        generator.generateConnectorMetadata();
+    }
+
+    @Test (expected = EIDASServiceException.class)
+    public void testGenerateMetadataWithoutSSOSPosttLocationInpPropertiesFile() throws Exception {
+        EidasNodeMetadataGenerator generator = buildEidasNodeMetadataGenerator();
+        generator.setSingleSignOnServicePostLocation(BINDING_LOCATION_URL_NOT_IN_PROPERTIES);
+        generator.setSingleSignOnServiceRedirectLocation(BINDING_LOCATION_URL);
+        generator.generateConnectorMetadata();
     }
 
     private Properties loadContactProps(String source){
         Properties props=new Properties();
         try {
-            InputStream stream = new ByteArrayInputStream(source.getBytes(Charset.forName("UTF-8")));
+            InputStream stream = new ByteArrayInputStream(EidasStringUtil.getBytes(source));
             props.loadFromXML(stream);
         }catch(Exception exc){
-            fail("cannot load properties "+exc);
+            Assert.fail("cannot load properties "+exc);
         }
         return props;
     }
-    
 
+    private EidasNodeMetadataGenerator buildEidasNodeMetadataGenerator() {
+        EidasNodeMetadataGenerator generator = new EidasNodeMetadataGenerator();
+        generator.setSamlConnectorIDP(SAML_CONNECTOR_IDP);
+        generator.setConnectorMetadataUrl(ENTITY_ID);
+        generator.setNodeProtocolEngineFactory(DefaultProtocolEngineFactory.getInstance());
+        generator.setConnectorCountry(CONNECTOR_COUNTRY_B);
+        generator.setConnectorUrl(ENTITY_ID);
+        return generator;
+    }
 }

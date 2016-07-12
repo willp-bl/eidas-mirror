@@ -21,7 +21,7 @@ import java.io.IOException;
  *
  * @since 1.2.0
  */
-public class RemoveHttpHeadersFilter extends AbstractSecurityResponseHeader implements Filter {
+public class RemoveHttpHeadersFilter implements Filter {
     /**
      * Logger object.
      */
@@ -30,7 +30,6 @@ public class RemoveHttpHeadersFilter extends AbstractSecurityResponseHeader impl
     @Override
     public void init(FilterConfig fConfig) throws ServletException {
         LOGGER.info(LoggingMarkerMDC.SYSTEM_EVENT, "Init of RemoveHttpHeadersFilter filter");
-        super.init();
     }
 
     @Override

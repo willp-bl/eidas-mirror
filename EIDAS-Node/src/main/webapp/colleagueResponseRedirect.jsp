@@ -29,14 +29,14 @@
                     <h2 class="sub-title"><fmt:message key="ConnectorRedirect.text" bundle="${i18n_eng}"/></h2>
                     <form name="redirectForm" method="post" action="${e:forHtml(spUrl)}">
                         <input type="hidden" id="SAMLResponse" name="SAMLResponse" value="${e:forHtml(SAMLResponse)}"/>
-                        <c:if test="RelayState!=null">
+                        <c:if test="${not empty RelayState}">
                             <input type="hidden" id="relayState" name="RelayState" value="${e:forHtml(RelayState)}"/>
                         </c:if>
                     </form>
                     <noscript>
                         <form name="redirectForm" method="post" action="${e:forHtml(spUrl)}">
                             <input type="hidden" id="SAMLResponse" name="SAMLResponse" value="${e:forHtml(SAMLResponse)}"/>
-                            <c:if test="RelayState!=null">
+                            <c:if test="${not empty RelayState}">
                                 <input type="hidden" id="relayState" name="RelayState" value="${e:forHtml(RelayState)}"/>
                             </c:if>
                             <p class="box-btn">
@@ -44,6 +44,7 @@
                             </p>
                         </form>
                     </noscript>
+                    <jsp:include page="footer-img.jsp"/>
                 </div>
             </div>
         </div>

@@ -19,6 +19,11 @@ public class ConfigurationSecurityBean {
 
     private boolean includeHSTS;
 
+    /**
+     * Include CSP browser support test script into JSPs
+     */
+    private boolean cspFallbackCheck;
+
     private boolean includeMozillaDirectives;
     /**
      * Max requests per citizen.
@@ -100,6 +105,14 @@ public class ConfigurationSecurityBean {
 
     public void setIncludeHSTS(boolean includeHSTS) {
         this.includeHSTS = includeHSTS;
+    }
+
+    public boolean isCspFallbackCheck() {
+        return cspFallbackCheck;
+    }
+
+    public void setCspFallbackCheck(boolean cspFallbackCheck) {
+        this.cspFallbackCheck = cspFallbackCheck;
     }
 
     public boolean isIncludeMozillaDirectives() {

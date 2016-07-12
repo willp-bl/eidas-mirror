@@ -1,5 +1,5 @@
 /*
- * Licensed under the EUPL, Version 1.1 or – as soon they will be approved by
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
  * the European Commission - subsequent versions of the EUPL (the "Licence");
  * You may not use this work except in compliance with the Licence. You may
  * obtain a copy of the Licence at:
@@ -14,13 +14,13 @@
  */
 package eu.eidas.auth.engine.core.validator.eidas;
 
-import eu.eidas.auth.engine.core.eidas.RequestedAttribute;
-import eu.eidas.auth.engine.core.eidas.RequestedAttributes;
+import java.util.List;
 
 import org.opensaml.xml.validation.ValidationException;
 import org.opensaml.xml.validation.Validator;
 
-import java.util.List;
+import eu.eidas.auth.engine.core.eidas.RequestedAttribute;
+import eu.eidas.auth.engine.core.eidas.RequestedAttributes;
 
 
 

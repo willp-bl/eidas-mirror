@@ -1,33 +1,31 @@
 /*
  * This work is Open Source and licensed by the European Commission under the
- * conditions of the European Public License v1.1 
- *  
- * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1); 
- * 
- * any use of this file implies acceptance of the conditions of this license. 
- * Unless required by applicable law or agreed to in writing, software 
- * distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT 
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the 
- * License for the specific language governing permissions and limitations 
+ * conditions of the European Public License v1.1
+ *
+ * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1);
+ *
+ * any use of this file implies acceptance of the conditions of this license.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
  * under the License.
  */
 package eu.eidas.node;
 
-import eu.eidas.auth.commons.EIDASParameters;
-import eu.eidas.auth.commons.EIDASValues;
-import eu.eidas.auth.engine.core.SAMLEngineModuleI;
-import eu.eidas.node.auth.connector.AUCONNECTORSAML;
-import eu.eidas.node.auth.metadata.NODEMetadataProcessor;
-import eu.eidas.node.auth.service.AUSERVICEUtil;
-import eu.eidas.node.security.ConfigurationSecurityBean;
-
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+
+import eu.eidas.auth.commons.EIDASValues;
+import eu.eidas.auth.commons.EidasParameterKeys;
+import eu.eidas.auth.engine.core.impl.CertificateValidator;
+import eu.eidas.node.auth.connector.AUCONNECTORSAML;
+import eu.eidas.node.auth.service.AUSERVICEUtil;
+import eu.eidas.node.security.ConfigurationSecurityBean;
 
 
 public class ApplicationContextProvider implements ApplicationContextAware {
@@ -54,19 +52,14 @@ public class ApplicationContextProvider implements ApplicationContextAware {
 
     private static void resetParamsForProduction(Properties props){
         //do not allow self signed certificates
-        props.setProperty(SAMLEngineModuleI.SELF_SIGNED_PROPERTY, "true");
+        props.setProperty(CertificateValidator.DISALLOW_SELF_SIGNED_CERTIFICATE_PROPERTY, "true");
         //do check certificates validiy period
-        props.setProperty(SAMLEngineModuleI.CHECK_VALIDITY_PERIOD_PROPERTY, "true");
+        props.setProperty(CertificateValidator.CHECK_VALIDITY_PERIOD_PROPERTY, "true");
         //activate metadata
         props.setProperty(EIDASValues.METADATA_ACTIVE.toString(), "true");
 
-        props.setProperty(EIDASValues.METADATA_CHECK_SIGNATURE.toString(), "true");
-        //enforce https for remote metadata
-        NODEMetadataProcessor eidasMetadataProcessor=applicationContext.getBean(NODEMetadataProcessor.class);
-        eidasMetadataProcessor.setRestrictHttp(true);
-
         //validate binding
-        props.setProperty(EIDASParameters.VALIDATE_BINDING.toString(), "true");
+        props.setProperty(EidasParameterKeys.VALIDATE_BINDING.toString(), "true");
 
         //enable content security settings
         ConfigurationSecurityBean securityBean = applicationContext.getBean(ConfigurationSecurityBean.class);

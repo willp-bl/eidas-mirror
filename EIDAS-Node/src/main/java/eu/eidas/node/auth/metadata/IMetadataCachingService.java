@@ -13,6 +13,8 @@
  */
 package eu.eidas.node.auth.metadata;
 
+import javax.annotation.Nonnull;
+
 import org.opensaml.saml2.metadata.EntityDescriptor;
 import org.opensaml.xml.signature.SignableXMLObject;
 
@@ -47,7 +49,7 @@ public interface IMetadataCachingService {
     * @param url
     * @return either the descriptor (stored in the cache) associated with url or its container (holding the signature)
     */
-   SignableXMLObject getDescriptorSignatureHolder(String url);
+   SignableXMLObject getDescriptorSignatureHolder(@Nonnull String url);
    /**
    *
    * @param url
@@ -57,7 +59,7 @@ public interface IMetadataCachingService {
   /**
   *
   * @param url
-  * @param signableObject - the object holding the signature for the entity identified by the @url
+  * @param container - the object holding the signature for the entity identified by the @url
   */
  void putDescriptorSignatureHolder(String url, EntityDescriptorContainer container);
 }

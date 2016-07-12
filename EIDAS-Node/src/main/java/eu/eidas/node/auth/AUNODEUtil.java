@@ -1,7 +1,7 @@
 package eu.eidas.node.auth;
 
 import eu.eidas.auth.commons.EIDASValues;
-import eu.eidas.auth.engine.core.SAMLExtensionFormat;
+import eu.eidas.auth.commons.cache.ConcurrentMapService;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineRuntimeException;
 import eu.eidas.node.logging.LoggingMarkerMDC;
 
@@ -66,19 +66,8 @@ public abstract class AUNODEUtil {
         return Boolean.TRUE;
     }
 
-    public SAMLExtensionFormat getProtocolExtensionFormat(String messageFormatName){
-        if(SAMLExtensionFormat.EIDAS10.getName().equalsIgnoreCase(messageFormatName)){
-            return SAMLExtensionFormat.EIDAS10;
-        } else {
-            return SAMLExtensionFormat.STORK10;
-        }
-    }
-
-    public boolean isEIDAS10(String messageFormatName){
-        return (messageFormatName != null && SAMLExtensionFormat.EIDAS10.getName().equalsIgnoreCase(messageFormatName));
-    }
-
     private static final String FALSE=Boolean.FALSE.toString();
+
     public Boolean isEidasMessageSupportedOnly(){
         final String eidasOnlyValue = getConfigs().getProperty(EIDASValues.NODE_SUPPORT_EIDAS_MESSAGE_FORMAT_ONLY.toString());
         return !(FALSE.equalsIgnoreCase(eidasOnlyValue));

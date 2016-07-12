@@ -1,19 +1,22 @@
 /*
  * This work is Open Source and licensed by the European Commission under the
- * conditions of the European Public License v1.1 
- *  
- * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1); 
- * 
- * any use of this file implies acceptance of the conditions of this license. 
- * Unless required by applicable law or agreed to in writing, software 
- * distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT 
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the 
- * License for the specific language governing permissions and limitations 
+ * conditions of the European Public License v1.1
+ *
+ * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1);
+ *
+ * any use of this file implies acceptance of the conditions of this license.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
  * under the License.
  */
 package eu.eidas.auth.commons;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeSet;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -201,21 +204,13 @@ public final class AttributeUtil {
      * @return true if all mandatory attributes have values, false if at least one
      * attribute doesn't have value.
      */
-    public static boolean checkMandatoryAttributes(
-            final IPersonalAttributeList personalAttrList) {
-
-        final Iterator<PersonalAttribute> itAttributes =
-                personalAttrList.values().iterator();
-        boolean retVal = true;
-        while (itAttributes.hasNext() && retVal) {
-            final PersonalAttribute attr = itAttributes.next();
-            if (attr.isRequired()
-                    && !EIDASStatusCode.STATUS_AVAILABLE.toString()
-                    .equals(attr.getStatus())) {
-                retVal = false;
+    public static boolean checkMandatoryAttributes(final IPersonalAttributeList personalAttrList) {
+        for (final PersonalAttribute personalAttribute : personalAttrList) {
+            if (personalAttribute.isRequired() && personalAttribute.isEmpty()) {
+                return false;
             }
         }
-        return retVal;
+        return true;
     }
 
     /**
@@ -224,18 +219,14 @@ public final class AttributeUtil {
      * @param personalAttrList The Personal Attributes List.
      * @return the comma separated list of mandatory attributes that doesn't have value.
      */
-    public static String getMissingMandatoryAttributes(
-            final IPersonalAttributeList personalAttrList) {
-
-        final Iterator<PersonalAttribute> itAttributes = personalAttrList.values().iterator();
-        StringBuilder listOfMissingAttributes=new StringBuilder();
-        while (itAttributes.hasNext()) {
-            final PersonalAttribute attr = itAttributes.next();
-            if (attr.isRequired() && !EIDASStatusCode.STATUS_AVAILABLE.toString().equals(attr.getStatus())) {
-                if(listOfMissingAttributes.length()>0){
+    public static String getMissingMandatoryAttributes(final IPersonalAttributeList personalAttrList) {
+        StringBuilder listOfMissingAttributes = new StringBuilder();
+        for (final PersonalAttribute personalAttribute : personalAttrList) {
+            if (personalAttribute.isRequired() && personalAttribute.isEmpty()) {
+                if (listOfMissingAttributes.length() > 0) {
                     listOfMissingAttributes.append(", ");
                 }
-                listOfMissingAttributes.append(attr.getName());
+                listOfMissingAttributes.append(personalAttribute.getName());
             }
         }
         return listOfMissingAttributes.toString();

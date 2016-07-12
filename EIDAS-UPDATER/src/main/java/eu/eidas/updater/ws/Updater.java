@@ -1,14 +1,14 @@
 /*
  * This work is Open Source and licensed by the European Commission under the
- * conditions of the European Public License v1.1 
- *  
- * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1); 
- * 
- * any use of this file implies acceptance of the conditions of this license. 
- * Unless required by applicable law or agreed to in writing, software 
- * distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT 
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the 
- * License for the specific language governing permissions and limitations 
+ * conditions of the European Public License v1.1
+ *
+ * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1);
+ *
+ * any use of this file implies acceptance of the conditions of this license.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
  * under the License.
  */
 package eu.eidas.updater.ws;
@@ -19,55 +19,52 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 
-import eu.eidas.auth.engine.core.EidasSAMLEngineFactoryI;
-import eu.eidas.updater.vc.VersionControl;
-
 import org.apache.log4j.Logger;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.web.context.ContextLoader;
 
+import eu.eidas.updater.vc.VersionControl;
+
 /**
  * REST service for reloading the application context.
- * 
+ *
  * @author hugo.magalhaes@multicert.com, ricardo.ferreira@multicert.com
- * 
+ *
  * @version $Revision: $, $Date: $
  */
 @Path("/updater")
 public final class Updater {
-  
-  /** 
-   * Return MIME Type. 
+
+  /**
+   * Return MIME Type.
    */
   private static final String MIME_TYPE = "text/plain";
-  
-  /** 
-   * The refresh's return string. 
+
+  /**
+   * The refresh's return string.
    */
   private static final String RETURN_MSG = "Refresh operation launched";
     private static final String REFRESH_IN_PROGRESS = "A refresh operation is currently in progress";
     private static final String REFRESH_NOT_ALLOWED = "not allowed";
     private static final String LOCALHOST="127.0.0.1";//NOSONAR
 
-    EidasSAMLEngineFactoryI nodeSamlEngineFactory;
-
   /**
-   * Version Controller. 
+   * Version Controller.
    */
   private VersionControl vc = null;
     private boolean refreshPending=false;
-  
+
   /**
    * The Logger object.
    */
   private static final Logger LOG = Logger.getLogger(Updater.class.getClass());
     Thread worker=null;
-  
+
   /**
    * REST method that receives the request for restarting the application
    * context.
-   * 
+   *
    * @return A string indicating that the application context is restarting.
    */
   @GET
@@ -105,7 +102,7 @@ public final class Updater {
       worker.start();
       return RETURN_MSG;
   }
-  
+
   /**
    * Reloads the spring application context.
    */
@@ -116,33 +113,24 @@ public final class Updater {
     ((ConfigurableApplicationContext) ctx).close();
     ((ConfigurableApplicationContext) ctx).refresh();
   }
-  
+
   /**
    * Sets the VersionControl wrapper.
-   * 
+   *
    * @param nVC The vc to set.
    */
   public void setVc(final VersionControl nVC) {
     this.vc = nVC;
   }
-  
+
   /**
    * Gets the VersionControl wrapper.
-   * 
+   *
    * @return the vc value.
    */
   public VersionControl getVc() {
     return vc;
   }
-
-
-    public EidasSAMLEngineFactoryI getNodeSamlEngineFactory() {
-        return nodeSamlEngineFactory;
-    }
-
-    public void setNodeSamlEngineFactory(EidasSAMLEngineFactoryI nodeSamlEngineFactory) {
-        this.nodeSamlEngineFactory = nodeSamlEngineFactory;
-    }
 
     private boolean isRefreshPossible(HttpServletRequest req){
         String remoteAddress = req.getRemoteAddr();
@@ -150,12 +138,8 @@ public final class Updater {
             LOG.warn("trying to refresh the configuration from remote address "+remoteAddress );
             return false;
         }
-        if(getNodeSamlEngineFactory().getActiveEngineCount(null)>0){
-            LOG.warn("invalid active SAMLEngine count - denying update");
-            return false;
-        }
         LOG.info("Allowing configuration reload");
         return true;
     }
-  
+
 }

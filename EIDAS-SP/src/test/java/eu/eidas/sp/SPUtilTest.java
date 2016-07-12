@@ -10,7 +10,7 @@ public class SPUtilTest {
     public void testExtractAssertion() throws Exception {
         String message="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<saml2p:Response xmlns:saml2p=\"urn:oasis:names:tc:SAML:2.0:protocol\" xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\" xmlns:eidas=\"http://eidas.europa.eu/attributes/naturalperson\" xmlns:saml2=\"urn:oasis:names:tc:SAML:2.0:assertion\" xmlns:stork=\"urn:eu:stork:names:tc:STORK:1.0:assertion\" xmlns:storkp=\"urn:eu:stork:names:tc:STORK:1.0:protocol\" Consent=\"urn:oasis:names:tc:SAML:2.0:consent:obtained\" Destination=\"http://SPSERVER:8888/SP/ReturnPage\" ID=\"_eedd0bcb2f2f9c80b898ac4bbc726ece\" InResponseTo=\"_a6bf27e8d7a4b2684b952a9651b709b5\" IssueInstant=\"2015-10-09T13:49:25.000Z\" Version=\"2.0\">\n" +
-                "\t<saml2:Issuer Format=\"urn:oasis:names:tc:SAML:2.0:nameid-format:entity\">http://eidasnode:8888/EidasNode/ConnectorResponderMetadata</saml2:Issuer>\n" +
+                "\t<saml2:Issuer Format=\"urn:oasis:names:tc:SAML:2.0:nameid-format:entity\">http://d02di1601313dit.net1.cec.eu.int:17001/EidasNode/ConnectorResponderMetadata</saml2:Issuer>\n" +
                 "\t<ds:Signature xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\">\n" +
                 "\t\t<ds:SignedInfo>\n" +
                 "\t\t\t<ds:CanonicalizationMethod Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/>\n" +
@@ -61,7 +61,7 @@ public class SPUtilTest {
                 "\t\t<saml2p:StatusMessage>urn:oasis:names:tc:SAML:2.0:status:Success</saml2p:StatusMessage>\n" +
                 "\t</saml2p:Status>\n" +
                 "\t<saml2:Assertion ID=\"_63e8052813db8233b32a5a7cb8ef08a7\" IssueInstant=\"2015-10-09T13:49:25.000Z\" Version=\"2.0\">\n" +
-                "\t\t<saml2:Issuer Format=\"urn:oasis:names:tc:SAML:2.0:nameid-format:entity\">http://eidasnode:8888/EidasNode/ConnectorResponderMetadata</saml2:Issuer>\n" +
+                "\t\t<saml2:Issuer Format=\"urn:oasis:names:tc:SAML:2.0:nameid-format:entity\">http://d02di1601313dit.net1.cec.eu.int:17001/EidasNode/ConnectorResponderMetadata</saml2:Issuer>\n" +
                 "\t\t<saml2:Subject>\n" +
                 "\t\t\t<saml2:NameID Format=\"urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified\" NameQualifier=\"http://C-PEPS.gov.xx\">CB/CB/12345</saml2:NameID>\n" +
                 "\t\t\t<saml2:SubjectConfirmation Method=\"urn:oasis:names:tc:SAML:2.0:cm:bearer\">\n" +

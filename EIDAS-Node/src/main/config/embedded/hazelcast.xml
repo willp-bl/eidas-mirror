@@ -33,7 +33,7 @@
             <ports>0</ports>
         </outbound-ports>
         <join>
-            <multicast enabled="true">
+            <multicast enabled="false">
                 <multicast-group>224.2.2.4</multicast-group>
                 <multicast-port>54327</multicast-port>
             </multicast>
@@ -119,12 +119,44 @@
         <time-to-live-seconds>86400</time-to-live-seconds><!-- 1 day -->
         <eviction-policy>LRU</eviction-policy>
     </map>
+    <map name="specificSpRequestCorrelationCacheService">
+        <in-memory-format>BINARY</in-memory-format>
+        <time-to-live-seconds>86400</time-to-live-seconds><!-- 1 day -->
+        <eviction-policy>LRU</eviction-policy>
+    </map>
+    <map name="connectorRequestCorrelationCacheService">
+        <in-memory-format>BINARY</in-memory-format>
+        <time-to-live-seconds>86400</time-to-live-seconds><!-- 1 day -->
+        <eviction-policy>LRU</eviction-policy>
+    </map>
+    <map name="proxyServiceRequestCorrelationCacheService">
+        <in-memory-format>BINARY</in-memory-format>
+        <time-to-live-seconds>86400</time-to-live-seconds><!-- 1 day -->
+        <eviction-policy>LRU</eviction-policy>
+    </map>
+    <map name="specificIdpRequestCorrelationCacheService">
+        <in-memory-format>BINARY</in-memory-format>
+        <time-to-live-seconds>86400</time-to-live-seconds><!-- 1 day -->
+        <eviction-policy>LRU</eviction-policy>
+    </map>
+    <map name="specificConnectorLtRequestCorrelationCacheService">
+        <in-memory-format>BINARY</in-memory-format>
+        <time-to-live-seconds>86400</time-to-live-seconds><!-- 1 day -->
+        <eviction-policy>LRU</eviction-policy>
+    </map>
+    <map name="specificServiceLtRequestCorrelationCacheService">
+        <in-memory-format>BINARY</in-memory-format>
+        <time-to-live-seconds>86400</time-to-live-seconds><!-- 1 day -->
+        <eviction-policy>LRU</eviction-policy>
+    </map>
+
+
     <map name="default">
         <!--
            Data type that will be used for storing recordMap.
            Possible values:
            BINARY (default): keys and values will be stored as binary data
-           OBJECT : values will be stored in their object forms
+           BINARY : values will be stored in their BINARY forms
            OFFHEAP : values will be stored in non-heap region of JVM
         -->
         <in-memory-format>BINARY</in-memory-format>

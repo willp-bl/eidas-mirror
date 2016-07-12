@@ -1,11 +1,11 @@
-/* 
- * Licensed under the EUPL, Version 1.1 or – as soon they will be approved by
+/*
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
  * the European Commission - subsequent versions of the EUPL (the "Licence");
  * You may not use this work except in compliance with the Licence. You may
  * obtain a copy of the Licence at:
- * 
+ *
  * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the Licence is distributed on an "AS IS" basis, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -27,13 +27,12 @@ import org.opensaml.xml.util.XMLObjectChildrenList;
 
 import eu.eidas.auth.engine.core.stork.RequestedAttribute;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import javax.annotation.Nullable;
 
 // TODO: Auto-generated Javadoc
 /**
  * The Class RequestedAttributeImpl.
- * 
+ *
  * @author fjquevedo
  */
 public class RequestedAttributeImpl extends AbstractSAMLObject implements
@@ -46,7 +45,7 @@ public class RequestedAttributeImpl extends AbstractSAMLObject implements
 
     /**
      * The friendly name.
-     * 
+     *
      */
     private String friendlyName;
 
@@ -57,25 +56,25 @@ public class RequestedAttributeImpl extends AbstractSAMLObject implements
 
     /**
      * The name.
-     * 
+     *
      */
     private String name;
 
     /**
      * The name format.
-     * 
+     *
      */
     private String nameFormat;
 
     /**
      * The unknown attributes.
-     * 
+     *
      */
     private AttributeMap unknownAttributes;
 
     /**
      * Instantiates a new requested attribute impl.
-     * 
+     *
      * @param namespaceURI the namespace uri
      * @param elementLocalName the element local name
      * @param namespacePrefix the namespace prefix
@@ -106,20 +105,20 @@ public class RequestedAttributeImpl extends AbstractSAMLObject implements
 	return friendlyName;
     }
 
-  
-    /**
+
+/*    *//**
      * Gets the checks if is required.
      *
      * @return the boolean if it's required.
-     */
+     *//*
     public final String isRequired() {
 	return isRequired;
-    }
+    }*/
 
 
     /**
      * Gets the is required xs boolean.
-     * 
+     *
      * @return the XSBoolean if it's required.
      */
     public final String getIsRequiredXSBoolean() {
@@ -148,7 +147,7 @@ public class RequestedAttributeImpl extends AbstractSAMLObject implements
 
     /**
      * Gets the ordered children.
-     * 
+     *
      * @return the list of XMLObject.
      */
     public final List<XMLObject> getOrderedChildren() {
@@ -168,7 +167,7 @@ public class RequestedAttributeImpl extends AbstractSAMLObject implements
 
     /**
      * Sets the friendly name.
-     * 
+     *
      * @param newFriendlyName the new friendly name format
      */
     public final void setFriendlyName(final String newFriendlyName) {
@@ -187,7 +186,7 @@ public class RequestedAttributeImpl extends AbstractSAMLObject implements
 
     /**
      * Sets the name.
-     * 
+     *
      * @param newName the new name
      */
     public final void setName(final String newName) {
@@ -196,7 +195,7 @@ public class RequestedAttributeImpl extends AbstractSAMLObject implements
 
     /**
      * Sets the name format.
-     * 
+     *
      * @param newNameFormat the new name format
      */
     public final void setNameFormat(final String newNameFormat) {
@@ -205,11 +204,29 @@ public class RequestedAttributeImpl extends AbstractSAMLObject implements
 
     /**
      * Sets the unknown attributes.
-     * 
+     *
      * @param newUnknownAttr the new unknown attributes
      */
     public final void setUnknownAttributes(final AttributeMap newUnknownAttr) {
 	this.unknownAttributes = newUnknownAttr;
     }
+    @Override
+    public XSBooleanValue isRequiredXSBoolean() {
+        return XSBooleanValue.valueOf(isRequired);
+    }
 
+    @Override
+    public void setIsRequired(@Nullable Boolean aBoolean) {
+        this.isRequired = String.valueOf(aBoolean);
+    }
+
+    @Override
+    public void setIsRequired(@ Nullable XSBooleanValue xsBooleanValue) {
+        this.isRequired = String.valueOf(xsBooleanValue);
+    }
+
+    @Override
+    public Boolean isRequired() {
+        return Boolean.parseBoolean(isRequired);
+    }
 }

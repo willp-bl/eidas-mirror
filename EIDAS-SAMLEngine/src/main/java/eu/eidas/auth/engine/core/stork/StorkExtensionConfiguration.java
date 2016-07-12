@@ -1,11 +1,58 @@
 package eu.eidas.auth.engine.core.stork;
 
-import eu.eidas.auth.engine.core.stork.impl.*;
-
 import org.opensaml.Configuration;
 
-public class StorkExtensionConfiguration {
-    public void configureExtension(){
+import eu.eidas.auth.engine.core.stork.impl.AuthenticationAttributesBuilder;
+import eu.eidas.auth.engine.core.stork.impl.AuthenticationAttributesMarshaller;
+import eu.eidas.auth.engine.core.stork.impl.AuthenticationAttributesUnmarshaller;
+import eu.eidas.auth.engine.core.stork.impl.CitizenCountryCodeBuilder;
+import eu.eidas.auth.engine.core.stork.impl.CitizenCountryCodeMarshaller;
+import eu.eidas.auth.engine.core.stork.impl.CitizenCountryCodeUnmarshaller;
+import eu.eidas.auth.engine.core.stork.impl.EIDCrossBorderShareBuilder;
+import eu.eidas.auth.engine.core.stork.impl.EIDCrossBorderShareMarshaller;
+import eu.eidas.auth.engine.core.stork.impl.EIDCrossBorderShareUnmarshaller;
+import eu.eidas.auth.engine.core.stork.impl.EIDCrossSectorShareBuilder;
+import eu.eidas.auth.engine.core.stork.impl.EIDCrossSectorShareMarshaller;
+import eu.eidas.auth.engine.core.stork.impl.EIDCrossSectorShareUnmarshaller;
+import eu.eidas.auth.engine.core.stork.impl.EIDSectorShareBuilder;
+import eu.eidas.auth.engine.core.stork.impl.EIDSectorShareMarshaller;
+import eu.eidas.auth.engine.core.stork.impl.EIDSectorShareUnmarshaller;
+import eu.eidas.auth.engine.core.stork.impl.QAAAttributeBuilder;
+import eu.eidas.auth.engine.core.stork.impl.QAAAttributeMarshaller;
+import eu.eidas.auth.engine.core.stork.impl.QAAAttributeUnmarshaller;
+import eu.eidas.auth.engine.core.stork.impl.RequestedAttributeBuilder;
+import eu.eidas.auth.engine.core.stork.impl.RequestedAttributeMarshaller;
+import eu.eidas.auth.engine.core.stork.impl.RequestedAttributeUnmarshaller;
+import eu.eidas.auth.engine.core.stork.impl.RequestedAttributesBuilder;
+import eu.eidas.auth.engine.core.stork.impl.RequestedAttributesMarshaller;
+import eu.eidas.auth.engine.core.stork.impl.RequestedAttributesUnmarshaller;
+import eu.eidas.auth.engine.core.stork.impl.SPApplicationBuilder;
+import eu.eidas.auth.engine.core.stork.impl.SPApplicationMarshaller;
+import eu.eidas.auth.engine.core.stork.impl.SPApplicationUnmarshaller;
+import eu.eidas.auth.engine.core.stork.impl.SPCountryBuilder;
+import eu.eidas.auth.engine.core.stork.impl.SPCountryMarshaller;
+import eu.eidas.auth.engine.core.stork.impl.SPCountryUnmarshaller;
+import eu.eidas.auth.engine.core.stork.impl.SPIDBuilder;
+import eu.eidas.auth.engine.core.stork.impl.SPIDMarshaller;
+import eu.eidas.auth.engine.core.stork.impl.SPIDUnmarshaller;
+import eu.eidas.auth.engine.core.stork.impl.SPInformationBuilder;
+import eu.eidas.auth.engine.core.stork.impl.SPInformationMarshaller;
+import eu.eidas.auth.engine.core.stork.impl.SPInformationUnmarshaller;
+import eu.eidas.auth.engine.core.stork.impl.SPInstitutionBuilder;
+import eu.eidas.auth.engine.core.stork.impl.SPInstitutionMarshaller;
+import eu.eidas.auth.engine.core.stork.impl.SPInstitutionUnmarshaller;
+import eu.eidas.auth.engine.core.stork.impl.SPSectorBuilder;
+import eu.eidas.auth.engine.core.stork.impl.SPSectorMarshaller;
+import eu.eidas.auth.engine.core.stork.impl.SPSectorUnmarshaller;
+import eu.eidas.auth.engine.core.stork.impl.VIDPAuthenticationAttributesBuilder;
+import eu.eidas.auth.engine.core.stork.impl.VIDPAuthenticationAttributesMarshaller;
+import eu.eidas.auth.engine.core.stork.impl.VIDPAuthenticationAttributesUnmarshaller;
+
+public final class StorkExtensionConfiguration {
+
+    private StorkExtensionConfiguration() {}
+
+    public static void configureExtension() {
         Configuration.registerObjectProvider(QAAAttribute.DEF_ELEMENT_NAME,
                 new QAAAttributeBuilder(), new QAAAttributeMarshaller(),
                 new QAAAttributeUnmarshaller());

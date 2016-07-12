@@ -22,9 +22,12 @@
 
 package eu.eidas.node;
 
-import eu.eidas.auth.commons.EIDASParameters;
-import eu.eidas.auth.commons.EIDASUtil;
-import eu.eidas.auth.commons.EIDASValues;
+import java.io.IOException;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -34,15 +37,7 @@ import org.slf4j.MarkerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import java.io.IOException;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
+import eu.eidas.auth.commons.EIDASValues;
 
 
 public abstract class AbstractSpecificServlet extends HttpServlet {
@@ -112,77 +107,6 @@ public abstract class AbstractSpecificServlet extends HttpServlet {
         strBuf.append(EIDASValues.SPACE.toString());
         strBuf.append(EIDASValues.HTTP_ONLY.toString());
         return strBuf.toString();
-    }
-
-    /**
-     * Creates a {@link java.util.Map} with all the parameters from the servletRequest, plus
-     * the Remote Address, Remote Host, Local Address and Local Host. Then returns
-     * the map.
-     *
-     * @return A map with the servletRequest's parameters, both the remote and
-     * local addresses and the remote and local host.
-     * @see java.util.Map
-     */
-    protected final Map<String, Object> getHttpRequestParameters(HttpServletRequest request) {
-
-        final Map<String, Object> httpParameters = new HashMap<String, Object>();
-
-        // iterate over the parameters
-        for (final Object key : request.getParameterMap().keySet()) {
-            final String parameterName = (String) key;
-            httpParameters.put(parameterName, request.getParameter(parameterName));
-        }
-
-        // get the remote address, if the address came from a proxy server
-        // then get the original address rather than the proxy address
-        String remoteAddr = request.getRemoteAddr();
-        if (request.getHeader(EIDASParameters.HTTP_X_FORWARDED_FOR.toString()) == null) {
-            if (request.getHeader(EIDASParameters.X_FORWARDED_FOR.toString()) != null) {
-                remoteAddr = request.getHeader(EIDASParameters.X_FORWARDED_FOR.toString());
-            }
-        } else {
-            remoteAddr = request.getHeader(EIDASParameters.HTTP_X_FORWARDED_FOR.toString());
-        }
-
-        final String remoteAddrCons = EIDASParameters.REMOTE_ADDR.toString();
-        EIDASUtil.validateParameter(this.getClass().getCanonicalName(), remoteAddrCons, remoteAddr);
-        httpParameters.put(remoteAddrCons, remoteAddr);
-
-        return httpParameters;
-    }
-
-    /**
-     * Creates a {@link Map} with all the attributes and headers from the
-     * servletRequest and then returns it.
-     *
-     * @param request
-     * @return A map with the servletRequest's attributes.
-     * @see Map
-     */
-    @SuppressWarnings("unchecked")
-    protected final Map<String, Object> getHttpRequestAttributesHeaders(HttpServletRequest request) {
-
-        final Map<String, Object> reqAttrHeaders = new HashMap<String, Object>();
-        // Store servletRequest's attributes
-        final Enumeration<String> attibuteNames = request.getAttributeNames();
-        while (attibuteNames.hasMoreElements()) {
-            final String attrName = attibuteNames.nextElement();
-            getLogger().trace("getHttpRequestAttributesHeader name {} val {} ", attrName, request.getAttribute(attrName));
-            if (request.getAttribute(attrName) != null) {
-                reqAttrHeaders.put(attrName, request.getAttribute(attrName));
-            }
-        }
-
-        // Store servletRequest's headers
-        final Enumeration<String> headerNames =
-                request.getHeaderNames();
-        while (headerNames.hasMoreElements()) {
-            final String headerName = headerNames.nextElement();
-            if (request.getHeader(headerName) != null) {
-                reqAttrHeaders.put(headerName, request.getHeader(headerName));
-            }
-        }
-        return reqAttrHeaders;
     }
 
     @Override

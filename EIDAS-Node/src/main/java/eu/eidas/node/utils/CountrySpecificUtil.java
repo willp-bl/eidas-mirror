@@ -22,17 +22,21 @@
 
 package eu.eidas.node.utils;
 
-import eu.eidas.auth.commons.CountrySpecificService;
-import eu.eidas.node.ApplicationContextProvider;
-import eu.eidas.node.auth.service.InactiveIntegrationPlugin;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
+
+import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
-import javax.servlet.http.HttpServletRequest;
-
-import java.util.*;
+import eu.eidas.auth.commons.CountrySpecificService;
+import eu.eidas.node.ApplicationContextProvider;
+import eu.eidas.node.auth.service.InactiveIntegrationPlugin;
 
 public class CountrySpecificUtil implements ApplicationContextAware {
 
@@ -52,7 +56,7 @@ public class CountrySpecificUtil implements ApplicationContextAware {
         if(isoCode==null || isoCode.isEmpty()) {
             return null;
         }
-        String normalizedISOCode=isoCode.toUpperCase();
+        String normalizedISOCode=isoCode.toUpperCase(Locale.ENGLISH);
         if(registeredCountries.isEmpty()) {
             loadCountryHandlers();
         }

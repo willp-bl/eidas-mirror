@@ -9,7 +9,7 @@
 	<jsp:include page="htmlHead.jsp"/>
 	<title>eIDAS Authentication Service (IdP)</title>
 </head>
-<body onload="document.redirectForm.submit();">
+<body>
 <form id="redirectForm" name="redirectForm" method="post" action="${e:forHtml(callback)}">
 	<input type="hidden" id="SAMLResponse" name="SAMLResponse" value="${e:forHtml(samlToken)}"/>
 	<input type="hidden" id="username" name="username" value="${e:forHtml(username)}"/>
@@ -35,13 +35,11 @@
 				</div>
 				<jsp:include page="leftColumn.jsp"/>
 				<div class="col-md-6">
-					<s:form id="authenticationForm" theme="eidas" name="redirectForm" method="post" action="%{callback}">
-						<s:hidden name="SAMLResponseNoScript" value="%{samlToken}"/>
-						<s:hidden name="usernameNoScript" value="%{username}"/>
-						<%--<s:submit label="%{getText('accept.button')}"/>--%>
-						<button type="button" class="btn btn-default btn-lg btn-block" onclick="$('#authenticationForm').submit();">
-						</button>
-					</s:form>
+					<form id="redirectFormNoJS" name="redirectForm" method="post" action="${e:forHtml(callback)}">
+						<input type="hidden" id="SAMLResponseNoJS" name="SAMLResponse" value="${e:forHtml(samlToken)}"/>
+						<input type="hidden" id="usernameNoJS" name="username" value="${e:forHtml(username)}"/>
+						<button class="btn btn-default btn-lg btn-block" type="submit">Redirect</button>
+					</form>
 				</div>
 			</div>
 		</div>
@@ -50,4 +48,5 @@
 <jsp:include page="footer.jsp"/>
 </noscript>
 </body>
+<script type="text/javascript" src="resources/js/redirectCallbackOnload.js"></script>
 </html>

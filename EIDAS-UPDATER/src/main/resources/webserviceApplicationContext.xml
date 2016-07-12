@@ -5,10 +5,9 @@
 
 	<bean id="vc" class="eu.eidas.updater.vc.VersionControl" scope="singleton">
 	</bean>
-	
+
 	<bean id="updater" class="eu.eidas.updater.ws.Updater" scope="singleton">
 		<property name="vc" ref="vc" />
-        <property name="nodeSamlEngineFactory" ref="samlEngineFactory"/>
 	</bean>
-	
+
 </beans>

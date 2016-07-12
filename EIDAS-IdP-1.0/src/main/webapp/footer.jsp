@@ -23,5 +23,6 @@
 <!--START FOOTER-->
 <footer class="footer">
     <div class="container"> <img src="resources/skin0/img/logo-eid.svg" alt="eID connecting europe" class="logo-cef"> </div>
+    <jsp:include page="buildVersion.jsp"/>
 </footer>
 <!--END FOOTER-->

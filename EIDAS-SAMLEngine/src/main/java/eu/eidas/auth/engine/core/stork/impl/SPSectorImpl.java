@@ -1,11 +1,11 @@
-/* 
- * Licensed under the EUPL, Version 1.1 or – as soon they will be approved by
+/*
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
  * the European Commission - subsequent versions of the EUPL (the "Licence");
  * You may not use this work except in compliance with the Licence. You may
  * obtain a copy of the Licence at:
- * 
+ *
  * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the Licence is distributed on an "AS IS" basis, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -26,7 +26,7 @@ import eu.eidas.auth.engine.core.stork.SPSector;
 
 /**
  * The Class SPSectorImpl.
- * 
+ *
  * @author fjquevedo
  */
 public class SPSectorImpl extends AbstractSAMLObject implements SPSector {
@@ -36,7 +36,7 @@ public class SPSectorImpl extends AbstractSAMLObject implements SPSector {
 
     /**
      * Instantiates a new Service provider sector implementation.
-     * 
+     *
      * @param namespaceURI the namespace URI
      * @param elementLocalName the element local name
      * @param namespacePrefix the namespace prefix
@@ -46,32 +46,32 @@ public class SPSectorImpl extends AbstractSAMLObject implements SPSector {
 	super(namespaceURI, elementLocalName, namespacePrefix);
     }
 
-    
+
     /**
      * Gets the service provider sector.
-     * 
+     *
      * @return the SP sector
-     * 
+     *
      * @see eu.eidas.auth.engine.core.SPSector#getSPSector()
      */
     public final String getSPSector() {
 	return spSector;
     }
 
-    
+
     /**
      * Sets the service provider sector.
-     * 
+     *
      * @param newSpSector the new service provider sector
      */
     public final void setSPSector(final String newSpSector) {
 	this.spSector = prepareForAssignment(this.spSector, newSpSector);
     }
 
-   
+
     /**
      * Gets the ordered children.
-     * 
+     *
      * @return the ordered children
      */
     public final List<XMLObject> getOrderedChildren() {

@@ -1,10 +1,53 @@
+eIDAS-Node Build 1.1 Content
+
+This eIDAS release includes architectural and stability improvements.
+Please be aware that the related documentation covering this release is not yet available but will be updated in the coming weeks.
+
+This release contains the following improvements:
+- definition of an abstraction and clear conformity of light Request/Response (in the module EIDAS-Light-Commons). These light objects (SAML agnostic) are designed to be used in the eIDAS-Node (SP to Connector) and also in the country specific modules (Proxy Service to IDP);
+- definition of an abstraction and a clear conformity for the country specific modules (in the module EIDAS-SpecificCommunicationDefinition). With this abstraction the dependency with the SAML Engine is no longer needed in the country specific modules;
+- improvements to the SAML Engine for complete independence and to able to be configured separately from the eIDAS-Node (metadata configuration, white list of signature and encryption algorithms);
+- definition of an attribute registry used by the SAML Engine to provide clear definition, conformity of the attributes supported (configuration based) and enforcing validation;
+- full coverage of the transliteration at the attribute and attribute registry level; and
+- hardening to ensure immutability when necessary on the classes used in the SAML Engine (builder pattern).
+
+The release also includes the following changes :
+
++ complete refactoring of the commons API to define a clear contract, prevent security and concurrency issues;
++ clear separation between Connector and Proxy Service;
+
++ definition of a clear contract of the SAML Engine API;
++ opening and definition of the SAML Engine ExtensionProcessorInterface, allowing extensibility to other SAML protocols (e.g. eIDAS, STORK etc.);
++ definition and declaration of a clear contract of the methods used in the Specific module;
++ dynamic configuration for properties used by the SAML Engine, these properties have been extracted from the eIDAS-Node general configuration and allow a more granular configuration (eidas.xml, eidas-specific.xml);
++ implementation of the minimum data set validation based on the attribute registry;
++implementation of a stable light-weight abstraction layer, exposed as an API and shipped as a library, on top of the OpenSAML library, which would wrap up all the low-level SAML boilerplate code;
++ implementation of two namespaces http://eidas.europa.eu/attributes/naturalperson and http://eidas.europa.eu/attributes/legalperson; and
++ remote code execution during object deserialization correction - upgrade the dependency version to commons-collection 3.2.2.
+
+N.B. For compatibility, some APIs  from 1.0.2 have been kept from previous unofficial releases but declared as deprecated. They could disappear in a future release, replaced by the new already provided implementation.
+
+####################### previous releases #######################
+
+eIDAS Node Build 1.0.2 Content
+
+This intermediary release includes architectural and stability improvements (documentation not updated).
+The tested applications servers are Tomcat, GlassFish and WebLogic.
+This release provides an end-to-end sample of the happy path of a citizen's identification with a complete refactoring of the SAML Engine.
+
+This refactoring covered:
+- defining an abstraction and clear conformity of light Request/Response (in the module EIDAS-Light-Commons). These light objects (SAML agnostic) are designed to be used in the eIDAS-Node and also in the country specific modules;
+- defining an abstraction and a clear conformity for the country specific modules (in the module EIDAS-SpecificCommunicationDefinition). With this abstraction the dependency with the SAML Engine is no longer needed in the country specific modules;
+- defining an attribute registry used by the SAML Engine to provide clear definition and conformity of the attributes supported (configuration based); and
+- hardening and ensuring immutability when necessary on the classes used in the SAML Engine (builder pattern).
+
 eIDAS Node Build 1.0 Content
 
 N.B: In a future release, it is intended to provide a major architectural improvement involving the Specific module.
 The Specific module is inherited from the STORK PEPS Pilot 1 application. 
-It provides a sample implementation of  a Member State Specific module to customise the communication between the Identity Provider and the eIDAS-Node Proxy Service. 
+It provides a sample implementation of a Member State Specific module to customise the communication between the Identity Provider and the eIDAS-Node Proxy Service. 
 Version 1.0 does not contain any improvements to or enhancements of the Specific module.
-                The architectural improvements of the Specific module will:
+The architectural improvements of the Specific module will:
 - Provide abstraction and a correct placeholder for the Member State's specific implementation; 
 - Remove the dependency between the SAML Engine and the Specific module;
 - Extend the Specific module to cover communications between Service Provider and eIDAS-Node Connector as well as the communications between Identity Provider and the eIDAS-Node Proxy Service. 
@@ -37,7 +80,6 @@ List of conformance documents and requirements:
 - eIDAS SAML Attribute Profile v1.0
 - eIDAS - Crypto Requirements for the Interop Framework v1.0
 
-####################### previous releases #######################
 eIDAS Node Build 0.9 Content
 
 Version 0.9

@@ -6,10 +6,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A SAMLEngineClock implementation that corresponds with the system clock.
+ * A SamlEngineClock implementation that corresponds with the system clock.
  */
-public class SAMLEngineSystemClock implements SAMLEngineClock {
-    private static final Logger LOG = LoggerFactory.getLogger(SAMLEngineSystemClock.class.getName());
+public class SamlEngineSystemClock implements SamlEngineClock {
+    private static final Logger LOG = LoggerFactory.getLogger(SamlEngineSystemClock.class.getName());
 
     public DateTime getCurrentTime() {
         LOG.trace("getCurrentTime");

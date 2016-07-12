@@ -1,12 +1,7 @@
 package eu.eidas.engine.test.simple.eidas;
 
-import eu.eidas.auth.commons.DocumentBuilderFactoryUtil;
-
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
+import java.io.File;
+import java.io.IOException;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
@@ -18,8 +13,13 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 
-import java.io.File;
-import java.io.IOException;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
+
+import eu.eidas.auth.commons.xml.DocumentBuilderFactoryUtil;
 
 import static org.junit.Assert.fail;
 
@@ -34,7 +34,7 @@ public class TestValidationSchema {
     private void testSchemaValidation() {
         try {
         // parse an XML document into a DOM tree
-        DocumentBuilder parser = DocumentBuilderFactoryUtil.getSecureDocumentBuilderFactory().newDocumentBuilder();
+        DocumentBuilder parser = DocumentBuilderFactoryUtil.newSecureDocumentBuilderFactory().newDocumentBuilder();
             File f=new File("EncryptModule_Metadata.xml");
             if(!f.exists()){
                 throw new IOException();

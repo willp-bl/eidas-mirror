@@ -22,25 +22,38 @@
 
 package eu.eidas.node.utils;
 
-import eu.eidas.auth.commons.*;
-import eu.eidas.auth.commons.exceptions.*;
-import eu.eidas.engine.exceptions.SAMLEngineException;
-import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
-import eu.eidas.node.ApplicationContextProvider;
-import eu.eidas.node.NodeBeanNames;
-import eu.eidas.node.auth.connector.ICONNECTORSAMLService;
-import eu.eidas.node.auth.service.ISERVICESAMLService;
-import eu.eidas.node.logging.LoggingMarkerMDC;
+import java.util.Arrays;
+import java.util.Locale;
+
+import javax.servlet.http.HttpServletRequest;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.NoSuchMessageException;
 import org.springframework.context.support.ResourceBundleMessageSource;
 
-import javax.servlet.http.HttpServletRequest;
-
-import java.util.Arrays;
-import java.util.Locale;
+import eu.eidas.auth.commons.EIDASStatusCode;
+import eu.eidas.auth.commons.EIDASSubStatusCode;
+import eu.eidas.auth.commons.EIDASValues;
+import eu.eidas.auth.commons.EidasErrorKey;
+import eu.eidas.auth.commons.EidasErrors;
+import eu.eidas.auth.commons.EidasParameterKeys;
+import eu.eidas.auth.commons.EidasStringUtil;
+import eu.eidas.auth.commons.IEIDASSession;
+import eu.eidas.auth.commons.exceptions.AbstractEIDASException;
+import eu.eidas.auth.commons.exceptions.EidasNodeException;
+import eu.eidas.auth.commons.exceptions.InternalErrorEIDASException;
+import eu.eidas.auth.commons.exceptions.InvalidParameterEIDASException;
+import eu.eidas.auth.commons.exceptions.InvalidParameterEIDASServiceException;
+import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
+import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
+import eu.eidas.engine.exceptions.SAMLEngineException;
+import eu.eidas.node.ApplicationContextProvider;
+import eu.eidas.node.NodeBeanNames;
+import eu.eidas.node.NodeParameterNames;
+import eu.eidas.node.auth.connector.ICONNECTORSAMLService;
+import eu.eidas.node.auth.service.ISERVICESAMLService;
+import eu.eidas.node.logging.LoggingMarkerMDC;
 
 /**
  * Utility class for preparing error saml response
@@ -67,18 +80,18 @@ public class EidasNodeErrorUtil {
             EIDASSubStatusCode.AUTHN_FAILED_URI,
     };
     /**
-     * EIDASErrors mapped to substatuscodes
+     * EidasErrorKey mapped to substatuscodes
      */
-    private static final EIDASErrors EIDAS_ERRORS_WITH_SAML_GENERATION[][] = {
-            {EIDASErrors.SP_COUNTRY_SELECTOR_INVALID_SPID,
-                    EIDASErrors.SP_COUNTRY_SELECTOR_INVALID_SPQAA, EIDASErrors.SPROVIDER_SELECTOR_INVALID_SPQAA,
-                    EIDASErrors.SPROVIDER_SELECTOR_INVALID_SPQAAID},
-            {EIDASErrors.SP_COUNTRY_SELECTOR_INVALID, EIDASErrors.SPWARE_CONFIG_ERROR, EIDASErrors.IDP_SAML_RESPONSE,EIDASErrors.COLLEAGUE_RESP_INVALID_SAML,},
-            {EIDASErrors.SP_COUNTRY_SELECTOR_INVALID, EIDASErrors.SPWARE_CONFIG_ERROR},
-            {EIDASErrors.AUTHENTICATION_FAILED_ERROR}
+    private static final EidasErrorKey EIDAS_ERRORS_WITH_SAML_GENERATION[][] = {
+            {EidasErrorKey.SP_COUNTRY_SELECTOR_INVALID_SPID,
+                    EidasErrorKey.SP_COUNTRY_SELECTOR_INVALID_SPQAA, EidasErrorKey.SPROVIDER_SELECTOR_INVALID_SPQAA,
+                    EidasErrorKey.SPROVIDER_SELECTOR_INVALID_SPQAAID},
+            {EidasErrorKey.SP_COUNTRY_SELECTOR_INVALID, EidasErrorKey.SPWARE_CONFIG_ERROR, EidasErrorKey.IDP_SAML_RESPONSE, EidasErrorKey.COLLEAGUE_RESP_INVALID_SAML,},
+            {EidasErrorKey.SP_COUNTRY_SELECTOR_INVALID, EidasErrorKey.SPWARE_CONFIG_ERROR},
+            {EidasErrorKey.AUTHENTICATION_FAILED_ERROR}
     };
     /**
-     * EIDASErrors codes, mapped to substatuscodes
+     * EidasErrorKey codes, mapped to substatuscodes
      */
     private static final String EIDAS_ERRORS_CODES_WITH_SAML_GENERATION[][] = new String[EIDAS_ERRORS_WITH_SAML_GENERATION.length][];
 
@@ -86,7 +99,7 @@ public class EidasNodeErrorUtil {
      * errorSAMLResponse 'blacklist' - for these codes there will be no SAML reponse generated.
      */
     private static final String EIDAS_ERRORS_NO_SAML_GENERATION[] = {
-            EIDASUtil.getConfig(EIDASErrors.SERVICE_REDIRECT_URL.errorCode())
+            EidasErrors.get(EidasErrorKey.SERVICE_REDIRECT_URL.errorCode())
     };
 
 
@@ -126,7 +139,7 @@ public class EidasNodeErrorUtil {
      * @param destLog the specific logger
      * @param redirectError the redirected error
      */
-    public static void processSAMLEngineException(Exception e, Logger destLog, EIDASErrors redirectError) {
+    public static void processSAMLEngineException(Exception e, Logger destLog, EidasErrorKey redirectError) {
         // Special case for propagating the error in case of xxe
         String errorCode=null;
         if(e instanceof EIDASSAMLEngineException){
@@ -137,24 +150,24 @@ public class EidasNodeErrorUtil {
         if(errorCode==null) {
             return;
         }
-        if (EIDASErrors.DOC_TYPE_NOT_ALLOWED_CODE.toString().equals(errorCode)) {
+        if (EidasErrorKey.DOC_TYPE_NOT_ALLOWED_CODE.toString().equals(errorCode)) {
             destLog.error(LoggingMarkerMDC.SECURITY_WARNING, "Error processing XML : XML entities processing DOCType not allowed, possible XXE attack ");
             throw new InternalErrorEIDASException(
-                    EIDASUtil.getConfig(EIDASErrors.DOC_TYPE_NOT_ALLOWED.errorCode()),
-                    EIDASUtil.getConfig(EIDASErrors.DOC_TYPE_NOT_ALLOWED.errorMessage()), e);
-        } else if (EIDASErrors.isErrorCode(errorCode)) {
-            EIDASErrors err = EIDASErrors.fromCode(errorCode);
-            String message = EIDASUtil.getConfig(err.errorMessage());
+                    EidasErrors.get(EidasErrorKey.DOC_TYPE_NOT_ALLOWED.errorCode()),
+                    EidasErrors.get(EidasErrorKey.DOC_TYPE_NOT_ALLOWED.errorMessage()), e);
+        } else if (EidasErrorKey.isErrorCode(errorCode)) {
+            EidasErrorKey err = EidasErrorKey.fromCode(errorCode);
+            String message = EidasErrors.get(err.errorMessage());
             if (ApplicationContextProvider.getApplicationContext() != null) {
                 ResourceBundleMessageSource msgResource = (ResourceBundleMessageSource) ApplicationContextProvider.getApplicationContext().
                         getBean(NodeBeanNames.SYSADMIN_MESSAGE_RESOURCES.toString());
                 final String errorMessage = msgResource.getMessage(message, new Object[]{
-                        EIDASUtil.getConfig(err.errorCode())}, Locale.getDefault());
+                        EidasErrors.get(err.errorCode())}, Locale.getDefault());
                 destLog.info(errorMessage);
             }
-            throw new InternalErrorEIDASException(
-                    EIDASUtil.getConfig(redirectError.errorCode()),
-                    EIDASUtil.getConfig(redirectError.errorMessage()), e);
+            throw new EidasNodeException(
+                    EidasErrors.get(redirectError.errorCode()),
+                    EidasErrors.get(redirectError.errorMessage()), e);
         }
     }
 
@@ -190,14 +203,14 @@ public class EidasNodeErrorUtil {
     }
 
     private static String getErrorReportingUrl(final HttpServletRequest request, IEIDASSession eidasSession) {
-        Object spUrl = request.getSession().getAttribute(EIDASParameters.SP_URL.toString());
-        Object errorUrl = eidasSession == null ? null : eidasSession.get(EIDASParameters.ERROR_REDIRECT_URL.toString());
-        Object errorInterceptorUrl = eidasSession == null ? null : eidasSession.get(EIDASParameters.ERROR_INTERCEPTOR_URL.toString());
+        Object spUrl = request.getSession().getAttribute(EidasParameterKeys.SP_URL.toString());
+        Object errorUrl = eidasSession == null ? null : eidasSession.get(EidasParameterKeys.ERROR_REDIRECT_URL.toString());
+        Object errorInterceptorUrl = eidasSession == null ? null : eidasSession.get(EidasParameterKeys.ERROR_INTERCEPTOR_URL.toString());
         if (errorUrl != null) {
             spUrl = errorUrl;
         }
         if (errorInterceptorUrl != null) {
-            request.setAttribute("redirectUrl", spUrl);
+            request.setAttribute(NodeParameterNames.REDIRECT_URL.toString(), spUrl);
             spUrl = errorInterceptorUrl;
         }
         return spUrl == null ? null : spUrl.toString();
@@ -213,15 +226,13 @@ public class EidasNodeErrorUtil {
             LOG.info("ERROR : " + getEidasErrorMessage(exc, null));
             return;
         }
-        byte[] samlToken = connectorSamlService.generateErrorAuthenticationResponse(getInResponseTo(request),
-                getIssuer(request), spUrl.toString(),
-                request.getRemoteAddr(), getSamlStatusCode(request),
+        byte[] samlToken = connectorSamlService.generateErrorAuthenticationResponse(request, spUrl.toString(),
+                getSamlStatusCode(request),
                 getSamlSubStatusCode(exc), exc.getErrorMessage());
-        exc.setSamlTokenFail(EIDASUtil.encodeSAMLToken(samlToken));
+        exc.setSamlTokenFail(EidasStringUtil.encodeToBase64(samlToken));
         if (eidasSession != null) {
-            eidasSession.put(EIDASParameters.ERROR_REDIRECT_URL.toString(), spUrl);
+            eidasSession.put(EidasParameterKeys.ERROR_REDIRECT_URL.toString(), spUrl);
         }
-
     }
 
     private static void prepareSamlResponseFailService(final HttpServletRequest request, AbstractEIDASException exc, IEIDASSession eidasSession) {
@@ -252,30 +263,35 @@ public class EidasNodeErrorUtil {
             }
         }
 
-        final EIDASAuthnRequest authData = (EIDASAuthnRequest) eidasSession.get(EIDASParameters.AUTH_REQUEST.toString());
+        final IAuthenticationRequest authData = (IAuthenticationRequest) eidasSession.get(EidasParameterKeys.AUTH_REQUEST.toString());
         if (authData == null) {
             LOG.info("ERROR : no authData found during the generation of the error message");
         }
         byte[] samlToken = serviceSamlService.generateErrorAuthenticationResponse(authData,
-                getSamlStatusCode(request), samlSubStatusCode,
+                getSamlStatusCode(request), null, samlSubStatusCode,
                 errorMessage, request.getRemoteAddr(), true);
-        exc.setSamlTokenFail(EIDASUtil.encodeSAMLToken(samlToken));
-        eidasSession.put(EIDASParameters.ERROR_REDIRECT_URL.toString(), spUrl);
+        exc.setSamlTokenFail(EidasStringUtil.encodeToBase64(samlToken));
+        eidasSession.put(EidasParameterKeys.ERROR_REDIRECT_URL.toString(), spUrl);
 
     }
 
-    private static String getInResponseTo(final HttpServletRequest req) {
-        Object inResponseTo = req.getSession().getAttribute(EIDASParameters.SAML_IN_RESPONSE_TO.toString());
+    public static String getInResponseTo(final HttpServletRequest req) {
+        Object inResponseTo = req.getSession().getAttribute(EidasParameterKeys.SAML_IN_RESPONSE_TO.toString());
         return inResponseTo == null ? "error" : inResponseTo.toString();
     }
 
-    private static String getIssuer(final HttpServletRequest req) {
-        Object issuer = req.getSession().getAttribute(EIDASParameters.ISSUER.toString());
+    public static String getIssuer(final HttpServletRequest req) {
+        Object issuer = req.getSession().getAttribute(EidasParameterKeys.ISSUER.toString());
+        return issuer == null ? "ConnectorExceptionHandlerServlet" : issuer.toString();
+    }
+
+    public static String getCitizenCountryCode(final HttpServletRequest req) {
+        Object issuer = req.getSession().getAttribute(EidasParameterKeys.CITIZEN_COUNTRY_CODE.toString());
         return issuer == null ? "ConnectorExceptionHandlerServlet" : issuer.toString();
     }
 
     private static String getSamlStatusCode(final HttpServletRequest req) {
-        Object phase = req.getSession().getAttribute(EIDASParameters.SAML_PHASE.toString());
+        Object phase = req.getSession().getAttribute(EidasParameterKeys.SAML_PHASE.toString());
         return phase == EIDASValues.SP_REQUEST ? EIDASStatusCode.REQUESTER_URI.toString() : EIDASStatusCode.RESPONDER_URI.toString();
     }
 
@@ -346,7 +362,7 @@ public class EidasNodeErrorUtil {
             for (int i = 0; i < EIDAS_ERRORS_WITH_SAML_GENERATION.length; i++) {
                 EIDAS_ERRORS_CODES_WITH_SAML_GENERATION[i] = new String[EIDAS_ERRORS_WITH_SAML_GENERATION[i].length];
                 for (int j = 0; j < EIDAS_ERRORS_WITH_SAML_GENERATION[i].length; j++) {
-                    EIDAS_ERRORS_CODES_WITH_SAML_GENERATION[i][j] = EIDASUtil.getConfig(EIDAS_ERRORS_WITH_SAML_GENERATION[i][j].errorCode());
+                    EIDAS_ERRORS_CODES_WITH_SAML_GENERATION[i][j] = EidasErrors.get(EIDAS_ERRORS_WITH_SAML_GENERATION[i][j].errorCode());
                 }
                 Arrays.sort(EIDAS_ERRORS_CODES_WITH_SAML_GENERATION[i]);
                 Arrays.sort(EIDAS_ERRORS_NO_SAML_GENERATION);
@@ -390,12 +406,12 @@ public class EidasNodeErrorUtil {
         if (cause instanceof EIDASSAMLEngineException) {
             code = ((EIDASSAMLEngineException) cause).getErrorCode();
         }
-        EIDASErrors err = EIDASErrors.fromID(code);
-        if (EIDASErrors.isErrorCode(code) || err != null) {
+        EidasErrorKey err = EidasErrorKey.fromID(code);
+        if (EidasErrorKey.isErrorCode(code) || err != null) {
             if (err == null) {
-                err = EIDASErrors.fromCode(code);
+                err = EidasErrorKey.fromCode(code);
             }
-            String message = EIDASUtil.getConfig(err.errorMessage());
+            String message = EidasErrors.get(err.errorMessage());
 
             errorText = prepareErrorMessage(message, prepareParameters(err, messageParameters), Locale.getDefault());
             if(!err.isShowToUser()){
@@ -405,9 +421,9 @@ public class EidasNodeErrorUtil {
         return errorText;
     }
 
-    private static Object[] prepareParameters(EIDASErrors err, Object[] otherMessageParameters) {
+    private static Object[] prepareParameters(EidasErrorKey err, Object[] otherMessageParameters) {
         Object[] parameters = new Object[1 + (otherMessageParameters == null ? 0 : otherMessageParameters.length)];
-        parameters[0] = EIDASUtil.getConfig(err.errorCode());
+        parameters[0] = EidasErrors.get(err.errorCode());
         if (otherMessageParameters != null && otherMessageParameters.length > 0) {
             System.arraycopy(otherMessageParameters, 0, parameters, 1, otherMessageParameters.length);
         }

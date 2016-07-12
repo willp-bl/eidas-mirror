@@ -1,8 +1,8 @@
 package eu.eidas;
 
-import eu.eidas.config.EIDASNodeMasterConfiguration;
-import eu.eidas.config.impl.FileConfigurationRepository;
-import eu.eidas.config.node.EIDASNodeParameter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 
 import org.junit.Before;
 import org.junit.FixMethodOrder;
@@ -14,9 +14,16 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.util.FileSystemUtils;
 
-import java.io.*;
+import eu.eidas.auth.commons.EidasStringUtil;
+import eu.eidas.config.EIDASNodeMasterConfiguration;
+import eu.eidas.config.impl.FileConfigurationRepository;
+import eu.eidas.config.node.EIDASNodeParameter;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * example how this module can be integrated on a configuration reader side.
@@ -73,7 +80,7 @@ public class TestIntegrationSample {
             FileInputStream fis = new FileInputStream(FILEREPO_DIR + "eidas.xml");
             byte data[]=new byte[fis.available()];
             fis.read(data);
-            String content=new String(data);
+            String content = EidasStringUtil.toString(data);
             assertTrue(content.contains(CONTROL_SAVE));
             fis.close();
         }catch(IOException ioe){

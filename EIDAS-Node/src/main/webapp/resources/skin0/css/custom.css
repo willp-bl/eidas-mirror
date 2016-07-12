@@ -249,6 +249,11 @@ a:hover {
 	text-decoration: underline;
 }
 
+.wraps {
+	white-space: pre-wrap
+}
+
+
 /*-------------------------SELECTION-------------------------*/
 /*-----------------------------------------------------------*/
 ::-moz-selection {
@@ -922,3 +927,12 @@ h1.baseline_noAnim, .col-right-inner_noAnim {
 .ie9 .col-right-inner {
 	opacity: 1;
 }
+
+/*===================================Javascript ===================================*/
+/* initially hide and disable any javascript required content
+/*===============================================================================*/
+
+.jsOK {
+	display: none;
+}
+

@@ -13,18 +13,20 @@
  */
 package eu.eidas.tests;
 
-import eu.eidas.auth.commons.*;
-import eu.eidas.auth.commons.exceptions.InternalErrorEIDASException;
-import eu.eidas.auth.commons.exceptions.InvalidParameterEIDASException;
-
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import java.util.Properties;
 
-import static org.junit.Assert.*;
+import eu.eidas.auth.commons.*;
+import org.junit.*;
+
+import eu.eidas.auth.commons.EidasErrorKey;
+import eu.eidas.auth.commons.exceptions.InternalErrorEIDASException;
+import eu.eidas.auth.commons.exceptions.InvalidParameterEIDASException;
+import eu.eidas.auth.commons.validation.NormalParameterValidator;
+
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
 
 /**
  * The EIDASUtil's Test Case.
@@ -93,13 +95,13 @@ public final class EIDASUtilTestCase {
     /**
      * The SAML's Base64 byte[] example value.
      */
-    private static byte[] SAML_BASE64_BYTE_SAMPLE = new byte[]{80, 72, 78, 104,
+    private static final byte[] SAML_BASE64_BYTE_SAMPLE = new byte[]{80, 72, 78, 104,
             98, 87, 119, 43, 76, 105, 52, 117, 80, 67, 57, 122, 89, 87, 49, 115};
 
     /**
      * The SAML's Base64 Hash byte[] example value.
      */
-    private static byte[] HASH_BYTE_SAMPLE = new byte[]{67, 38, 11, 115, 49,
+    private static final byte[] HASH_BYTE_SAMPLE = new byte[]{67, 38, 11, 115, 49,
             -5, 54, -85, 38, 43, -99, 96, 71, -41, 50, -96, 71, -86, 90, -97, 66, -67,
             90, 101, 30, 82, -13, 60, -106, -72, -103, -75, 19, 2, -107, 107, -6, -56,
             34, -111, -44, -57, -26, -5, 33, 78, -1, 30, 21, 74, -26, 118, -46, -12,
@@ -182,9 +184,9 @@ public final class EIDASUtilTestCase {
      * Tests the {@link EIDASUtil#getConfig(String)} method for the given null
      * value.
      */
-    @Test(expected = NullPointerException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testGetConfigNull() {
-        Assert.assertNull(EIDASUtil.getConfig(null));
+        String config = EIDASUtil.getConfig(null);
     }
 
     /**
@@ -193,7 +195,7 @@ public final class EIDASUtilTestCase {
      */
     @Test
     public void testIsValidParameterExists() {
-        Assert.assertTrue(EIDASUtil.isValidParameter("qaaLevel", "1"));
+        Assert.assertTrue(NormalParameterValidator.paramName("qaaLevel").paramValue("1").isValid());
     }
 
     /**
@@ -202,7 +204,7 @@ public final class EIDASUtilTestCase {
      */
     @Test
     public void testIsValidParameterExistsGreat() {
-        Assert.assertFalse(EIDASUtil.isValidParameter("qaaLevel", "12"));
+        Assert.assertFalse(NormalParameterValidator.paramName("qaaLevel").paramValue("12").isValid());
     }
 
     /**
@@ -210,8 +212,9 @@ public final class EIDASUtilTestCase {
      * given param values.
      */
     @Test
+    @Ignore
     public void testIsValidParameterExistsIvalidConf() {
-        Assert.assertFalse(EIDASUtil.isValidParameter("spUrl", "https://sp:8080/SP/"));
+        Assert.assertFalse(NormalParameterValidator.paramName("spUrl").paramValue("https://sp:8080/SP/").isValid());
     }
 
     /**
@@ -220,7 +223,7 @@ public final class EIDASUtilTestCase {
      */
     @Test
     public void testIsValidParameterNotExists() {
-        Assert.assertFalse(EIDASUtil.isValidParameter("doesntexists","https://sp:8080/SP/"));
+        Assert.assertFalse(NormalParameterValidator.paramName("doesntexists").paramValue("https://sp:8080/SP/").isValid());
     }
 
     /**
@@ -229,7 +232,7 @@ public final class EIDASUtilTestCase {
      */
     @Test
     public void testIsValidParameterNullParamName() {
-        Assert.assertFalse(EIDASUtil.isValidParameter(null, "https://sp:8080/SP/"));
+        Assert.assertFalse(NormalParameterValidator.paramName((String) null).paramValue("https://sp:8080/SP/").isValid());
     }
 
     /**
@@ -238,7 +241,7 @@ public final class EIDASUtilTestCase {
      */
     @Test
     public void testIsValidParameterNullParamValue() {
-        Assert.assertFalse(EIDASUtil.isValidParameter("spUrl", null));
+        Assert.assertFalse(NormalParameterValidator.paramName("spUrl").paramValue(null).isValid());
     }
 
     /**
@@ -247,10 +250,10 @@ public final class EIDASUtilTestCase {
      */
     @Test
     public void testValidateParameterValid() {
-        final IPersonalAttributeList persAttrList = new PersonalAttributeList();
-        persAttrList.populate("isAgeOver:true:[15,]:Available;");
-        EIDASUtil.validateParameter("ServiceProviderAction",
-                EIDASParameters.ATTRIBUTE_LIST.toString(), persAttrList);
+        String strAttrList = "http://www.stork.gov.eu/1.0/isAgeOver:true:[15,]:Available;";
+        final IPersonalAttributeList attrList = PersonalAttributeString.fromStringList(strAttrList);
+
+        NormalParameterValidator.paramName(EidasParameterKeys.ATTRIBUTE_LIST).paramValue(null == attrList ? null : attrList.toString()).validate();
     }
 
     /**
@@ -259,8 +262,7 @@ public final class EIDASUtilTestCase {
      */
     @Test(expected = InvalidParameterEIDASException.class)
     public void testValidateParameterNull() {
-        EIDASUtil.validateParameter("ServiceProviderAction",
-                EIDASParameters.ATTRIBUTE_LIST.toString(), null);
+        NormalParameterValidator.paramName(EidasParameterKeys.ATTRIBUTE_LIST).paramValue(null).validate();
     }
 
     /**
@@ -273,15 +275,13 @@ public final class EIDASUtilTestCase {
      */
     @Test
     public void testValidateParameter() {
-        EIDASUtil.validateParameter("ServiceProviderAction",
-                EIDASParameters.ATTRIBUTE_LIST.toString(),
-                "isAgeOver:true:[15,]:Available;");
+        NormalParameterValidator.paramName(EidasParameterKeys.ATTRIBUTE_LIST).paramValue("isAgeOver:true:[15,]:Available;").validate();
     }
 
     /**
      * Tests the
-     * {@link EIDASUtil#validateParameter(String, String, String, EIDASErrors)}
-     * method for the given string value and {@link EIDASErrors} enum.
+     * {@link EIDASUtil#validateParameter(String, String, String, EidasErrorKey)}
+     * method for the given string value and {@link EidasErrorKey} enum.
      * <p/>
      * The tested class just invokes
      * {@link EIDASUtil#validateParameter(String, String, String, String, String)}
@@ -289,10 +289,7 @@ public final class EIDASUtilTestCase {
      */
     @Test
     public void testValidateParameterEIDASErrors() {
-        EIDASUtil.validateParameter("CountrySelectorAction",
-                EIDASParameters.ATTRIBUTE_LIST.toString(),
-                "isAgeOver:true:[15,]:Available;",
-                EIDASErrors.SP_COUNTRY_SELECTOR_INVALID_ATTR);
+        NormalParameterValidator.paramName(EidasParameterKeys.ATTRIBUTE_LIST).paramValue("isAgeOver:true:[15,]:Available;").eidasError(EidasErrorKey.SP_COUNTRY_SELECTOR_INVALID_ATTR).validate();
     }
 
     /**
@@ -302,8 +299,7 @@ public final class EIDASUtilTestCase {
      */
     @Test
     public void testValidateParameterValidParams() {
-        EIDASUtil.validateParameter("ServiceProviderAction", "qaaLevel", "1",
-                "qaaLevel.code", "qaaLevel.message");
+        NormalParameterValidator.paramName("qaaLevel").paramValue("1").errorCode("qaaLevel.code").errorMessage("qaaLevel.message").validate();
     }
 
     /**
@@ -313,8 +309,7 @@ public final class EIDASUtilTestCase {
      */
     @Test(expected = InvalidParameterEIDASException.class)
     public void testValidateParameterInvalidParamValue() {
-        EIDASUtil.validateParameter("ServiceProviderAction", "qaaLevel", "10",
-                "qaaLevel.code", "qaaLevel.message");
+        NormalParameterValidator.paramName("qaaLevel").paramValue("10").errorCode("qaaLevel.code").errorMessage("qaaLevel.message").validate();
     }
 
     /**
@@ -324,8 +319,7 @@ public final class EIDASUtilTestCase {
      */
     @Test(expected = InvalidParameterEIDASException.class)
     public void testValidateParameterInvalidParamName() {
-        EIDASUtil.validateParameter("ServiceProviderAction", "doesnt.exists", "1",
-                "qaaLevel.code", "qaaLevel.message");
+        NormalParameterValidator.paramName("doesnt.exists").paramValue("1").errorCode("qaaLevel.code").errorMessage("qaaLevel.message").validate();
     }
 
     /**
@@ -335,8 +329,7 @@ public final class EIDASUtilTestCase {
      */
     @Test(expected = InvalidParameterEIDASException.class)
     public void testValidateParameterNullParamName() {
-        EIDASUtil.validateParameter("ServiceProviderAction", null, "1",
-                "qaaLevel.code", "qaaLevel.message");
+        NormalParameterValidator.paramName((String) null).paramValue("1").errorCode("qaaLevel.code").errorMessage("qaaLevel.message").validate();
     }
 
     /**
@@ -346,35 +339,34 @@ public final class EIDASUtilTestCase {
      */
     @Test(expected = InvalidParameterEIDASException.class)
     public void testValidateParameterNullParamValue() {
-        EIDASUtil.validateParameter("ServiceProviderAction", "qaaLevel", null,
-                "qaaLevel.code", "qaaLevel.message");
+        NormalParameterValidator.paramName("qaaLevel").paramValue(null).errorCode("qaaLevel.code").errorMessage("qaaLevel.message").validate();
     }
 
     /**
-     * Tests the {@link EIDASUtil#encodeSAMLToken(byte[])} method for the given
+     * Tests the {@link EidasStringUtil#encodeToBase64(byte[])} method for the given
      * string value.
      */
     @Test
     public void testEncodeSAMLToken() {
-        assertEquals(EIDASUtil.encodeSAMLToken(SAML_BYTE_SAMPLE), SAML_BASE64_SAMPLE);
+        assertEquals(EidasStringUtil.encodeToBase64(SAML_BYTE_SAMPLE), SAML_BASE64_SAMPLE);
     }
 
     /**
-     * Tests the {@link EIDASUtil#encodeSAMLToken(byte[])} method for the given
+     * Tests the {@link EidasStringUtil#encodeToBase64(byte[])} method for the given
      * null.
      */
     @Test(expected = NullPointerException.class)
     public void testEncodeSAMLTokenNull() {
-        assertNotSame(EIDASUtil.encodeSAMLToken(null), SAML_BASE64_SAMPLE);
+        assertNotSame(EidasStringUtil.encodeToBase64((String)null), SAML_BASE64_SAMPLE);
     }
 
     /**
-     * Tests the {@link EIDASUtil#encodeSAMLToken(byte[])} method for the given
+     * Tests the {@link EidasStringUtil#encodeToBase64(byte[])} method for the given
      * empty byte[] value.
      */
     @Test
     public void testEncodeSAMLTokenEmpty() {
-        assertEquals(EIDASUtil.encodeSAMLToken(EMPTY_BYTE), EMPTY_STRING);
+        assertEquals(EidasStringUtil.encodeToBase64(EMPTY_BYTE), EMPTY_STRING);
     }
 
     /**
@@ -383,8 +375,8 @@ public final class EIDASUtilTestCase {
      */
     @Test
     public void testDecodeSAMLToken() {
-        assertArrayEquals(EIDASUtil.decodeSAMLToken(SAML_BASE64_SAMPLE),
-                SAML_BYTE_SAMPLE);
+        assertArrayEquals(EidasStringUtil.decodeBytesFromBase64(SAML_BASE64_SAMPLE),
+                          SAML_BYTE_SAMPLE);
     }
 
     /**
@@ -393,7 +385,7 @@ public final class EIDASUtilTestCase {
      */
     @Test(expected = NullPointerException.class)
     public void testDecodeSAMLTokenNull() {
-        assertNotSame(EIDASUtil.decodeSAMLToken(null), SAML_BYTE_SAMPLE);
+        assertNotSame(EidasStringUtil.decodeBytesFromBase64(null), SAML_BYTE_SAMPLE);
     }
 
     /**
@@ -402,35 +394,35 @@ public final class EIDASUtilTestCase {
      */
     @Test(expected = org.bouncycastle.util.encoders.DecoderException.class)
     public void testDecodeSAMLTokenEmpty() {
-        assertEquals(EIDASUtil.decodeSAMLToken(EMPTY_STRING), EMPTY_BYTE);
+        assertEquals(EidasStringUtil.decodeBytesFromBase64(EMPTY_STRING), EMPTY_BYTE);
     }
 
     /**
-     * Tests the {@link EIDASUtil#hashPersonalToken(byte[])} method for the given
+     * Tests the {@link EidasDigestUtil#hashPersonalToken(byte[])} method for the given
      * byte[] value.
      */
     @Test
     public void testHashPersonalToken() {
-        assertArrayEquals(EIDASUtil.hashPersonalToken(SAML_BASE64_BYTE_SAMPLE),
-                HASH_BYTE_SAMPLE);
+        assertArrayEquals(EidasDigestUtil.hashPersonalToken(SAML_BASE64_BYTE_SAMPLE),
+                          HASH_BYTE_SAMPLE);
     }
 
     /**
-     * Tests the {@link EIDASUtil#hashPersonalToken(byte[])} method for the given
+     * Tests the {@link EidasDigestUtil#hashPersonalToken(byte[])} method for the given
      * null value.
      */
     @Test(expected = InternalErrorEIDASException.class)
     public void testHashPersonalTokenNull() {
-        assertNull(EIDASUtil.hashPersonalToken(null));
+        assertNull(EidasDigestUtil.hashPersonalToken(null));
     }
 
     /**
-     * Tests the {@link EIDASUtil#hashPersonalToken(byte[])} method for the given
+     * Tests the {@link EidasDigestUtil#hashPersonalToken(byte[])} method for the given
      * empty value.
      */
     @Test
     public void testHashPersonalTokenEmpty() {
-        assertArrayEquals(EIDASUtil.hashPersonalToken(EMPTY_BYTE), EMPTY_HASH_BYTE);
+        assertArrayEquals(EidasDigestUtil.hashPersonalToken(EMPTY_BYTE), EMPTY_HASH_BYTE);
     }
 
     /**
@@ -560,7 +552,7 @@ public final class EIDASUtilTestCase {
         Properties configLocal = new Properties();
         configLocal.setProperty("validation.active", "false");
         EIDASUtil.setConfigs(configLocal);
-        Assert.assertTrue(EIDASUtil.isValidParameter("qaaLevel", "1"));
+        Assert.assertTrue(NormalParameterValidator.paramName("qaaLevel").paramValue("1").isValid());
     }
 
 }

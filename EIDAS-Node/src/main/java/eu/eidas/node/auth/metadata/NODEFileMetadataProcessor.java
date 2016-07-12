@@ -13,11 +13,13 @@
  */
 package eu.eidas.node.auth.metadata;
 
-import eu.eidas.auth.commons.Constants;
-import eu.eidas.auth.engine.metadata.EntityDescriptorContainer;
-import eu.eidas.auth.engine.metadata.MetadataGenerator;
-import eu.eidas.configuration.SAMLBootstrap;
-import eu.eidas.impl.file.FileService;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.monitor.FileAlterationListener;
 import org.apache.commons.io.monitor.FileAlterationMonitor;
@@ -31,11 +33,11 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.context.event.ContextStoppedEvent;
 
-import java.io.File;
-import java.io.UnsupportedEncodingException;
-import java.util.*;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import eu.eidas.auth.commons.EidasStringUtil;
+import eu.eidas.auth.engine.metadata.EntityDescriptorContainer;
+import eu.eidas.auth.engine.metadata.MetadataGenerator;
+import eu.eidas.auth.engine.xml.opensaml.SAMLBootstrap;
+import eu.eidas.impl.file.FileService;
 
 /**
  * implements metadata cache
@@ -47,14 +49,22 @@ public class NODEFileMetadataProcessor implements ApplicationListener{
     private MetadataGenerator metadataTool=new MetadataGenerator();
     /**
      * monitor the folder for changes on the files
+     * @deprecated use the java 7 {@link java.nio.file.FileSystem#newWatchService()} instead, which implements this natively, is thread-safe and does not start a Thread (which is forbidden on WebSphere and on the Google App Engine).
      */
     private FileAlterationMonitor monitor;
+
+    /**
+     * @deprecated use the java 7 {@link java.nio.file.FileSystem#newWatchService()} instead, which implements this natively, is thread-safe and does not start a Thread (which is forbidden on WebSphere and on the Google App Engine).
+     */
     private FileAlterationObserver observer;
     private XMLObserver xmlObserver;
     private static final long MONITOR_INTERVAL=1000L;
     private static final Logger LOG = LoggerFactory.getLogger(NODEFileMetadataProcessor.class.getName());
     private boolean init=false;
     private Map<String, List<String>> directoryToDescriptor=new HashMap<String, List<String>>();
+    /**
+     * @deprecated use the java 7 {@link java.nio.file.FileSystem#newWatchService()} instead, which implements this natively, is thread-safe and does not start a Thread (which is forbidden on WebSphere and on the Google App Engine).
+     */
     private ScheduledThreadPoolExecutor stpe=null;
     private Runnable refreshCommand=null;
 
@@ -100,12 +110,7 @@ public class NODEFileMetadataProcessor implements ApplicationListener{
     }
     private EntityDescriptorContainer loadDescriptors(String fileName){
         byte[] content = fileService.loadBinaryFile(fileName);
-        try{
-        	return content==null?null : metadataTool.deserializeEntityDescriptor(new String(content, Constants.UTF8_ENCODING));
-        }catch(UnsupportedEncodingException uee){
-        	LOG.error("error reading metadatafile {}", uee);
-        }
-        return null;
+        return content==null?null : metadataTool.deserializeEntityDescriptor(EidasStringUtil.toString(content));
     }
 
     private void initFileMonitor(){
@@ -140,7 +145,7 @@ public class NODEFileMetadataProcessor implements ApplicationListener{
         	endMonitoring();
         }
     }
-    
+
     public void endMonitoring(){
         //stop worker thread
         if(monitor!=null){
@@ -153,7 +158,7 @@ public class NODEFileMetadataProcessor implements ApplicationListener{
             }
             monitor=null;
         }
-    	
+
     }
 
     /**

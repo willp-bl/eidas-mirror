@@ -1,13 +1,14 @@
 package eu.eidas.auth.engine.core.eidas;
 
-import eu.eidas.auth.engine.core.SAMLCore;
-
-import org.opensaml.common.SAMLObject;
-
 import java.util.Map;
 
 import javax.xml.namespace.QName;
 
+import org.opensaml.common.SAMLObject;
+
+import eu.eidas.auth.engine.core.SAMLCore;
+
+@Deprecated
 public interface GenericEidasAttributeType extends SAMLObject {
     String TYPE_SUPPORT_NS = SAMLCore.EIDAS10_RESPONSESAML_NS.getValue();
     String TYPE_SUPPORT_PREFIX = SAMLCore.EIDAS10_SAML_PREFIX.getValue();

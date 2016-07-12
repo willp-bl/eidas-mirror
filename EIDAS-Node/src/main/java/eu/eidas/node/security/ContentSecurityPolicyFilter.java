@@ -32,11 +32,13 @@ import java.io.IOException;
  * @author vanegdi
  * @since 1.2.0
  */
-public class ContentSecurityPolicyFilter extends AbstractSecurityResponseHeader implements Filter {
+public class ContentSecurityPolicyFilter implements Filter {
     /**
      * Logger object.
      */
     private static final Logger LOGGER = LoggerFactory.getLogger(ContentSecurityPolicyFilter.class.getName());
+
+    protected SecurityResponseHeaderHelper securityResponseHeaderHelper;
 
     /**
      * Used to prepare (one time for all) set of CSP policies that will be applied on each HTTP response.
@@ -46,7 +48,7 @@ public class ContentSecurityPolicyFilter extends AbstractSecurityResponseHeader 
     @Override
     public void init(FilterConfig fConfig) throws ServletException {
         LOGGER.info(LoggingMarkerMDC.SYSTEM_EVENT, "Init of CSP filter");
-        super.init();
+        securityResponseHeaderHelper = new SecurityResponseHeaderHelper();
     }
 
     private boolean shouldDisableFilter(HttpServletRequest httpRequest){
@@ -60,35 +62,15 @@ public class ContentSecurityPolicyFilter extends AbstractSecurityResponseHeader 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain fchain) throws IOException, ServletException {
         try {
-        HttpServletRequest httpRequest = (HttpServletRequest) request;
-        HttpServletResponse httpResponse = (HttpServletResponse) response;
-        LOGGER.trace("ContentSecurityPolicy FILTER for " + httpRequest.getServletPath());
-        if ( shouldDisableFilter(httpRequest)){
-            LOGGER.info("Redirecting to country plugin : no csp defined");
-        } else {
-            if (configurationSecurityBean.getIsContentSecurityPolicyActive()) {
-                processContentSecurityPolicy(httpRequest, httpResponse);
+            HttpServletRequest httpRequest = (HttpServletRequest) request;
+            ExtendedServletResponseWrapper httpResponse = new ExtendedServletResponseWrapper((HttpServletResponse)response);
+            LOGGER.trace("ContentSecurityPolicy FILTER for " + httpRequest.getServletPath());
+            if ( shouldDisableFilter(httpRequest)){
+                LOGGER.info("Redirecting to country plugin : no csp defined");
+            } else {
+                securityResponseHeaderHelper.populateResponseHeader(httpRequest, httpResponse);
             }
-
-            if (configurationSecurityBean.isIncludeXXssProtection()){
-                httpResponse.setHeader(X_XSS_PROTECTION_HEADER, X_XSS_PROTECTION_MODE_BLOCK);
-            }
-            if (configurationSecurityBean.isIncludeXContentTypeOptions()){
-                httpResponse.setHeader(X_CONTENT_TYPE_OPTIONS_HEADER, X_CONTENT_TYPE_OPTIONS_NO_SNIFF);
-            }
-            if (configurationSecurityBean.isIncludeXFrameOptions()){
-                httpResponse.setHeader(X_FRAME_OPTIONS_HEADER, X_FRAME_OPTIONS_SAME_ORIGIN);
-            }
-            if (configurationSecurityBean.isIncludeHSTS()){
-                httpResponse.setHeader(STRICT_TRANSPORT_SECURITY_HEADER, STRICT_TRANSPORT_SECURITY);
-            }
-
-            httpResponse.setHeader(HTTP_1_1_CACHE_CONTROL, HTTP_1_1_CACHE_CONTROL_NOCACHE); // HTTP 1.1.
-            httpResponse.setHeader(HTTP_1_0_PRAGMA, HTTP_1_0_PRAGMA_NOCACHE); // HTTP 1.0.
-            httpResponse.setHeader(PROXIES_EXPIRES, PROXIES_EXPIRES_0); // Proxies.
-        }
-
-        fchain.doFilter(request, response);
+            fchain.doFilter(httpRequest, httpResponse);
         }catch(Exception e){
             LOGGER.info("ERROR : ", e.getMessage());
             LOGGER.debug("ERROR : ", e);

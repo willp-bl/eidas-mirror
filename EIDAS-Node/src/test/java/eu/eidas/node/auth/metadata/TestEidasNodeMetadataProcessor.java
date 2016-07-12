@@ -1,26 +1,43 @@
+/*
+ * Copyright (c) 2016 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
+ * the European Commission - subsequent versions of the EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
+ *
+ * This product combines work with different licenses. See the "NOTICE" text
+ * file for details on the various modules and licenses.
+ * The "NOTICE" text file is part of the distribution. Any derivative works
+ * that you distribute must include a readable copy of the "NOTICE" text file.
+ *
+ */
+
 package eu.eidas.node.auth.metadata;
-
-import eu.eidas.auth.engine.EIDASSAMLEngine;
-import eu.eidas.engine.exceptions.SAMLEngineException;
-import eu.eidas.node.auth.metadata.NODEFileMetadataProcessor;
-import eu.eidas.node.auth.metadata.NODEMetadataProcessor;
-import eu.eidas.node.auth.metadata.SimpleMetadataCaching;
-import eu.eidas.node.auth.util.tests.FileUtils;
-import eu.eidas.node.init.EidasSamlEngineFactory;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.opensaml.DefaultBootstrap;
-import org.opensaml.saml2.metadata.EntityDescriptor;
-import org.opensaml.xml.ConfigurationException;
-import org.springframework.util.FileSystemUtils;
 
 import java.io.File;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.opensaml.xml.ConfigurationException;
+import org.springframework.util.FileSystemUtils;
+
+import eu.eidas.auth.engine.ProtocolEngineFactory;
+import eu.eidas.auth.engine.ProtocolEngineI;
+import eu.eidas.auth.engine.xml.opensaml.SAMLBootstrap;
+import eu.eidas.engine.exceptions.EIDASMetadataProviderException;
+import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
+import eu.eidas.node.auth.util.tests.FileUtils;
+
 
 public class TestEidasNodeMetadataProcessor {
     private static final String FILEREPO_DIR_READ="src/test/resources/EntityDescriptors1/";
@@ -37,9 +54,9 @@ public class TestEidasNodeMetadataProcessor {
         FileUtils.copyFile(new File(FILEREPO_DIR_READ), sampleNodeRepo);
         new File(FILEREPO_DIR_WRITE_EMPTY).mkdirs();
         try {
-            DefaultBootstrap.bootstrap();
+            SAMLBootstrap.bootstrap();
         }catch (ConfigurationException ce){
-            assertTrue("opensaml configuration exception", false);
+            Assert.assertTrue("opensaml configuration exception", false);
         }
     }
     @After
@@ -48,22 +65,16 @@ public class TestEidasNodeMetadataProcessor {
         FileSystemUtils.deleteRecursively(new File(FILEREPO_DIR_WRITE_EMPTY));
     }
 
-    @Test
-    public void testgetEntityDescriptors(){
+    @Test(expected = EIDASMetadataProviderException.class)
+    public void testgetEntityDescriptors() throws EIDASMetadataProviderException {
         NODEMetadataProcessor processor=new NODEMetadataProcessor();
         processor.setFileMetadataLoader(new NODEFileMetadataProcessor());
         processor.getFileMetadataLoader().setRepositoryPath(FILEREPO_DIR_WRITE);
         processor.setCache(new SimpleMetadataCaching());
         processor.initProcessor();
-        EntityDescriptor ed=null;
-        try{
-            //expect exactly one expired entity descriptor
-            ed = processor.getEntityDescriptor(ENTITY_ID);
-            fail("expect exactly one expired entity descriptor");
-        }catch(SAMLEngineException exc){
-            assertTrue(ed==null);
-        }
+        processor.getEntityDescriptor(ENTITY_ID);
     }
+
     @Test
     public void testValidatesignature(){
         NODEMetadataProcessor processor=new NODEMetadataProcessor();
@@ -71,14 +82,12 @@ public class TestEidasNodeMetadataProcessor {
         processor.getFileMetadataLoader().setRepositoryPath(FILEREPO_SIGNATURE);
         processor.setCache(new SimpleMetadataCaching());
         processor.initProcessor();
-        EntityDescriptor ed=null;
         try{
-            ed = processor.getEntityDescriptor(CONNECTOR_ENTITY_ID);
-            assertNotNull(ed);
-            EIDASSAMLEngine engine = new EidasSamlEngineFactory().getEngine("METADATA", null);
+            ProtocolEngineI engine = ProtocolEngineFactory.getDefaultProtocolEngine("METADATA");
             processor.checkValidMetadataSignature(CONNECTOR_ENTITY_ID, engine);
-        }catch(SAMLEngineException exc){
-            fail("got error checking the signature: "+exc);
+        } catch (EIDASSAMLEngineException e) {
+            Assert.fail("got error checking the signature: "+ e);
+            e.printStackTrace();
         }
     }
 }

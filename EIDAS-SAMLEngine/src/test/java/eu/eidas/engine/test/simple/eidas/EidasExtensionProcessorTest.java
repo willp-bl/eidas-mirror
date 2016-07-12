@@ -1,25 +1,29 @@
 package eu.eidas.engine.test.simple.eidas;
 
-import eu.eidas.auth.engine.core.eidas.EidasAttributesTypes;
-import eu.eidas.auth.engine.core.eidas.EidasExtensionProcessor;
-import eu.eidas.auth.engine.core.validator.eidas.EIDASAttributes;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import eu.eidas.auth.commons.attribute.AttributeDefinition;
+import eu.eidas.auth.engine.core.eidas.EidasExtensionProcessor;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 public class EidasExtensionProcessorTest {
 
-    private static final String TEST_ATTRIBUTE_FULL_NAME="http://eidas.europa.eu/attributes/EidasAdditionalAttribute";
-    private static final String TEST_ATTRIBUTE_INVALID="not found";
+    private static final String TEST_ATTRIBUTE_FULL_NAME =
+            "http://eidas.europa.eu/attributes/naturalperson/EidasAdditionalAttribute";
+
+    private static final String TEST_ATTRIBUTE_INVALID = "urn:not_found";
+
     @Test
     public void testGetDynamicAtributeType() throws Exception {
-        EidasAttributesTypes eat = EidasExtensionProcessor.getDynamicAtributeType(TEST_ATTRIBUTE_FULL_NAME);
-        assertNotNull(eat);
-        assertEquals(eat, EidasAttributesTypes.NATURAL_PERSON_OPTIONAL);
-        eat = EidasExtensionProcessor.getDynamicAtributeType(TEST_ATTRIBUTE_INVALID);
-        assertNull(eat);
-        eat = EIDASAttributes.getAttributeType(TEST_ATTRIBUTE_FULL_NAME);
-        assertNotNull(eat);
-        assertEquals(eat, EidasAttributesTypes.NATURAL_PERSON_OPTIONAL);
+        EidasExtensionProcessor eidasExtensionProcessor =
+                new EidasExtensionProcessor("saml-engine-additional-attributes-TEMPLATE.xml", null, null);
+        AttributeDefinition attributeDefinition =
+                eidasExtensionProcessor.getAdditionalAttributes().getByName(TEST_ATTRIBUTE_FULL_NAME);
+        assertNotNull(attributeDefinition);
+
+        attributeDefinition = eidasExtensionProcessor.getAdditionalAttributes().getByName(TEST_ATTRIBUTE_INVALID);
+        assertNull(attributeDefinition);
     }
 }

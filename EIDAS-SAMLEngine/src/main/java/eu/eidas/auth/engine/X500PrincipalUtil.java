@@ -23,35 +23,32 @@
 package eu.eidas.auth.engine;
 
 import org.bouncycastle.asn1.x500.X500Name;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Utility class used to decrease complexity of comparison of 2 X509principal
  *
- * @version $Revision: 1.00 $, $Date: 2013-05-24 20:53:51 $
- *  $Revision: 1.1 $, $Date: 2013-05-24 20:53:51 $
+ * @version $Revision: 1.00 $, $Date: 2013-05-24 20:53:51 $ $Revision: 1.1 $, $Date: 2013-05-24 20:53:51 $
+ * @deprecated do not use, use {@link javax.security.auth.x500.X500Principal} instead.
  */
+@Deprecated
 public final class X500PrincipalUtil {
-
-    private static final Logger LOG = LoggerFactory.getLogger(X500PrincipalUtil.class);
 
     /**
      * Compares 2 X500Principals to detect if they principalEquals
+     *
      * @param principal1
      * @param principal2
      * @return true if arguments are not null and principalEquals
      */
-    public static boolean principalEquals(X500Name principal1, X500Name principal2) {
-        if (principal1 == null || principal2 == null){
+    public static boolean principalNotNullEquals(X500Name principal1, X500Name principal2) {
+        if (principal1 == null || principal2 == null) {
             return false;
         }
 
         return principal1.equals(principal2);
     }
 
-    private X500PrincipalUtil(){
-        // default contructor
-        LOG.error("Fake X500PrincipalUtil : never be called");
+    private X500PrincipalUtil() {
+        throw new AssertionError();
     }
 }

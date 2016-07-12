@@ -34,6 +34,7 @@
                         <c:if test="${empty samlTokenFail}" >
                             <input type="hidden" name="SAMLResponse" value="${e:forHtml(samlToken)}" id="ColleagueResponse_SAMLResponse"/>
                         </c:if>
+                        <input type="hidden" name="RelayState" value="${e:forHtml(RelayState)}" id="relayState"/>
                     </form>
                     <noscript>
                         <h2><fmt:message key="APRedirect.text" bundle="${i18n_eng}"/></h2>

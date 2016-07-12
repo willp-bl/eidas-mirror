@@ -1,11 +1,11 @@
-/* 
- * Licensed under the EUPL, Version 1.1 or – as soon they will be approved by
+/*
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
  * the European Commission - subsequent versions of the EUPL (the "Licence");
  * You may not use this work except in compliance with the Licence. You may
  * obtain a copy of the Licence at:
- * 
+ *
  * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the Licence is distributed on an "AS IS" basis, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -15,17 +15,16 @@
 
 package eu.eidas.auth.engine.core.validator.eidas;
 
+import java.nio.charset.Charset;
 
-import eu.eidas.auth.commons.EIDASAuthnRequest;
-
-import org.opensaml.common.xml.SAMLConstants;
-import org.opensaml.xml.validation.ValidationException;
 import org.opensaml.common.SAMLVersion;
+import org.opensaml.common.xml.SAMLConstants;
 import org.opensaml.saml2.core.AuthnRequest;
 import org.opensaml.saml2.core.validator.AuthnRequestSchemaValidator;
 import org.opensaml.xml.util.XMLHelper;
+import org.opensaml.xml.validation.ValidationException;
 
-import java.nio.charset.Charset;
+import eu.eidas.auth.commons.protocol.impl.SamlNameIdFormat;
 
 /**
  * The Class ExtensionsSchemaValidator for eIDAS request format.
@@ -105,6 +104,8 @@ public class EidasAuthnRequestValidator extends AuthnRequestSchemaValidator {
                 throw new ValidationException("Destination is required.");
         }
 
+        //TODO move destination validation against local URI here from AISERVICESAML.processAuthenticationRequest after Metadata has been made accessible
+
         if (request.getProviderName() == null) {
 
             throw new ValidationException("ProviderName is required.");
@@ -119,9 +120,9 @@ public class EidasAuthnRequestValidator extends AuthnRequestSchemaValidator {
         }
         if(request.getNameIDPolicy() == null) {
             throw new ValidationException("NameIDPolicy is required.");
-        }else if(!EIDASAuthnRequest.SUPPORTED_NAMEID_FORMATS.contains(request.getNameIDPolicy().getFormat())){
+        }else if(null == SamlNameIdFormat.fromString(request.getNameIDPolicy().getFormat())){
             throw new ValidationException("NameIDPolicy format has to be one of the following: "+
-                    EIDASAuthnRequest.NAMEID_FORMAT_PERSISTENT+","+EIDASAuthnRequest.NAMEID_FORMAT_TRANSIENT+","+EIDASAuthnRequest.NAMEID_FORMAT_UNSPECIFIED);
+                                                  SamlNameIdFormat.mapper().unmodifiableKeyList(SamlNameIdFormat.values()));
         }
     }
 

@@ -1,110 +1,110 @@
 /*
  * This work is Open Source and licensed by the European Commission under the
- * conditions of the European Public License v1.1 
- *  
- * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1); 
- * 
- * any use of this file implies acceptance of the conditions of this license. 
- * Unless required by applicable law or agreed to in writing, software 
- * distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT 
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the 
- * License for the specific language governing permissions and limitations 
+ * conditions of the European Public License v1.1
+ *
+ * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1);
+ *
+ * any use of this file implies acceptance of the conditions of this license.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
  * under the License.
  */
 package eu.eidas.node.auth.service;
 
 import java.util.Map;
 
+import javax.annotation.Nonnull;
+
 import eu.eidas.auth.commons.CitizenConsent;
 import eu.eidas.auth.commons.IPersonalAttributeList;
-import eu.eidas.auth.commons.IEIDASSession;
-import eu.eidas.auth.commons.EIDASAuthnRequest;
+import eu.eidas.auth.commons.WebRequest;
+import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
+import eu.eidas.auth.commons.exceptions.EIDASServiceException;
+import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
+import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
 
 /**
  * Interface that supplies methods for processing citizen-related matters.
- * 
+ *
  * @author ricardo.ferreira@multicert.com, renato.portela@multicert.com,
  *         luis.felix@multicert.com, hugo.magalhaes@multicert.com,
  *         paulo.ribeiro@multicert.com
  * @version $Revision: 1.28 $, $Date: 2010-11-18 23:17:50 $
  */
 public interface ISERVICECitizenService {
-  
+
   /**
    * Checks if the citizen consent has all the required mandatory attributes.
-   * 
+   *
    * @param consent The citizen supplied consent.
    * @param authData The authentication request.
    * @param ipUserAddress The citizen's IP address.
    * @param serviceSAMLService The ProxyService Saml Service.
-   * 
+   *
    * @see CitizenConsent
-   * @see EIDASAuthnRequest
+   * @see EidasAuthenticationRequest
    * @see ISERVICESAMLService
    */
   void processCitizenConsent(CitizenConsent consent,
-    EIDASAuthnRequest authData, String ipUserAddress,
-    ISERVICESAMLService serviceSAMLService);
-  
+                             @Nonnull StoredAuthenticationRequest storedRequest,
+                             String ipUserAddress);
+
   /**
    * Constructs the Citizen Consent based on the checked boxes from consent-type
    * form.
-   * 
+   *
    * @param parameters A map of the selected attributes.
    * @param personalList The personal attribute list.
-   * 
+   *
    * @return CitizenConsent containing the mandatory and optional attributes
    *         that the Node has permission to request.
-   * 
+   *
    * @see CitizenConsent
    * @see Map
    * @see IPersonalAttributeList
    */
-  CitizenConsent getCitizenConsent(Map<String, String> parameters,
-    IPersonalAttributeList personalList);
-  
+  @Nonnull
+  CitizenConsent getCitizenConsent(@Nonnull WebRequest webRequest, @Nonnull ImmutableAttributeMap attributes);
+
   /**
-   * Eliminates attributes without consent, and updates the Personal Attribute
-   * List.
-   * 
+   * Eliminates attributes without consent, and updates the Attributes.
+   *
    * @param citizenConsent The attributes the citizen gives permission to be
    *          accessed.
-   * @param personalList The list to update.
-   * 
-   * @return The updated Personal Attribute List.
-   * 
+   * @param attributes The attributes to update.
+   *
+   * @return The updated attributes.
+   *
    * @see CitizenConsent
-   * @see IPersonalAttributeList
+   * @see ImmutableAttributeMap
    */
-  IPersonalAttributeList updateAttributeList(CitizenConsent citizenConsent,
-    IPersonalAttributeList personalList);
-  
+  @Nonnull
+  ImmutableAttributeMap filterConsentedAttributes(@Nonnull CitizenConsent citizenConsent,
+                                                  @Nonnull ImmutableAttributeMap attributes);
+
   /**
    * Replaces the attribute list in session with the one provided.
-   * 
-   * @param session The current session.
+   *
+   * @param requestCorrelationMap The requestCorrelationMap.
    * @param attributeList The attribute list.
-   * 
+   *
    * @return The updated Personal Attribute List.
-   * 
-   * @see IEIDASSession
+   *
+   * @see RequestCorrelationMap
    * @see IPersonalAttributeList
    */
-  IPersonalAttributeList updateAttributeList(IEIDASSession session,
-    IPersonalAttributeList attributeList);
-  
+  @Nonnull
+  IAuthenticationRequest updateConsentedAttributes(@Nonnull IAuthenticationRequest authnRequest,
+                                                   @Nonnull ImmutableAttributeMap consentedAttributes);
+
   /**
-   * Updates the values and the status of the attributeList in session.
-   * 
-   * @param session The current session.
-   * @param attributeList The updated personal attribute list.
-   * 
-   * @return The updated Personal Attribute List.
-   * 
-   * @see IEIDASSession
-   * @see IPersonalAttributeList
+   * Checks that all mandatory values are present in the given attributes otherwise throws an Exception.
+   *
+   * @param attributeMap The attributes to check.
+   * @throws EIDASServiceException if the attributes are not missing a mandatory attribute
    */
-  IPersonalAttributeList updateAttributeListValues(IEIDASSession session,
-    IPersonalAttributeList attributeList);
-  
+  void checkMandatoryAttributes(@Nonnull ImmutableAttributeMap attributes) throws EIDASServiceException;
 }

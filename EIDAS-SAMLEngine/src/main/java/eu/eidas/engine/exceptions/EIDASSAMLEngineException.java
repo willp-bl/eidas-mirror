@@ -1,11 +1,11 @@
-/* 
- * Licensed under the EUPL, Version 1.1 or – as soon they will be approved by
+/*
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
  * the European Commission - subsequent versions of the EUPL (the "Licence");
  * You may not use this work except in compliance with the Licence. You may
  * obtain a copy of the Licence at:
- * 
+ *
  * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the Licence is distributed on an "AS IS" basis, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -16,7 +16,7 @@
 package eu.eidas.engine.exceptions;
 
 /**
- * The Class EIDASSAMLEngineException.
+ * The main SAMLEngine Exception.
  *
  * @author fjquevedo
  */
@@ -40,10 +40,11 @@ public class EIDASSAMLEngineException extends Exception {
     /**
      * Instantiates a new EIDASSAML engine exception.
      *
-     * @param wrappedException the wrapped exception
+     * @param cause the cause (which is saved for later retrieval by the {@link #getCause()} method).  (A <tt>null</tt>
+     * value is permitted, and indicates that the cause is nonexistent or unknown.)
      */
-    public EIDASSAMLEngineException(final Exception wrappedException) {
-        super(wrappedException);
+    public EIDASSAMLEngineException(Throwable cause) {
+        super(cause);
     }
 
     /**
@@ -51,19 +52,19 @@ public class EIDASSAMLEngineException extends Exception {
      *
      * @param errorMessage the error message
      */
-    public EIDASSAMLEngineException(final String errorMessage) {
+    public EIDASSAMLEngineException(String errorMessage) {
         super(errorMessage);
     }
 
     /**
      * Instantiates a new EIDASSAML engine exception.
      *
-     * @param message          the message
-     * @param wrappedException the wrapped exception
+     * @param message the detail message (which is saved for later retrieval by the {@link #getMessage()} method).
+     * @param cause the cause (which is saved for later retrieval by the {@link #getCause()} method).  (A <tt>null</tt>
+     * value is permitted, and indicates that the cause is nonexistent or unknown.)
      */
-    public EIDASSAMLEngineException(final String message,
-                                    final Exception wrappedException) {
-        super(message, wrappedException);
+    public EIDASSAMLEngineException(String message, Throwable cause) {
+        super(message, cause);
     }
 
     /**
@@ -73,8 +74,7 @@ public class EIDASSAMLEngineException extends Exception {
      * @param errorMessage the error message
      */
 
-    public EIDASSAMLEngineException(final String newErrorCode,
-                                    final String errorMessage) {
+    public EIDASSAMLEngineException(String newErrorCode, String errorMessage) {
         super(errorMessage);
         this.errorCode = newErrorCode;
     }
@@ -84,24 +84,23 @@ public class EIDASSAMLEngineException extends Exception {
      *
      * @param newErrorCode the error code
      * @param errorMessage the error message
+     * @param cause the cause (which is saved for later retrieval by the {@link #getCause()} method).  (A <tt>null</tt>
+     * value is permitted, and indicates that the cause is nonexistent or unknown.)
      */
-
-    public EIDASSAMLEngineException(final String newErrorCode,
-                                    final String errorMessage, final Exception wrappedException) {
-        super(errorMessage, wrappedException);
+    public EIDASSAMLEngineException(String newErrorCode, String errorMessage, Throwable cause) {
+        super(errorMessage, cause);
         this.errorCode = newErrorCode;
-        this.errorDetail = wrappedException.getMessage();
+        this.errorDetail = cause.getMessage();
     }
 
     /**
      * Instantiates a new EIDASSAML engine exception.
      *
-     * @param newErrorCode   the error code
-     * @param errorMessage   the error message
+     * @param newErrorCode the error code
+     * @param errorMessage the error message
      * @param newErrorDetail the error detail
      */
-    public EIDASSAMLEngineException(final String newErrorCode,
-                                    final String errorMessage, final String newErrorDetail) {
+    public EIDASSAMLEngineException(String newErrorCode, String errorMessage, String newErrorDetail) {
         super(errorMessage);
         this.errorCode = newErrorCode;
         this.errorDetail = newErrorDetail;
@@ -134,16 +133,15 @@ public class EIDASSAMLEngineException extends Exception {
         return super.getMessage();
     }
 
-
     /**
      * Gets the message.
      *
      * @return the message of the exception.
      * @see java.lang.Throwable#getMessage()
      */
+    @Override
     public final String getMessage() {
-        return "Error (no. " + errorCode + ") processing request : "
-                + super.getMessage() + " - " + getErrorDetail();
+        return "Error (no. " + errorCode + ") processing request : " + super.getMessage() + " - " + getErrorDetail();
     }
 
     /**
@@ -151,7 +149,7 @@ public class EIDASSAMLEngineException extends Exception {
      *
      * @param newErrorCode the new error code
      */
-    public final void setErrorCode(final String newErrorCode) {
+    public final void setErrorCode(String newErrorCode) {
         this.errorCode = newErrorCode;
     }
 
@@ -160,7 +158,7 @@ public class EIDASSAMLEngineException extends Exception {
      *
      * @param newErrorDetail the new error detail
      */
-    public final void setErrorDetail(final String newErrorDetail) {
+    public final void setErrorDetail(String newErrorDetail) {
         this.errorDetail = newErrorDetail;
     }
 

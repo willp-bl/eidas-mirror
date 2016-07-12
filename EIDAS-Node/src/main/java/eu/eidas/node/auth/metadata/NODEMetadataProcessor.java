@@ -13,14 +13,13 @@
  */
 package eu.eidas.node.auth.metadata;
 
-import eu.eidas.auth.commons.EIDASErrors;
-import eu.eidas.auth.commons.EIDASUtil;
-import eu.eidas.auth.engine.AbstractSAMLEngine;
-import eu.eidas.auth.engine.SAMLEngineUtils;
-import eu.eidas.auth.engine.EIDASSAMLEngine;
-import eu.eidas.auth.engine.metadata.EntityDescriptorContainer;
-import eu.eidas.auth.engine.metadata.MetadataProcessorI;
-import eu.eidas.engine.exceptions.SAMLEngineException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+
+import javax.annotation.Nonnull;
+import javax.annotation.concurrent.NotThreadSafe;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.opensaml.saml2.metadata.EntityDescriptor;
@@ -33,144 +32,158 @@ import org.opensaml.xml.signature.SignableXMLObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.security.KeyStore;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import eu.eidas.auth.commons.EIDASUtil;
+import eu.eidas.auth.commons.EidasErrorKey;
+import eu.eidas.auth.engine.AbstractProtocolEngine;
+import eu.eidas.auth.engine.ProtocolEngineI;
+import eu.eidas.auth.engine.metadata.EntityDescriptorContainer;
+import eu.eidas.auth.engine.metadata.MetadataProcessorI;
+import eu.eidas.auth.engine.metadata.MetadataSignerI;
+import eu.eidas.engine.exceptions.EIDASMetadataProviderException;
+import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 
 /**
- * retrieves and check metadata
- * Retrieval: 
- * - support remote retrieval of EntityDescriptor objects
- * - support local (file-based) retrieval of either EntityDescriptor or EntitiesDescriptor objects
- * Check:
- * - remote or local EntityDescriptor should be signed, with the following exceptions:
- *     - when they are in the list of explicitly trusted ED or 
- *     - signature check is disabled -see isValidateEntityDescriptorSignature or
- *     - are located inside an EntityDescriptors contained, which should be signed
- * - locally retrieved EntitiesDescriptor should be signed
- * 
- * TODO:
- * 1. move perhaps in EIDAS-Specific module, since there is only a particular implementation
+ * retrieves and check metadata Retrieval: - support remote retrieval of EntityDescriptor objects - support local
+ * (file-based) retrieval of either EntityDescriptor or EntitiesDescriptor objects Check: - remote or local
+ * EntityDescriptor should be signed, with the following exceptions: - when they are in the list of explicitly trusted
+ * ED or - signature check is disabled -see isValidateEntityDescriptorSignature or - are located inside an
+ * EntityDescriptors contained, which should be signed - locally retrieved EntitiesDescriptor should be signed
+ * <p>
+ * TODO: 1. move perhaps in EIDAS-Specific module, since there is only a particular implementation
+ * @deprecated since 1.1
  */
+@Deprecated
+@NotThreadSafe
 public class NODEMetadataProcessor implements MetadataProcessorI, IStaticMetadataChangeListener {
+
     private static final Logger LOG = LoggerFactory.getLogger(NODEMetadataProcessor.class.getName());
 
-    private static final int METADATA_TIMEOUT_MS=20000;
+    private static final int METADATA_TIMEOUT_MS = 20000;
+
     private int metadataRequestTimeout;
+
     private IMetadataCachingService cache;
+
     private NODEFileMetadataProcessor fileMetadataLoader;
-    private boolean enableHttpRetrieval=false;
+
+    private boolean enableHttpRetrieval = false;
+
     /**
-     * when restrictHttp is true, remote metadata is accepted only through https
-     * otherwise, metadata retrieved using http protocol is also accepted
+     * when restrictHttp is true, remote metadata is accepted only through https otherwise, metadata retrieved using
+     * http protocol is also accepted
      */
-    private boolean restrictHttp=false;
+    private boolean restrictHttp = false;
+
     /**
      * whether to enable the signature validation for EntityDescriptors
      */
-    private boolean validateEntityDescriptorSignature=true;
+    private boolean validateEntityDescriptorSignature = true;
+
     /**
      * initialized with a list of urls corresponding to EntityDescriptor not needing signature validation
      */
     private String trustedEntityDescriptors;
-    private Set<String> trustedEntityDescriptorsSet=new HashSet<String>();
 
+    private Set<String> trustedEntityDescriptorsSet = new HashSet<String>();
 
-    public EntityDescriptor getEntityDescriptor(String url) throws SAMLEngineException{
+    public EntityDescriptor getEntityDescriptor(@Nonnull String url) throws EIDASMetadataProviderException {
         return helperGetEntityDescriptor(url);
     }
 
-    public SignableXMLObject getEntityDescriptorSignatureHolder(String url) throws SAMLEngineException{
+    public SignableXMLObject getEntityDescriptorSignatureHolder(@Nonnull String url)
+            throws EIDASMetadataProviderException {
         return getCache().getDescriptorSignatureHolder(url);
     }
 
-    private EntityDescriptor helperGetEntityDescriptor(String url) throws SAMLEngineException{
-        EntityDescriptor entityDescriptor=null;
-        if(url==null || url.isEmpty()){
-            if(LOG.isTraceEnabled()) {
-                LOG.trace("metadata retrieving from "+url+" is disabled");
-            }
-            return null;
+    private EntityDescriptor helperGetEntityDescriptor(@Nonnull String url) throws EIDASMetadataProviderException {
+        EntityDescriptor entityDescriptor = getFromCache(url);
+        boolean expiredMetadata = false;
+        if (entityDescriptor != null && !entityDescriptor.isValid()) {
+            LOG.error("Invalid static metadata information associated with " + url
+                              + ", will try to retrieve from the network");
+            entityDescriptor = null;
+            expiredMetadata = true;
         }
-        entityDescriptor=getFromCache(url);
-        boolean expiredMetadata=false;
-        if(entityDescriptor!=null && !entityDescriptor.isValid()){
-            LOG.error("Invalid static metadata information associated with "+url+", will try to retrieve from the network");
-            entityDescriptor=null;
-            expiredMetadata=true;
-        }
-        if(entityDescriptor==null && isHttpMetadataRetrieval() && allowMetadataUrl(url)) {
+        if (entityDescriptor == null && isHttpMetadataRetrieval() && allowMetadataUrl(url)) {
             try {
                 LOG.debug("Trying to get metadata from url " + url);
                 NODEHttpMetadataProvider provider = new NODEHttpMetadataProvider(null, new HttpClient(), url);
-                provider.setParserPool(AbstractSAMLEngine.getNewBasicSecuredParserPool());
+                provider.setParserPool(AbstractProtocolEngine.getSecuredParserPool());
                 provider.initialize();
                 XMLObject metadata = provider.getMetadata();
-                if(metadata instanceof EntityDescriptor) {
-                    entityDescriptor = (EntityDescriptor)metadata;
-                }else {
+                if (metadata instanceof EntityDescriptor) {
+                    entityDescriptor = (EntityDescriptor) metadata;
+                } else {
                     //CAVEAT: the entity descriptor should have its id equal to the url (issuer url)
-                    entityDescriptor=provider.getEntityDescriptor(url);
+                    entityDescriptor = provider.getEntityDescriptor(url);
                 }
                 //entityDescriptor = provider.getEntityDescriptor(url);
                 LOG.debug("Obtained entity descriptor from metadata retrieved from url " + url);
                 if (entityDescriptor == null) {
                     LOG.info("Empty entity descriptor null from metadata retrieved from url " + url);
-                }else{
+                } else {
                     putInCache(url, entityDescriptor);
                 }
             } catch (MetadataProviderException mpe) {
                 LOG.info("error getting a metadataprovider {}", mpe.getMessage());
                 LOG.debug("error getting a metadataprovider {}", mpe);
-                EIDASErrors error=expiredMetadata?EIDASErrors.SAML_ENGINE_INVALID_METADATA:EIDASErrors.SAML_ENGINE_NO_METADATA;
-                throw new SAMLEngineException(error.errorCode(), error.errorMessage(), mpe);
+                EidasErrorKey error = expiredMetadata ? EidasErrorKey.SAML_ENGINE_INVALID_METADATA
+                                                      : EidasErrorKey.SAML_ENGINE_NO_METADATA;
+                throw new EIDASMetadataProviderException(error.errorCode(), error.errorMessage(), mpe);
             }
         }
-        if(entityDescriptor==null ){
-            throw new SAMLEngineException(EIDASErrors.SAML_ENGINE_NO_METADATA.errorCode(), EIDASErrors.SAML_ENGINE_NO_METADATA.errorMessage());
+        if (entityDescriptor == null) {
+            throw new EIDASMetadataProviderException(EidasErrorKey.SAML_ENGINE_NO_METADATA.errorCode(),
+                                                     EidasErrorKey.SAML_ENGINE_NO_METADATA.errorMessage(),
+                                                     "No entity descriptor for URL " + url);
         }
-        if(!entityDescriptor.isValid()){
-            throw new SAMLEngineException(EIDASErrors.SAML_ENGINE_INVALID_METADATA.errorCode(), EIDASErrors.SAML_ENGINE_INVALID_METADATA.errorMessage());
+        if (!entityDescriptor.isValid()) {
+            throw new EIDASMetadataProviderException(EidasErrorKey.SAML_ENGINE_INVALID_METADATA.errorCode(),
+                                                     EidasErrorKey.SAML_ENGINE_INVALID_METADATA.errorMessage(),
+                                                     "Invalid entity descriptor for URL " + url);
         }
         return entityDescriptor;
 
     }
 
-    private boolean allowMetadataUrl(String url) throws SAMLEngineException{
-        if(restrictHttp && (url==null || !url.toLowerCase().startsWith("https://"))){
-            throw new SAMLEngineException(EIDASErrors.SAML_ENGINE_INVALID_METADATA_SOURCE.errorCode(), EIDASErrors.SAML_ENGINE_INVALID_METADATA_SOURCE.errorMessage());
+    private boolean allowMetadataUrl(@Nonnull String url) throws EIDASMetadataProviderException {
+        if (restrictHttp && !url.toLowerCase(Locale.ENGLISH).startsWith("https://")) {
+            throw new EIDASMetadataProviderException(EidasErrorKey.SAML_ENGINE_INVALID_METADATA_SOURCE.errorCode(),
+                                                     EidasErrorKey.SAML_ENGINE_INVALID_METADATA_SOURCE.errorMessage(),
+                                                     "Metadata URL is not secure : " + url);
         }
         return true;
     }
-    private <T extends RoleDescriptor> T getFirstRoleDescriptor(EntityDescriptor entityDescriptor, final Class<T> clazz){
-        for(RoleDescriptor rd:entityDescriptor.getRoleDescriptors()){
-            if(clazz.isInstance(rd)){
-                return (T)rd;
+
+    private <T extends RoleDescriptor> T getFirstRoleDescriptor(EntityDescriptor entityDescriptor,
+                                                                final Class<T> clazz) {
+        for (RoleDescriptor rd : entityDescriptor.getRoleDescriptors()) {
+            if (clazz.isInstance(rd)) {
+                return (T) rd;
             }
         }
         return null;
     }
 
     @Override
-    public SPSSODescriptor getSPSSODescriptor(String url) throws SAMLEngineException {
+    public SPSSODescriptor getSPSSODescriptor(@Nonnull String url) throws EIDASMetadataProviderException {
         return getFirstRoleDescriptor(helperGetEntityDescriptor(url), SPSSODescriptor.class);
     }
 
     @Override
-    public IDPSSODescriptor getIDPSSODescriptor(String url) throws SAMLEngineException {
+    public IDPSSODescriptor getIDPSSODescriptor(@Nonnull String url) throws EIDASMetadataProviderException {
         return getFirstRoleDescriptor(helperGetEntityDescriptor(url), IDPSSODescriptor.class);
     }
 
-    private EntityDescriptor getFromCache(String url) throws SAMLEngineException{
-        if(cache!=null){
+    private EntityDescriptor getFromCache(String url) {
+        if (cache != null) {
             return cache.getDescriptor(url);
         }
         return null;
     }
 
-    private void putInCache(String url, EntityDescriptor ed){
-        if(cache!=null && ed!=null && ed.isValid()){
+    private void putInCache(String url, EntityDescriptor ed) {
+        if (cache != null && ed != null && ed.isValid()) {
             cache.putDescriptor(url, ed, EntityDescriptorType.DYNAMIC);
         }
     }
@@ -186,17 +199,17 @@ public class NODEMetadataProcessor implements MetadataProcessorI, IStaticMetadat
     /**
      * perform post construct task, eg populating the cache with file based metadata
      */
-    public void initProcessor(){
-        if(getFileMetadataLoader()!=null){
+    public void initProcessor() {
+        if (getFileMetadataLoader() != null) {
             List<EntityDescriptorContainer> fileStoredDescriptors = getFileMetadataLoader().getEntityDescriptors();
-            if(getCache()!=null){
-                for(EntityDescriptorContainer edc: fileStoredDescriptors){
-                	for(EntityDescriptor ed:edc.getEntityDescriptors()){
-                		getCache().putDescriptor(ed.getEntityID(), ed, EntityDescriptorType.STATIC);
-                		if(edc.getEntitiesDescriptor()!=null && ed.getSignature()==null){
-                			getCache().putDescriptorSignatureHolder(ed.getEntityID(), edc);
-                		}
-                	}
+            if (getCache() != null) {
+                for (EntityDescriptorContainer edc : fileStoredDescriptors) {
+                    for (EntityDescriptor ed : edc.getEntityDescriptors()) {
+                        getCache().putDescriptor(ed.getEntityID(), ed, EntityDescriptorType.STATIC);
+                        if (edc.getEntitiesDescriptor() != null && ed.getSignature() == null) {
+                            getCache().putDescriptorSignatureHolder(ed.getEntityID(), edc);
+                        }
+                    }
                 }
             }
             getFileMetadataLoader().addListenerContentChanged(this);
@@ -211,7 +224,7 @@ public class NODEMetadataProcessor implements MetadataProcessorI, IStaticMetadat
         this.fileMetadataLoader = fileMetadataLoader;
     }
 
-    private boolean isHttpMetadataRetrieval(){
+    private boolean isHttpMetadataRetrieval() {
         return isEnableHttpRetrieval();
     }
 
@@ -233,31 +246,26 @@ public class NODEMetadataProcessor implements MetadataProcessorI, IStaticMetadat
 
     @Override
     public void add(EntityDescriptor ed) {
-        if(getCache()!=null){
+        if (getCache() != null) {
             getCache().putDescriptor(ed.getEntityID(), ed, EntityDescriptorType.STATIC);
         }
     }
 
     @Override
     public void remove(String entityID) {
-        if(getCache()!=null){
+        if (getCache() != null) {
             getCache().putDescriptor(entityID, null, null);
         }
     }
 
     @Override
-    public void checkValidMetadataSignature(String url, EIDASSAMLEngine engine) throws SAMLEngineException{
-        if(isValidateEntityDescriptorSignature() && !getTrustedEntityDescriptorsSet().contains(url)) {
-            SignableXMLObject entityDescriptor=getEntityDescriptorSignatureHolder(url);
-            SAMLEngineUtils.validateEntityDescriptorSignature(entityDescriptor, engine);
-        }
-    }
-
-    @Override
-    public void checkValidMetadataSignature(String url, KeyStore store) throws SAMLEngineException{
-        if(isValidateEntityDescriptorSignature() && !getTrustedEntityDescriptorsSet().contains(url)) {
-        	SignableXMLObject obj=getEntityDescriptorSignatureHolder(url);
-            SAMLEngineUtils.validateEntityDescriptorSignature(obj, store);
+    public void checkValidMetadataSignature(@Nonnull String url, @Nonnull ProtocolEngineI engine)
+            throws EIDASSAMLEngineException {
+        if (isValidateEntityDescriptorSignature() && !getTrustedEntityDescriptorsSet().contains(url)) {
+            //TODO quick fix to overcome runtime exception EIDASSAMLEngineException("invalid entity descriptor") thrown from SAMLEngineUtils#validateEntityDescriptorSignature
+            SignableXMLObject entityDescriptor = helperGetEntityDescriptor(url);
+            MetadataSignerI signer = (MetadataSignerI) engine.getSigner();
+            signer.validateMetadataSignature(entityDescriptor);
         }
     }
 
@@ -285,6 +293,7 @@ public class NODEMetadataProcessor implements MetadataProcessorI, IStaticMetadat
     public void setTrustedEntityDescriptorsSet(Set<String> trustedEntityDescriptorsList) {
         this.trustedEntityDescriptorsSet = trustedEntityDescriptorsList;
     }
+
     public int getMetadataRequestTimeout() {
         return metadataRequestTimeout;
     }
@@ -292,5 +301,4 @@ public class NODEMetadataProcessor implements MetadataProcessorI, IStaticMetadat
     public void setMetadataRequestTimeout(int metadataRequestTimeout) {
         this.metadataRequestTimeout = metadataRequestTimeout;
     }
-    
 }

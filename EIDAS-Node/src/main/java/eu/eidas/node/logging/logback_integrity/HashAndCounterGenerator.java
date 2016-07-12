@@ -22,13 +22,16 @@
 
 package eu.eidas.node.logging.logback_integrity;
 
-import javax.xml.bind.DatatypeConverter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.atomic.AtomicLong;
+
+import javax.xml.bind.DatatypeConverter;
+
+import eu.eidas.auth.commons.EidasStringUtil;
 
 /**
  * Class used to generate hash in front of line in log files
@@ -110,7 +113,7 @@ public class HashAndCounterGenerator extends OutputStream {
         if (byteToWrite == NEWLINE) {
             // increment the counter and add it to the hash
             byte[] base64HashBytes = computeHashBeforeLog();
-            this.lastDigest = new String(base64HashBytes, Charset.forName("UTF-8"));
+            this.lastDigest = EidasStringUtil.toString(base64HashBytes);
             outputStream.write(BEGIN_SEPARATOR);
             outputStream.write(base64HashBytes);
             outputStream.write(END_SEPARATOR);

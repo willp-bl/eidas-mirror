@@ -1,372 +1,553 @@
 /*
  * This work is Open Source and licensed by the European Commission under the
- * conditions of the European Public License v1.1 
- *  
- * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1); 
- * 
- * any use of this file implies acceptance of the conditions of this license. 
- * Unless required by applicable law or agreed to in writing, software 
- * distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT 
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the 
- * License for the specific language governing permissions and limitations 
+ * conditions of the European Public License v1.1
+ *
+ * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1);
+ *
+ * any use of this file implies acceptance of the conditions of this license.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
  * under the License.
  */
 package eu.eidas.auth.commons;
 
-import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.annotation.concurrent.ThreadSafe;
+
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.eidas.auth.commons.exceptions.InternalErrorEIDASException;
+import eu.eidas.auth.commons.lang.Canonicalizers;
+import eu.eidas.auth.commons.lang.EnumMapper;
+import eu.eidas.auth.commons.lang.KeyAccessor;
+import eu.eidas.util.Preconditions;
 
 /**
- * This class is a bean used to store the information relative to the
- * PersonalAttribute.
- * 
- * @author ricardo.ferreira@multicert.com, renato.portela@multicert.com,
- *         luis.felix@multicert.com, hugo.magalhaes@multicert.com,
- *         paulo.ribeiro@multicert.com
- * @version $Revision: 1.22 $, $Date: 2010-11-17 05:15:28 $
+ * Stores all the information relative to the PersonalAttribute.
+ * <p/>
+ * Note that every iterator obtained from this class MUST synchronize around its iteration loop.
+ *
+ * @deprecated use {@link eu.eidas.auth.model.attribute.ImmutablePersonalAttribute} instead.
  */
-public final class PersonalAttribute implements Serializable, Cloneable {
-  
-  /**
-   * Unique identifier.
-   */
-  private static final long serialVersionUID = 2612951678412632174L;
-  
-  /**
-   * Logger object.
-   */
-  private static final Logger LOG = LoggerFactory.getLogger(PersonalAttribute.class
-    .getName());
-  
-  /**
-   * Name of the personal attribute.
-   */
-  private String name;
-  
-  /**
-   * Values of the personal attribute.
-   */
-  private List<String> value = new ArrayList<String>();
-  
-  /**
-   * Complex values of the personal attribute.
-   */
-  private Map<String, String> complexValue = new ConcurrentHashMap<String, String>();
-  
-  /**
-   * Is the personal attribute mandatory?
-   */
-  private transient boolean required;
-  
-  /**
-   * Returned status of the attribute from the IdP.
-   */
-  private String status;
-  
-  /**
-   * Name of the personal attribute.
-   */
-  private String friendlyName;
+@Deprecated
+@ThreadSafe
+public final class PersonalAttribute {
 
-  /**
-   * complete name, as set in the Name attribute of the stork:RequestedAttribute node
-   */
-  private String fullName;
+    public enum Status {
+        /**
+         * Attribute is Available.
+         */
+        AVAILABLE("Available"),
+
+        /**
+         * Attribute is NotAvailable.
+         */
+        NOT_AVAILABLE("NotAvailable");
+
+        private static final EnumMapper<String, Status> MAPPER =
+                new EnumMapper<String, Status>(new KeyAccessor<String, Status>() {
+
+                    @Nonnull
+                    @Override
+                    public String getKey(@Nonnull Status stat) {
+                        return stat.getValue();
+                    }
+                }, Canonicalizers.trimLowerCase(), values());
+
+        @Nullable
+        public static Status fromString(@Nonnull String val) {
+            return MAPPER.fromKey(val);
+        }
+
+        public static EnumMapper<String, Status> mapper() {
+            return MAPPER;
+        }
+
+        @Nonnull
+        private final transient String value;
+
+        Status(@Nonnull String value) {
+            this.value = value;
+        }
+
+        @Nonnull
+        public String getValue() {
+            return value;
+        }
+
+        @Nonnull
+        @Override
+        public String toString() {
+            return value;
+        }
+    }
+
+    /**
+     * Guesses the friendly name from the given full attribute name URI.
+     *
+     * @param name the attribute name URI
+     * @return the guessed friendly name
+     */
+    public static String extractFriendlyName(@Nonnull String name) {
+        Preconditions.checkNotNull(name, "name");
+        if (StringUtils.isBlank(name)) {
+            return StringUtils.EMPTY;
+        }
+        int lastIndexOf = name.lastIndexOf('/');
+        if (lastIndexOf == -1 || lastIndexOf == name.length() - 1) {
+            return name;
+        }
+        return name.substring(lastIndexOf + 1);
+    }
+
+    /**
+     * Logger object.
+     */
+    private static final Logger LOG = LoggerFactory.getLogger(PersonalAttribute.class.getName());
+
+    /**
+     * Name of the personal attribute as a URI.
+     * <p/>
+     * This is the full name as in {@code http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName}.
+     */
+    private final String name;
+
+    /**
+     * Friendly name of this personal attribute.
+     * <p/>
+     * For example for {@code http://eidas.europa.eu/attributes/naturalperson/CurrentGivenName}, the friendly name is
+     * {@code FirstName}.
+     */
+    private final String friendlyName;
+
+    /**
+     * Values of the personal attribute.
+     */
+    @Nonnull
+    private List<String> value = Collections.synchronizedList(new ArrayList<String>());
+
+    /**
+     * Complex values of the personal attribute.
+     */
+    @Nonnull
+    private Map<String, String> complexValue = Collections.synchronizedMap(new HashMap<String, String>());
+
+    /**
+     * Is the personal attribute mandatory?
+     */
+    private boolean required;
 
     /**
      * set to true when the attribute is an eIDAS natural person attribute
      */
     private boolean eidasNaturalPersonAttr;
+
     /**
      * set to true when the attribute is an eIDAS legal person attribute
      */
     private boolean eidasLegalPersonAttr;
 
-  /**
-   * Empty Constructor.
-   */
-  public PersonalAttribute() {
-    super();
-  }
-  
-  /**
-   * PersonalAttribute Constructor for complex values.
-   * 
-   * @param attrName The attribute name.
-   * @param attrIsRequired The attribute type value.
-   * @param attrComplexValue The attribute's value.
-   * @param attrStatus The attribute's status value.
-   */
-  public PersonalAttribute(final String attrName, final boolean attrIsRequired,
-    final List<String> attrComplexValue, final String attrStatus) {
-    this.setName(attrName);
-    this.setIsRequired(attrIsRequired);
-    this.setValue(attrComplexValue);
-    this.setStatus(attrStatus);
-  }
-  
-  /**
-   * PersonalAttribute Constructor for complex values.
-   * 
-   * @param attrName The attribute name.
-   * @param attrIsRequired The attribute type value.
-   * @param attrComplexValue The attribute's complex value.
-   * @param attrStatus The attribute's status value.
-   */
-  public PersonalAttribute(final String attrName, final boolean attrIsRequired,
-    final Map<String, String> attrComplexValue, final String attrStatus) {
-    this.setName(attrName);
-    this.setIsRequired(attrIsRequired);
-    this.setComplexValue(attrComplexValue);
-    this.setStatus(attrStatus);
-  }
-  
-  /**
-   * {@inheritDoc}
-   */
-  @SuppressWarnings("unchecked")
-  public Object clone() {
-    
-    try {
-      final PersonalAttribute personalAttr = (PersonalAttribute) super.clone();
-      personalAttr.setIsRequired(this.isRequired());
-      personalAttr.setName(this.getName());
-      personalAttr.setStatus(this.getStatus());
-        personalAttr.eidasLegalPersonAttr=this.eidasLegalPersonAttr;
-        personalAttr.eidasNaturalPersonAttr=this.eidasNaturalPersonAttr;
-      if (!isEmptyValue()) {
-        final List<String> val =
-          (List<String>) ((ArrayList<String>) this.getValue()).clone();
-        personalAttr.setValue(val);
-      }
-      if (!isEmptyComplexValue()) {
-        final Map<String, String> complexVal =
-          (Map<String, String>) ((HashMap<String, String>) this
-            .getComplexValue()).clone();
-        personalAttr.setComplexValue(complexVal);
-      }
-      return personalAttr;
-    } catch (final CloneNotSupportedException e) {
-      LOG.trace("Nothing to do.");
-      throw new InternalErrorEIDASException(
-        EIDASUtil.getConfig(EIDASErrors.INTERNAL_ERROR.errorCode()),
-        EIDASUtil.getConfig(EIDASErrors.INTERNAL_ERROR.errorMessage()), e);
+    /**
+     * Copy constructor which can change the name and copies all values.
+     *
+     * @param copy the instance to copy
+     */
+    public PersonalAttribute(@Nonnull PersonalAttribute copy,
+                             @Nonnull String newName,
+                             @Nonnull String newFriendlyName) {
+        this(copy, newName, newFriendlyName, true);
     }
-  }
-  
-  /**
-   * Getter for the required value.
-   * 
-   * @return The required value.
-   */
-  public boolean isRequired() {
-    return required;
-  }
-  
-  /**
-   * Setter for the required value.
-   * 
-   * @param attrIsRequired this attribute?
-   */
-  public void setIsRequired(final boolean attrIsRequired) {
-    this.required = attrIsRequired;
-  }
-  
-  /**
-   * Getter for the name value.
-   * 
-   * @return The name value.
-   */
-  public String getName() {
-    return name;
-  }
-  
-  /**
-   * Setter for the name value.
-   * 
-   * @param attrName The personal attribute name.
-   */
-  public void setName(final String attrName) {
-    this.name = attrName;
-  }
-  
-  /**
-   * Getter for the value.
-   * 
-   * @return The list of values.
-   */
-  public List<String> getValue() {
-    return value;
-  }
-
-  public String getDisplayValue() {
-    if(value!=null && value.size()==1){
-      return value.get(0);
-    }else{
-      return getValue().toString();
-    }
-  }
-
-  /**
-   * Setter for the list of values.
-   * 
-   * @param attrValue The personal attribute value.
-   */
-  public void setValue(final List<String> attrValue) {
-    if (attrValue != null) {
-      this.value = attrValue;
-    }
-  }
-  
-  /**
-   * Getter for the status.
-   * 
-   * @return The status value.
-   */
-  public String getStatus() {
-    return status;
-  }
-  
-  /**
-   * Setter for the status value.
-   * 
-   * @param attrStatus The personal attribute status.
-   */
-  public void setStatus(final String attrStatus) {
-    this.status = attrStatus;
-  }
-  
-  /**
-   * Getter for the complex value.
-   * 
-   * @return The complex value.
-   */
-  public Map<String, String> getComplexValue() {
-    return complexValue;
-  }
-  
-  /**
-   * Setter for the complex value.
-   * 
-   * @param complexVal The personal attribute Complex value.
-   */
-  public void setComplexValue(final Map<String, String> complexVal) {
-    if (complexVal != null) {
-      this.complexValue = complexVal;
-    }
-  }
-  
-  /**
-   * Getter for the personal's friendly name.
-   * 
-   * @return The personal's friendly name value.
-   */
-  public String getFriendlyName() {
-    return friendlyName;
-  }
-  
-  /**
-   * Setter for the personal's friendly name.
-   * 
-   * @param fName The personal's friendly name.
-   */
-  public void setFriendlyName(final String fName) {
-    this.friendlyName = fName;
-  }
-  
-  /**
-   * Return true the value is empty.
-   * 
-   * @return True if the value is empty "[]";
-   */
-  public boolean isEmptyValue() {
-    return value==null || value.isEmpty() || (value.size() == 1 && value.get(0).length() == 0);
-  }
-  
-  /**
-   * Returns true if the Complex Value is empty.
-   * 
-   * @return True if the Complex Value is empty;
-   */
-  public boolean isEmptyComplexValue() {
-    return complexValue.isEmpty();
-  }
-  
-  /**
-   * Returns true if the Status is empty.
-   * 
-   * @return True if the Status is empty;
-   */
-  public boolean isEmptyStatus() {
-    return status == null || status.length() == 0;
-  }
-
-  public String getFullName() {
-    return fullName;
-  }
-
-	  public void setFullName(String fullNameArg) {
-	    this.fullName = fullNameArg;
-	  }
-
-	    public boolean isEidasNaturalPersonAttr() {
-	        return eidasNaturalPersonAttr;
-	    }
-
-	    public void setEidasNaturalPersonAttr(boolean eidasNaturalPersonAttrArg) {
-	        this.eidasNaturalPersonAttr = eidasNaturalPersonAttrArg;
-	    }
-
-	    public boolean isEidasLegalPersonAttr() {
-	        return eidasLegalPersonAttr;
-	    }
-
-	    public void setEidasLegalPersonAttr(boolean eidasLegalPersonAttrArg) {
-	        this.eidasLegalPersonAttr = eidasLegalPersonAttrArg;
-	    }
 
     /**
-   * Prints the PersonalAttribute in the following format.
-   * name:required:[v,a,l,u,e,s]|[v=a,l=u,e=s]:status;
-   * 
-   * @return The PersonalAttribute as a string.
-   */
-  public String toString() {
-    final StringBuilder strBuild = new StringBuilder();
-    
-    AttributeUtil.appendIfNotNull(strBuild, getName());
-    strBuild.append(EIDASValues.ATTRIBUTE_TUPLE_SEP.toString());
-    AttributeUtil.appendIfNotNull(strBuild, String.valueOf(isRequired()));
-    strBuild.append(EIDASValues.ATTRIBUTE_TUPLE_SEP.toString());
-    strBuild.append('[');
-    
-    if (isEmptyValue()) {
-      if (!isEmptyComplexValue()) {
-        AttributeUtil.appendIfNotNull(strBuild, AttributeUtil.mapToString(
-          getComplexValue(), EIDASValues.ATTRIBUTE_VALUE_SEP.toString()));
-      }
-    } else {
-      AttributeUtil.appendIfNotNull(
-        strBuild,
-        AttributeUtil.listToString(getValue(),
-          EIDASValues.ATTRIBUTE_VALUE_SEP.toString()));
+     * Copy constructor which keeps the same name and copies all values.
+     *
+     * @param copy the instance to copy
+     */
+    public PersonalAttribute(@Nonnull PersonalAttribute copy) {
+        this(copy, copy.getName(), copy.getFriendlyName(), true);
     }
-    
-    strBuild.append(']');
-    strBuild.append(EIDASValues.ATTRIBUTE_TUPLE_SEP.toString());
-    AttributeUtil.appendIfNotNull(strBuild, getStatus());
-    strBuild.append(EIDASValues.ATTRIBUTE_SEP.toString());
-    
-    return strBuild.toString();
-  }
-  
+
+    /**
+     * Copy constructor
+     *
+     * @param copy the instance to copy
+     * @param copyAllValues {@code true} if all the values must also be copied.
+     */
+    private PersonalAttribute(@Nonnull PersonalAttribute copy,
+                              @Nonnull String newName,
+                              @Nonnull String newFriendlyName,
+                              boolean copyAllValues) {
+        Preconditions.checkNotNull(copy, "copy");
+        Preconditions.checkNotNull(newName, "newName");
+        Preconditions.checkNotNull(newFriendlyName, "newFriendlyName");
+        name = newName;
+        friendlyName = newFriendlyName;
+        //noinspection SynchronizationOnLocalVariableOrMethodParameter
+        synchronized (copy) {
+            // lock obtention optimization // no deadlock possibility since this instance is not created yet
+            //noinspection NestedSynchronizedStatement
+            synchronized (this) {
+                if (copyAllValues) {
+                    setValue(copy.getValue());
+                    setComplexValue(copy.getComplexValue());
+                }
+                setIsRequired(copy.isRequired());
+                setEidasNaturalPersonAttr(copy.isEidasNaturalPersonAttr());
+                setEidasLegalPersonAttr(copy.isEidasLegalPersonAttr());
+            }
+        }
+    }
+
+    /**
+     * Default Constructor.
+     */
+    public PersonalAttribute(@Nonnull String name, @Nonnull String friendlyName) {
+        Preconditions.checkNotNull(name, "name");
+        if (StringUtils.isBlank(friendlyName)) {
+            friendlyName = extractFriendlyName(name);
+        }
+        this.name = name;
+        this.friendlyName = friendlyName;
+    }
+
+    public PersonalAttribute(@Nonnull String name, @Nonnull String friendlyName, boolean isRequired) {
+        this(name,friendlyName);
+        setIsRequired(isRequired);
+    }
+
+    /**
+     * PersonalAttribute Constructor for complex values.
+     *
+     * @param attrName The attribute name.
+     * @param attrIsRequired The attribute type value.
+     * @param simpleValue The attribute's value.
+     */
+    public PersonalAttribute(@Nonnull String attrName,
+                             @Nonnull String friendlyName,
+                             final boolean attrIsRequired,
+                             @Nonnull List<String> simpleValue) {
+        this(attrName, friendlyName);
+        // lock obtention optimization
+        synchronized (this) {
+            this.setIsRequired(attrIsRequired);
+            this.setValue(simpleValue);
+        }
+    }
+
+    /**
+     * PersonalAttribute Constructor for complex values.
+     *
+     * @param attrName The attribute name.
+     * @param attrIsRequired The attribute type value.
+     * @param attrComplexValue The attribute's complex value.
+     */
+    @Deprecated
+    public PersonalAttribute(@Nonnull String attrName,
+                             @Nonnull String friendlyName,
+                             final boolean attrIsRequired,
+                             @Nonnull Map<String, String> attrComplexValue) {
+        this(attrName, friendlyName);
+        // lock obtention optimization
+        synchronized (this) {
+            this.setIsRequired(attrIsRequired);
+            this.setComplexValue(attrComplexValue);
+        }
+    }
+
+    /**
+     * Static factory to create a new copy of the given instance, including all values.
+     *
+     * @param copy the instance to copy
+     * @return a new copy
+     */
+    @Nullable
+    @SuppressWarnings("unchecked")
+    public static PersonalAttribute copyOf(@Nullable PersonalAttribute copy) {
+        if (null == copy) {
+            return null;
+        }
+        return new PersonalAttribute(copy, copy.getName(), copy.getFriendlyName(), true);
+    }
+
+    /**
+     * Static factory to create a new copy of the given instance, excluding all values.
+     *
+     * @param copy the instance to copy without any value
+     * @return a new copy without any value
+     */
+    @Nullable
+    @SuppressWarnings("unchecked")
+    public static PersonalAttribute copyOfWithoutValues(@Nullable PersonalAttribute copy) {
+        if (null == copy) {
+            return null;
+        }
+        return new PersonalAttribute(copy, copy.getName(), copy.getFriendlyName(), false);
+    }
+
+    /**
+     * Static factory to create a new copy of the given instance, including all values and which can change the name.
+     *
+     * @param copy the instance to copy
+     * @return a new copy
+     */
+    @Nullable
+    @SuppressWarnings("unchecked")
+    public static PersonalAttribute copyOfWithNewName(@Nullable PersonalAttribute copy,
+                                                      @Nonnull String newName,
+                                                      @Nonnull String newFriendlyName) {
+        if (null == copy) {
+            return null;
+        }
+        return new PersonalAttribute(copy, newName, newFriendlyName, true);
+    }
+
+    /**
+     * Static factory to create a new copy of the given instance, excluding all values and which can change the name.
+     *
+     * @param copy the instance to copy without any value
+     * @return a new copy without any value
+     */
+    @Nullable
+    @SuppressWarnings("unchecked")
+    public static PersonalAttribute copyOfWithNewNameWithoutValues(@Nullable PersonalAttribute copy,
+                                                                   @Nonnull String newName,
+                                                                   @Nonnull String newFriendlyName) {
+        if (null == copy) {
+            return null;
+        }
+        return new PersonalAttribute(copy, newName, newFriendlyName, false);
+    }
+
+    /**
+     * Getter for the required value.
+     *
+     * @return The required value.
+     */
+    public synchronized boolean isRequired() {
+        return required;
+    }
+
+    /**
+     * Setter for the required value.
+     *
+     * @param attrIsRequired this attribute?
+     */
+    public synchronized void setIsRequired(final boolean attrIsRequired) {
+        this.required = attrIsRequired;
+    }
+
+    /**
+     * Returns the name of this personal attribute as a URI.
+     * <p/>
+     * This is the full name as in {@code http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName}.
+     *
+     * @return The name value.
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * /** Friendly Name of this personal attribute.
+     * <p/>
+     * For example, for {@code http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName}, the friendly name is
+     * {@code CurrentFamilyName}.
+     *
+     * @return The friendly name value.
+     */
+    public String getFriendlyName() {
+        return friendlyName;
+    }
+
+    /**
+     * Getter for the value.
+     *
+     * @return The list of values.
+     */
+    @Nonnull
+    public synchronized List<String> getValue() {
+        return value;
+    }
+
+    @Nonnull
+    public synchronized String getDisplayValue() {
+        if (value.size() == 1) {
+            return value.get(0);
+        } else {
+            return value.toString();
+        }
+    }
+
+    /**
+     * Setter for the list of values.
+     *
+     * @param attrValue The personal attribute value.
+     */
+    public synchronized void setValue(@Nullable List<String> attrValue) {
+        // no defensive copy needed when there is no reference update
+        if (value == attrValue) {
+            return;
+        }
+        if (null == attrValue || attrValue.isEmpty()) {
+            value.clear();
+            return;
+        }
+        ArrayList<String> defensiveCopy = new ArrayList<String>();
+        defensiveCopy.addAll(attrValue);
+        value = Collections.synchronizedList(defensiveCopy);
+    }
+
+    /**
+     * Getter for the status.
+     *
+     * @return The status.
+     */
+    public Status getStatus() {
+        if (isEmpty()) {
+            return Status.NOT_AVAILABLE;
+        }
+        return Status.AVAILABLE;
+    }
+
+    /**
+     * Returns {@code true} if this attribute has no simple value and no complex value, {@code false} otherwise.
+     *
+     * @return {@code true} if this attribute has no simple value and no complex value, {@code false} otherwise.
+     */
+    public synchronized boolean isEmpty() {
+        // atomically check both the list and the map
+        return isEmptyValue() && isEmptyComplexValue();
+    }
+
+    /**
+     * Getter for the complex value.
+     *
+     * @return The complex value.
+     */
+    @Nonnull
+    public synchronized Map<String, String> getComplexValue() {
+        return complexValue;
+    }
+
+    /**
+     * Setter for the complex value.
+     *
+     * @param complexVal The personal attribute Complex value.
+     */
+    public synchronized void setComplexValue(@Nullable Map<String, String> complexVal) {
+        // no defensive copy needed when there is no reference update
+        if (this.complexValue == complexVal) {
+            return;
+        }
+        if (null == complexVal || complexVal.isEmpty()) {
+            this.complexValue.clear();
+            return;
+        }
+        this.complexValue = Collections.synchronizedMap(new HashMap<String, String>(complexVal));
+    }
+
+    /**
+     * Return true the value is empty.
+     *
+     * @return True if the value is empty "[]";
+     */
+    public synchronized boolean isEmptyValue() {
+        return value.isEmpty() || (value.size() == 1 && StringUtils.isEmpty(value.get(0)));
+    }
+
+    /**
+     * Returns true if the Complex Value is empty.
+     *
+     * @return True if the Complex Value is empty;
+     */
+    public synchronized boolean isEmptyComplexValue() {
+        return complexValue.isEmpty();
+    }
+
+    public synchronized boolean isEidasNaturalPersonAttr() {
+        return eidasNaturalPersonAttr;
+    }
+
+    public synchronized void setEidasNaturalPersonAttr(boolean eidasNaturalPersonAttrArg) {
+        this.eidasNaturalPersonAttr = eidasNaturalPersonAttrArg;
+    }
+
+    public synchronized boolean isEidasLegalPersonAttr() {
+        return eidasLegalPersonAttr;
+    }
+
+    public synchronized void setEidasLegalPersonAttr(boolean eidasLegalPersonAttrArg) {
+        this.eidasLegalPersonAttr = eidasLegalPersonAttrArg;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        PersonalAttribute that = (PersonalAttribute) o;
+
+        // Open call for final fields:
+        if (name != null ? !name.equals(that.name) : that.name != null) {
+            return false;
+        }
+        if (friendlyName != null ? !friendlyName.equals(that.friendlyName) : that.friendlyName != null) {
+            return false;
+        }
+
+        synchronized (this) {
+            // A deadlock is possible here if 2 threads try to equals() each other instances...
+            synchronized (that) {
+                if (required != that.required) {
+                    return false;
+                }
+                if (eidasNaturalPersonAttr != that.eidasNaturalPersonAttr) {
+                    return false;
+                }
+                if (eidasLegalPersonAttr != that.eidasLegalPersonAttr) {
+                    return false;
+                }
+                if (value != null ? !value.equals(that.value) : that.value != null) {
+                    return false;
+                }
+                return complexValue != null ? complexValue.equals(that.complexValue) : that.complexValue == null;
+            }
+        }
+    }
+
+    @Override
+    public synchronized int hashCode() {
+        int result = name != null ? name.hashCode() : 0;
+        result = 31 * result + (friendlyName != null ? friendlyName.hashCode() : 0);
+        result = 31 * result + (value != null ? value.hashCode() : 0);
+        result = 31 * result + (complexValue != null ? complexValue.hashCode() : 0);
+        result = 31 * result + (required ? 1 : 0);
+        result = 31 * result + (eidasNaturalPersonAttr ? 1 : 0);
+        result = 31 * result + (eidasLegalPersonAttr ? 1 : 0);
+        return result;
+    }
+
+    /**
+     * Prints the PersonalAttribute in the following format. name:required:[v,a,l,u,e,s]|[v=a,l=u,e=s]:status;
+     *
+     * @return The PersonalAttribute as a string.
+     */
+    @Override
+    public synchronized String toString() {
+        return PersonalAttributeString.toString(this);
+    }
 }

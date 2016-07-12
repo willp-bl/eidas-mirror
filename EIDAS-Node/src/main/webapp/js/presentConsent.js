@@ -51,7 +51,22 @@ function backEventSlide2() {
     //$("#checkbox_Confirmation_div").css('color','white');
 }
 
+function initJSEnabledContainers() {
+    $('.jsOK').prop('disabled', false);
+    $('.jsOK').show();
+}
+
+$("#attributeModal").on('show.bs.modal', function (e) {
+    var attributeModalName = $(e.relatedTarget).data('attribute-name');
+    var attributeModalDesc = $(e.relatedTarget).data('attribute-desc');
+    $(e.currentTarget).find('label[id="attributeModalNameDisp"]').text(attributeModalName);
+    $(e.currentTarget).find('div[id="attributeModalDescriptionDisp"]').text(attributeModalDesc);
+});
+
 function init () {
+
+    initJSEnabledContainers();
+
     document.getElementById("slider1").style.display = "block" ;
     document.getElementById("slider2").style.display = "none" ;
 

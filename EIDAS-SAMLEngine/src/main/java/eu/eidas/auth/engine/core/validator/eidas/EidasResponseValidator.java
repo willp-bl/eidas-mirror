@@ -1,5 +1,5 @@
 /*
- * Licensed under the EUPL, Version 1.1 or – as soon they will be approved by
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
  * the European Commission - subsequent versions of the EUPL (the "Licence");
  * You may not use this work except in compliance with the Licence. You may
  * obtain a copy of the Licence at:
@@ -14,6 +14,7 @@
  */
 package eu.eidas.auth.engine.core.validator.eidas;
 
+import java.nio.charset.Charset;
 
 import org.opensaml.common.SAMLVersion;
 import org.opensaml.saml1.core.StatusCode;
@@ -21,8 +22,6 @@ import org.opensaml.saml2.core.Response;
 import org.opensaml.saml2.core.validator.ResponseSchemaValidator;
 import org.opensaml.xml.util.XMLHelper;
 import org.opensaml.xml.validation.ValidationException;
-
-import java.nio.charset.Charset;
 
 
 public class EidasResponseValidator extends ResponseSchemaValidator {

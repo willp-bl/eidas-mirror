@@ -13,35 +13,23 @@
  */
 package eu.eidas.node.auth.metadata;
 
-import eu.eidas.auth.commons.Constants;
-import eu.eidas.auth.commons.EidasStringUtil;
-import eu.eidas.auth.engine.SAMLEngineUtils;
-import eu.eidas.auth.engine.metadata.EntityDescriptorContainer;
-import eu.eidas.auth.engine.metadata.MetadataGenerator;
+import java.util.Map;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.xml.security.signature.XMLSignature;
-import org.apache.xml.security.signature.XMLSignatureException;
-import org.opensaml.saml2.metadata.EntitiesDescriptor;
+import javax.annotation.Nonnull;
+
 import org.opensaml.saml2.metadata.EntityDescriptor;
 import org.opensaml.xml.XMLObject;
 import org.opensaml.xml.signature.SignableXMLObject;
-import org.opensaml.xml.signature.Signature;
-import org.opensaml.xml.signature.impl.SignatureImpl;
 
-import java.util.List;
-import java.util.Map;
+import eu.eidas.auth.commons.EidasStringUtil;
+import eu.eidas.auth.commons.xml.opensaml.OpenSamlHelper;
+import eu.eidas.auth.engine.metadata.EntityDescriptorContainer;
+import eu.eidas.auth.engine.metadata.MetadataGenerator;
+import eu.eidas.encryption.exception.MarshallException;
 
 public abstract class AbstractMetadataCaching implements IMetadataCachingService {
-    private MetadataGenerator generator;
     private static final String SIGNATURE_HOLDER_ID_PREFIX="signatureholder";
 
-    public AbstractMetadataCaching(){
-        init();
-    }
-    private void init(){
-        generator = new MetadataGenerator();
-    }
     @Override
     public final EntityDescriptor getDescriptor(String url) {
         if(getMap()!=null){
@@ -78,22 +66,26 @@ public abstract class AbstractMetadataCaching implements IMetadataCachingService
     }
 
     private String serializeEntityDescriptor(XMLObject ed){
-        return SAMLEngineUtils.serializeObject(ed);
+        try {
+            return EidasStringUtil.toString(OpenSamlHelper.marshall(ed));
+        } catch (MarshallException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     private EntityDescriptor deserializeEntityDescriptor(String content){
-    	EntityDescriptorContainer container = generator.deserializeEntityDescriptor(content);
+    	EntityDescriptorContainer container = MetadataGenerator.deserializeEntityDescriptor(content);
         return container.getEntityDescriptors().isEmpty()?null:container.getEntityDescriptors().get(0);
     }
 
     protected abstract Map<String, SerializedEntityDescriptor> getMap();
 
     @Override
-    public SignableXMLObject getDescriptorSignatureHolder(String url){
+    public SignableXMLObject getDescriptorSignatureHolder(@Nonnull String url){
     	SerializedEntityDescriptor sed = getMap().get(SIGNATURE_HOLDER_ID_PREFIX+url);
     	if(sed!=null){
     		EntityDescriptorContainer edc;
-   			edc = generator.deserializeEntityDescriptor(sed.getSerializedEntityDescriptor());
+   			edc = MetadataGenerator.deserializeEntityDescriptor(sed.getSerializedEntityDescriptor());
     		if(edc.getEntitiesDescriptor()!=null){
     			return edc.getEntitiesDescriptor();
     		}
@@ -108,9 +100,9 @@ public abstract class AbstractMetadataCaching implements IMetadataCachingService
     @Override
 	public void putDescriptorSignatureHolder(String url, EntityDescriptorContainer container){
     	if(container.getSerializedEntitesDescriptor()!=null){
-    		getMap().put(SIGNATURE_HOLDER_ID_PREFIX+url, new SerializedEntityDescriptor(EidasStringUtil.stringFromBytesArray(container.getSerializedEntitesDescriptor()), EntityDescriptorType.SERIALIZED_SIGNATURE_HOLDER));
+    		getMap().put(SIGNATURE_HOLDER_ID_PREFIX+url, new SerializedEntityDescriptor(EidasStringUtil.toString(container.getSerializedEntitesDescriptor()), EntityDescriptorType.SERIALIZED_SIGNATURE_HOLDER));
     	}else{
     		putDescriptorSignatureHolder(url, container.getEntitiesDescriptor());
     	}
-    }    
+    }
 }

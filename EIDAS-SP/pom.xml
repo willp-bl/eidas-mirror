@@ -1,64 +1,55 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<groupId>eu.eidas</groupId>
-	<artifactId>eidas-sp</artifactId>
-	<packaging>war</packaging>
-	<name>SP</name>
-	<properties>
-	    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-	</properties>
-	<version>${project.version}</version>
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>eidas-sp</artifactId>
+    <packaging>war</packaging>
+    <name>SP</name>
+    <version>1.1.0</version>
+    <description>eIDAS Service Provider</description>
     <parent>
         <groupId>eu.eidas</groupId>
         <artifactId>eidas-parent</artifactId>
-        <version>eidas</version>
+        <version>1.1.0</version>
         <relativePath>../EIDAS-Parent/pom.xml</relativePath>
     </parent>
-	<dependencies>
-
-		<!--SP-->
-		<!-- eidas Commons -->
-		<dependency>
-    		<groupId>eu.eidas</groupId>
-    		<artifactId>eidas-commons</artifactId>
-    		<version>${commons.version}</version>
-			<!--scope>provided</scope-->
+    <dependencies>
+        <!-- 1) Dependencies on other modules: -->
+        <dependency>
+            <groupId>eu.eidas</groupId>
+            <artifactId>eidas-commons</artifactId>
+            <!--scope>provided</scope-->
             <exclusions>
                 <exclusion>
                     <groupId>log4j</groupId>
                     <artifactId>log4j</artifactId>
                 </exclusion>
             </exclusions>
-		</dependency>
-
-		<!-- eidas SAML Engine -->
-		<dependency>
-    		<groupId>eu.eidas</groupId>
-    		<artifactId>saml-engine</artifactId>
-    		<version>${saml.version}</version>
-    		<scope>compile</scope>
-			<exclusions>
-				<exclusion>
-					<groupId>org.slf4j</groupId>
-					<artifactId>slf4j-simple</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>org.slf4j</groupId>
-					<artifactId>jcl-over-slf4j</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>org.slf4j</groupId>
-					<artifactId>slf4j-api</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>org.slf4j</groupId>
-					<artifactId>jul-to-slf4j</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>org.slf4j</groupId>
-					<artifactId>log4j-over-slf4j</artifactId>
-				</exclusion>
+        </dependency>
+        <dependency>
+            <groupId>eu.eidas</groupId>
+            <artifactId>eidas-saml-engine</artifactId>
+            <scope>compile</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-simple</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>jcl-over-slf4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>jul-to-slf4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>log4j-over-slf4j</artifactId>
+                </exclusion>
                 <exclusion>
                     <groupId>xalan</groupId>
                     <artifactId>serializer</artifactId>
@@ -79,123 +70,107 @@
                     <groupId>xml-apis</groupId>
                     <artifactId>xml-apis</artifactId>
                 </exclusion>
-			</exclusions>
-		</dependency>
-		<!-- From SAML Engine -->
+            </exclusions>
+        </dependency>
 
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>${junit.version}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>commons-io</groupId>
-			<artifactId>commons-io</artifactId>
-			<version>${commons.io}</version>
-			<scope>compile</scope>
-		</dependency>
+        <!-- 2) Dependencies on libraries: -->
+        <!-- Log4J -->
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+        </dependency>
+        <!-- bouncyCastle -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk15on</artifactId>
+        </dependency>
+        <!-- Servlet & JSP-->
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>servlet-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>jsp-api</artifactId>
+        </dependency>
 
-		<!-- Servlet & JSP-->
-		<dependency>
-			<groupId>javax.servlet</groupId>
-			<artifactId>servlet-api</artifactId>
-			<version>${servlet.version}</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>javax.servlet</groupId>
-			<artifactId>jsp-api</artifactId>
-			<version>${jsp.api}</version>
-			<scope>provided</scope>
-		</dependency>
-		
-	  	<!-- Struts2 -->
-		<dependency>
-			<groupId>org.apache.struts</groupId>
-			<artifactId>struts2-core</artifactId>
-			<version>${struts.version}</version>
-		</dependency>
+        <!-- Struts2 -->
+        <dependency>
+            <groupId>org.apache.struts</groupId>
+            <artifactId>struts2-core</artifactId>
+        </dependency>
 
-
-
-		<dependency>
-		    <groupId>org.slf4j</groupId>
-		    <artifactId>slf4j-api</artifactId>
-		    <version>${slf4j.version}</version>
-		</dependency>
-		<dependency>
-		    <groupId>org.slf4j</groupId>
-		    <artifactId>slf4j-simple</artifactId>
-		    <version>${slf4j.version}</version>
-		</dependency>
-		<dependency>
-		    <groupId>org.slf4j</groupId>
-		    <artifactId>jcl-over-slf4j</artifactId>
-		    <version>${slf4j.version}</version>
-		</dependency>
-		<dependency>
-		    <groupId>org.slf4j</groupId>
-		    <artifactId>jul-to-slf4j</artifactId>
-		    <version>${slf4j.version}</version>
-		</dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>jcl-over-slf4j</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>jul-to-slf4j</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-web</artifactId>
-            <version>${spring.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>xerces</groupId>
+            <artifactId>xercesImpl</artifactId>
+            <scope>package</scope>
+        </dependency>
+        <dependency>
+            <groupId>xalan</groupId>
+            <artifactId>xalan</artifactId>
+            <scope>package</scope>
+        </dependency>
+        <dependency>
+            <groupId>xalan</groupId>
+            <artifactId>serializer</artifactId>
         </dependency>
 
-  </dependencies>
-  
-  <build>
-  <finalName>SP</finalName>
-		<pluginManagement>
-			<plugins>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-compiler-plugin</artifactId>
-                    <version>${compile.plugin.version}</version>
-                    <configuration>
-                        <source>${java.version}</source>
-                        <target>${java.version}</target>
-					</configuration>
-				</plugin>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-surefire-plugin</artifactId>
-					<configuration>
-						<skip>false</skip>
-					</configuration>
-				</plugin>
-			</plugins>
-		</pluginManagement>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-war-plugin</artifactId>
-                <version>${war.plugin.version}</version>
-			</plugin>
-			<plugin>
-				<artifactId>maven-antrun-plugin</artifactId>
-				<executions>
-				  <execution>
-					<phase>prepare-package</phase>
-					<configuration>
-					  <tasks>
-						<replace replacefilterfile="../eidas-parent/dev.properties" dir="target/classes">                                 
-						  <include name="**/sp.properties"/>
-						</replace>
-					  </tasks>
-					</configuration>
-					<goals>
-						<goal>run</goal>
-					</goals>
-				  </execution>
-				</executions>
-			</plugin>
-		</plugins>
-	</build>
-	<profiles>
+        <!-- UNIT TEST Dependencies -->
+        <dependency>
+            <groupId>xml-apis</groupId>
+            <artifactId>xml-apis</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>SP</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>prepare-package</phase>
+                        <configuration>
+                            <tasks>
+                                <replace replacefilterfile="../EIDAS-Parent/dev.properties" dir="target/classes">
+                                    <include name="**/sp.properties"/>
+                                </replace>
+                            </tasks>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+    <profiles>
         <profile>
             <id>coreDependencies</id>
             <dependencies>
@@ -208,26 +183,26 @@
         </profile>
         <profile>
             <id>encryptionProvider</id>
-			<activation>
-				<jdk>[1.6,)</jdk>
-			</activation>
+            <activation>
+                <jdk>[1.6,)</jdk>
+            </activation>
             <dependencies>
-				<dependency>
-					<groupId>org.bouncycastle</groupId>
-					<artifactId>bcprov-jdk15on</artifactId>
-					<version>${bouncycastle.version}</version>
-				</dependency>
+                <dependency>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcprov-jdk15on</artifactId>
+                    <scope>compile</scope>
+                </dependency>
             </dependencies>
         </profile>
         <profile>
             <id>websphere</id>
-			<build>
+            <build>
                 <resources>
                     <resource>
                         <directory>${project.basedir}/src/main/config/websphere/resources</directory>
                     </resource>
                 </resources>
-			</build>
+            </build>
         </profile>
         <profile>
             <id>embedded</id>
@@ -245,6 +220,13 @@
         </profile>
         <profile>
             <id>weblogic</id>
+            <dependencies>
+                <dependency>
+                    <groupId>xml-apis</groupId>
+                    <artifactId>xml-apis</artifactId>
+                    <version>${xmlapis.version}</version>
+                </dependency>
+            </dependencies>
             <build>
                 <pluginManagement>
                     <plugins>
@@ -313,36 +295,40 @@
         </profile>
         <profile>
             <id>jBoss7</id>
+            <dependencies>
+                <dependency>
+                    <groupId>xml-apis</groupId>
+                    <artifactId>xml-apis</artifactId>
+                </dependency>
+            </dependencies>
             <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-resources-plugin</artifactId>
-                            <version>${resources.plugin.version}</version>
-                            <executions>
-                                <execution>
-                                    <id>copy-jboss-resources</id>
-                                    <phase>process-resources</phase>
-                                    <goals>
-                                        <goal>copy-resources</goal>
-                                    </goals>
-                                    <configuration>
-                                        <outputDirectory>
-                                            ${project.build.directory}/SP/WEB-INF
-                                        </outputDirectory>
-                                        <resources>
-                                            <resource>
-                                                <directory>${project.basedir}/src/main/config/jBoss7</directory>
-                                                <filtering>true</filtering>
-                                            </resource>
-                                        </resources>
-                                    </configuration>
-                                </execution>
-                            </executions>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <version>${resources.plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>copy-jboss-resources</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>
+                                        ${project.build.directory}/SP/WEB-INF
+                                    </outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.basedir}/src/main/config/jBoss7</directory>
+                                            <filtering>true</filtering>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
             </build>
         </profile>
         <profile>
@@ -363,5 +349,5 @@
                 </plugins>
             </build>
         </profile>
- </profiles>
+    </profiles>
 </project>

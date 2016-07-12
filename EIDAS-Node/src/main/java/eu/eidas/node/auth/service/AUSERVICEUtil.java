@@ -1,14 +1,14 @@
 package eu.eidas.node.auth.service;
 
-import eu.eidas.auth.commons.EIDASAuthnResponse;
-import eu.eidas.node.auth.AUNODEUtil;
-import eu.eidas.node.auth.ConcurrentMapService;
+import java.util.Properties;
 
+import eu.eidas.auth.commons.cache.ConcurrentMapService;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Properties;
+import eu.eidas.auth.commons.protocol.impl.AuthenticationResponse;
+import eu.eidas.node.auth.AUNODEUtil;
 
 public class AUSERVICEUtil extends AUNODEUtil {
     /**
@@ -26,7 +26,7 @@ public class AUSERVICEUtil extends AUNODEUtil {
 
     public AUSERVICEUtil(final ConcurrentMapService concurrentMapService) {
         // Obtaining the anti-replay cache service provider defined in configuration and call it for setting up cache
-        setAntiReplayCache(concurrentMapService.getNewAntiReplayCache());
+        setAntiReplayCache(concurrentMapService.getNewMapCache());
     }
 
     /**
@@ -60,9 +60,9 @@ public class AUSERVICEUtil extends AUNODEUtil {
         }
         return configs.getProperty(key);
     }
-    public void setMetadatUrlToAuthnResponse(final String metadataUrl, EIDASAuthnResponse authnResponse){
+    public void setMetadatUrlToAuthnResponse(final String metadataUrl, AuthenticationResponse.Builder authnResponseBuilder){
         if(metadataUrl!=null && !metadataUrl.isEmpty()) {
-            authnResponse.setIssuer(metadataUrl);
+            authnResponseBuilder.issuer(metadataUrl);
         }
     }
 }

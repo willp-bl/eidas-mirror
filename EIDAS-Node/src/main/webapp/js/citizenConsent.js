@@ -41,12 +41,18 @@ function submitSendFormAction() {
     }*/
 }
 
+function initJSEnabledContainers() {
+    $('.jsOK').prop('disabled', false);
+    $('.jsOK').show();
+}
+
 function init () {
+    initJSEnabledContainers();
     document.getElementById("buttonNext").addEventListener("click", function () {submitSendFormAction()});
     document.getElementById("buttonCancel").addEventListener("click", function () {submitCancelFormAction()});
-	document.getElementById("stepstatusjs").style.display = "block" ;
-	document.getElementById("stepnumberjs").style.display = "block" ;
-	document.getElementById("buttongroupjsjs").style.display = "block" ;
+    $("#currentAddressBase64Out").text(decodeCurrentAddress());
+    document.getElementById("stepstatusjs").style.display = "block" ;
+    document.getElementById("buttongroupjsjs").style.display = "block" ;
 }
 
 init();

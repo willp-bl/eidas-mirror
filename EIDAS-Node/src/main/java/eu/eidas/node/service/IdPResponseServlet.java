@@ -1,140 +1,290 @@
 /*
- * This work is Open Source and licensed by the European Commission under the
- * conditions of the European Public License v1.1 
- *  
- * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1); 
- * 
- * any use of this file implies acceptance of the conditions of this license. 
- * Unless required by applicable law or agreed to in writing, software 
- * distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT 
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the 
- * License for the specific language governing permissions and limitations 
- * under the License.
+ * Copyright (c) 2015 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
+ * the European Commission - subsequent versions of the EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
+ *
+ * This product combines work with different licenses. See the "NOTICE" text
+ * file for details on the various modules and licenses.
+ * The "NOTICE" text file is part of the distribution. Any derivative works
+ * that you distribute must include a readable copy of the "NOTICE" text file.
+ *
  */
+
 package eu.eidas.node.service;
 
-import eu.eidas.auth.commons.IPersonalAttributeList;
-import eu.eidas.auth.commons.EIDASErrors;
-import eu.eidas.auth.commons.EIDASParameters;
-import eu.eidas.auth.commons.EIDASUtil;
-import eu.eidas.auth.commons.exceptions.InvalidSessionEIDASException;
-import eu.eidas.node.NodeBeanNames;
-import eu.eidas.node.NodeViewNames;
-import eu.eidas.node.utils.PropertiesUtil;
-
-import org.owasp.esapi.StringUtilities;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.io.IOException;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
-import java.io.IOException;
-import java.util.Map;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import eu.eidas.auth.commons.EIDASStatusCode;
+import eu.eidas.auth.commons.EIDASValues;
+import eu.eidas.auth.commons.EidasErrorKey;
+import eu.eidas.auth.commons.EidasParameterKeys;
+import eu.eidas.auth.commons.EidasStringUtil;
+import eu.eidas.auth.commons.IncomingRequest;
+import eu.eidas.auth.commons.WebRequest;
+import eu.eidas.auth.commons.attribute.AttributeDefinition;
+import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
+import eu.eidas.auth.commons.light.ILightResponse;
+import eu.eidas.auth.commons.light.IResponseStatus;
+import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.IAuthenticationResponse;
+import eu.eidas.auth.commons.protocol.IResponseMessage;
+import eu.eidas.auth.commons.protocol.stork.IStorkAuthenticationRequest;
+import eu.eidas.auth.commons.tx.CorrelationMap;
+import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
+import eu.eidas.auth.engine.core.ProtocolProcessorI;
+import eu.eidas.auth.engine.core.eidas.spec.EidasSpec;
+import eu.eidas.node.NodeBeanNames;
+import eu.eidas.node.NodeParameterNames;
+import eu.eidas.node.NodeViewNames;
+import eu.eidas.node.specificcommunication.ISpecificProxyService;
+import eu.eidas.node.specificcommunication.exception.SpecificException;
+import eu.eidas.node.utils.EidasAttributesUtil;
+import eu.eidas.node.utils.SessionHolder;
 
 /**
- * Action that handles the incoming response from the Identity Provider.
- * 
+ * Action that handles the incoming response from the ID Provider.
+ *
+ * @see eu.eidas.node.service.AbstractServiceServlet
  */
 public final class IdPResponseServlet extends AbstractServiceServlet {
 
-
-  private static final long serialVersionUID = 8306593771657820731L;
-  /**
-   * Logger object.
-   */
-  private static final Logger LOG = LoggerFactory.getLogger(IdPResponseServlet.class.getName());
-
-  @Override
-  protected Logger getLogger() {
-    return LOG;
-  }
-
-  /**
-   * Validates the incoming parameters and executes the method
-   */
-  @Override
-  protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
     /**
-     * Attribute list returned by the IdP.
+     * Unique identifier.
      */
-    IPersonalAttributeList attrList;
+    private static final long serialVersionUID = 4539991356226362922L;
 
-    /**
-     * Error code returned by the IdP (only in case of error).
-     */
-    String errorCode;
-
-    /**
-     * Error subordinate code (only in case of error).
-     */
-    String subCode;
-
-    /**
-     * Error message returned by the IdP (only in case of error).
-     */
-    String errorMessage;
-
-    try{
-
-      attrList = (IPersonalAttributeList) request.getAttribute(EIDASParameters.ATTRIBUTE_LIST.toString());
-      errorCode = (String) request.getAttribute(EIDASParameters.ERROR_CODE.toString());
-      subCode = (String) request.getAttribute(EIDASParameters.ERROR_SUBCODE.toString());
-      errorMessage = (String) request.getAttribute(EIDASParameters.ERROR_MESSAGE.toString());
-
-
-      // Obtaining the assertion consumer url from SPRING context
-      ServiceControllerService controllerService = (ServiceControllerService) getApplicationContext().getBean(NodeBeanNames.EIDAS_SERVICE_CONTROLLER.toString());
-
-      // Validate if the session has the required attributes.
-      synchronized (controllerService.getSession()) {
-        LOG.debug("Session content " + controllerService.getSession());
-        if (controllerService.getSession().get(EIDASParameters.AUTH_REQUEST.toString()) == null
-                || controllerService.getSession().get(EIDASParameters.REMOTE_ADDR.toString()) == null) {
-          LOG.info("BUSINESS EXCEPTION : Session is null or invalid!");
-          throw new InvalidSessionEIDASException(
-                  EIDASUtil.getConfig(EIDASErrors.INVALID_SESSION.errorCode()),
-                  EIDASUtil.getConfig(EIDASErrors.INVALID_SESSION.errorMessage()));
-        }
-      }
-      // Prevent cookies from being accessed through client-side script.
-      setHTTPOnlyHeaderToSession(false, request, response);
-
-      final Map<String, String> parameters = getHttpRequestParameters(request);
-
-      // If the IdP doesn't sends any error then we must validate some
-      // parameters.
-      if (StringUtilities.isEmpty(errorCode)) {
-        // Validating Struts' attrList "chain" parameter
-        EIDASUtil.validateParameter(IdPResponseServlet.class.getCanonicalName(),
-                EIDASErrors.INVALID_ATTRIBUTE_LIST.toString(), attrList);
-        parameters.put(EIDASParameters.ATTRIBUTE_LIST.toString(),
-                attrList.toString());
-        controllerService.getSession().put(EIDASParameters.EIDAS_SERVICE_LOA.toString(), request.getAttribute(EIDASParameters.EIDAS_SERVICE_LOA.toString()));
-      } else {
-        parameters.put(EIDASParameters.ERROR_CODE.toString(), errorCode);
-        if (!StringUtilities.isEmpty(subCode)) {
-          parameters.put(EIDASParameters.ERROR_SUBCODE.toString(), subCode);
-        }
-        parameters.put(EIDASParameters.ERROR_MESSAGE.toString(), errorMessage);
-      }
-
-      controllerService.getProxyService().processIdPResponse(parameters, controllerService.getSession());
-      request.setAttribute(EIDASParameters.ATTRIBUTE_LIST.toString(), attrList);
-
-      LOG.debug("[APSelector]: "+PropertiesUtil.getProperty(NodeViewNames.AP_SELECTOR.toString()));
-
-      RequestDispatcher dispatcher = getServletContext().getRequestDispatcher(PropertiesUtil.getProperty(NodeViewNames.AP_SELECTOR.toString()));
-      dispatcher.forward(request,response);
-    }catch(ServletException e){
-      LOG.info(e.toString());
-      throw e;
-
-    }catch(IOException e) {
-      LOG.info(e.toString());
-      throw e;
+    @Override
+    protected Logger getLogger() {
+        return LOG;
     }
-  }
+
+    /**
+     * Logger object.
+     */
+    private static final Logger LOG = LoggerFactory.getLogger(IdPResponseServlet.class.getName());
+
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        execute(request, response);
+    }
+
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        execute(request, response);
+    }
+
+    /**
+     * Executes the method {@link eu.eidas.node.auth.service.AUSERVICE#processIdpResponse} (of the ProxyService) and
+     * then sets the internal variables used by the redirection JSP or the consent-value jsp, accordingly to {@link
+     * EidasParameterKeys#NO_CONSENT_VALUE} or {@link EidasParameterKeys#CONSENT_VALUE} respectively.
+     *
+     * @param request
+     * @param response
+     * @return {@link EidasParameterKeys#CONSENT_VALUE} if the consent-value form is to be displayed, {@link
+     * EidasParameterKeys#NO_CONSENT_VALUE} otherwise.
+     * @see EidasParameterKeys#NO_CONSENT_VALUE
+     * @see EidasParameterKeys#CONSENT_VALUE
+     */
+
+    private void execute(HttpServletRequest request, HttpServletResponse response)
+            throws IOException, ServletException {
+        try {
+
+            RequestDispatcher dispatcher = getServletContext().getRequestDispatcher(handleExecute(request, response));
+            dispatcher.forward(request, response);
+            HttpSession session = request.getSession(false);
+            if (null != session
+                    && session.getAttribute(EidasParameterKeys.EIDAS_CONNECTOR_SESSION.toString()) == null) {
+                session.invalidate();
+            }
+        } catch (ServletException e) {
+            getLogger().info("ERROR : ServletException {}", e.getMessage());
+            getLogger().debug("ERROR : ServletException {}", e);
+            throw e;
+        } catch (IOException e) {
+            getLogger().info("IOException {}", e.getMessage());
+            getLogger().debug("IOException {}", e);
+            throw e;
+        }
+
+    }
+
+    private String handleExecute(HttpServletRequest request, HttpServletResponse response) throws ServletException {
+
+        IdPResponseBean controllerService =
+                (IdPResponseBean) getApplicationContext().getBean(NodeBeanNames.IdP_RESPONSE.toString());
+
+        ISpecificProxyService specificProxyService = controllerService.getSpecificProxyService();
+        ILightResponse lightResponse;
+        try {
+            lightResponse = specificProxyService.processResponse(request, response);
+        } catch (SpecificException e) {
+            getLogger().error("SpecificException" + e, e);
+            // Illegal state: no error AND no success response received from the specific
+            throw new ServletException("Unable to process specific response: " + e, e);
+        }
+        if (null == lightResponse) {
+            getLogger().error("SpecificException: Missing specific response");
+            // Illegal state: no error AND no success response received from the specific
+            throw new ServletException("Missing specific response: no error and no success");
+        }
+
+        HttpSession session = request.getSession();
+        SessionHolder.setId(session);
+        session.setAttribute(EidasParameterKeys.SAML_PHASE.toString(), EIDASValues.EIDAS_SERVICE_RESPONSE);
+
+        // This is not the specific Map
+        CorrelationMap<StoredAuthenticationRequest> requestCorrelationMap =
+                controllerService.getProxyServiceRequestCorrelationMap();
+        StoredAuthenticationRequest storedAuthenticationRequest =
+                requestCorrelationMap.remove(lightResponse.getInResponseToId());
+
+        if (null == storedAuthenticationRequest) {
+            // send the error back:
+            if (LOG.isErrorEnabled()) {
+                LOG.error("Could not correlate any eIDAS request to the received specific IdP response: "
+                                  + lightResponse);
+            }
+            throw new ServletException(
+                    "Could not correlate specific response ID: " + lightResponse.getId() + " to any eIDAS request");
+        }
+
+        IAuthenticationRequest originalRequest = storedAuthenticationRequest.getRequest();
+
+        WebRequest webRequest = new IncomingRequest(request);
+
+        String retVal;
+
+        IResponseStatus responseStatus = lightResponse.getStatus();
+        if (responseStatus.isFailure()) {
+
+            String statusCode = responseStatus.getStatusCode();
+            String errorMessage = responseStatus.getStatusMessage();
+            String errorSubCode = responseStatus.getSubStatusCode();
+
+            // send the error back:
+            if (LOG.isErrorEnabled()) {
+                LOG.error("Received failed authentication from Specific Idp: errorMessage=\"" + errorMessage
+                                  + "\", statusCode=\"" + statusCode + "\", subCode=\"" + errorSubCode + "\"");
+            }
+            retVal = NodeViewNames.EIDAS_CONNECTOR_REDIRECT.toString();
+
+            getLogger().trace("Generate SAMLTokenFail because of authentication failure received from specific IdP");
+            String samlTokenFail = controllerService.getProxyService()
+                    .generateSamlTokenFail(originalRequest, statusCode, null, errorSubCode, errorMessage,
+                                           webRequest.getRemoteIpAddress(), false);
+
+            request.setAttribute(NodeParameterNames.SAML_TOKEN_FAIL.toString(), samlTokenFail);
+        } else {
+
+            // generate the eIDAS response with the ProxyService and send it back to the Connector:
+            if (controllerService.isAskConsentValue()) {
+                getLogger().trace("consent-value");
+                retVal = NodeViewNames.EIDAS_SERVICE_CITIZEN_CONSENT.toString();
+
+                // TODO: DO NOT generate this in advance!
+                getLogger().trace(
+                        "Generate SAMLTokenFail proactively in case of future consent refusal by the citizen");
+                String samlTokenFail = controllerService.getProxyService()
+                        .generateSamlTokenFail(originalRequest, EIDASStatusCode.REQUESTER_URI.toString(),
+                                               EidasErrorKey.CITIZEN_NO_CONSENT_MANDATORY,
+                                               webRequest.getRemoteIpAddress());
+
+                request.setAttribute(NodeParameterNames.SAML_TOKEN_FAIL.toString(), samlTokenFail);
+
+            } else {
+                getLogger().trace("no-consent-value");
+                retVal = NodeViewNames.EIDAS_CONNECTOR_REDIRECT.toString();
+            }
+
+            IResponseMessage responseMessage = controllerService.getProxyService()
+                    .processIdpResponse(webRequest, storedAuthenticationRequest, lightResponse);
+
+            String samlToken = EidasStringUtil.encodeToBase64(responseMessage.getMessageBytes());
+
+            request.setAttribute(NodeParameterNames.SAML_TOKEN.toString(), samlToken);
+
+            IAuthenticationResponse authnResponse = responseMessage.getResponse();
+
+            ImmutableAttributeMap responseAttributeMap = authnResponse.getAttributes();
+
+            ImmutableAttributeMap.Builder attrMapBuilder = new ImmutableAttributeMap.Builder();
+            ProtocolProcessorI extProx =
+                    controllerService.getProxyService().getSamlService().getSamlEngine().getProtocolProcessor();
+            for (AttributeDefinition attrDef : responseAttributeMap.getAttributeMap().keySet()) {
+                // filter out non file-registry attributes = dynamic, additional ones, where value must not be displayed
+                if (extProx.getAttributeDefinitionNullable(attrDef.getNameUri().toString()) != null
+                        && extProx.getAdditionalAttributes().getByName(attrDef.getNameUri().toString()) == null) {
+                    attrMapBuilder.put(attrDef, responseAttributeMap.getAttributeValuesByNameUri(attrDef.getNameUri()));
+                }
+            }
+            request.setAttribute(NodeParameterNames.PAL.toString(), attrMapBuilder.build().getAttributeMap());
+
+            boolean hasEidasAttributes = false;
+            for (final AttributeDefinition attributeDefinition : responseAttributeMap.getAttributeMap().keySet()) {
+                if (EidasSpec.REGISTRY.contains(attributeDefinition)) {
+                    hasEidasAttributes = true;
+                    break;
+                }
+            }
+            request.setAttribute(NodeParameterNames.EIDAS_ATTRIBUTES_PARAM.toString(),
+                                 Boolean.valueOf(hasEidasAttributes));
+
+            if (StringUtils.isNotBlank(authnResponse.getLevelOfAssurance())) {
+                request.setAttribute(NodeParameterNames.LOA_VALUE.toString(),
+                                     EidasAttributesUtil.getUserFriendlyLoa(authnResponse.getLevelOfAssurance()));
+            }
+        }
+
+        // Prevent cookies from being accessed through client-side script.
+        setHTTPOnlyHeaderToSession(false, request, response);
+
+        // Gets the attributes from Attribute Providers and validates mandatory
+        // attributes.
+
+        // Setting internal variables, to be included by the Struts on the JSP
+        getLogger().trace("setting internal variables");
+
+        String redirectUrl = originalRequest.getAssertionConsumerServiceURL();
+        getLogger().debug("redirectUrl: " + redirectUrl);
+
+        // These attributes are used by citizenConsent.jsp
+        request.setAttribute(NodeParameterNames.REDIRECT_URL.toString(),
+                             response.encodeRedirectURL(redirectUrl)); // Correct URl redirect cookie implementation
+        request.setAttribute(EidasParameterKeys.SP_ID.toString(), originalRequest.getProviderName());
+        if (originalRequest instanceof IStorkAuthenticationRequest) {
+            request.setAttribute(NodeParameterNames.QAA_LEVEL.toString(),
+                                 ((IStorkAuthenticationRequest) originalRequest).getQaa());
+        }
+
+        String relayState = storedAuthenticationRequest.getRelayState();
+        if (StringUtils.isNotBlank(relayState)) {
+            getLogger().debug("Relay State ProxyService " + relayState);
+            request.setAttribute(NodeParameterNames.RELAY_STATE.toString(), relayState);
+        }
+
+        return retVal;
+    }
 }

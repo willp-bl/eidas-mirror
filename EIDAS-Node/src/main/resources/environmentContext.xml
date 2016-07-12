@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.1.xsd">
+
+<!--
+
+    // Defining the eidasConfigRepository using an environment variable
+
+    <bean id="eidasConfigRepository" class="java.lang.String">
+        <constructor-arg value="#{systemEnvironment['EIDAS_CONFIG_REPOSITORY']}" />
+    </bean>
+
+-->
+<!--
+
+    // Defining the eidasConfigRepository using a System property
+
+    <bean id="eidasConfigRepository" class="java.lang.String">
+        <constructor-arg value="#{systemProperties['EIDAS_CONFIG_REPOSITORY']}" />
+    </bean>
+
+-->
+    <!-- Defining the eidasConfigRepository using a plain String -->
+    <bean id="eidasConfigRepository" class="java.lang.String">
+        <constructor-arg value="c:/pgm/projects/configEidas/"/>
+	</bean>
+
+</beans>

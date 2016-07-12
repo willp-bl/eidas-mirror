@@ -26,6 +26,21 @@
                         <span><fmt:message key="eidas.title" bundle="${i18n_eng}"/></span>
                     </h1>
                     <h2><fmt:message key="IdPRedirect.text" bundle="${i18n_eng}"/></h2>
+                    <c:if test="${idp_number>0}">
+                        <div class="form-group" id="citizenIdpDiv">
+                            <label for="idpList"><fmt:message key='IdpChoose.text' bundle="${i18n_eng}"/></label>
+                            <select name="idpList" id="idpList" class="form-control">
+                                <option data-description="Choose an option"></option>
+                                <c:forEach var="idpView" items="${idp_views}">
+                                    <option value="${idpView.idpUrl}">${idpView.idpDescription}</option>
+                                </c:forEach>
+                            </select>
+                            <p class="box-btn">
+                                <input type="submit" id="submit_idp_choice" class="btn btn-next" value="<fmt:message key='common.next' bundle="${i18n_eng}"/>"/>
+                            </p>
+                            <script type="text/javascript" src="js/idpRedirect.js"></script>
+                        </div>
+                    </c:if>
                     <form name="redirectForm" method="${e:forHtml(binding)}" action="${e:forHtml(idpUrl)}">
                         <input type="hidden" id="SAMLRequest" name="SAMLRequest" value="${e:forHtml(samlToken)}"/>
                         <input type="hidden" id="signAssertion" name="signAssertion" value='${e:forHtml(requestScope["response.sign.assertions"])}'/>
@@ -43,6 +58,7 @@
 							</p>
                         </form>
                     </noscript>
+                    <jsp:include page="footer-img.jsp"/>
                 </div>
             </div>
         </div>
@@ -50,6 +66,8 @@
 </main>
 <jsp:include page="footerScripts.jsp"/>
 <script type="text/javascript" src="js/autocompleteOff.js"></script>
-<script type="text/javascript" src="js/redirectOnload.js"></script>
+<c:if test="${empty idp_number}">
+    <script type="text/javascript" src="js/redirectOnload.js"></script>
+</c:if>
 </body>
 </html>

@@ -1,45 +1,54 @@
 package eu.eidas.engine.test.simple.eidas;
 
-import eu.eidas.auth.commons.EIDASAuthnRequest;
-import eu.eidas.auth.commons.IPersonalAttributeList;
-import eu.eidas.auth.commons.PersonalAttribute;
-import eu.eidas.auth.commons.PersonalAttributeList;
-import eu.eidas.auth.engine.EIDASSAMLEngine;
-import eu.eidas.auth.engine.core.SAMLExtensionFormat;
-import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-
-import static org.junit.Assert.*;
+import eu.eidas.auth.commons.attribute.AttributeDefinition;
+import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
+import eu.eidas.auth.commons.attribute.PersonType;
+import eu.eidas.auth.commons.attribute.impl.StringAttributeValue;
+import eu.eidas.auth.commons.attribute.impl.StringAttributeValueMarshaller;
+import eu.eidas.auth.commons.protocol.stork.IStorkAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.stork.impl.StorkAuthenticationRequest;
+import eu.eidas.auth.engine.ProtocolEngineFactory;
+import eu.eidas.auth.engine.ProtocolEngineI;
+import eu.eidas.auth.engine.core.SAMLCore;
+import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 public class EidasMessageFormatOnlyTest {
+
     /**
      * The Constant LOG.
      */
     private static final Logger LOG = LoggerFactory.getLogger(EidasMessageFormatOnlyTest.class.getName());
 
-    private EIDASSAMLEngine getEngine(String conf) {
-        EIDASSAMLEngine engine = null;
-        try {
-            engine = EIDASSAMLEngine.createSAMLEngine(conf);
-        } catch (EIDASSAMLEngineException exc) {
-            fail("Failed to initialize SAMLEngines");
-        }
-        return engine;
-    }
-    private EIDASSAMLEngine getEngine(){
-        return getEngine("EIDASONLY");
-    }
-    private EIDASSAMLEngine getStorkEngine(){
-        return getEngine("CONF1");
+    private static AttributeDefinition<String> newStorkAttributeDefinition(String friendlyName, boolean required) {
+        return new AttributeDefinition.Builder<String>().nameUri(SAMLCore.STORK10_BASE_URI.getValue() + friendlyName)
+                .friendlyName(friendlyName)
+                .required(required)
+                .personType(PersonType.NATURAL_PERSON)
+                .xmlType("http://www.w3.org/2001/XMLSchema", "string", "eidas-natural")
+                .attributeValueMarshaller(new StringAttributeValueMarshaller())
+                .build();
     }
 
+    private ProtocolEngineI getEngine(String conf) {
+        ProtocolEngineI engine = null;
+            engine = ProtocolEngineFactory.getDefaultProtocolEngine(conf);
+        return engine;
+    }
+
+    private ProtocolEngineI getEngine() {
+        return getEngine("EIDASONLY");
+    }
+
+    private ProtocolEngineI getStorkEngine() {
+        return getEngine("CONF2");
+    }
 
     /**
      * The destination.
@@ -82,9 +91,9 @@ public class EidasMessageFormatOnlyTest {
     private static final int QAAL = 3;
 
     /**
-     * The List of Personal Attributes.
+     * The Map of Attributes.
      */
-    private IPersonalAttributeList pal;
+    private ImmutableAttributeMap immutableAttributeMap;
 
     /**
      * The assertion consumer URL.
@@ -92,26 +101,14 @@ public class EidasMessageFormatOnlyTest {
     private String assertConsumerUrl;
 
     public EidasMessageFormatOnlyTest() {
-        pal = new PersonalAttributeList();
+        final AttributeDefinition<String> isAgeOver = newStorkAttributeDefinition("isAgeOver", true);
 
-        final PersonalAttribute isAgeOver = new PersonalAttribute();
-        isAgeOver.setName("isAgeOver");
-        isAgeOver.setIsRequired(true);
-        final ArrayList<String> ages = new ArrayList<String>();
-        ages.add("16");
-        ages.add("18");
-        isAgeOver.setValue(ages);
-        pal.add(isAgeOver);
+        final AttributeDefinition<String> dateOfBirth = newStorkAttributeDefinition("dateOfBirth", false);
 
-        final PersonalAttribute dateOfBirth = new PersonalAttribute();
-        dateOfBirth.setName("dateOfBirth");
-        dateOfBirth.setIsRequired(false);
-        pal.add(dateOfBirth);
+        final AttributeDefinition<String> eIDNumber = newStorkAttributeDefinition("eIdentifier", true);
 
-        final PersonalAttribute eIDNumber = new PersonalAttribute();
-        eIDNumber.setName("eIdentifier");
-        eIDNumber.setIsRequired(true);
-        pal.add(eIDNumber);
+        immutableAttributeMap =
+                new ImmutableAttributeMap.Builder().put(isAgeOver, new StringAttributeValue("16", false), new StringAttributeValue("18", false)).put(dateOfBirth).put(eIDNumber).build();
 
         destination = "http://proxyservice.gov.xx/EidasNode/ColleagueRequest";
         assertConsumerUrl = "http://connector.gov.xx/EidasNode/ColleagueResponse";
@@ -126,54 +123,49 @@ public class EidasMessageFormatOnlyTest {
 
     }
 
-
-
     @Test
-    public void testMessageFormatForEidasOnly(){
-        EIDASSAMLEngine engine = getEngine();
+    public void testMessageFormatForEidasOnly() {
+        ProtocolEngineI engine = getEngine();
         assertNotNull(engine);
-        assertTrue(engine.getExtensionProcessors().length== 1);
         byte[] request = null;
         try {
             request = generateStorkRequest();
-        }catch(EIDASSAMLEngineException ee){
-            fail("error during the generation of stork request: "+ee);
+        } catch (EIDASSAMLEngineException ee) {
+            fail("error during the generation of stork request: " + ee);
         }
-        try{
-            engine.validateEIDASAuthnRequest(request);
+        try {
+            engine.unmarshallRequestAndValidate(request, "EN");
             fail("can validate stork request on eidas only processor");
-        }catch(EIDASSAMLEngineException ee){
+        } catch (EIDASSAMLEngineException ee) {
+            try {
+                getStorkEngine().unmarshallRequestAndValidate(request, "EN");
+            } catch (EIDASSAMLEngineException ee1) {
+                fail("cannot validate stork request on multi processor engine");
+            }
+        }
 
-        }
-        try{
-            getStorkEngine().validateEIDASAuthnRequest(request);
-        }catch(EIDASSAMLEngineException ee){
-            fail("cannot validate stork request on multi processor engine");
-        }
     }
 
     private byte[] generateStorkRequest() throws EIDASSAMLEngineException {
 
-        final EIDASAuthnRequest request = new EIDASAuthnRequest();
+        IStorkAuthenticationRequest request = StorkAuthenticationRequest.builder()
+                .id("f5e7e0f5-b9b8-4256-a7d0-4090141b326d")
+                .issuer("http://localhost:7001/SP/metadata")
+                .destination(destination)
+                .providerName(spName)
+                .qaa(QAAL)
+                .requestedAttributes(immutableAttributeMap)
+                .assertionConsumerServiceURL(assertConsumerUrl)
+                .spSector(spSector)
+                .spInstitution(spInstitution)
+                .spApplication(spApplication)
+                .serviceProviderCountryCode(spCountry)
+                .spId(spId)
+                .citizenCountryCode("ES")
+                .levelOfAssurance("High")
+                .build();
 
-        request.setDestination(destination);
-        request.setProviderName(spName);
-        request.setQaa(QAAL);
-        request.setPersonalAttributeList(pal);
-        request.setAssertionConsumerServiceURL(assertConsumerUrl);
-
-        // news parameters
-        request.setSpSector(spSector);
-        request.setSpInstitution(spInstitution);
-        request.setSpApplication(spApplication);
-        request.setSpCountry(spCountry);
-        request.setSPID(spId);
-        request.setCitizenCountryCode("ES");
-        request.setMessageFormatName(SAMLExtensionFormat.STORK1_FORMAT_NAME);
-
-
-        return getStorkEngine().generateEIDASAuthnRequest(request).getTokenSaml();
+        return getStorkEngine().generateRequestMessage(request, null).getMessageBytes();
     }
-
 
 }

@@ -13,55 +13,54 @@
  */
 package eu.eidas.auth.engine.metadata;
 
-import eu.eidas.auth.engine.EIDASSAMLEngine;
-import eu.eidas.engine.exceptions.SAMLEngineException;
+import javax.annotation.Nonnull;
+
+import com.google.common.annotations.Beta;
 
 import org.opensaml.saml2.metadata.EntityDescriptor;
 import org.opensaml.saml2.metadata.IDPSSODescriptor;
 import org.opensaml.saml2.metadata.SPSSODescriptor;
 
-import java.security.KeyStore;
+import eu.eidas.auth.engine.ProtocolEngineI;
+import eu.eidas.engine.exceptions.EIDASMetadataProviderException;
+import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 
 /**
- * obtain and processes metadata associated with SAML requests and responses
+ * Obtains and processes SAML2 metadata objects associated with SAML requests and responses.
+ *
+ * @deprecated since 1.1, use {@link MetadataFetcherI} instead.
  */
+@Deprecated
+@Beta
 public interface MetadataProcessorI {
+
     /**
-     *
-     * @param url
+     * @param url the url of the metadata file
      * @return the entity descriptor associated with the given url.
-     * @throws SAMLEngineException
+     * @throws throws EIDASMetadataProviderException
      */
-    EntityDescriptor getEntityDescriptor(String url) throws SAMLEngineException;
+    EntityDescriptor getEntityDescriptor(@Nonnull String url) throws EIDASMetadataProviderException;
+
     /**
-     *
-     * @param url
+     * @param url the url of the metadata file
      * @return the first SPSSODescriptor found in the descriptor associated with the url
-     * @throws SAMLEngineException
+     * @throws EIDASMetadataProviderException
      */
-    SPSSODescriptor getSPSSODescriptor(String url) throws SAMLEngineException;
+    SPSSODescriptor getSPSSODescriptor(@Nonnull String url) throws EIDASMetadataProviderException;
+
     /**
-     *
-     * @param url
+     * @param url the url of the metadata file
      * @return the first IDPSSODescriptor found in the descriptor associated with the url
-     * @throws SAMLEngineException
+     * @throws EIDASMetadataProviderException
      */
-    IDPSSODescriptor getIDPSSODescriptor(String url) throws SAMLEngineException;
+    IDPSSODescriptor getIDPSSODescriptor(@Nonnull String url) throws EIDASMetadataProviderException;
 
     /**
      * check the signature of the descriptor found at the url
-     * @param url
-     * @param engine
-     * @throws SAMLEngineException when the signature is not trusted by the engine
+     *
+     * @param url the url of the metadata file
+     * @param engine the samlEngine instance used to validate the signature of the metadata file
+     * @throws EIDASMetadataProviderException when the signature is not trusted by the engine
      */
-    void checkValidMetadataSignature(String url, EIDASSAMLEngine engine) throws SAMLEngineException;
-
-    /**
-     * check the signature of the descriptor found at the url
-     * @param url
-     * @param trustStore
-     * @throws SAMLEngineException when the signature is not trusted by the keystore
-     */
-    void checkValidMetadataSignature(String url, KeyStore trustStore) throws SAMLEngineException;
-
+    void checkValidMetadataSignature(@Nonnull String url, @Nonnull ProtocolEngineI engine) throws EIDASSAMLEngineException;
 }

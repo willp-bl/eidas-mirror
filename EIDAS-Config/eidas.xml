@@ -105,7 +105,7 @@
 	<!-- Present consent-value form? (true/false) -->
 	<entry key="service.askconsent.value">true</entry>
 	<!-- Method to call after IdP -->
-	<entry key="service.specificidpredirect.url">http://eidasnode:8888/EidasNode/SpecificIdPResponse</entry>
+	<entry key="service.specificidpredirect.url">http://eidasnode:8888/EidasNode/IdpResponse</entry>
 	<!-- Method to call after AP -->
 	<entry key="service.specificapredirect.url">http://eidasnode:8888/EidasNode/APSelector</entry>
 	<!-- Action of Citizen Consent -->
@@ -223,6 +223,14 @@
 	<entry key="metadata.file.repository">c:\Pgm\projects\configeidas\tomcat\metadata</entry>
 	<entry key="metadata.http.retrieval">true</entry>
 	
+         <!-- Eidas Node Service Metadata Single Sign On locations for ServiceMetadata-->
+	<entry key="ssos.serviceMetadataGeneratorIDP.redirect.location">http://localhost:8080/EidasNode/ColleagueRequest</entry>
+	<entry key="ssos.serviceMetadataGeneratorIDP.post.location">http://localhost:8080/EidasNode/ColleagueRequest</entry>
+        
+         <!-- Eidas Node Service Metadata Single Sign On locations for ConnectorResponseMetadata-->
+	<entry key="ssos.connectorMetadataGeneratorIDP.redirect.location">http://localhost:8080/EidasNode/ServiceProvider</entry>
+	<entry key="ssos.connectorMetadataGeneratorIDP.post.location">http://localhost:8080/EidasNode/ServiceProvider</entry>
+                        
 	<!--
         Check that the citizen country code in the SAMLRequest is the same than the country of the Service signing certificate
     -->
@@ -245,9 +253,10 @@
 	<entry key="metadata.sector">public</entry>
 
 	<entry key="hashDigest.className">org.bouncycastle.crypto.digests.SHA512Digest</entry>
-	<!-- sets the application running environment to Dev, eg uses simple HashMasp instead of distributed cache -->
-	<entry key="node.run.environment">Dev</entry>
-
+	
+	<!-- sets the mapprovider for req-rep correlations, antireplay and metadata to distributed - hazelcast needs to be configured for this option -->
+	<entry key="distributedMaps">false</entry>
+	
 	<!-- sets the the applicaiton configuration in production mode, overrinding the values for some of the parameters -->
 	<entry key="productionmode">false</entry>
 

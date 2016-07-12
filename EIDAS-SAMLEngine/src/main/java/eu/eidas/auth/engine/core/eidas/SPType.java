@@ -1,11 +1,11 @@
-/* 
- * Licensed under the EUPL, Version 1.1 or – as soon they will be approved by
+/*
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
  * the European Commission - subsequent versions of the EUPL (the "Licence");
  * You may not use this work except in compliance with the Licence. You may
  * obtain a copy of the Licence at:
- * 
+ *
  * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the Licence is distributed on an "AS IS" basis, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -15,11 +15,11 @@
 
 package eu.eidas.auth.engine.core.eidas;
 
-import eu.eidas.auth.engine.core.SAMLCore;
+import javax.xml.namespace.QName;
 
 import org.opensaml.common.SAMLObject;
 
-import javax.xml.namespace.QName;
+import eu.eidas.auth.engine.core.SAMLCore;
 
 /**
  * The Interface SPType. - <eidas:SPType> MUST be present either in the <md:Extensions> element of SAML metadata or in the <saml2p:Extensions> element of a <saml2p:AuthnRequest>. The <eidas:SPType> element can contain the values "public" or "private" only
@@ -45,14 +45,14 @@ public interface SPType extends SAMLObject {
 
     /**
      * Gets the sector type.
-     * 
+     *
      * @return the sector provider
      */
     String getSPType();
 
     /**
      * Sets the request's sector type.
-     * 
+     *
      * @param spType the new service type
      */
     void setSPType(String spType);

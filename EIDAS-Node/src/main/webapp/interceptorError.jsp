@@ -1,3 +1,5 @@
+<%@ page import="eu.eidas.node.security.SecurityResponseHeaderHelper" %>
+<%@ page import="eu.eidas.node.security.ExtendedServletResponseWrapper" %>
 <!DOCTYPE html>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
@@ -12,6 +14,15 @@
     This page is for handling Node errors with error message defined in properties files
  *********************************************************************************** --%>
 <html>
+
+<%
+    /*  Check if the servlet has removed CSP headers added by filter before */
+    if (!(response instanceof ExtendedServletResponseWrapper)
+            || !((ExtendedServletResponseWrapper) response).hasCSPHeaders()) {
+        /* if the response was rewritten or no CSP flags, place them back if needed */
+        new SecurityResponseHeaderHelper().populateResponseHeader(request, response);
+    }
+%>
 
 <head>
     <jsp:include page="htmlHead.jsp"/>
@@ -44,6 +55,7 @@
                     </div>
                     <div id="cspMessage" class="warningCsp"></div>
                     <h2 class="sub-title text-highlight"><fmt:message key="thank.message" bundle="${i18n_error}" /></h2>
+                    <jsp:include page="footer-img.jsp"/>
                 </div>
             </div>
         </div>

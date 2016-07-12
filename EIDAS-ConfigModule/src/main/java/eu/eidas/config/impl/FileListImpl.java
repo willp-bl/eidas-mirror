@@ -1,6 +1,6 @@
 /*
 * Copyright  (c) $today.year European Commission
-* Licensed under the EUPL, Version 1.1 or – as soon they will be approved by
+* Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
 * the European Commission - subsequent versions of the EUPL (the "Licence");
 * You may not use this work except in compliance with the Licence. You may
 * obtain a copy of the Licence at:
@@ -15,9 +15,10 @@
 */
 package eu.eidas.config.impl;
 
-import javax.xml.bind.annotation.XmlElement;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.xml.bind.annotation.XmlElement;
 
 public class FileListImpl {
     private List<EIDASNodeConfFile> configurationFiles=new ArrayList<EIDASNodeConfFile>();

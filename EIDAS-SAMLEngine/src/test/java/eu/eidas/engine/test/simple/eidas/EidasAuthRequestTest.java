@@ -1,11 +1,11 @@
-/* 
- * Licensed under the EUPL, Version 1.1 or – as soon they will be approved by
+/*
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
  * the European Commission - subsequent versions of the EUPL (the "Licence");
  * You may not use this work except in compliance with the Licence. You may
  * obtain a copy of the Licence at:
- * 
+ *
  * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the Licence is distributed on an "AS IS" basis, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -15,27 +15,42 @@
 
 package eu.eidas.engine.test.simple.eidas;
 
-import eu.eidas.auth.commons.*;
-import eu.eidas.auth.engine.EIDASSAMLEngine;
-import eu.eidas.auth.engine.core.SAMLCore;
-import eu.eidas.auth.engine.core.SAMLExtensionFormat;
-import eu.eidas.auth.engine.core.eidas.EidasExtensionProcessor;
-import eu.eidas.auth.engine.core.stork.StorkExtensionProcessor;
-import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
-import eu.eidas.engine.test.simple.SSETestUtils;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.junit.FixMethodOrder;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runners.MethodSorters;
-import org.opensaml.xml.parse.BasicParserPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
+import eu.eidas.auth.commons.EidasStringUtil;
+import eu.eidas.auth.commons.attribute.AttributeDefinition;
+import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
+import eu.eidas.auth.commons.attribute.impl.StringAttributeValue;
+import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.IRequestMessage;
+import eu.eidas.auth.commons.protocol.eidas.IEidasAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.eidas.LevelOfAssurance;
+import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.impl.SamlNameIdFormat;
+import eu.eidas.auth.engine.ProtocolEngineFactory;
+import eu.eidas.auth.engine.ProtocolEngineI;
+import eu.eidas.auth.engine.core.eidas.EidasProtocolProcessor;
+import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
+import eu.eidas.engine.test.simple.SSETestUtils;
 
-import static org.junit.Assert.*;
+import static eu.eidas.engine.EidasAttributeTestUtil.newAttributeDefinition;
+import static eu.eidas.engine.EidasAttributeTestUtil.newEidasAttributeDefinition;
+import static eu.eidas.engine.EidasAttributeTestUtil.newStorkAttributeDefinition;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * The Class EidasAuthRequestTest performs unit test for EIDAS format requests
@@ -43,28 +58,38 @@ import static org.junit.Assert.*;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class EidasAuthRequestTest {
 
-	private static final String NAMEID_FORMAT="urn:oasis:names:tc:SAML:2.0:nameid-format:transient";
-	private static final String LOA_LOW="http://eidas.europa.eu/LoA/low";
+    @SuppressWarnings({"PublicField"})
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
+
+    private static final String TEST_ATTRIBUTE_FULL_NAME =
+            "http://eidas.europa.eu/attributes/naturalperson/EidasAdditionalAttribute";
+
     /**
      * The engines.
      */
-    EIDASSAMLEngine getEngine(){
+    ProtocolEngineI getEngine() {
         return getEngine("CONF1");
     }
-    EIDASSAMLEngine getEngine2(){
+
+    ProtocolEngineI getEngine2() {
         return getEngine("CONF2");
     }
-    EIDASSAMLEngine getEngine3(){
+
+    ProtocolEngineI getEngine3() {
         return getEngine("CONF3");
     }
-    EIDASSAMLEngine getEngine4(){
+
+    ProtocolEngineI getEngine4() {
         return getEngine("CONF4");
     }
-    EIDASSAMLEngine getEngine(String conf) {
-        EIDASSAMLEngine engine = null;
+
+    ProtocolEngineI getEngine(String conf) {
+        ProtocolEngineI engine = null;
         try {
-            engine = EIDASSAMLEngine.createSAMLEngine(conf);
-            engine.setExtensionProcessor(new EidasExtensionProcessor());
+            engine = ProtocolEngineFactory.createProtocolEngine(conf, new EidasProtocolProcessor(
+                    "saml-engine-eidas-attributes-" + conf + ".xml",
+                    "saml-engine-additional-attributes-" + conf + ".xml", null, null));
         } catch (EIDASSAMLEngineException exc) {
             fail("Failed to initialize SAMLEngines");
         }
@@ -75,35 +100,38 @@ public class EidasAuthRequestTest {
      * Instantiates a new authentication request test.
      */
     public EidasAuthRequestTest() {
-        pal = new PersonalAttributeList();
+        Map<AttributeDefinition, ? extends Iterable<String>> attributeDefinitionMap = new HashMap<>();
 
-        final PersonalAttribute dateOfBirth = new PersonalAttribute();
-        dateOfBirth.setName("DateOfBirth");
-        dateOfBirth.setIsRequired(false);
-        pal.add(dateOfBirth);
+        AttributeDefinition eIDNumber =
+                newEidasAttributeDefinition("PersonIdentifier", "PersonIdentifier", true, true, false);
+        AttributeDefinition dateOfBirth = newEidasAttributeDefinition("DateOfBirth", "DateOfBirth", true, false, false);
+        AttributeDefinition familyName =
+                newEidasAttributeDefinition("CurrentFamilyName", "FamilyName", true, false, true);
+        AttributeDefinition currentAddress =
+                newEidasAttributeDefinition("CurrentAddress", "CurrentAddress", false, false, false);
 
-        final PersonalAttribute eIDNumber = new PersonalAttribute();
-        eIDNumber.setName("PersonIdentifier");
-        eIDNumber.setIsRequired(true);
-        pal.add(eIDNumber);
-
-        final PersonalAttribute familyName = new PersonalAttribute();
-        familyName.setName("FamilyName");
-        familyName.setIsRequired(true);
-        pal.add(familyName);
+        immutableAttributeMap = new ImmutableAttributeMap.Builder().put(eIDNumber)
+                .put(dateOfBirth)
+                .put(familyName)
+                .put(currentAddress)
+                .build();
 
         destination = "http://proxyservice.gov.xx/EidasNode/ColleagueRequest";
         assertConsumerUrl = "http://connector.gov.xx/EidasNode/ColleagueResponse";
 
         spName = "University of Oxford";
-        spSector = "EDU001";
-        spInstitution = "OXF001";
-        spApplication = "APP001";
-        spCountry = "EN";
 
-        spId = "EDU001-OXF001-APP001";
-
+        spType = "public";
     }
+
+    /**
+     * Dummy samlId
+     */
+    private static String DUMMY_SAML_ID = "0";
+
+    private static String DUMMY_ISSUER_URI = "http://issuer.com";
+
+    private static String LEVEL_OF_ASSURANCE = LevelOfAssurance.LOW.getValue();
 
     /**
      * The destination.
@@ -116,39 +144,14 @@ public class EidasAuthRequestTest {
     private String spName;
 
     /**
-     * The service provider sector.
+     * The service provider type.
      */
-    private String spSector;
+    private String spType;
 
     /**
-     * The service provider institution.
+     * The Map of Attributes.
      */
-    private String spInstitution;
-
-    /**
-     * The service provider application.
-     */
-    private String spApplication;
-
-    /**
-     * The service provider country.
-     */
-    private String spCountry;
-
-    /**
-     * The service provider id.
-     */
-    private String spId;
-
-    /**
-     * The quality authentication assurance level.
-     */
-    private static final int QAAL = 3;
-
-    /**
-     * The List of Personal Attributes.
-     */
-    private IPersonalAttributeList pal;
+    private ImmutableAttributeMap immutableAttributeMap;
 
     /**
      * The assertion consumer URL.
@@ -163,17 +166,7 @@ public class EidasAuthRequestTest {
     /**
      * The Constant LOG.
      */
-    private static final Logger LOG = LoggerFactory
-            .getLogger(EidasAuthRequestTest.class.getName());
-
-    /**
-     * Parser manager used to parse XML.
-     */
-    private static BasicParserPool parser;
-
-    static {
-        parser = EIDASSAMLEngine.getNewBasicSecuredParserPool();
-    }
+    private static final Logger LOG = LoggerFactory.getLogger(EidasAuthRequestTest.class.getName());
 
     /**
      * Test generate authentication request.
@@ -181,205 +174,110 @@ public class EidasAuthRequestTest {
      * @throws EIDASSAMLEngineException the EIDASSAML engine exception
      */
     @Test
-    public final void testGenerateAuthnRequest() throws EIDASSAMLEngineException {
+    public void testGenerateAuthnRequest() throws EIDASSAMLEngineException {
 
-        final EIDASAuthnRequest request = new EIDASAuthnRequest();
+        AttributeDefinition additionalAttributeDefinition =
+                newAttributeDefinition(TEST_ATTRIBUTE_FULL_NAME, "EidasAdditionalAttribute", true);
+        ImmutableAttributeMap additionalAttributeMap =
+                new ImmutableAttributeMap.Builder().put(additionalAttributeDefinition).build();
 
-        request.setDestination(destination);
-        request.setProviderName(spName);
-        request.setQaa(QAAL);
-        request.setPersonalAttributeList(pal);
-        request.setAssertionConsumerServiceURL(assertConsumerUrl);
-        request.setMessageFormatName(SAMLExtensionFormat.EIDAS10.getName());
+        IAuthenticationRequest request = new EidasAuthenticationRequest.Builder().destination(destination)
+                .providerName(spName)
+                .requestedAttributes(additionalAttributeMap)
+                .assertionConsumerServiceURL(assertConsumerUrl)
+                .spType("public")
+                .levelOfAssurance(LEVEL_OF_ASSURANCE)
+                .id(DUMMY_SAML_ID)
+                .issuer(DUMMY_ISSUER_URI)
+                .citizenCountryCode("ES")
+                .nameIdFormat(SamlNameIdFormat.PERSISTENT.toString())
+                .build();
 
-        // new parameters
-        request.setCitizenCountryCode("ES");
-        request.setSPType("public");
-        request.setEidasLoA(LOA_LOW);
-        request.setEidasNameidFormat(NAMEID_FORMAT);
-        final IPersonalAttributeList attrList = new PersonalAttributeList();
-
-        final PersonalAttribute newAttr = new PersonalAttribute();
-        newAttr.setName("EidasAdditionalAttribute");
-        newAttr.setIsRequired(true);
-        attrList.add(newAttr);
-        request.setPersonalAttributeList(attrList);
-
-        byte [] samlToken = getEngine().generateEIDASAuthnRequest(request).getTokenSaml();
-        LOG.info("EIDASAuthnRequest 1: " + SSETestUtils.encodeSAMLToken(samlToken));
-        EIDASAuthnRequest parsedRequest = getEngine().validateEIDASAuthnRequest(samlToken);
+        byte[] samlToken = getEngine().generateRequestMessage(request, null).getMessageBytes();
+        LOG.info("EidasAuthenticationRequest 1: " + SSETestUtils.encodeSAMLToken(samlToken));
+        IAuthenticationRequest parsedRequest = getEngine().unmarshallRequestAndValidate(samlToken, "ES");
         assertNotNull(parsedRequest);
-        assertFalse(parsedRequest.getPersonalAttributeList().isEmpty());
-        request.setCitizenCountryCode("ES");
-        LOG.info("EIDASAuthnRequest 2: " + SSETestUtils.encodeSAMLToken(getEngine().generateEIDASAuthnRequest(request).getTokenSaml()));
+        assertFalse(parsedRequest.getRequestedAttributes().isEmpty());
+
+        LOG.info("EidasAuthenticationRequest 2: " + SSETestUtils.encodeSAMLToken(
+                getEngine().generateRequestMessage(request, null).getMessageBytes()));
     }
 
-
     /**
-     * Test generate authentication request error personal attribute name error.
+     * Test generate authentication request empty personal attribute name error.
      */
     @Test
-    public final void testGenerateAuthnRequestPALsErr1() {
-
-        final IPersonalAttributeList palWrong = new PersonalAttributeList();
-
-        final PersonalAttribute wrongAttr = new PersonalAttribute();
-        wrongAttr.setName("attrNotValid");
-        wrongAttr.setIsRequired(true);
-
-        final EIDASAuthnRequest request = new EIDASAuthnRequest();
-
-        request.setDestination(destination);
-        request.setProviderName(spName);
-        request.setQaa(QAAL);
-        request.setPersonalAttributeList(palWrong);
-        request.setAssertionConsumerServiceURL(assertConsumerUrl);
-
-        // news parameters
-        request.setSpSector(spSector);
-        request.setSpInstitution(spInstitution);
-        request.setSpApplication(spApplication);
-        request.setSpCountry(spCountry);
-        request.setSPID(spId);
-        request.setCitizenCountryCode("ES");
+    public void testGenerateAuthnRequestPALsErr1() {
+        ImmutableAttributeMap emptyAttributeMap = new ImmutableAttributeMap.Builder().build();
+        IAuthenticationRequest request = new EidasAuthenticationRequest.Builder().destination(destination)
+                .providerName(spName)
+                .levelOfAssurance(LEVEL_OF_ASSURANCE)
+                .assertionConsumerServiceURL(assertConsumerUrl)
+                .spType(spType)
+                .requestedAttributes(emptyAttributeMap)
+                .id(DUMMY_SAML_ID)
+                .issuer(DUMMY_ISSUER_URI)
+                .citizenCountryCode("ES")
+                .nameIdFormat(SamlNameIdFormat.PERSISTENT.toString())
+                .build();
 
         try {
-            getEngine().generateEIDASAuthnRequest(request);
-            fail("generateEIDASAuthnRequest(...) should've thrown an EIDASSAMLEngineException!");
+            getEngine().generateRequestMessage(request, null);
+            fail("generateRequestMessage(...) should've thrown an EIDASSAMLEngineException!");
         } catch (EIDASSAMLEngineException e) {
             LOG.error("Error");
         }
     }
-
 
     /**
      * Test generate authentication request error personal attribute value error.
      */
     @Test
-    public final void testGenerateAuthnRequestPALsErr2() {
+    public void testGenerateAuthnRequestPALsErr2() throws Exception {
 
-        final IPersonalAttributeList palWrong = new PersonalAttributeList();
+        AttributeDefinition wrongAttributeDefinition =
+                newEidasAttributeDefinition("attrNotValid", "attrNotValid", true);
+        ImmutableAttributeMap wrongAttributeMap =
+                new ImmutableAttributeMap.Builder().put(wrongAttributeDefinition).build();
 
-        final PersonalAttribute attrNotValid = new PersonalAttribute();
-        attrNotValid.setName("attrNotValid");
-        attrNotValid.setIsRequired(true);
-        palWrong.add(attrNotValid);
+        IAuthenticationRequest request = new EidasAuthenticationRequest.Builder().destination(destination)
+                .providerName(spName)
+                .levelOfAssurance(LEVEL_OF_ASSURANCE)
+                .assertionConsumerServiceURL(assertConsumerUrl)
+                .spType(spType)
+                .requestedAttributes(wrongAttributeMap)
+                .id(DUMMY_SAML_ID)
+                .issuer(DUMMY_ISSUER_URI)
+                .citizenCountryCode("ES")
+                .nameIdFormat(SamlNameIdFormat.PERSISTENT.toString())
+                .build();
 
-
-        final EIDASAuthnRequest request = new EIDASAuthnRequest();
-
-        request.setDestination(destination);
-        request.setProviderName(spName);
-        request.setQaa(QAAL);
-        request.setPersonalAttributeList(palWrong);
-        request.setAssertionConsumerServiceURL(assertConsumerUrl);
-
-        // news parameters
-        request.setSpSector(spSector);
-        request.setSpInstitution(spInstitution);
-        request.setSpApplication(spApplication);
-        request.setSpCountry(spCountry);
-        request.setSPID(spId);
-        request.setCitizenCountryCode("ES");
-
-        try {
-            getEngine().generateEIDASAuthnRequest(request);
-            fail("generateEIDASAuthnRequest(...) should've thrown an EIDASSAMLEngineException!");
-        } catch (EIDASSAMLEngineException e) {
-            LOG.error("Error");
-        }
+        IRequestMessage authenticationRequest = getEngine().generateRequestMessage(request, null);
+        assertNotNull(authenticationRequest);
     }
 
     /**
      * Test generate authentication request error provider name null.
      */
     @Test
-    public final void testGenerateAuthnRequestSPNAmeErr1() {
+    public void testGenerateAuthnRequestSPNAmeErr1() {
 
-
-        final EIDASAuthnRequest request = new EIDASAuthnRequest();
-
-        request.setDestination(destination);
-        request.setProviderName(null);
-        request.setQaa(QAAL);
-        request.setPersonalAttributeList(pal);
-        request.setAssertionConsumerServiceURL(assertConsumerUrl);
-
-        // news parameters
-        request.setSpSector(spSector);
-        request.setSpInstitution(spInstitution);
-        request.setSpApplication(spApplication);
-        request.setSpCountry(spCountry);
-        request.setSPID(spId);
-        request.setCitizenCountryCode("ES");
+        IAuthenticationRequest request = new EidasAuthenticationRequest.Builder().destination(destination)
+                .levelOfAssurance(LEVEL_OF_ASSURANCE)
+                .assertionConsumerServiceURL(assertConsumerUrl)
+                .spType(spType)
+                .requestedAttributes(immutableAttributeMap)
+                .id(DUMMY_SAML_ID)
+                .issuer(DUMMY_ISSUER_URI)
+                .citizenCountryCode("ES")
+                .nameIdFormat(SamlNameIdFormat.PERSISTENT.toString())
+                .build();
 
         try {
-            getEngine().generateEIDASAuthnRequest(request);
-            fail("generateEIDASAuthnRequest(...) should've thrown an EIDASSAMLEngineException!");
+            getEngine().generateRequestMessage(request, null);
+            fail("generateRequestMessage(...) should've thrown an EIDASSAMLEngineException!");
         } catch (EIDASSAMLEngineException e) {
             LOG.error("Error");
-        }
-    }
-
-    /**
-     * Test generate authentication request service provider sector null.
-     */
-    @Test
-    public final void testGenerateAuthnRequestSectorErr() {
-
-        final EIDASAuthnRequest request = new EIDASAuthnRequest();
-
-        request.setDestination(destination);
-        request.setProviderName(spName);
-        request.setQaa(QAAL);
-        request.setPersonalAttributeList(pal);
-        request.setAssertionConsumerServiceURL(assertConsumerUrl);
-
-        // news parameters
-        request.setSpSector(null);
-        request.setSpInstitution(spInstitution);
-        request.setSpApplication(spApplication);
-        request.setSpCountry(spCountry);
-        request.setSPID(spId);
-        request.setCitizenCountryCode("ES");
-
-        try {
-            getEngine().generateEIDASAuthnRequest(request);
-        } catch (EIDASSAMLEngineException e) {
-            LOG.error("Error");
-            fail("generateEIDASAuthnRequest(...) should've thrown an EIDASSAMLEngineException!");
-
-        }
-    }
-
-    /**
-     * Test generate authentication request service provider institution null.
-     */
-    @Test
-    public final void testGenerateAuthnRequestInstitutionrErr() {
-
-        final EIDASAuthnRequest request = new EIDASAuthnRequest();
-
-        request.setDestination(destination);
-        request.setProviderName(spName);
-        request.setQaa(QAAL);
-        request.setPersonalAttributeList(pal);
-        request.setAssertionConsumerServiceURL(assertConsumerUrl);
-
-        // news parameters
-        request.setSpSector(spSector);
-        request.setSpInstitution(null);
-        request.setSpApplication(spApplication);
-        request.setSpCountry(spCountry);
-        request.setSPID(spId);
-        request.setCitizenCountryCode("ES");
-
-        try {
-            getEngine().generateEIDASAuthnRequest(request);
-
-        } catch (EIDASSAMLEngineException e) {
-            LOG.error("Error");
-            fail("generateEIDASAuthnRequest(...) should've thrown an EIDASSAMLEngineException!");
         }
     }
 
@@ -387,30 +285,26 @@ public class EidasAuthRequestTest {
      * Test generate authentication request service provider application null.
      */
     @Test
-    public final void testGenerateAuthnRequestApplicationErr() {
+    public void testGenerateAuthnRequestApplicationErr() {
 
-        final EIDASAuthnRequest request = new EIDASAuthnRequest();
-
-        request.setDestination(destination);
-        request.setProviderName(spName);
-        request.setQaa(QAAL);
-        request.setPersonalAttributeList(pal);
-        request.setAssertionConsumerServiceURL(assertConsumerUrl);
-
-        // news parameters
-        request.setSpSector(spSector);
-        request.setSpInstitution(spInstitution);
-        request.setSpApplication(null);
-        request.setSpCountry(spCountry);
-        request.setSPID(spId);
-        request.setCitizenCountryCode("ES");
+        IAuthenticationRequest request = new EidasAuthenticationRequest.Builder().destination(destination)
+                .providerName(null)
+                .levelOfAssurance(LEVEL_OF_ASSURANCE)
+                .assertionConsumerServiceURL(assertConsumerUrl)
+                .spType(spType)
+                .requestedAttributes(immutableAttributeMap)
+                .id(DUMMY_SAML_ID)
+                .issuer(DUMMY_ISSUER_URI)
+                .citizenCountryCode("ES")
+                .nameIdFormat(SamlNameIdFormat.PERSISTENT.toString())
+                .build();
 
         try {
-            getEngine().generateEIDASAuthnRequest(request);
-
+            getEngine().generateRequestMessage(request, null);
+            fail("generateRequestMessage(...) should've thrown an EIDASSAMLEngineException!");
         } catch (EIDASSAMLEngineException e) {
-            LOG.error("Error");
-            fail("generateEIDASAuthnRequest(...) should've thrown an EIDASSAMLEngineException!");
+            LOG.error("Error: " + e, e);
+            e.printStackTrace();
         }
     }
 
@@ -418,58 +312,48 @@ public class EidasAuthRequestTest {
      * Test generate authentication request service provider country null.
      */
     @Test
-    public final void testGenerateAuthnRequestCountryErr() {
+    public void testGenerateAuthnRequestCountryErr() throws Exception {
 
-        final EIDASAuthnRequest request = new EIDASAuthnRequest();
+        thrown.expect(IllegalArgumentException.class);
+        thrown.expectMessage("citizenCountryCode cannot be null, empty or blank");
 
-        request.setDestination(destination);
-        request.setProviderName(spName);
-        request.setQaa(QAAL);
-        request.setPersonalAttributeList(pal);
-        request.setAssertionConsumerServiceURL(assertConsumerUrl);
-
-        // news parameters
-        request.setSpSector(spSector);
-        request.setSpInstitution(spInstitution);
-        request.setSpApplication(spApplication);
-        request.setSpCountry(null);
-        request.setSPID(spId);
-        request.setCitizenCountryCode("ES");
-
-        try {
-            getEngine().generateEIDASAuthnRequest(request);
-
-        } catch (EIDASSAMLEngineException e) {
-            LOG.error("Error");
-            fail("generateEIDASAuthnRequest(...) should've thrown an EIDASSAMLEngineException!");
-        }
+        IAuthenticationRequest request = new EidasAuthenticationRequest.Builder().destination(destination)
+                .providerName(spName)
+                .levelOfAssurance(LEVEL_OF_ASSURANCE)
+                .assertionConsumerServiceURL(assertConsumerUrl)
+                .spType(spType)
+                .requestedAttributes(immutableAttributeMap)
+                .id(DUMMY_SAML_ID)
+                .issuer(DUMMY_ISSUER_URI)
+                .citizenCountryCode(null)
+                .nameIdFormat(SamlNameIdFormat.PERSISTENT.toString())
+                .build();
+        getEngine().generateRequestMessage(request, null);
     }
 
     /**
-     * Test generate authentication request error with quality authentication
-     * assurance level wrong.
+     * Test generate authentication request error with quality authentication assurance level wrong.
      */
     @Test
-    public final void testGenerateAuthnRequestLoAErr() {
-        final EIDASAuthnRequest request = new EIDASAuthnRequest();
+    public void testGenerateAuthnRequestLoAErr() {
+        thrown.expect(IllegalArgumentException.class);
+        thrown.expectMessage("Invalid levelOfAssurance: \"incorrectValue\"");
 
-        request.setDestination(destination);
-        request.setProviderName(spName);
-        request.setQaa(0);
-        request.setPersonalAttributeList(pal);
-        request.setEidasLoA("incorrectvalue");
-
-        // news parameters
-        request.setSpSector(spSector);
-        request.setSpInstitution(spInstitution);
-        request.setSpApplication(spApplication);
-        request.setSpCountry(spCountry);
-        request.setSPID(spId);
-        request.setCitizenCountryCode("ES");
+        IAuthenticationRequest request = new EidasAuthenticationRequest.Builder().destination(destination)
+                .providerName(spName)
+                .levelOfAssurance("incorrectValue")
+                .assertionConsumerServiceURL(assertConsumerUrl)
+                .spType(spType)
+                .requestedAttributes(immutableAttributeMap)
+                .id(DUMMY_SAML_ID)
+                .issuer(DUMMY_ISSUER_URI)
+                .citizenCountryCode("ES")
+                .nameIdFormat(SamlNameIdFormat.PERSISTENT.toString())
+                .build();
 
         try {
-            getEngine().generateEIDASAuthnRequest(request);
-            fail("generateEIDASAuthnRequest(...) should've thrown an EIDASSAMLEngineException!");
+            getEngine().generateRequestMessage(request, null);
+            fail("generateRequestMessage(...) should've thrown an EIDASSAMLEngineException!");
         } catch (EIDASSAMLEngineException e) {
             LOG.error("Error");
         }
@@ -479,26 +363,21 @@ public class EidasAuthRequestTest {
      * Test generate authentication request personal attribute list null value.
      */
     @Test
-    public final void testGenerateAuthnRequestPALErr1() {
-        final EIDASAuthnRequest request = new EIDASAuthnRequest();
-
-        request.setDestination(destination);
-        request.setProviderName(spName);
-        request.setQaa(QAAL);
-        request.setPersonalAttributeList(null);
-        request.setAssertionConsumerServiceURL(assertConsumerUrl);
-
-        // news parameters
-        request.setSpSector(spSector);
-        request.setSpInstitution(spInstitution);
-        request.setSpApplication(spApplication);
-        request.setSpCountry(spCountry);
-        request.setSPID(spId);
-        request.setCitizenCountryCode("ES");
+    public void testGenerateAuthnRequestPALErr1() {
+        IAuthenticationRequest request = new EidasAuthenticationRequest.Builder().destination(destination)
+                .providerName(spName)
+                .levelOfAssurance(LEVEL_OF_ASSURANCE)
+                .assertionConsumerServiceURL(assertConsumerUrl)
+                .spType(spType)
+                .id(DUMMY_SAML_ID)
+                .issuer(DUMMY_ISSUER_URI)
+                .citizenCountryCode("ES")
+                .nameIdFormat(SamlNameIdFormat.PERSISTENT.toString())
+                .build();
 
         try {
-            getEngine().generateEIDASAuthnRequest(request);
-            fail("generateEIDASAuthnRequest(...) should've thrown an EIDASSAMLEngineException!");
+            getEngine().generateRequestMessage(request, null);
+            fail("generateRequestMessage(...) should've thrown an EIDASSAMLEngineException!");
         } catch (EIDASSAMLEngineException e) {
             LOG.error("Error");
         }
@@ -510,11 +389,10 @@ public class EidasAuthRequestTest {
      * @throws EIDASSAMLEngineException the EIDASSAML engine exception
      */
     @Test
-    public final void testValidateAuthnRequestNullParam()
-            throws EIDASSAMLEngineException {
+    public void testValidateAuthnRequestNullParam() throws EIDASSAMLEngineException {
         try {
-            getEngine().validateEIDASAuthnRequest(null);
-            fail("validateEIDASAuthnRequest(...) should've thrown an EIDASSAMLEngineException!");
+            getEngine().unmarshallRequestAndValidate(null, "ES");
+            fail("processValidateRequestToken(...) should've thrown an EIDASSAMLEngineException!");
         } catch (EIDASSAMLEngineException e) {
             LOG.error("Error");
         }
@@ -526,11 +404,10 @@ public class EidasAuthRequestTest {
      * @throws EIDASSAMLEngineException the EIDASSAML engine exception
      */
     @Test
-    public final void testValidateAuthnRequestErrorEncode()
-            throws EIDASSAMLEngineException {
+    public void testValidateAuthnRequestErrorEncode() throws EIDASSAMLEngineException {
         try {
-            getEngine().validateEIDASAuthnRequest("messageError".getBytes());
-            fail("validateEIDASAuthnRequest(...) should've thrown an EIDASSAMLEngineException!");
+            getEngine().unmarshallRequestAndValidate(EidasStringUtil.getBytes("messageError"), "ES");
+            fail("processValidateRequestToken(...) should've thrown an EIDASSAMLEngineException!");
         } catch (EIDASSAMLEngineException e) {
             LOG.error("Error");
         }
@@ -542,25 +419,23 @@ public class EidasAuthRequestTest {
      * @throws EIDASSAMLEngineException the EIDASSAML engine exception
      */
     @Test
-    public final void testValidateAuthnRequest() throws EIDASSAMLEngineException {
-        final EIDASAuthnRequest validatedRequest = getEngine().validateEIDASAuthnRequest(getDefaultTestStorkAuthnRequestTokenSaml());
-
-        assertEquals("CrossBorderShare incorrect: ", validatedRequest.isEIDCrossBorderShare(), false);
-        assertEquals("CrossSectorShare incorrect: ", validatedRequest.isEIDCrossSectorShare(), false);
-        assertEquals("SectorShare incorrect: ", validatedRequest.isEIDSectorShare(), false);
-
+    public void testValidateAuthnRequest() throws EIDASSAMLEngineException {
+        IEidasAuthenticationRequest validatedRequest =
+                (IEidasAuthenticationRequest) getEngine().unmarshallRequestAndValidate(
+                        getDefaultTestEidasAuthnRequestTokenSaml(), "ES");
+        assertNotNull(validatedRequest.getSpType());
     }
 
     /**
-     * Test validate data authenticate request. Verified parameters after
-     * validation.
+     * Test validate data authenticate request. Verified parameters after validation.
      *
      * @throws EIDASSAMLEngineException the EIDASSAML engine exception
      */
     @Test
-    public final void testValidateDataAuthnRequest() throws EIDASSAMLEngineException {
+    public void testValidateDataAuthnRequest() throws EIDASSAMLEngineException {
 
-        final EIDASAuthnRequest request = getEngine().validateEIDASAuthnRequest(getDefaultTestStorkAuthnRequestTokenSaml());
+        IAuthenticationRequest request =
+                getEngine().unmarshallRequestAndValidate(getDefaultTestEidasAuthnRequestTokenSaml(), "ES");
 
         assertEquals("Sestination incorrect: ", request.getDestination(), destination);
 
@@ -572,7 +447,8 @@ public class EidasAuthRequestTest {
 //        assertEquals("QAAL incorrect: ", request.getQaa(), QAAL);
 //        assertEquals("SPInstitution incorrect: ", request.getSpInstitution(), null);
 //        assertEquals("SPApplication incorrect: ", request.getSpApplication(), spApplication);
-        assertEquals("Asserition consumer URL incorrect: ", request.getAssertionConsumerServiceURL(), assertConsumerUrl);
+        assertEquals("Asserition consumer URL incorrect: ", request.getAssertionConsumerServiceURL(),
+                     assertConsumerUrl);
 
 //        assertEquals("SP Country incorrect: ", request.getSpCountry(), spCountry);
 //        assertEquals("SP Id incorrect: ", request.getSPID(), spId);
@@ -586,12 +462,12 @@ public class EidasAuthRequestTest {
      * @throws Exception the exception
      */
     @Test
-    public final void testValidateFileAuthnRequest() throws Exception {
+    public void testValidateFileAuthnRequest() throws Exception {
 
-        final byte[] bytes = SSETestUtils.readSamlFromFile("/data/eu/eidas/EIDASSAMLEngine/AuthnRequest.xml");
+        byte[] bytes = SSETestUtils.readSamlFromFile("/data/eu/eidas/EIDASSAMLEngine/AuthnRequest.xml");
 
         try {
-            getEngine().validateEIDASAuthnRequest(bytes);
+            getEngine().unmarshallRequestAndValidate(bytes, "ES");
             fail("testValidateFileAuthnRequest(...) should've thrown an EIDASSAMLEngineException!");
         } catch (EIDASSAMLEngineException e) {
             LOG.error(e.getMessage());
@@ -604,13 +480,13 @@ public class EidasAuthRequestTest {
      * @throws Exception the exception
      */
     @Test
-    public final void testValidateFileAuthnRequestTagDelete() throws Exception {
+    public void testValidateFileAuthnRequestTagDelete() throws Exception {
 
-        final byte[] bytes = SSETestUtils.readSamlFromFile("/data/eu/eidas/EIDASSAMLEngine/AuthnRequestTagDelete.xml");
+        byte[] bytes = SSETestUtils.readSamlFromFile("/data/eu/eidas/EIDASSAMLEngine/AuthnRequestTagDelete.xml");
 
         try {
-            getEngine().validateEIDASAuthnRequest(bytes);
-            fail("validateEIDASAuthnRequest(...) should have thrown an EIDASSAMLEngineException!");
+            getEngine().unmarshallRequestAndValidate(bytes, "ES");
+            fail("processValidateRequestToken(...) should have thrown an EIDASSAMLEngineException!");
         } catch (EIDASSAMLEngineException e) {
             LOG.error(e.getMessage());
 
@@ -623,37 +499,26 @@ public class EidasAuthRequestTest {
      * @throws EIDASSAMLEngineException the EIDASSAML engine exception
      */
     @Test
-    public final void testValidateAuthnRequestNotTrustedErr1()
-            throws EIDASSAMLEngineException {
+    public void testValidateAuthnRequestNotTrustedErr1() throws EIDASSAMLEngineException {
 
         try {
-            final EIDASSAMLEngine engineNotTrusted = EIDASSAMLEngine
-                    .createSAMLEngine("CONF2");
-            engineNotTrusted.setExtensionProcessor(new EidasExtensionProcessor());
+            ProtocolEngineI engineNotTrusted =
+                    ProtocolEngineFactory.createProtocolEngine("CONF2", EidasProtocolProcessor.INSTANCE);
 
-            final EIDASAuthnRequest request = new EIDASAuthnRequest();
+            IAuthenticationRequest request = new EidasAuthenticationRequest.Builder().destination(destination)
+                    .providerName(spName)
+                    .levelOfAssurance(LEVEL_OF_ASSURANCE)
+                    .assertionConsumerServiceURL(assertConsumerUrl)
+                    .spType(spType)
+                    .requestedAttributes(immutableAttributeMap)
+                    .id(DUMMY_SAML_ID)
+                    .issuer(DUMMY_ISSUER_URI)
+                    .citizenCountryCode("ES")
+                    .nameIdFormat(SamlNameIdFormat.PERSISTENT.toString())
+                    .build();
+            byte[] authReqNotTrust = engineNotTrusted.generateRequestMessage(request, null).getMessageBytes();
 
-            request.setDestination(destination);
-            request.setProviderName(spName);
-            request.setQaa(QAAL);
-            request.setPersonalAttributeList(pal);
-            request.setAssertionConsumerServiceURL(assertConsumerUrl);
-
-            // news parameters
-            request.setSpSector(spSector);
-            request.setSpInstitution(spInstitution);
-            request.setSpApplication(spApplication);
-            request.setSpCountry(spCountry);
-            request.setSPType("public");
-
-            request.setSPID(spName);
-            request.setEidasLoA(LOA_LOW);
-            request.setEidasNameidFormat(NAMEID_FORMAT);
-
-            final byte[] authReqNotTrust = engineNotTrusted
-                    .generateEIDASAuthnRequest(request).getTokenSaml();
-
-            getEngine().validateEIDASAuthnRequest(authReqNotTrust);
+            getEngine().unmarshallRequestAndValidate(authReqNotTrust, "ES");
         } catch (EIDASSAMLEngineException e) {
             LOG.error("Error");
             fail("validateEIDASAuthnRequestNotTrusted(...) should not have thrown an EIDASSAMLEngineException!");
@@ -666,65 +531,51 @@ public class EidasAuthRequestTest {
      * @throws EIDASSAMLEngineException the EIDASSAML engine exception
      */
     @Test
-    public final void testValidateAuthnRequestTrusted()
-            throws EIDASSAMLEngineException {
+    public void testValidateAuthnRequestTrusted() throws EIDASSAMLEngineException {
 
-        final EIDASSAMLEngine engineTrusted = EIDASSAMLEngine
-                .createSAMLEngine("CONF3");
-        engineTrusted.setExtensionProcessor(new EidasExtensionProcessor());
+        ProtocolEngineI engineTrusted =
+                ProtocolEngineFactory.createProtocolEngine("CONF3", EidasProtocolProcessor.INSTANCE);
 
-        final EIDASAuthnRequest request = new EIDASAuthnRequest();
+        IAuthenticationRequest request = new EidasAuthenticationRequest.Builder().destination(destination)
+                .providerName(spName)
+                .levelOfAssurance(LEVEL_OF_ASSURANCE)
+                .assertionConsumerServiceURL(assertConsumerUrl)
+                .spType(spType)
+                .requestedAttributes(immutableAttributeMap)
+                .id(DUMMY_SAML_ID)
+                .issuer(DUMMY_ISSUER_URI)
+                .citizenCountryCode("ES")
+                .nameIdFormat(SamlNameIdFormat.PERSISTENT.toString())
+                .build();
 
-        request.setDestination(destination);
-        request.setProviderName(spName);
-        request.setQaa(QAAL);
-        request.setPersonalAttributeList(pal);
-        request.setAssertionConsumerServiceURL(assertConsumerUrl);
+        byte[] authReqTrust = engineTrusted.generateRequestMessage(request, null).getMessageBytes();
 
-
-        // news parameters
-        request.setSpSector(spSector);
-        request.setSpInstitution(spInstitution);
-        request.setSpApplication(spApplication);
-        request.setSpCountry(spCountry);
-        request.setSPType("public");
-        ///
-        request.setSPID(spName);
-        request.setEidasLoA(LOA_LOW);
-        request.setEidasNameidFormat(NAMEID_FORMAT);
-        final byte[] authReqNotTrust = engineTrusted.generateEIDASAuthnRequest(
-                request).getTokenSaml();
-
-        // engine ("CONF1") no have trust certificate from "CONF2"
-        getEngine().validateEIDASAuthnRequest(authReqNotTrust);
+        // engine ("CONF1")  have trust certificate from "CONF3"
+        getEngine().unmarshallRequestAndValidate(authReqTrust, "ES");
 
     }
-
 
     /**
      * Test generate authentication request service provider application not null.
      */
     @Test
-    public final void testGenerateAuthnRequestNADA() {
-        final EIDASAuthnRequest request = new EIDASAuthnRequest();
-
-        request.setDestination(destination);
-        request.setProviderName(spName);
-        request.setQaa(QAAL);
-        request.setPersonalAttributeList(pal);
-        request.setAssertionConsumerServiceURL(assertConsumerUrl);
-
-        // news parameters
-        request.setSpSector(null);
-        request.setSpInstitution(null);
-        request.setSpApplication(null);
-        request.setSpCountry(null);
-        request.setSPID("TEST_SP");
+    public void testGenerateAuthnRequestNADA() {
+        IEidasAuthenticationRequest request = new EidasAuthenticationRequest.Builder().destination(destination)
+                .providerName(spName)
+                .levelOfAssurance(LEVEL_OF_ASSURANCE)
+                .assertionConsumerServiceURL(assertConsumerUrl)
+                .spType("public")
+                .requestedAttributes(immutableAttributeMap)
+                .id(DUMMY_SAML_ID)
+                .issuer(DUMMY_ISSUER_URI)
+                .citizenCountryCode("ES")
+                .nameIdFormat(SamlNameIdFormat.PERSISTENT.toString())
+                .build();
 
         try {
-            authRequest = getEngine().generateEIDASAuthnRequest(request).getTokenSaml();
-            getEngine().validateEIDASAuthnRequest(authRequest);
-            assertNotNull(request.getSPID());
+            authRequest = getEngine().generateRequestMessage(request, null).getMessageBytes();
+            getEngine().unmarshallRequestAndValidate(authRequest, "ES");
+            assertNotNull(request.getSpType());
         } catch (EIDASSAMLEngineException e) {
             LOG.error("Error");
         }
@@ -734,25 +585,23 @@ public class EidasAuthRequestTest {
      * Test generate authentication request service provider application not null.
      */
     @Test
-    public final void testGenerateAuthnRequestWithVIDPAuthenticationBlockAbsent() {
-        final EIDASAuthnRequest request = new EIDASAuthnRequest();
-
-        request.setDestination(destination);
-        request.setProviderName(spName);
-        request.setQaa(QAAL);
-        request.setPersonalAttributeList(pal);
-        request.setAssertionConsumerServiceURL(assertConsumerUrl);
-
-        // news parameters
-        request.setSpSector(null);
-        request.setSpInstitution(null);
-        request.setSpApplication(null);
-        request.setSpCountry(null);
+    public void testGenerateAuthnRequestWithVIDPAuthenticationBlockAbsent() {
+        IEidasAuthenticationRequest request = new EidasAuthenticationRequest.Builder().destination(destination)
+                .providerName(spName)
+                .levelOfAssurance(LEVEL_OF_ASSURANCE)
+                .assertionConsumerServiceURL(assertConsumerUrl)
+                .requestedAttributes(immutableAttributeMap)
+                .id(DUMMY_SAML_ID)
+                .issuer(DUMMY_ISSUER_URI)
+                .citizenCountryCode("ES")
+                .nameIdFormat(SamlNameIdFormat.PERSISTENT.toString())
+                .spType("public")
+                .build();
 
         try {
-            authRequest = getEngine().generateEIDASAuthnRequest(request).getTokenSaml();
-            getEngine().validateEIDASAuthnRequest(authRequest);
-            assertNull(request.getSPID());
+            authRequest = getEngine().generateRequestMessage(request, null).getMessageBytes();
+            IAuthenticationRequest authenticationRequest = getEngine().unmarshallRequestAndValidate(authRequest, "ES");
+            assertEquals("public", ((IEidasAuthenticationRequest) authenticationRequest).getSpType().getValue());
         } catch (EIDASSAMLEngineException e) {
             LOG.error("Error");
         }
@@ -764,49 +613,39 @@ public class EidasAuthRequestTest {
      * @throws EIDASSAMLEngineException the EIDASSAML engine exception
      */
     @Test
-    public final void testValidateAuthnRequestWithUnknownElements() throws EIDASSAMLEngineException {
+    public void testValidateAuthnRequestWithUnknownElements() throws EIDASSAMLEngineException {
 
-        final EIDASAuthnRequest request = new EIDASAuthnRequest();
+        AttributeDefinition unknownAttributeDefinition = newEidasAttributeDefinition("unknown", "unknown", true);
 
-        request.setDestination(destination);
-        request.setProviderName(spName);
-        request.setQaa(QAAL);
-        request.setPersonalAttributeList(pal);
-        request.setAssertionConsumerServiceURL(assertConsumerUrl);
+        AttributeDefinition eIdentifier =
+                newEidasAttributeDefinition("PersonIdentifier", "PersonIdentifier", true, true, false);
 
-        IPersonalAttributeList pAttList = new PersonalAttributeList();
+        ImmutableAttributeMap attributeMapWithUnknown =
+                new ImmutableAttributeMap.Builder().put(unknownAttributeDefinition).put(eIdentifier).build();
 
-        final PersonalAttribute unknown = new PersonalAttribute();
-        unknown.setName("unknown");
-        unknown.setIsRequired(true);
-        pAttList.add(unknown);
+        IAuthenticationRequest request = new EidasAuthenticationRequest.Builder().destination(destination)
+                .providerName(spName)
+                .levelOfAssurance(LEVEL_OF_ASSURANCE)
+                .assertionConsumerServiceURL(assertConsumerUrl)
+                .spType(spType)
+                .requestedAttributes(attributeMapWithUnknown)
+                .id(DUMMY_SAML_ID)
+                .issuer(DUMMY_ISSUER_URI)
+                .citizenCountryCode("ES")
+                .nameIdFormat(SamlNameIdFormat.PERSISTENT.toString())
+                .build();
 
-        final PersonalAttribute eIdentifier = new PersonalAttribute();
-        eIdentifier.setName("PersonIdentifier");
-        eIdentifier.setIsRequired(true);
-        pAttList.add(eIdentifier);
-
-        request.setPersonalAttributeList(pAttList);
-
-        // new parameters
-        request.setSpSector(spSector);
-        request.setSpInstitution(spInstitution);
-        request.setSpApplication(spApplication);
-        request.setSpCountry(spCountry);
-        request.setSPID(spId);
-        request.setCitizenCountryCode("ES");
-        request.setSPType("public");
-        request.setEidasLoA(LOA_LOW);
-        request.setEidasNameidFormat(NAMEID_FORMAT);
-
-        EIDASAuthnRequest req = getEngine3().generateEIDASAuthnRequest(request);
-        String saml=new String(req.getTokenSaml(), Charset.forName("UTF-8"));
+        IRequestMessage req = getEngine3().generateRequestMessage(request, null);
+        byte[] messageBytes = req.getMessageBytes();
+        String saml = EidasStringUtil.toString(messageBytes);
         assertFalse(saml.isEmpty());
 
-        req = getEngine().validateEIDASAuthnRequest(req.getTokenSaml());
+        IAuthenticationRequest authenticationRequest = getEngine().unmarshallRequestAndValidate(messageBytes, "ES");
 
-        assertNull("The value shouldn't exist", req.getPersonalAttributeList().get("unknown"));
-        assertNotNull("The value should exist", req.getPersonalAttributeList().get("PersonIdentifier"));
+        assertNull("The value shouldn't exist",
+                   authenticationRequest.getRequestedAttributes().getAttributeValuesByNameUri("unknown"));
+        assertNotNull("The value should exist", authenticationRequest.getRequestedAttributes()
+                .getAttributeValuesByNameUri("http://eidas.europa.eu/attributes/naturalperson/PersonIdentifier"));
 
     }
 
@@ -816,53 +655,57 @@ public class EidasAuthRequestTest {
      * @throws EIDASSAMLEngineException the EIDASSAML engine exception
      */
     @Test
-    public final void testGenerateAuthnRequestWithIsRequiredElementsByDefault() throws EIDASSAMLEngineException {
+    public void testGenerateAuthnRequestWithIsRequiredElementsByDefault() throws EIDASSAMLEngineException {
+        AttributeDefinition eIdentifierRequired =
+                newEidasAttributeDefinition("PersonIdentifier", "PersonIdentifier", true, true, false);
+        AttributeDefinition eIdentifierOptional =
+                newEidasAttributeDefinition("PersonIdentifier", "PersonIdentifier", false, true, false);
 
-        final EIDASAuthnRequest request = new EIDASAuthnRequest();
+        ImmutableAttributeMap requestedAttributesWithRequired =
+                new ImmutableAttributeMap.Builder().put(eIdentifierRequired).build();
 
-        request.setDestination(destination);
-        request.setProviderName(spName);
-        request.setQaa(QAAL);
-        request.setPersonalAttributeList(pal);
-        request.setAssertionConsumerServiceURL(assertConsumerUrl);
+        ImmutableAttributeMap requestedAttributesWithOptional =
+                new ImmutableAttributeMap.Builder().put(eIdentifierOptional).build();
 
-        IPersonalAttributeList pAttList = new PersonalAttributeList();
+        IEidasAuthenticationRequest requestWithRequired =
+                new EidasAuthenticationRequest.Builder().destination(destination)
+                        .providerName(spName)
+                        .levelOfAssurance(LEVEL_OF_ASSURANCE)
+                        .assertionConsumerServiceURL(assertConsumerUrl)
+                        .spType(spType)
+                        .requestedAttributes(requestedAttributesWithRequired)
+                        .id(DUMMY_SAML_ID)
+                        .issuer(DUMMY_ISSUER_URI)
+                        .citizenCountryCode("ES")
+                        .nameIdFormat(SamlNameIdFormat.PERSISTENT.toString())
+                        .build();
 
-        final PersonalAttribute eIdentifier = new PersonalAttribute();
-        eIdentifier.setName("eIdentifier");
-        eIdentifier.setIsRequired(true);
-        pAttList.add(eIdentifier);
+        IAuthenticationRequest requestWithOptional =
+                new EidasAuthenticationRequest.Builder(requestWithRequired).requestedAttributes(
+                        requestedAttributesWithOptional).build();
 
-        request.setPersonalAttributeList(pAttList);
+        IRequestMessage reqTrue = getEngine().generateRequestMessage(requestWithRequired, null);
+        IRequestMessage reqFalse = getEngine2().generateRequestMessage(requestWithOptional, null);
+        IRequestMessage req = getEngine3().generateRequestMessage(requestWithRequired, null);
 
-        // new parameters
-        request.setSpSector(spSector);
-        request.setSpInstitution(spInstitution);
-        request.setSpApplication(spApplication);
-        request.setSpCountry(spCountry);
-        request.setSPID(spId);
-        request.setCitizenCountryCode("ES");
+        String token = EidasStringUtil.toString(req.getMessageBytes());
+        String reqTrueToken = EidasStringUtil.toString(reqTrue.getMessageBytes());
+        String reqFalseToken = EidasStringUtil.toString(reqFalse.getMessageBytes());
 
-        EIDASAuthnRequest req = new EIDASAuthnRequest();
-        EIDASAuthnRequest reqTrue = new EIDASAuthnRequest();
-        EIDASAuthnRequest reqFalse = new EIDASAuthnRequest();
+        System.out.println();
+        System.out.println("token = " + token);
+        System.out.println();
+        System.out.println("reqTrueToken = " + reqTrueToken);
+        System.out.println();
+        System.out.println("reqFalseToken = " + reqFalseToken);
+        System.out.println();
 
-        reqTrue = getEngine().generateEIDASAuthnRequest(request);
-        reqFalse = getEngine2().generateEIDASAuthnRequest(request);
-        req = getEngine3().generateEIDASAuthnRequest(request);
-
-
-        String token = new String(req.getTokenSaml());
-        String reqTrueToken = new String(reqTrue.getTokenSaml());
-        String reqFalseToken = new String(reqFalse.getTokenSaml());
-
-        assertTrue("The token must contain the chain 'isRequired'", token.contains("isRequired"));
-        assertTrue("The token must contain the chain 'isRequired'", reqTrueToken.contains("isRequired"));
-        assertFalse("The token must contain the chain 'isRequired'", reqFalseToken.contains("isRequired"));
-
+        assertTrue("The token must contain the chain 'isRequired=\"true\"'", token.contains("isRequired=\"true\""));
+        assertTrue("The token must contain the chain 'isRequired=\"true\"'",
+                   reqTrueToken.contains("isRequired=\"true\""));
+        assertTrue("The token must contain the chain 'isRequired=\"false\"'",
+                   reqFalseToken.contains("isRequired=\"false\""));
     }
-
-
 
     /**
      * Test cross validation: a request in EIDAS format validated against an eidas engine
@@ -870,121 +713,57 @@ public class EidasAuthRequestTest {
      * @throws EIDASSAMLEngineException the EIDASSAML engine exception
      */
     @Test
-    public final void testCrossValidation()
-            throws EIDASSAMLEngineException {
+    public void testCrossValidation() throws Exception {
 
-        final EIDASAuthnRequest request = new EIDASAuthnRequest();
+        AttributeDefinition<String> eIdentifier = newStorkAttributeDefinition("eIdentifier", true);
+        AttributeDefinition<String> isAgeOver = newStorkAttributeDefinition("isAgeOver", true);
 
-        PersonalAttributeList paler = new PersonalAttributeList();
-
-        final PersonalAttribute eIDNumber = new PersonalAttribute();
-        eIDNumber.setName("eIdentifier");
-        eIDNumber.setIsRequired(true);
-        paler.add(eIDNumber);
-
-        final PersonalAttribute isAgeOver = new PersonalAttribute();
-        isAgeOver.setName("isAgeOver");
-        isAgeOver.setIsRequired(true);
-        final ArrayList<String> ages = new ArrayList<String>();
-        ages.add("16");
-        ages.add("18");
-        isAgeOver.setValue(ages);
-        paler.add(isAgeOver);
-
-        request.setDestination(destination);
-        request.setProviderName(spName);
-        request.setQaa(QAAL);
-        request.setPersonalAttributeList(paler);
-        request.setAssertionConsumerServiceURL(assertConsumerUrl);
-
-        // new parameters
-        request.setSpSector(spSector);
-        request.setSpInstitution(spInstitution);
-        request.setSpApplication(spApplication);
-        request.setSpCountry(spCountry);
-        request.setSPID(spId);
-        request.setCitizenCountryCode("ES");
-
-        EIDASAuthnRequest req = new EIDASAuthnRequest();
-
+        ImmutableAttributeMap attributeMapWithMandatoryDataset = new ImmutableAttributeMap.Builder().put(eIdentifier)
+                .put(isAgeOver, new StringAttributeValue("16", false), new StringAttributeValue("18", false))
+                .build();
+        IAuthenticationRequest request = new EidasAuthenticationRequest.Builder().destination(destination)
+                .providerName(spName)
+                .levelOfAssurance(LEVEL_OF_ASSURANCE)
+                .assertionConsumerServiceURL(assertConsumerUrl)
+                .spType(spType)
+                .requestedAttributes(attributeMapWithMandatoryDataset)
+                .id(DUMMY_SAML_ID)
+                .issuer(DUMMY_ISSUER_URI)
+                .citizenCountryCode("ES")
+                .nameIdFormat(SamlNameIdFormat.PERSISTENT.toString())
+                .build();
         //prepare request in STORK format
-        EIDASSAMLEngine storkEngine = getEngine4();
-        storkEngine.setExtensionProcessor(new StorkExtensionProcessor());
-        req = storkEngine.generateEIDASAuthnRequest(request);
-        String asXml=new String(req.getTokenSaml(), Charset.forName("UTF-8"));
+        ProtocolEngineI storkEngine = getEngine4();
+        IRequestMessage req = storkEngine.generateRequestMessage(request, null);
 
         //validate request in a EIDAS enabled samlengine
-        try {
-            req = getEngine().validateEIDASAuthnRequest(req.getTokenSaml());
-            assertTrue("should throw a validation exception", false);
-        }catch(EIDASSAMLEngineException exc){
-
-        }
-
+        IAuthenticationRequest authenticationRequest =
+                getEngine().unmarshallRequestAndValidate(req.getMessageBytes(), "ES");
+        assertNotNull(authenticationRequest);
     }
-
-
 
     /**
      * Return the default authRequest token used in the tests.
+     *
      * @return default authRequest token
      * @throws EIDASSAMLEngineException
      */
-    private final byte[] getDefaultTestStorkAuthnRequestTokenSaml() throws EIDASSAMLEngineException {
-        final EIDASAuthnRequest request = new EIDASAuthnRequest();
+    private byte[] getDefaultTestEidasAuthnRequestTokenSaml() throws EIDASSAMLEngineException {
+        IAuthenticationRequest request = new EidasAuthenticationRequest.Builder().destination(destination)
+                .providerName(spName)
+                .levelOfAssurance(LEVEL_OF_ASSURANCE)
+                .assertionConsumerServiceURL(assertConsumerUrl)
+                .spType(spType)
+                .requestedAttributes(immutableAttributeMap)
+                .id(DUMMY_SAML_ID)
+                .issuer(DUMMY_ISSUER_URI)
+                .citizenCountryCode("ES")
+                .nameIdFormat(SamlNameIdFormat.PERSISTENT.toString())
+                .build();
 
-        request.setDestination(destination);
-        request.setProviderName(spName);
-        request.setQaa(QAAL);
-        request.setPersonalAttributeList(pal);
-        request.setAssertionConsumerServiceURL(assertConsumerUrl);
-
-        // news parameters
-        request.setSpSector(spSector);
-        request.setSpInstitution(spInstitution);
-        request.setSpApplication(spApplication);
-        request.setSpCountry(spCountry);
-        request.setSPID(spId);
-        request.setCitizenCountryCode("ES");
-        request.setSPType("public");
-        request.setEidasLoA("http://eidas.europa.eu/LoA/low");
-        request.setMessageFormatName(SAMLExtensionFormat.EIDAS_FORMAT_NAME);
-        request.setEidasNameidFormat("urn:oasis:names:tc:SAML:2.0:nameid-format:transient");
-        byte saml[]=getEngine().generateEIDASAuthnRequest(request).getTokenSaml();
-        String base64SamlXml=new String(saml);
+        byte saml[] = getEngine().generateRequestMessage(request, null).getMessageBytes();
+        String base64SamlXml = EidasStringUtil.toString(saml);
         assertFalse(base64SamlXml.isEmpty());
         return saml;
     }
-
-    @Test
-    public final void testResignAuthnRequest() throws EIDASSAMLEngineException {
-
-        EIDASAuthnRequest request = new EIDASAuthnRequest();
-
-        request.setDestination(destination);
-        request.setProviderName(spName);
-        request.setPersonalAttributeList(pal);
-
-        // new parameters
-        request.setSpSector(spSector);
-        request.setSpInstitution(spInstitution);
-        request.setSpApplication(spApplication);
-        request.setSpCountry(spCountry);
-        request.setSPID(spId);
-        request.setCitizenCountryCode("ES");
-        request.setBinding(EIDASAuthnRequest.BINDING_EMPTY);
-        request.setEidasNameidFormat("urn:oasis:names:tc:SAML:2.0:nameid-format:persistent");
-
-        try {
-            request = getEngine().generateEIDASAuthnRequest(request);
-            new StorkExtensionProcessor().configureExtension();
-            byte[] b=request.getTokenSaml();
-            String marshalled = new String(b, Constants.UTF8_ENCODING);
-            String resigned=new String(getEngine().resignEIDASTokenSAML(b));
-            assertFalse(resigned.isEmpty());
-        }catch(UnsupportedEncodingException uee){
-            fail("encoding error "+uee);
-        }
-    }
-
 }

@@ -1,11 +1,11 @@
-/* 
- * Licensed under the EUPL, Version 1.1 or – as soon they will be approved by
+/*
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
  * the European Commission - subsequent versions of the EUPL (the "Licence");
  * You may not use this work except in compliance with the Licence. You may
  * obtain a copy of the Licence at:
- * 
+ *
  * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the Licence is distributed on an "AS IS" basis, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -20,7 +20,6 @@ import javax.xml.namespace.QName;
 import org.opensaml.common.impl.AbstractSAMLObjectUnmarshaller;
 import org.opensaml.xml.XMLObject;
 import org.opensaml.xml.io.UnmarshallingException;
-import org.opensaml.xml.schema.XSBooleanValue;
 import org.opensaml.xml.util.XMLHelper;
 import org.w3c.dom.Attr;
 
@@ -29,7 +28,7 @@ import eu.eidas.auth.engine.core.stork.RequestedAttribute;
 
 /**
  * The Class RequestedAttributeUnmarshaller.
- * 
+ *
  * @author fjquevedo
  */
 public class RequestedAttributeUnmarshaller extends
@@ -37,10 +36,10 @@ public class RequestedAttributeUnmarshaller extends
 
     /**
      * Process child element.
-     * 
+     *
      * @param parentSAMLObject parent SAMLObject
      * @param childSAMLObject child SAMLObject
-     * 
+     *
      * @throws UnmarshallingException error at unmarshall XML object
      */
     protected final void processChildElement(final XMLObject parentSAMLObject,

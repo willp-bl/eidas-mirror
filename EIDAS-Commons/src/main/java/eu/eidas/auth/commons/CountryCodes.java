@@ -1,79 +1,152 @@
 /*
  * This work is Open Source and licensed by the European Commission under the
- * conditions of the European Public License v1.1 
- *  
- * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1); 
- * 
- * any use of this file implies acceptance of the conditions of this license. 
- * Unless required by applicable law or agreed to in writing, software 
- * distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT 
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the 
- * License for the specific language governing permissions and limitations 
+ * conditions of the European Public License v1.1
+ *
+ * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1);
+ *
+ * any use of this file implies acceptance of the conditions of this license.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
  * under the License.
  */
 package eu.eidas.auth.commons;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.MissingResourceException;
+
+import javax.annotation.Nullable;
+
+import org.apache.commons.lang.StringUtils;
 
 /**
- * This class contains all the ISO 3166-1 Alpha 3 Country Codes.
- * 
- * @author ricardo.ferreira@multicert.com, renato.portela@multicert.com,
- *         luis.felix@multicert.com, hugo.magalhaes@multicert.com,
- *         paulo.ribeiro@multicert.com
- * @version $Revision: 1.2 $, $Date: 2011-04-14 00:24:56 $
+ * This utility class contains convenient methods to work with ISO 3166-1 Alpha 3 Country Codes.
+ * <p/>
+ * Its implementation relies on the JDK {@link java.util.Locale}.
  */
 public final class CountryCodes {
-  
-  /**
-   * Private Constructor.
-   */
-  private CountryCodes() {
-    
-  }
-  
-  /**
-   * ISO 3166-1 Alpha 3 Country Codes.
-   */
-  private static List<String> countrysAlpha3 = Arrays.asList("ABW", "AFG",
-    "AGO", "AIA", "ALA", "ALB", "AND", "ANT", "ARE", "ARG", "ARM", "ASM",
-    "ATA", "ATF", "ATG", "AUS", "AUT", "AZE", "BDI", "BEL", "BEN", "BES",
-    "BFA", "BGD", "BGR", "BHR", "BHS", "BIH", "BLM", "BLR", "BLZ", "BMU",
-    "BOL", "BRA", "BRB", "BRN", "BTN", "BUR", "BVT", "BWA", "BYS", "CAF",
-    "CAN", "CCK", "CHE", "CHL", "CHN", "CIV", "CMR", "COD", "COG", "COK",
-    "COL", "COM", "CPV", "CRI", "CSK", "CUB", "CUW", "CXR", "CYM", "CYP",
-    "CZE", "DEU", "DJI", "DMA", "DNK", "DOM", "DZA", "ECU", "EGY", "ERI",
-    "ESH", "ESP", "EST", "ETH", "FIN", "FJI", "FLK", "FRA", "FRO", "FSM",
-    "GAB", "GBR", "GEO", "GGY", "GHA", "GIB", "GIN", "GLP", "GMB", "GNB",
-    "GNQ", "GRC", "GRD", "GRL", "GTM", "GUF", "GUM", "GUY", "HKG", "HMD",
-    "HND", "HRV", "HTI", "HUN", "IDN", "IMN", "IND", "IOT", "IRL", "IRN",
-    "IRQ", "ISL", "ISR", "ITA", "JAM", "JEY", "JOR", "JPN", "KAZ", "KEN",
-    "KGZ", "KHM", "KIR", "KNA", "KOR", "KWT", "LAO", "LBN", "LBR", "LBY",
-    "LCA", "LIE", "LKA", "LSO", "LTU", "LUX", "LVA", "MAC", "MAF", "MAR",
-    "MCO", "MDA", "MDG", "MDV", "MEX", "MHL", "MKD", "MLI", "MLT", "MMR",
-    "MNE", "MNG", "MNP", "MOZ", "MRT", "MSR", "MTQ", "MUS", "MWI", "MYS",
-    "MYT", "NAM", "NCL", "NER", "NFK", "NGA", "NIC", "NIU", "NLD", "NOR",
-    "NPL", "NRU", "NZL", "OMN", "PAK", "PAN", "PCN", "PER", "PHL", "PLW",
-    "PNG", "POL", "PRI", "PRK", "PRT", "PRY", "PSE", "PYF", "QAT", "REU",
-    "ROM", "ROU", "RUS", "RWA", "SAU", "SCG", "SDN", "SEN", "SGP", "SGS",
-    "SHN", "SJM", "SLB", "SLE", "SLV", "SMR", "SOM", "SPM", "SRB", "STP",
-    "SUR", "SVK", "SVN", "SXW", "SWE", "SWZ", "SYC", "SYR", "TCA", "TCD",
-    "TGO", "THA", "TJK", "TKL", "TKM", "TLS", "TMP", "TON", "TTO", "TUN",
-    "TUR", "TUV", "TWN", "TZA", "UGA", "UKR", "UMI", "URY", "USA", "UZB",
-    "VAT", "VCT", "VEN", "VGB", "VIR", "VNM", "VUT", "WLF", "WSM", "YEM",
-    "YUG", "ZAF", "ZAR", "ZMB", "ZWE");
-  
-  /**
-   * Searches the CountryCode (3166-1 alpha3 format) an return true if it
-   * exists.
-   * 
-   * @param countryCode The Country code to search.
-   * 
-   * @return true if the CountryCode exists, false otherwise.
-   */
-  public static boolean hasCountryCodeAlpha3(final String countryCode) {
-    
-    return CountryCodes.countrysAlpha3.contains(countryCode);
-  }
+
+    private static final Map<String, Locale> ISO_ALPHA2_TO_COUNTRY_LOCALES;
+
+    private static final Map<String, Locale> ISO_ALPHA3_TO_COUNTRY_LOCALES;
+
+    static {
+        Map<String, Locale> iso2ToCountryLocales = new HashMap<String, Locale>();
+        Map<String, Locale> iso3ToCountryLocales = new HashMap<String, Locale>();
+        String[] iso2Countries = Locale.getISOCountries();
+        for (final String alpha2CountryCode : iso2Countries) {
+            Locale countryLocale = new Locale("", alpha2CountryCode);
+            try {
+                iso2ToCountryLocales.put(alpha2CountryCode, countryLocale);
+                String alpha3CountryCode = countryLocale.getISO3Country();
+                if (alpha3CountryCode.trim().length() != 0) {
+                    iso3ToCountryLocales.put(alpha3CountryCode, countryLocale);
+                }
+            } catch (MissingResourceException ignored) {
+            }
+        }
+        ISO_ALPHA2_TO_COUNTRY_LOCALES = Collections.unmodifiableMap(iso2ToCountryLocales);
+        ISO_ALPHA3_TO_COUNTRY_LOCALES = Collections.unmodifiableMap(iso3ToCountryLocales);
+    }
+
+    /**
+     * Returns the CountryCode (3166-1 alpha3 format) based on the given alpha2 country code or null if it does not
+     * exist.
+     *
+     * @param alpha2CountryCode The alpha2 Country code to search.
+     * @return the CountryCode (3166-1 alpha3 format) or null if it does not exist
+     * @throws MissingResourceException Throws MissingResourceException if the three-letter country abbreviation is not
+     * available for this countryCode.
+     * @since 1.1
+     */
+    public static String getCountryCodeAlpha3(final String alpha2CountryCode) throws MissingResourceException {
+        try {
+            Locale countryLocale = getCountryLocale(alpha2CountryCode);
+            if (null == countryLocale) {
+                return null;
+            }
+            String alpha3Country = countryLocale.getISO3Country();
+            if (alpha3Country.trim().length() != 0) {
+                return alpha3Country;
+            }
+        } catch (MissingResourceException ignored) {
+        }
+        return null;
+    }
+
+    /**
+     * Returns the Country Locale based on the given ISO alpha2 or alpha3 country code or null if it does not exist.
+     *
+     * @param isoCountryCode The ISO alpha2 or alpha3 Country code to search.
+     * @return the Country Locale or null if it does not exist
+     * @throws MissingResourceException Throws MissingResourceException if the three-letter country abbreviation is not
+     * available for this countryCode.
+     * @since 1.1
+     */
+    public static Locale getCountryLocale(String isoCountryCode) throws MissingResourceException {
+        if (StringUtils.isBlank(isoCountryCode)) {
+            return null;
+        }
+        String countryCode = isoCountryCode.trim();
+        if (countryCode.length() == 2) {
+            return ISO_ALPHA2_TO_COUNTRY_LOCALES.get(countryCode);
+        }
+        if (countryCode.length() == 3) {
+            return ISO_ALPHA3_TO_COUNTRY_LOCALES.get(countryCode);
+        }
+        return null;
+    }
+
+    /**
+     * Returns the Map of ISO Alpha2 country codes to corresponding Java Locales.
+     * @return the Map of ISO Alpha2 country codes to corresponding Java Locales.
+     * @since 1.1
+     */
+    public static Map<String, Locale> getIsoAlpha2ToCountryLocales() {
+        return ISO_ALPHA2_TO_COUNTRY_LOCALES;
+    }
+
+    /**
+     * Returns the Map of ISO Alpha3 country codes to corresponding Java Locales.
+     * @return the Map of ISO Alpha3 country codes to corresponding Java Locales.
+     * @since 1.1
+     */
+    public static Map<String, Locale> getIsoAlpha3ToCountryLocales() {
+        return ISO_ALPHA3_TO_COUNTRY_LOCALES;
+    }
+
+    /**
+     * Returns {@code true} only if the given alpha3 country code exists, returns {@code false} otherwise.
+     *
+     * @param alpha3CountryCode The alpha3 Country code to check.
+     * @return {@code true} if the alpha3 CountryCode exists, {@code false} otherwise.
+     */
+    public static boolean hasCountryCodeAlpha3(@Nullable String alpha3CountryCode) {
+        //noinspection SimplifiableIfStatement
+        if (StringUtils.isBlank(alpha3CountryCode) || alpha3CountryCode.length() != 3) {
+            return false;
+        }
+        return ISO_ALPHA3_TO_COUNTRY_LOCALES.containsKey(alpha3CountryCode);
+    }
+
+    /**
+     * Returns {@code true} only if the given ISO alpha2 or alpha3 country code exists, returns {@code false}
+     * otherwise.
+     *
+     * @param isoCountryCode The ISO alpha2 or alpha3 Country code to check.
+     * @return {@code true} if the isoCountryCode exists, {@code false} otherwise.
+     */
+    public static boolean isValidIsoCountryCode(@Nullable String isoCountryCode) {
+        return null != getCountryLocale(isoCountryCode);
+    }
+
+    /**
+     * Private Constructor.
+     */
+    private CountryCodes() {
+    }
 }

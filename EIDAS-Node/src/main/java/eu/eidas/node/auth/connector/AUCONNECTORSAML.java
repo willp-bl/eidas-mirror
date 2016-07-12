@@ -22,71 +22,95 @@
 
 package eu.eidas.node.auth.connector;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
-import java.util.Map;
+import java.util.regex.Pattern;
 
-import eu.eidas.auth.commons.*;
-import eu.eidas.auth.commons.exceptions.*;
-import eu.eidas.auth.engine.SAMLEngineUtils;
-import eu.eidas.auth.engine.EIDASSAMLEngine;
-import eu.eidas.auth.engine.metadata.MetadataProcessorI;
+import javax.annotation.Nonnull;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import com.google.common.collect.ImmutableSet;
+
+import org.apache.commons.lang.StringUtils;
+import org.opensaml.xml.validation.ValidationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
+import org.springframework.context.NoSuchMessageException;
+
+import eu.eidas.auth.commons.DateUtil;
+import eu.eidas.auth.commons.EIDASStatusCode;
+import eu.eidas.auth.commons.EIDASUtil;
+import eu.eidas.auth.commons.EIDASValues;
+import eu.eidas.auth.commons.EidasDigestUtil;
+import eu.eidas.auth.commons.EidasErrorKey;
+import eu.eidas.auth.commons.EidasErrors;
+import eu.eidas.auth.commons.EidasParameterKeys;
+import eu.eidas.auth.commons.EidasStringUtil;
+import eu.eidas.auth.commons.IEIDASLogger;
+import eu.eidas.auth.commons.RequestState;
+import eu.eidas.auth.commons.WebRequest;
+import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
+import eu.eidas.auth.commons.attribute.impl.StringAttributeValue;
+import eu.eidas.auth.commons.exceptions.InternalErrorEIDASException;
+import eu.eidas.auth.commons.exceptions.InvalidParameterEIDASException;
+import eu.eidas.auth.commons.exceptions.InvalidSessionEIDASException;
+import eu.eidas.auth.commons.exceptions.SecurityEIDASException;
+import eu.eidas.auth.commons.light.ILightRequest;
+import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.IAuthenticationResponse;
+import eu.eidas.auth.commons.protocol.IRequestMessage;
+import eu.eidas.auth.commons.protocol.IResponseMessage;
+import eu.eidas.auth.commons.protocol.eidas.IEidasAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.eidas.LevelOfAssurance;
+import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.impl.AuthenticationResponse;
+import eu.eidas.auth.commons.protocol.impl.EidasSamlBinding;
+import eu.eidas.auth.commons.protocol.impl.SamlBindingUri;
+import eu.eidas.auth.commons.protocol.stork.IStorkAuthenticationRequest;
+import eu.eidas.auth.commons.tx.AuthenticationExchange;
+import eu.eidas.auth.commons.tx.CorrelationMap;
+import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
+import eu.eidas.auth.commons.tx.StoredLightRequest;
+import eu.eidas.auth.commons.validation.NormalParameterValidator;
+import eu.eidas.auth.engine.Correlated;
+import eu.eidas.auth.engine.ProtocolEngineFactory;
+import eu.eidas.auth.engine.ProtocolEngineI;
+import eu.eidas.auth.engine.core.eidas.spec.EidasSpec;
+import eu.eidas.auth.engine.metadata.MetadataFetcherI;
+import eu.eidas.auth.engine.metadata.MetadataSignerI;
 import eu.eidas.auth.engine.metadata.MetadataUtil;
-import eu.eidas.engine.exceptions.SAMLEngineException;
+import eu.eidas.auth.engine.xml.opensaml.SAMLEngineUtils;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
-import eu.eidas.impl.file.FileService;
-import eu.eidas.node.ApplicationContextProvider;
-import eu.eidas.node.auth.metadata.MetadataAgregator;
-import eu.eidas.node.init.EidasSamlEngineFactory;
 import eu.eidas.node.logging.LoggingMarkerMDC;
 import eu.eidas.node.utils.EidasNodeErrorUtil;
 import eu.eidas.node.utils.EidasNodeValidationUtil;
 import eu.eidas.node.utils.PropertiesUtil;
 import eu.eidas.node.utils.SessionHolder;
 
-import org.apache.commons.lang.StringUtils;
-import org.opensaml.saml2.core.Attribute;
-import org.opensaml.saml2.metadata.IDPSSODescriptor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.context.MessageSource;
-import org.springframework.context.NoSuchMessageException;
-
-import javax.servlet.http.HttpSession;
-
 /**
- * This class is used by {@link AUCONNECTOR} to get, process and generate SAML
- * Tokens.
+ * This class is used by {@link AUCONNECTOR} to get, process and generate SAML Tokens.
  *
  * @see ICONNECTORSAMLService
  */
 public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
 
-        /**
-         * Logger object.
-         */
-        private static final Logger LOG = LoggerFactory.getLogger(AUCONNECTORSAML.class
-                .getName());
-        /**
-         * Logger object.
-         */
-        private static final Logger logger = LoggerFactory.getLogger(AUCONNECTORSAML.class
-                .getName());
+    /**
+     * Logger object.
+     */
+    private static final Logger LOG = LoggerFactory.getLogger(AUCONNECTORSAML.class);
 
     /**
      * Request logging.
      */
-    private static final Logger LOGGER_COM_REQ = LoggerFactory
-            .getLogger(EIDASValues.EIDAS_PACKAGE_REQUEST_LOGGER_VALUE.toString() + "."
-                    + AUCONNECTOR.class.getSimpleName());
+    private static final Logger LOGGER_COM_REQ = LoggerFactory.getLogger(
+            EIDASValues.EIDAS_PACKAGE_REQUEST_LOGGER_VALUE.toString() + "." + AUCONNECTOR.class.getSimpleName());
 
     /**
      * Response logging.
      */
-    private static final Logger LOGGER_COM_RESP = LoggerFactory
-            .getLogger(EIDASValues.EIDAS_PACKAGE_RESPONSE_LOGGER_VALUE.toString() + "."
-                    + AUCONNECTOR.class.getSimpleName());
+    private static final Logger LOGGER_COM_RESP = LoggerFactory.getLogger(
+            EIDASValues.EIDAS_PACKAGE_RESPONSE_LOGGER_VALUE.toString() + "." + AUCONNECTOR.class.getSimpleName());
 
     /**
      * Logger bean.
@@ -124,68 +148,103 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
     private MessageSource messageSource;
 
     private boolean checkCitizenCertificateServiceCertificate;
-    private EidasSamlEngineFactory samlEngineFactory;
+
+    private MetadataFetcherI metadataFetcher;
+
+    private ProtocolEngineFactory nodeProtocolEngineFactory;
 
     public void setCheckCitizenCertificateServiceCertificate(boolean checkCitizenCertificateServiceCertificate) {
         this.checkCitizenCertificateServiceCertificate = checkCitizenCertificateServiceCertificate;
     }
-    public EidasSamlEngineFactory getSAMLEngineFactory() {
-        return samlEngineFactory;
-    }
-
-    public void setSamlEngineFactory(EidasSamlEngineFactory samlEngineFactory) {
-        this.samlEngineFactory = samlEngineFactory;
-    }
-
-    private MetadataProcessorI metadataProcessor;
 
     /**
      * {@inheritDoc}
      */
-    public byte[] generateErrorAuthenticationResponse(final String inResponseTo,
-                                                      final String issuer, final String destination, final String ipUserAddress,
-                                                      final String statusCode, final String subCode, final String message) {
-        EIDASSAMLEngine engine=null;
+    @Override
+    public byte[] generateErrorAuthenticationResponse(HttpServletRequest httpRequest,
+                                                      String destination,
+                                                      String statusCode,
+                                                      String subCode,
+                                                      String message) {
+        EidasAuthenticationRequest.Builder request = new EidasAuthenticationRequest.Builder();
+        request.id(EidasNodeErrorUtil.getInResponseTo(httpRequest));
+        request.issuer(EidasNodeErrorUtil.getIssuer(httpRequest));
+        request.destination(destination);
+        request.citizenCountryCode(EidasNodeErrorUtil.getCitizenCountryCode(httpRequest));
+        request.assertionConsumerServiceURL(destination);
+        IAuthenticationRequest dummyRequest = request.build();
+
+        return generateErrorAuthenticationResponse(dummyRequest, httpRequest.getRemoteAddr(), statusCode, subCode,
+                                                   message);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public byte[] generateErrorAuthenticationResponse(IAuthenticationRequest request,
+                                                      String ipUserAddress,
+                                                      String statusCode,
+                                                      String subCode,
+                                                      String message) {
+        AuthenticationResponse.Builder samlResponseFail = new AuthenticationResponse.Builder();
+        samlResponseFail.statusCode(statusCode);
+        samlResponseFail.subStatusCode(subCode);
+        samlResponseFail.statusMessage(message);
+        samlResponseFail.issuer(getConnectorResponderMetadataUrl());
+        samlResponseFail.inResponseTo(request.getId());
+        samlResponseFail.id(SAMLEngineUtils.generateNCName());
+        IAuthenticationResponse response = samlResponseFail.build();
+
+        return generateErrorAuthenticationResponse(request, ipUserAddress, response, message);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public byte[] generateErrorAuthenticationResponse(IAuthenticationRequest request,
+                                                      String ipUserAddress,
+                                                      IAuthenticationResponse response,
+                                                      String message) {
         try {
-            engine = getSAMLEngineFactory().getEngine(samlSpInstance, getConnectorUtil() == null ? null : getConnectorUtil().getConfigs());
+            ProtocolEngineI engine = getSamlEngine(samlSpInstance);
             // Generate SAMLResponse Fail.
-            final EIDASAuthnRequest request = new EIDASAuthnRequest();
-            request.setSamlId(inResponseTo);
-            request.setIssuer(issuer);
-            request.setAssertionConsumerServiceURL(destination);
+            String inResponseTo = request.getId();
 
-            EIDASAuthnResponse samlResponseFail = new EIDASAuthnResponse();
-            samlResponseFail.setStatusCode(statusCode);
-            samlResponseFail.setSubStatusCode(subCode);
-            samlResponseFail.setMessage(message);
-            samlResponseFail.setIssuer(getConnectorResponderMetadataUrl());
-            engine.setRequestIssuer(issuer);
-            samlResponseFail = engine.generateEIDASAuthnResponseFail(request, samlResponseFail,
-                            ipUserAddress, false);
-            samlResponseFail.setInResponseTo(inResponseTo);
-            prepareRespLoggerBean(EIDASValues.SP_RESPONSE.toString(),
-                    samlResponseFail, inResponseTo);
-            this.saveLog(AUCONNECTORSAML.LOGGER_COM_RESP);
-            LOG.info(LoggingMarkerMDC.SAML_EXCHANGE, "Connector - Generating ERROR SAML Response to request with ID {}, error is {} {}",
-                    inResponseTo, statusCode, message);
+            AuthenticationResponse.Builder samlResponseFail = new AuthenticationResponse.Builder();
+            samlResponseFail.id(response.getId());
+            samlResponseFail.statusCode(response.getSubStatusCode());
+            samlResponseFail.subStatusCode(response.getSubStatusCode());
+            samlResponseFail.statusMessage(message);
+            samlResponseFail.issuer(getConnectorResponderMetadataUrl());
+            samlResponseFail.inResponseTo(inResponseTo);
 
-            return samlResponseFail.getTokenSaml();
-        } catch (final EIDASSAMLEngineException e) {
+            IResponseMessage responseMessage =
+                    engine.generateResponseErrorMessage(request, samlResponseFail.build(), ipUserAddress);
+
+            prepareRespLoggerBean(EIDASValues.SP_RESPONSE.toString(), responseMessage.getResponse(), inResponseTo);
+            saveLog(AUCONNECTORSAML.LOGGER_COM_RESP);
+            LOG.info(LoggingMarkerMDC.SAML_EXCHANGE,
+                     "Connector - Generating ERROR SAML Response to request with ID {}, error is {} {}", inResponseTo,
+                     response.getSubStatusCode(), message);
+
+            return responseMessage.getMessageBytes();
+        } catch (EIDASSAMLEngineException e) {
             LOG.info("BUSINESS EXCEPTION : Error generating SAMLToken", e);
-            EidasNodeErrorUtil.processSAMLEngineException(e, LOG, getConnectorRedirectError(e, EIDASErrors.SPROVIDER_SELECTOR_ERROR_CREATE_SAML));
+            EidasNodeErrorUtil.processSAMLEngineException(e, LOG, getConnectorRedirectError(e,
+                                                                                            EidasErrorKey.SPROVIDER_SELECTOR_ERROR_CREATE_SAML));
             throw new InternalErrorEIDASException(
-                    EIDASUtil.getConfig(EIDASErrors.SPROVIDER_SELECTOR_ERROR_CREATE_SAML.errorCode()),
-                    EIDASUtil.getConfig(EIDASErrors.SPROVIDER_SELECTOR_ERROR_CREATE_SAML.errorMessage()), e);
-        }finally {
-            getSAMLEngineFactory().releaseEngine(engine);
+                    EidasErrors.get(EidasErrorKey.SPROVIDER_SELECTOR_ERROR_CREATE_SAML.errorCode()),
+                    EidasErrors.get(EidasErrorKey.SPROVIDER_SELECTOR_ERROR_CREATE_SAML.errorMessage()), e);
         }
     }
 
-    private EIDASErrors getConnectorRedirectError(EIDASSAMLEngineException exc, EIDASErrors defaultError){
-        EIDASErrors redirectError=defaultError;
-        EIDASErrors actualError=EIDASErrors.fromCode(exc.getErrorCode());
-        if(actualError!=null && actualError.isShowToUser()){
-            redirectError=actualError;
+    private EidasErrorKey getConnectorRedirectError(EIDASSAMLEngineException exc, EidasErrorKey defaultError) {
+        EidasErrorKey redirectError = defaultError;
+        EidasErrorKey actualError = EidasErrorKey.fromCode(exc.getErrorCode());
+        if (actualError != null && actualError.isShowToUser()) {
+            redirectError = actualError;
         }
         return redirectError;
     }
@@ -193,490 +252,423 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
     /**
      * {@inheritDoc}
      */
-    public byte[] getSAMLToken(final Map<String, String> parameters,
-                               final String errorCode, final boolean isRequest) {
+    public byte[] extractResponseSAMLToken(WebRequest webRequest) {
 
         String strSamlToken;
-        String paramName;
-        if (isRequest) {
-            paramName = EIDASParameters.SAML_REQUEST.toString();
-            strSamlToken = parameters.get(paramName);
-        } else {
-            paramName = EIDASParameters.SAML_RESPONSE.toString();
-            strSamlToken = parameters.get(paramName);
+        strSamlToken = webRequest.getEncodedLastParameterValue(EidasParameterKeys.SAML_RESPONSE);
+
+        NormalParameterValidator.paramName(EidasParameterKeys.SAML_RESPONSE)
+                .paramValue(strSamlToken)
+                .eidasError(EidasErrorKey.valueOf(EidasErrorKey.COLLEAGUE_RESP_INVALID_SAML.name()))
+                .validate();
+
+        if (StringUtils.isBlank(strSamlToken)) {
+            return null;
         }
-        validateParameter(paramName, strSamlToken, EIDASErrors.valueOf(errorCode));
 
-        return EIDASUtil.decodeSAMLToken(strSamlToken);
+        return EidasStringUtil.decodeBytesFromBase64(strSamlToken);
     }
 
-    public byte[] getSAMLArtifact(final Map<String, String> parameters,
-                                  final String errorCode, final boolean isRequest){
-        String paramName = EIDASParameters.SAML_ARTIFACT.toString();
-        String strSamlArtifact = parameters.get(paramName);
-
-        return EIDASUtil.decodeSAMLToken(strSamlArtifact);
-    }
+/*    @Nonnull
+    @Override
+    public ISpRequestResult processSpRequest(@Nonnull ILightRequest fromSpLightRequest)
+            throws EIDASSAMLEngineException {
+        return null;
+    }*/
 
     /**
      * {@inheritDoc}
      */
-    public EIDASAuthnRequest processAuthenticationRequest(final byte[] samlToken,
-                                                          final Map<String, String> parameters) {
-        EIDASSAMLEngine engine=null;
+    @Override
+    public IAuthenticationRequest processSpRequest(@Nonnull ILightRequest lightRequest, WebRequest webRequest) {
         try {
-
-            engine = getSAMLEngineFactory().getEngine(samlSpInstance, getConnectorUtil() == null ? null : getConnectorUtil().getConfigs());
-            // validate SAML Token
-            final EIDASAuthnRequest authnRequest = engine.validateEIDASAuthnRequest(samlToken);
-
-            LOG.info(LoggingMarkerMDC.SAML_EXCHANGE, "Connector - Processing SAML Request with ID {}", authnRequest.getSamlId());
-
-            LOG.trace("Validating parameters.");
-
-            // Get Assertion Consumer URL and validate
-            if(StringUtils.isEmpty(authnRequest.getAssertionConsumerServiceURL())){
-                //retrieve it from the metadata
-                authnRequest.setAssertionConsumerServiceURL(MetadataUtil.getAssertionUrlFromMetadata(metadataProcessor, engine, authnRequest));
-            }
-            validateParameter(EIDASParameters.SP_URL.toString(), authnRequest.getAssertionConsumerServiceURL(), EIDASErrors.SPROVIDER_SELECTOR_INVALID_SPREDIRECT);
-            if(SessionHolder.getId()!=null){
-                HttpSession session= SessionHolder.getId();
-                session.setAttribute(EIDASParameters.SP_URL.toString(), authnRequest.getAssertionConsumerServiceURL());
-                session.setAttribute(EIDASParameters.SAML_IN_RESPONSE_TO.toString(), authnRequest.getSamlId());
-                session.setAttribute(EIDASParameters.ISSUER.toString(), authnRequest.getIssuer());
-            }
-
-            // Get Personal Attribute List and validate
-            final IPersonalAttributeList pal = authnRequest.getPersonalAttributeList();
-            validateParameter(EIDASParameters.ATTRIBUTE_LIST.toString(), pal.toString(), EIDASErrors.SPROVIDER_SELECTOR_INVALID_ATTR);
-
-            // Get QAA Level and validate
-            final String qaa = String.valueOf(authnRequest.getQaa());
-            LOG.info("checking QAA {}{}"+ qaa);
-            validateParameter(EIDASParameters.SP_QAALEVEL.toString(), qaa, EIDASErrors.SPROVIDER_SELECTOR_INVALID_SPQAA);
-
-            parameters.put(EIDASParameters.EIDAS_SERVICE_LOA.toString(), authnRequest.getEidasLoA());
-
-            // Get ProviderName and validate
-            final String providerName = authnRequest.getProviderName();
-            validateParameter(EIDASParameters.PROVIDER_NAME_VALUE.toString(), providerName, EIDASErrors.SPROVIDER_SELECTOR_INVALID_SP_PROVIDERNAME);
-            parameters.put(EIDASParameters.PROVIDER_NAME_VALUE.toString(), providerName);
-
-            // Alias validation : If alias is blank, then we continue the authentication flow
-            aliasValidation(authnRequest, providerName);
-
-
-
-            // Get SP ID (backwards compatibility)
-            final String spId = StringUtils.isBlank(authnRequest.getSPID()) ? providerName : authnRequest.getSPID();
-
-            validateParameter(EIDASParameters.SP_ID.toString(), spId, EIDASErrors.SPROVIDER_SELECTOR_INVALID_SPID);
-            parameters.put(EIDASParameters.SP_ID.toString(), spId);
-
-            final String serviceCode = getCountryCode(authnRequest, parameters);
+            String serviceCode = getCountryCode(lightRequest, webRequest);
 
             LOG.debug("Requested country: " + serviceCode);
-            final String serviceURL = connectorUtil.loadConfigServiceURL(serviceCode);
-            LOG.debug("Citizen Country URL " + serviceCode + " URL " + serviceURL);
-            authnRequest.setCitizenCountryCode(serviceCode);
-            if(connectorUtil.isEIDAS10(authnRequest.getMessageFormatName())){
-                validateRequestLoA(authnRequest,connectorUtil.loadConfigServiceMetadataURL(serviceCode));
-            } else if (connectorUtil.isEidasMessageSupportedOnly()){
-                // Send an error SAML message back - the use of InvalidParameterEIDASException should have triggered an error page
-                throw new InvalidParameterEIDASException(
-                        EIDASUtil.getConfig(EIDASErrors.MESSAGE_FORMAT_UNSUPPORTED.errorCode()),
-                        EIDASUtil.getConfig(EIDASErrors.MESSAGE_FORMAT_UNSUPPORTED.errorMessage()));
-                
+
+            String serviceMetadataURL = getConnectorUtil().loadConfigServiceMetadataURL(serviceCode);
+
+            ProtocolEngineI engine = getSamlEngine(samlSpInstance);
+
+            String serviceUrl =
+                    engine.getProtocolProcessor().getServiceUrl(serviceMetadataURL, SamlBindingUri.SAML2_POST);
+
+            if (StringUtils.isBlank(serviceUrl)) {
+                // fallback to the locale configuration
+                serviceUrl = connectorUtil.loadConfigServiceURL(serviceCode);
             }
 
-            validateParameter(EIDASErrors.SERVICE_REDIRECT_URL.toString(), serviceURL, EIDASErrors.SPROVIDER_SELECTOR_INVALID_COUNTRY);
+            LOG.debug("Citizen Country URL " + serviceCode + " URL " + serviceUrl);
+            NormalParameterValidator.paramName(EidasErrorKey.SERVICE_REDIRECT_URL.toString())
+                    .paramValue(serviceUrl)
+                    .eidasError(EidasErrorKey.SPROVIDER_SELECTOR_INVALID_COUNTRY)
+                    .validate();
+
+            LOG.info(LoggingMarkerMDC.SAML_EXCHANGE, "Connector - Processing LightRequest with ID {}",
+                     lightRequest.getId());
+
+            // Get Personal Attribute List and validate
+            ImmutableAttributeMap requestedAttributes = lightRequest.getRequestedAttributes();
+
+            NormalParameterValidator.paramName(EidasParameterKeys.ATTRIBUTE_LIST)
+                    .paramValue(requestedAttributes.isEmpty() ? null : "dummy")
+                    .eidasError(EidasErrorKey.SPROVIDER_SELECTOR_INVALID_ATTR)
+                    .validate();
+
+            String levelOfAssurance = lightRequest.getLevelOfAssurance();
+            RequestState requestState = webRequest.getRequestState();
+            if (null != levelOfAssurance) {
+                requestState.setLevelOfAssurance(levelOfAssurance);
+            }
+
+            // Get ProviderName and validate
+            String providerName = lightRequest.getProviderName();
+            NormalParameterValidator.paramName(EidasParameterKeys.PROVIDER_NAME_VALUE)
+                    .paramValue(providerName)
+                    .eidasError(EidasErrorKey.SPROVIDER_SELECTOR_INVALID_SP_PROVIDERNAME)
+                    .validate();
+
+            requestState.setProviderName(providerName);
+
+            IAuthenticationRequest authnRequest = EidasAuthenticationRequest.builder()
+                    .lightRequest(lightRequest)
+                    .destination(serviceUrl)
+                    .citizenCountryCode(serviceCode)
+                    .build();
+
+            validateRequestLoA(authnRequest, connectorUtil.loadConfigServiceMetadataURL(serviceCode));
+
+            if (SessionHolder.getId() != null) {
+                HttpSession session = SessionHolder.getId();
+                session.setAttribute(EidasParameterKeys.SAML_IN_RESPONSE_TO.toString(), lightRequest.getId());
+                session.setAttribute(EidasParameterKeys.ISSUER.toString(), lightRequest.getIssuer());
+            }
 
             LOG.trace("Checking if SP is reliable");
-            parameters.put(EIDASParameters.SAML_IN_RESPONSE_TO.toString(), authnRequest.getSamlId());
-            parameters.put(EIDASParameters.ISSUER.toString(), authnRequest.getIssuer());
-            parameters.put(EIDASParameters.SP_URL.toString(), authnRequest.getAssertionConsumerServiceURL());
-            parameters.put(EIDASParameters.SP_ID.toString(), spId);
-            parameters.put(EIDASParameters.SP_QAALEVEL.toString(), qaa);
+            requestState.setInResponseTo(authnRequest.getId());
+            requestState.setIssuer(authnRequest.getIssuer());
+            requestState.setServiceUrl(authnRequest.getAssertionConsumerServiceURL());
 
             // Validate if SP has valid qaalevel and is trustworthy
-            if (!connectorUtil.validateSP(parameters)) {
+            if (!connectorUtil.validateSP(webRequest)) {
                 throw new InvalidParameterEIDASException(
-                        EIDASUtil.getConfig(EIDASErrors.SPROVIDER_SELECTOR_INVALID_SPQAAID
-                                .errorCode()),
-                        EIDASUtil.getConfig(EIDASErrors.SPROVIDER_SELECTOR_INVALID_SPQAAID
-                                .errorMessage()));
+                        EidasErrors.get(EidasErrorKey.SPROVIDER_SELECTOR_INVALID_SPQAAID.errorCode()),
+                        EidasErrors.get(EidasErrorKey.SPROVIDER_SELECTOR_INVALID_SPQAAID.errorMessage()));
             }
-            // check if SP is allowed to access requested attribute
-            if (!connectorUtil.checkContents(spId, pal)) {
-                LOG.info("ERROR : SP can't request this attrs");
-                throw new SecurityEIDASException(
-                        EIDASUtil.getConfig(EIDASErrors.SPROVIDER_SELECTOR_SPNOTALLOWED
-                                .errorCode()),
-                        EIDASUtil.getConfig(EIDASErrors.SPROVIDER_SELECTOR_SPNOTALLOWED
-                                .errorMessage()));
+            String metaDataUrl = webRequest.getEncodedLastParameterValue(EidasParameterKeys.SP_METADATA_URL);
+            if (null != metaDataUrl && isIssuedBySelf(authnRequest)) {
+                EidasAuthenticationRequest.Builder eIDASAuthnRequestBuilder =
+                        EidasAuthenticationRequest.builder((IEidasAuthenticationRequest) authnRequest);
+                eIDASAuthnRequestBuilder.issuer(metaDataUrl);
+                authnRequest = eIDASAuthnRequestBuilder.build();
             }
-            if(parameters.containsKey(EIDASParameters.SP_METADATA_URL.toString()) && isIssuedBySelf(authnRequest) ){
-                authnRequest.setIssuer(parameters.get(EIDASParameters.SP_METADATA_URL.toString()));
-            }
-
-            authnRequest.setDestination(serviceURL);
-
             // Checking for antiReplay
-            if (!connectorUtil.checkNotPresentInCache(authnRequest.getSamlId(), authnRequest.getCitizenCountryCode())){
-                LOG.trace("Eidas Audit");
-                prepareReqLoggerBean(EIDASValues.SP_REQUEST.toString(), samlToken,
-                        authnRequest, authnRequest.getSamlId());
-                this.saveLog(AUCONNECTORSAML.LOGGER_COM_REQ);
+            if (!connectorUtil.checkNotPresentInCache(authnRequest.getId(), authnRequest.getCitizenCountryCode())
+                    .booleanValue()) {
                 throw new SecurityEIDASException(
-                        EIDASUtil.getConfig(EIDASErrors.SPROVIDER_SELECTOR_INVALID_SAML.errorCode()),
-                        EIDASUtil.getConfig(EIDASErrors.SPROVIDER_SELECTOR_INVALID_SAML.errorMessage()));
+                        EidasErrors.get(EidasErrorKey.SPROVIDER_SELECTOR_INVALID_SAML.errorCode()),
+                        EidasErrors.get(EidasErrorKey.SPROVIDER_SELECTOR_INVALID_SAML.errorMessage()));
             }
-
-            //  Logging
-            LOG.trace("Eidas Audit");
-            prepareReqLoggerBean(EIDASValues.SP_REQUEST.toString(), samlToken, authnRequest, authnRequest.getSamlId());
-            this.saveLog(AUCONNECTORSAML.LOGGER_COM_REQ);
 
             return authnRequest;
-        } catch (final EIDASSAMLEngineException e) {
+        } catch (EIDASSAMLEngineException e) {
             // Special case for propagating the error in case of xxe
-            EidasNodeErrorUtil.processSAMLEngineException(e, LOG, getConnectorRedirectError(e, EIDASErrors.SPROVIDER_SELECTOR_INVALID_SAML));
+            EidasNodeErrorUtil.processSAMLEngineException(e, LOG, getConnectorRedirectError(e,
+                                                                                            EidasErrorKey.SPROVIDER_SELECTOR_INVALID_SAML));
             throw new InternalErrorEIDASException(
-                    EIDASUtil.getConfig(EIDASErrors.SPROVIDER_SELECTOR_INVALID_SAML.errorCode()),
-                    EIDASUtil.getConfig(EIDASErrors.SPROVIDER_SELECTOR_INVALID_SAML.errorMessage()), e);
-        }finally {
-            getSAMLEngineFactory().releaseEngine(engine);
+                    EidasErrors.get(EidasErrorKey.SPROVIDER_SELECTOR_INVALID_SAML.errorCode()),
+                    EidasErrors.get(EidasErrorKey.SPROVIDER_SELECTOR_INVALID_SAML.errorMessage()), e);
         }
     }
 
-    private void validateRequestLoA (EIDASAuthnRequest authRequest, String idpUrl){
-        try{
-            String colleagueLoA= SAMLEngineUtils.getServiceLoA(metadataProcessor.getEntityDescriptor(idpUrl));
-            if(!StringUtils.isEmpty(colleagueLoA) && !EidasNodeValidationUtil.isRequestLoAValid(authRequest, colleagueLoA)){
-                throw new InternalErrorEIDASException(
-                        EIDASUtil.getConfig(EIDASErrors.SERVICE_PROVIDER_INVALID_LOA.errorCode()),
-                        EIDASUtil.getConfig(EIDASErrors.SERVICE_PROVIDER_INVALID_LOA.errorMessage()));
-            }
-        }catch(SAMLEngineException exc){
-            LOG.info("cannot retrieve metadata information {}", exc);
+    private void validateRequestLoA(IAuthenticationRequest authRequest, String idpUrl) throws EIDASSAMLEngineException {
+        if (null == metadataFetcher) {
+            return;
+        }
+        String colleagueLoA = MetadataUtil.getServiceLevelOfAssurance(metadataFetcher.getEntityDescriptor(idpUrl,
+                                                                                                          (MetadataSignerI) getSamlEngine(samlServiceInstance).getSigner()));
+        if (!StringUtils.isEmpty(colleagueLoA) && !EidasNodeValidationUtil.isRequestLoAValid(authRequest,
+                                                                                             colleagueLoA)) {
+            throw new InternalErrorEIDASException(
+                    EidasErrors.get(EidasErrorKey.SERVICE_PROVIDER_INVALID_LOA.errorCode()),
+                    EidasErrors.get(EidasErrorKey.SERVICE_PROVIDER_INVALID_LOA.errorMessage()));
         }
     }
-    private boolean isIssuedBySelf(EIDASAuthnRequest authnRequest){
-        if(getConnectorMetadataUrl()!=null && getConnectorMetadataUrl().equalsIgnoreCase(authnRequest.getIssuer())) {
-            return true;
-        }
-        return false;
-    }
-    /**
-     * Alias validation : If alias is blank, then we continue the authentication flow: 
-     * backwards compatibility!
-     * @param authnRequest
-     * @param providerName
-     */
-    private void aliasValidation(EIDASAuthnRequest authnRequest, String providerName) {
-        final String alias = authnRequest.getAlias();
-        LOG.trace("Alias validation!");
-        if (StringUtils.isNotBlank(alias)
-                && !StringUtils.lowerCase(providerName).equals(
-                StringUtils.lowerCase(alias))
-                && !connectorUtil.validateSPCertAlias(providerName, alias)) {
 
-            LOG.info("ERROR : SP's (" + providerName + ") alias validation failed to "
-                    + alias);
-            throw new SecurityEIDASException(
-                    EIDASUtil.getConfig(EIDASErrors.SPROVIDER_SELECTOR_INVALID_SPALIAS
-                            .errorCode()),
-                    EIDASUtil.getConfig(EIDASErrors.SPROVIDER_SELECTOR_INVALID_SPALIAS
-                            .errorMessage()));
-        }
-        LOG.trace("Alias validation succeeded!");
+    private boolean isIssuedBySelf(IAuthenticationRequest authnRequest) {
+        String connectorMetadataUrl = getConnectorMetadataUrl();
+        return connectorMetadataUrl != null && connectorMetadataUrl.equalsIgnoreCase(authnRequest.getIssuer());
     }
 
     /**
      * Gets the Country Code.
      *
-     * @param authnRequest The Authentication Request object.
-     * @param parameters   A map of necessary arguments.
+     * @param lightRequest The light authentication Request object.
+     * @param webRequest the webRequest.
      * @return the country code value.
      */
-    private static String getCountryCode(final EIDASAuthnRequest authnRequest,
-                                         final Map<String, String> parameters) {
+    private static String getCountryCode(ILightRequest lightRequest, WebRequest webRequest) {
         // Country: Mandatory if the destination is a ProxyService.
         String serviceCode;
-        if (authnRequest.getCitizenCountryCode() == null) {
-            serviceCode = parameters.get(EIDASParameters.COUNTRY.toString());
-            authnRequest.setCitizenCountryCode(serviceCode);
+        if (lightRequest.getCitizenCountryCode() == null) {
+            serviceCode = webRequest.getEncodedLastParameterValue(EidasParameterKeys.COUNTRY);
+
         } else {
-            serviceCode = authnRequest.getCitizenCountryCode();
+            serviceCode = lightRequest.getCitizenCountryCode();
         }
 
         // Compatibility
-        if (serviceCode.endsWith(EIDASValues.EIDAS_SERVICE_SUFFIX.toString())) {
-            serviceCode =
-                    serviceCode.replace(EIDASValues.EIDAS_SERVICE_SUFFIX.toString(),
-                            EIDASValues.EMPTY_STRING.toString());
+        if (null != serviceCode && serviceCode.endsWith(EIDASValues.EIDAS_SERVICE_SUFFIX.toString())) {
+            serviceCode = serviceCode.replace(EIDASValues.EIDAS_SERVICE_SUFFIX.toString(), StringUtils.EMPTY);
         }
+
         return serviceCode;
     }
 
     /**
-     * Checks if a given parameter and it's value aren't null and their size is
-     * between the specified bounds.
-     *
-     * @param paramName  The name of the parameter to validate.
-     * @param paramValue The value of the parameter to validate.
-     * @param eidasError  The eidasERROR value.
-     */
-    private static void validateParameter(final String paramName,
-                                          final String paramValue, final EIDASErrors eidasError) {
-        EIDASUtil.validateParameter(AUCONNECTORSAML.class.getCanonicalName(), paramName,
-                paramValue, EIDASUtil.getConfig(eidasError.errorCode()), EIDASUtil.getConfig(eidasError.errorMessage()));
-    }
-
-    /**
      * {@inheritDoc}
      */
-    public EIDASAuthnRequest generateSpAuthnRequest(
-            final EIDASAuthnRequest authData) {
+    @Override
+    public IRequestMessage generateServiceAuthnRequest(@Nonnull WebRequest webRequest, @Nonnull IAuthenticationRequest request) {
 
-        return generateAuthenticationRequest(samlSpInstance, authData);
-    }
+        String serviceCountryCode = getCountryCode(request, webRequest);
 
-    /**
-     * {@inheritDoc}
-     */
-    public EIDASAuthnRequest generateServiceAuthnRequest(
-            final EIDASAuthnRequest authData) {
+        //TODO check if tempAuthData creation could be avoided
+        IRequestMessage tempAuthData = generateAuthenticationRequest(samlServiceInstance, request, serviceCountryCode);
 
-        final EIDASAuthnRequest retAuthData =
-                generateAuthenticationRequest(samlServiceInstance, authData);
+        prepareReqLoggerBean(EIDASValues.EIDAS_CONNECTOR_REQUEST.toString(), tempAuthData.getMessageBytes(),
+                             tempAuthData.getRequest(), tempAuthData.getRequest().getId());
 
-        if (retAuthData.getCitizenCountryCode() == null) {
-            retAuthData.setCitizenCountryCode(authData.getCitizenCountryCode());
-        }
-        if (StringUtils.isEmpty(retAuthData.getCountry())) {
-            retAuthData.setCountry(authData.getCountry());
-        }
-        prepareReqLoggerBean(EIDASValues.EIDAS_CONNECTOR_REQUEST.toString(),
-                retAuthData.getTokenSaml(), retAuthData, authData.getSamlId());
-
-        this.saveLog(AUCONNECTORSAML.LOGGER_COM_REQ);
+        saveLog(AUCONNECTORSAML.LOGGER_COM_REQ);
         LOG.trace("Logging communication");
 
-        return retAuthData;
+        return tempAuthData;
     }
 
-    private String extractErrorMessage(String defaultMsg, String errorCode){
-        String newErrorMessage=defaultMsg;
+    private String extractErrorMessage(String defaultMsg, String errorCode) {
+        String newErrorMessage = defaultMsg;
         try {
-            newErrorMessage =
-                    messageSource.getMessage(errorCode, new Object[]{errorCode},
-                            Locale.getDefault());
-        }catch(NoSuchMessageException nsme){
+            newErrorMessage = messageSource.getMessage(errorCode, new Object[] {errorCode}, Locale.getDefault());
+        } catch (NoSuchMessageException nsme) {
             LOG.warn("Cannot found the message with the id {} - {}", errorCode, nsme);
         }
         return newErrorMessage;
     }
-    /**
-     * {@inheritDoc}
-     */
-    public EIDASAuthnRequest processAuthenticationResponse(
-            final byte[] samlToken, final EIDASAuthnRequest authData,
-            final EIDASAuthnRequest spAuthData, final String remoteAddr) {
-        EIDASSAMLEngine engine=null;
+
+    public AuthenticationExchange processProxyServiceResponse(@Nonnull WebRequest webRequest,
+                                                              @Nonnull
+                                                                      CorrelationMap<StoredAuthenticationRequest> connectorRequestCorrelationMap,
+                                                              @Nonnull
+                                                                      CorrelationMap<StoredLightRequest> specificSpRequestCorrelationMap)
+            throws InternalErrorEIDASException {
         try {
-            engine = getSAMLEngineFactory().getEngine(samlServiceInstance, getConnectorUtil() == null ? null : getConnectorUtil().getConfigs());
-            Long serviceSkew = connectorUtil.loadConfigServiceTimeSkewInMillis(authData.getCitizenCountryCode());
-            engine.initRequestedAttributes(authData.getPersonalAttributeList());
-            final EIDASAuthnResponse authnResponse = engine.validateEIDASAuthnResponse(samlToken, remoteAddr, serviceSkew);
 
-            LOG.info(LoggingMarkerMDC.SAML_EXCHANGE, "Connector - Processing SAML Response to request with ID {}", authData.getSamlId());
-            this.prepareRespLoggerBean(EIDASValues.EIDAS_CONNECTOR_RESPONSE.toString(),
-                    authnResponse, spAuthData.getSamlId());
-            this.saveLog(AUCONNECTORSAML.LOGGER_COM_RESP);
+            LOG.trace("Getting SAML Token");
+            byte[] responseFromProxyService = this.extractResponseSAMLToken(webRequest);
 
-            LOG.trace("Checking inResponseTo");
-            checkInResponseTo(authData.getSamlId(), authnResponse.getInResponseTo());
+            // validates SAML Token
+            ProtocolEngineI engine = getSamlEngine(samlServiceInstance);
 
-            checkAntiReplay(samlToken, authData, authnResponse);
+            Correlated proxyServiceSamlResponse = engine.unmarshallResponse(responseFromProxyService);
 
-            checkServiceCountryToCitizenCountry(samlToken, authData, authnResponse);
+            String connectorRequestId = proxyServiceSamlResponse.getInResponseToId();
 
-            if(!authnResponse.isFail()) {
-                checkResponseLoA(samlToken, authData, authnResponse);
-                authData.setEidasLoA(authnResponse.getAssuranceLevel());
+            if (StringUtils.isBlank(connectorRequestId)) {
+                LOG.error("ERROR : SAML Response \"" + proxyServiceSamlResponse.getId() + "\" has no InResponseTo");
+                throw new InvalidSessionEIDASException(EidasErrors.get(EidasErrorKey.AU_REQUEST_ID.errorCode()),
+                                                       EidasErrors.get(EidasErrorKey.AU_REQUEST_ID.errorMessage()));
             }
 
+            StoredAuthenticationRequest storedConnectorRequest = connectorRequestCorrelationMap.get(connectorRequestId);
+            StoredLightRequest storedServiceProviderRequest = specificSpRequestCorrelationMap.get(connectorRequestId);
+            if (null == storedConnectorRequest || null == storedServiceProviderRequest) {
+                LOG.error("ERROR : SAML Response InResponseTo \"" + connectorRequestId
+                                  + "\" cannot be found in requestCorrelationMap");
+                throw new InvalidSessionEIDASException(EidasErrors.get(EidasErrorKey.AU_REQUEST_ID.errorCode()),
+                                                       EidasErrors.get(EidasErrorKey.AU_REQUEST_ID.errorMessage()));
+            }
+
+            String citizenIpAddress = storedConnectorRequest.getRemoteIpAddress();
+            IAuthenticationRequest connectorAuthnRequest = storedConnectorRequest.getRequest();
+
+            Long serviceSkew =
+                    connectorUtil.loadConfigServiceTimeSkewInMillis(connectorAuthnRequest.getCitizenCountryCode());
+            IAuthenticationResponse authnResponse =
+                    engine.validateUnmarshalledResponse(proxyServiceSamlResponse, citizenIpAddress, serviceSkew, null);
+
+            LOG.info(LoggingMarkerMDC.SAML_EXCHANGE, "Connector - Processing SAML Response to request with ID {}",
+                     connectorRequestId);
+
+            prepareRespLoggerBean(EIDASValues.EIDAS_CONNECTOR_RESPONSE.toString(), authnResponse, connectorRequestId);
+            saveLog(AUCONNECTORSAML.LOGGER_COM_RESP);
+
+            checkAntiReplay(responseFromProxyService, connectorAuthnRequest, authnResponse);
+
+            checkServiceCountryToCitizenCountry(responseFromProxyService, connectorAuthnRequest, authnResponse);
+
+            if (!authnResponse.isFailure()) {
+                checkResponseLoA(responseFromProxyService, connectorAuthnRequest, authnResponse);
+                checkIdentifierFormat(authnResponse);
+            }
+
+            ILightRequest serviceProviderRequest = storedServiceProviderRequest.getRequest();
+            String serviceProviderRequestSamlId = serviceProviderRequest.getId();
+
             LOG.trace("Checking status code");
-            if (!EIDASStatusCode.SUCCESS_URI.toString().equals(
-                    authnResponse.getStatusCode())) {
+            if (!EIDASStatusCode.SUCCESS_URI.toString().equals(authnResponse.getStatusCode())) {
                 LOG.info("ERROR : Auth not succeed!");
 
-                final String errorCode =
-                        EIDASUtil.getEidasErrorCode(authnResponse.getMessage());
+                String errorCode = EIDASUtil.getEidasErrorCode(authnResponse.getStatusMessage());
                 // We only change the error message if we get any error code on the Message!
                 // Backwards compatibility
-                String errorMessage = authnResponse.getMessage();
+                String errorMessage = authnResponse.getStatusMessage();
                 if (StringUtils.isNotBlank(errorCode)) {
-                    errorMessage=extractErrorMessage(errorMessage, errorCode);
+                    errorMessage = extractErrorMessage(errorMessage, errorCode);
                 }
-                final byte[] samlResponseFail =
-                        generateErrorAuthenticationResponse(spAuthData.getSamlId(),
-                                authData.getOriginalIssuer()!=null?authData.getOriginalIssuer():authData.getIssuer(), spAuthData.getAssertionConsumerServiceURL(),
-                                remoteAddr, authnResponse.getStatusCode(),
-                                authnResponse.getSubStatusCode(), errorMessage);
-                throw new InternalErrorEIDASException(errorCode, errorMessage,
-                        EIDASUtil.encodeSAMLToken(samlResponseFail));
+                authnResponse = AuthenticationResponse.builder(authnResponse).statusMessage(errorMessage).build();
             }
 
             LOG.trace("Checking audience...");
-            checkAudienceRestriction(authData.getIssuer(), authnResponse.getAudienceRestriction());
+            checkAudienceRestriction(connectorAuthnRequest.getIssuer(), authnResponse.getAudienceRestriction());
 
-            LOG.trace("Setting internal variables");
+            AuthenticationResponse connectorResponse =
+                    new AuthenticationResponse.Builder(authnResponse).inResponseTo(serviceProviderRequestSamlId)
+                            .issuer(connectorAuthnRequest.getIssuer())
+                            .build();
 
-            authData.setPersonalAttributeList(authnResponse
-                    .getPersonalAttributeList());
-            if(authData.getOriginalIssuer()!=null) {
-                spAuthData.setIssuer(authData.getOriginalIssuer());
-            }
-            return authData;
-        } catch (final EIDASSAMLEngineException e) {
+            return new AuthenticationExchange(storedConnectorRequest, connectorResponse);
+
+        } catch (EIDASSAMLEngineException e) {
             LOG.info("BUSINESS EXCEPTION : SAML validation error", e.getMessage());
             LOG.debug("BUSINESS EXCEPTION : SAML validation error", e);
-            EidasNodeErrorUtil.processSAMLEngineException(e, LOG, getConnectorRedirectError(e, EIDASErrors.COLLEAGUE_RESP_INVALID_SAML));
+            EidasNodeErrorUtil.processSAMLEngineException(e, LOG, getConnectorRedirectError(e,
+                                                                                            EidasErrorKey.COLLEAGUE_RESP_INVALID_SAML));
             //normal processing of the above line will already cause the throw of the below exception
             throw new InternalErrorEIDASException(
-                    EIDASUtil.getConfig(EIDASErrors.COLLEAGUE_RESP_INVALID_SAML.errorCode()),
-                    EIDASUtil.getConfig(EIDASErrors.COLLEAGUE_RESP_INVALID_SAML
-                            .errorMessage()), e);
-        }finally{
-            getSAMLEngineFactory().releaseEngine(engine);
+                    EidasErrors.get(EidasErrorKey.COLLEAGUE_RESP_INVALID_SAML.errorCode()),
+                    EidasErrors.get(EidasErrorKey.COLLEAGUE_RESP_INVALID_SAML.errorMessage()), e);
         }
+    }
+
+    private void validateAttributeValueFormat(String value,
+                                              String currentAttrName,
+                                              String attrNameToTest,
+                                              String pattern) throws ValidationException {
+        if (currentAttrName.equals(attrNameToTest) && !Pattern.matches(pattern, value)) {
+            throw new ValidationException(attrNameToTest + " has incorrect format.");
+        }
+
+    }
+    private void checkIdentifierFormat(IAuthenticationResponse authnResponse) throws InternalErrorEIDASException {
+        String patterEidentifier = "^[A-Z]{2}/[A-Z]{2}/[A-Za-z0-9+/=\r\n]+$";
+        if (authnResponse.getAttributes() != null){
+            ImmutableSet personIdentifier = authnResponse.getAttributes().getAttributeValuesByNameUri(EidasSpec.Definitions.PERSON_IDENTIFIER.getNameUri().toASCIIString());
+            if (personIdentifier != null && !personIdentifier.isEmpty()){
+                if (!Pattern.matches(patterEidentifier, ((StringAttributeValue)personIdentifier.iterator().next()).getValue())) {
+                    throw new InternalErrorEIDASException(EidasErrorKey.COLLEAGUE_RESP_INVALID_SAML.errorCode(), "Person Identifier has an invalid format.");
+                }
+            }
+            ImmutableSet legalPersonIdentifier = authnResponse.getAttributes().getAttributeValuesByNameUri(EidasSpec.Definitions.LEGAL_PERSON_IDENTIFIER.getNameUri().toASCIIString());
+            if (legalPersonIdentifier != null  && !legalPersonIdentifier.isEmpty()){
+                if (!Pattern.matches(patterEidentifier, ((StringAttributeValue)legalPersonIdentifier.iterator().next()).getValue())) {
+                    throw new InternalErrorEIDASException(EidasErrorKey.COLLEAGUE_RESP_INVALID_SAML.errorCode(), "Legal person Identifier has an invalid format.");
+                }
+
+            }
+        }
+
     }
 
     /**
      * Compares the stored SAML request id to the incoming SAML response id.
      *
-     * @param auRequestID      The stored Id of the SAML request.
+     * @param auRequestID The stored Id of the SAML request.
      * @param currentRequestId The Id of the incoming SAML response.
      */
-    private void checkInResponseTo(final String auRequestID,
-                                   final String currentRequestId) {
+    private void checkInResponseTo(String auRequestID, String currentRequestId) {
 
         if (auRequestID == null || !auRequestID.equals(currentRequestId)) {
-            LOG.info(LoggingMarkerMDC.SECURITY_WARNING, "ERROR : Stored request Id ({}) is not the same than response request id ({})", auRequestID, currentRequestId);
-            throw new InvalidSessionEIDASException(
-                    EIDASUtil.getConfig(EIDASErrors.AU_REQUEST_ID.errorCode()),
-                    EIDASUtil.getConfig(EIDASErrors.AU_REQUEST_ID.errorMessage()));
+            LOG.info(LoggingMarkerMDC.SECURITY_WARNING,
+                     "ERROR : Stored request Id ({}) is not the same than response request id ({})", auRequestID,
+                     currentRequestId);
+            throw new InvalidSessionEIDASException(EidasErrors.get(EidasErrorKey.AU_REQUEST_ID.errorCode()),
+                                                   EidasErrors.get(EidasErrorKey.AU_REQUEST_ID.errorMessage()));
         }
     }
 
     /**
      * Check if the citizen country code is the same than the Service signing certificate
-     * @param samlToken     the samlToken received
-     * @param authData      the initial authnRequest
+     *
+     * @param samlToken the samlToken received
+     * @param spAuthnRequest the initial authnRequest
      * @param authnResponse the authnResponse
      */
-    private void checkServiceCountryToCitizenCountry(byte[] samlToken, EIDASAuthnRequest authData, EIDASAuthnResponse authnResponse) {
-        if (checkCitizenCertificateServiceCertificate && !authData.getCitizenCountryCode().equals(authnResponse.getCountry())){
-            LOG.warn("ERROR : Signing country for Service " + authnResponse.getCountry() + " is not the same than the citizen country code " + authData.getCitizenCountryCode());
-            prepareReqLoggerBean(EIDASValues.SP_REQUEST.toString(), samlToken,
-                    authData, authData.getSamlId());
-            this.saveLog(AUCONNECTORSAML.LOGGER_COM_REQ);
+    private void checkServiceCountryToCitizenCountry(byte[] samlToken,
+                                                     IAuthenticationRequest spAuthnRequest,
+                                                     IAuthenticationResponse authnResponse) {
+        if (checkCitizenCertificateServiceCertificate && !spAuthnRequest.getCitizenCountryCode()
+                .equals(authnResponse.getCountry())) {
+            LOG.warn("ERROR : Signing country for Service " + authnResponse.getCountry()
+                             + " is not the same than the citizen country code "
+                             + spAuthnRequest.getCitizenCountryCode());
+            prepareReqLoggerBean(EIDASValues.SP_REQUEST.toString(), samlToken, spAuthnRequest, spAuthnRequest.getId());
+            saveLog(AUCONNECTORSAML.LOGGER_COM_REQ);
             throw new InvalidSessionEIDASException(
-                    EIDASUtil.getConfig(EIDASErrors.INVALID_RESPONSE_COUNTRY_ISOCODE.errorCode()),
-                    EIDASUtil.getConfig(EIDASErrors.INVALID_RESPONSE_COUNTRY_ISOCODE.errorMessage()));
+                    EidasErrors.get(EidasErrorKey.INVALID_RESPONSE_COUNTRY_ISOCODE.errorCode()),
+                    EidasErrors.get(EidasErrorKey.INVALID_RESPONSE_COUNTRY_ISOCODE.errorMessage()));
         }
     }
 
     /**
      * check the LoA in the response against connector's own LoA
+     *
      * @param samlToken
-     * @param authData
+     * @param spAuthnRequest
      * @param authnResponse
      */
-    private void checkResponseLoA(byte[] samlToken, EIDASAuthnRequest authData, EIDASAuthnResponse authnResponse) {
-        EidasLoaLevels requestedLevel=EidasLoaLevels.getLevel(authData.getEidasLoA());
-        EidasLoaLevels responseLevel= EidasLoaLevels.getLevel(authnResponse.getAssuranceLevel());
-        if (requestedLevel!=null && (responseLevel==null || !EidasNodeValidationUtil.isRequestLoAValid(authData, responseLevel.stringValue()))){
-            LOG.info("ERROR : the level of assurance in the response "+authnResponse.getAssuranceLevel()+" does not satisfy the requested level "+requestedLevel);
-            prepareReqLoggerBean(EIDASValues.SP_REQUEST.toString(), samlToken, authData, authData.getSamlId());
-            this.saveLog(AUCONNECTORSAML.LOGGER_COM_REQ);
-            throw new InvalidSessionEIDASException(
-                    EIDASUtil.getConfig(EIDASErrors.INTERNAL_ERROR.errorCode()),
-                    EIDASUtil.getConfig(EIDASErrors.INTERNAL_ERROR.errorMessage()));
+    private void checkResponseLoA(byte[] samlToken,
+                                  IAuthenticationRequest spAuthnRequest,
+                                  IAuthenticationResponse authnResponse) {
+        LevelOfAssurance requestedLevel = LevelOfAssurance.getLevel(spAuthnRequest.getLevelOfAssurance());
+        LevelOfAssurance responseLevel = LevelOfAssurance.getLevel(authnResponse.getLevelOfAssurance());
+        if (requestedLevel != null && (responseLevel == null || !EidasNodeValidationUtil.isRequestLoAValid(
+                spAuthnRequest, responseLevel.stringValue()))) {
+            LOG.info("ERROR : the level of assurance in the response " + authnResponse.getLevelOfAssurance()
+                             + " does not satisfy the requested level " + requestedLevel);
+            prepareReqLoggerBean(EIDASValues.SP_REQUEST.toString(), samlToken, spAuthnRequest, spAuthnRequest.getId());
+            saveLog(AUCONNECTORSAML.LOGGER_COM_REQ);
+            throw new InvalidSessionEIDASException(EidasErrors.get(EidasErrorKey.INTERNAL_ERROR.errorCode()),
+                                                   EidasErrors.get(EidasErrorKey.INTERNAL_ERROR.errorMessage()));
         }
     }
 
     /**
      * Check the antireplay cache to control if the samlId has not yet been submitted
-     * @param samlToken     the samlToken received
-     * @param authData      the initial authnRequest
+     *
+     * @param samlToken the samlToken received
+     * @param spAuthnRequest the initial authnRequest
      * @param authnResponse the authnResponse
      */
-    private void checkAntiReplay(byte[] samlToken, EIDASAuthnRequest authData, EIDASAuthnResponse authnResponse) {
-        if (!connectorUtil.checkNotPresentInCache(authnResponse.getSamlId(), authnResponse.getCountry())){
-            LOG.info("ERROR : SAMLID " + authnResponse.getSamlId() + "+ for response found in Antireplay cache");
-            prepareReqLoggerBean(EIDASValues.SP_REQUEST.toString(), samlToken,
-                    authData, authData.getSamlId());
-            this.saveLog(AUCONNECTORSAML.LOGGER_COM_REQ);
-            throw new SecurityEIDASException(
-                    EIDASUtil.getConfig(EIDASErrors.SPROVIDER_SELECTOR_INVALID_SAML.errorCode()),
-                    EIDASUtil.getConfig(EIDASErrors.SPROVIDER_SELECTOR_INVALID_SAML.errorMessage()));
+    private void checkAntiReplay(byte[] samlToken,
+                                 IAuthenticationRequest spAuthnRequest,
+                                 IAuthenticationResponse authnResponse) {
+        if (!connectorUtil.checkNotPresentInCache(authnResponse.getId(), authnResponse.getCountry())) {
+            LOG.info("ERROR : SAMLID " + authnResponse.getId() + "+ for response found in Antireplay cache");
+            prepareReqLoggerBean(EIDASValues.SP_REQUEST.toString(), samlToken, spAuthnRequest, spAuthnRequest.getId());
+            saveLog(AUCONNECTORSAML.LOGGER_COM_REQ);
+            throw new SecurityEIDASException(EidasErrors.get(EidasErrorKey.SPROVIDER_SELECTOR_INVALID_SAML.errorCode()),
+                                             EidasErrors.get(
+                                                     EidasErrorKey.SPROVIDER_SELECTOR_INVALID_SAML.errorMessage()));
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public byte[] generateAuthenticationResponse(
-            final EIDASAuthnRequest authData, final String ipUserAddress) {
-        EIDASSAMLEngine engine=null;
-        try {
-            engine = getSAMLEngineFactory().getEngine(samlSpInstance, getConnectorUtil() == null ? null : getConnectorUtil().getConfigs());
-
-            EIDASAuthnResponse eidasResponse = new EIDASAuthnResponse();
-            eidasResponse.setPersonalAttributeList(authData.getPersonalAttributeList());
-
-            //TODO retrieve this from SP metadata
-            boolean generateSignedAssertion = Boolean.parseBoolean(connectorUtil == null || connectorUtil.getConfigs() == null ? null : connectorUtil.getConfigs().getProperty(EIDASParameters.RESPONSE_SIGN_ASSERTION.toString()));
-            engine.setRequestIssuer(authData.getIssuer());
-            // Generate SAMLResponse.
-            eidasResponse.setIssuer(getConnectorResponderMetadataUrl());
-            if( StringUtils.isEmpty(authData.getEidasLoA()) && connectorUtil.isEIDAS10(authData.getMessageFormatName())){
-                eidasResponse.setAssuranceLevel("dummy");
-            }else{
-//            	if (connectorUtil.isEidasMessageSupportedOnly()){
-//                    // Send an error SAML message back - the use of InternalErrorEIDASException should have triggered an error page
-//                    throw new InvalidParameterEIDASException(
-//                            EIDASUtil.getConfig(EIDASErrors.MESSAGE_FORMAT_UNSUPPORTED.errorCode()),
-//                            EIDASUtil.getConfig(EIDASErrors.MESSAGE_FORMAT_UNSUPPORTED.errorMessage()));
-//                }
-                eidasResponse.setAssuranceLevel(authData.getEidasLoA());
-            }
-            eidasResponse = engine.generateEIDASAuthnResponse(authData, eidasResponse,
-                            ipUserAddress, false, generateSignedAssertion);
-
-            LOG.info(LoggingMarkerMDC.SAML_EXCHANGE, "Connector - Generating SAML Response to request with ID {}", authData.getSamlId());
-            eidasResponse.setInResponseTo(authData.getSamlId());
-            prepareRespLoggerBean(EIDASValues.SP_RESPONSE.toString(), eidasResponse,
-                    authData.getSamlId());
-            AUCONNECTORSAML.LOGGER_COM_RESP.info(LoggingMarkerMDC.SAML_EXCHANGE, loggerBean.toString());
-
-            return eidasResponse.getTokenSaml();
-        } catch (final EIDASSAMLEngineException e) {
-            LOG.info("ERROR : Error generating SAMLToken", e);
-            EidasNodeErrorUtil.processSAMLEngineException(e, LOG, getConnectorRedirectError(e, EIDASErrors.SPROVIDER_SELECTOR_INVALID_SAML));
-            throw new InternalErrorEIDASException(
-                    EIDASUtil.getConfig(EIDASErrors.CONNECTOR_SAML_RESPONSE.errorCode()),
-                    EIDASUtil.getConfig(EIDASErrors.CONNECTOR_SAML_RESPONSE.errorMessage()), e);
-        }finally {
-            if(engine!=null) {
-                getSAMLEngineFactory().releaseEngine(engine);
-            }
+    public String getIssuer() {
+        String connectorMetadataUrl = getConnectorMetadataUrl();
+        if (StringUtils.isNotBlank(connectorMetadataUrl) && PropertiesUtil.isMetadataEnabled()) {
+            return connectorMetadataUrl;
         }
-
+        ProtocolEngineI engine = getSamlEngine(samlSpInstance);
+        return engine.getCoreProperties().getRequester();
     }
 
     /**
@@ -685,96 +677,130 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
      * @param instance String containing the SAML configuration to load.
      * @param authData An authentication request to generate the SAML token.
      * @return An authentication request with the embedded SAML token.
-     * @see EIDASAuthnRequest
+     * @see EidasAuthenticationRequest
      */
-    private EIDASAuthnRequest generateAuthenticationRequest(
-            final String instance, final EIDASAuthnRequest authData) {
+    private IRequestMessage generateAuthenticationRequest(@Nonnull String instance,
+                                                          @Nonnull IAuthenticationRequest request,
+                                                          @Nonnull String serviceCountryCode) {
 
-        final EIDASSAMLEngine engine = getSAMLEngineFactory().getEngine(instance, getConnectorUtil()==null?null:getConnectorUtil().getConfigs());
+        if (!(request instanceof IEidasAuthenticationRequest)) {
+            // Send an error SAML message back - the use of InternalErrorEIDASException should have triggered an error page
+            throw new InvalidParameterEIDASException(
+                    EidasErrors.get(EidasErrorKey.MESSAGE_FORMAT_UNSUPPORTED.errorCode()),
+                    EidasErrors.get(EidasErrorKey.MESSAGE_FORMAT_UNSUPPORTED.errorMessage()));
+        }
+
+        boolean modified = false;
+        EidasAuthenticationRequest.Builder builder = null;
+        IEidasAuthenticationRequest eidasRequest = (IEidasAuthenticationRequest) request;
+
+        if (!EidasSamlBinding.EMPTY.getName().equals(eidasRequest.getBinding())) {
+            builder = EidasAuthenticationRequest.builder(eidasRequest);
+            builder.binding(EidasSamlBinding.EMPTY.getName());
+            modified = true;
+        }
+
+        // If there is no SP Country, Then we get it from SAML's Certificate
+        if (StringUtils.isBlank(request.getServiceProviderCountryCode())) {
+            if (null == builder) {
+                builder = EidasAuthenticationRequest.builder(eidasRequest);
+            }
+            builder.serviceProviderCountryCode(request.getOriginCountryCode());
+            modified = true;
+        }
+
+        String connectorMetadataUrl = getConnectorMetadataUrl();
+        if (connectorMetadataUrl != null && !connectorMetadataUrl.isEmpty() && PropertiesUtil.isMetadataEnabled()
+                && !request.getIssuer().equals(connectorMetadataUrl)) {
+            if (null == builder) {
+                builder = EidasAuthenticationRequest.builder(eidasRequest);
+            }
+            builder.originalIssuer(request.getIssuer());
+            builder.issuer(connectorMetadataUrl);
+            modified = true;
+        }
 
         try {
+            ProtocolEngineI engine = getSamlEngine(instance);
 
-            // If there is no SP Country, Then we get it from SAML's Certificate
-            if (StringUtils.isBlank(authData.getSpCountry())) {
-                authData.setSpCountry(authData.getCountry());
-            }
-            LOG.info(LoggingMarkerMDC.SAML_EXCHANGE, "Connector - Processing SAML Request with ID {}", authData.getSamlId());
-            if(getConnectorMetadataUrl()!=null && !getConnectorMetadataUrl().isEmpty() && PropertiesUtil.isMetadataEnabled()){
-                authData.setOriginalIssuer(authData.getIssuer());
-                authData.setIssuer(getConnectorMetadataUrl());
-            }
-            if(connectorUtil.isEIDAS10(authData.getMessageFormatName())){
-                authData.setBinding(EIDASAuthnRequest.BINDING_EMPTY);
-            }else if (connectorUtil.isEidasMessageSupportedOnly()){
-                // Send an error SAML message back - the use of InternalErrorEIDASException should have triggered an error page
-                throw new InvalidParameterEIDASException(
-                        EIDASUtil.getConfig(EIDASErrors.MESSAGE_FORMAT_UNSUPPORTED.errorCode()),
-                        EIDASUtil.getConfig(EIDASErrors.MESSAGE_FORMAT_UNSUPPORTED.errorMessage()));
+            LOG.info(LoggingMarkerMDC.SAML_EXCHANGE, "Connector - Processing SAML Request with ID {}", request.getId());
+
+            String serviceMetadataURL = getConnectorUtil().loadConfigServiceMetadataURL(serviceCountryCode);
+            if (StringUtils.isEmpty(serviceMetadataURL)) {
+                String message = "The service metadata URL for \"" + serviceCountryCode + "\" is not configured";
+                LOG.error(message);
+                throw new InternalErrorEIDASException(
+                        EidasErrors.get(EidasErrorKey.SAML_ENGINE_NO_METADATA.errorCode()),
+                        EidasErrors.get(EidasErrorKey.SAML_ENGINE_NO_METADATA.errorMessage()), message);
             }
 
-            return engine.generateEIDASAuthnRequest(authData);
+            if (modified) {
+                request = builder.build();
+            }
 
-        } catch (final EIDASSAMLEngineException e) {
+            return engine.generateRequestMessage(request, serviceMetadataURL);
+
+        } catch (EIDASSAMLEngineException e) {
             LOG.info(instance + " : Error generating SAML Token", e.getMessage());
             LOG.debug(instance + " : Error generating SAML Token", e);
-            EidasNodeErrorUtil.processSAMLEngineException(e, LOG, getConnectorRedirectError(e, EIDASErrors.SPROVIDER_SELECTOR_INVALID_SAML));
+            EidasNodeErrorUtil.processSAMLEngineException(e, LOG, getConnectorRedirectError(e,
+                                                                                            EidasErrorKey.SPROVIDER_SELECTOR_INVALID_SAML));
             throw new InternalErrorEIDASException(
-                    EIDASUtil.getConfig(EIDASErrors.SPROVIDER_SELECTOR_ERROR_CREATE_SAML.errorCode()),
-                    EIDASUtil.getConfig(EIDASErrors.SPROVIDER_SELECTOR_ERROR_CREATE_SAML.errorMessage()), e);
-        }finally {
-            getSAMLEngineFactory().releaseEngine(engine);
+                    EidasErrors.get(EidasErrorKey.SPROVIDER_SELECTOR_ERROR_CREATE_SAML.errorCode()),
+                    EidasErrors.get(EidasErrorKey.SPROVIDER_SELECTOR_ERROR_CREATE_SAML.errorMessage()), e);
         }
     }
 
     /**
      * Sets all the fields to audit the request.
      *
-     * @param opType       The operation type.
-     * @param samlObj      The SAML token byte[].
+     * @param opType The operation type.
+     * @param samlObj The SAML token byte[].
      * @param authnRequest The Authentication Request object.
-     * @param spSamlId     The SP's SAML ID.
-     * @see EIDASAuthnRequest
+     * @param spSamlId The SP's SAML ID.
+     * @see EidasAuthenticationRequest
      */
-    private void prepareReqLoggerBean(final String opType, final byte[] samlObj,
-                                      final EIDASAuthnRequest authnRequest, final String spSamlId) {
-        final String hashClassName=getConnectorUtil()!=null && getConnectorUtil().getConfigs()!=null?getConnectorUtil().getConfigs().getProperty(EIDASParameters.HASH_DIGEST_CLASS.toString()):null;
-        final byte[] tokenHash = EIDASUtil.hashPersonalToken(samlObj, hashClassName);
+    private void prepareReqLoggerBean(String opType,
+                                      byte[] samlObj,
+                                      IAuthenticationRequest authnRequest,
+                                      String spSamlId) {
+        String hashClassName =
+                getConnectorUtil() != null && getConnectorUtil().getConfigs() != null ? getConnectorUtil().getConfigs()
+                        .getProperty(EidasParameterKeys.HASH_DIGEST_CLASS.toString()) : null;
+        byte[] tokenHash = EidasDigestUtil.hashPersonalToken(samlObj, hashClassName);
         loggerBean.setTimestamp(DateUtil.currentTimeStamp().toString());
         loggerBean.setOpType(opType);
         loggerBean.setOrigin(authnRequest.getAssertionConsumerServiceURL());
         loggerBean.setDestination(authnRequest.getDestination());
-        loggerBean.setSpApplication(authnRequest.getSpApplication());
         loggerBean.setProviderName(authnRequest.getProviderName());
         loggerBean.setCountry(authnRequest.getCitizenCountryCode());
-        loggerBean.setQaaLevel(authnRequest.getQaa());
+        if (authnRequest instanceof IStorkAuthenticationRequest) {
+            IStorkAuthenticationRequest storkAuthenticationRequest = (IStorkAuthenticationRequest) authnRequest;
+            loggerBean.setSpApplication(storkAuthenticationRequest.getSpApplication());
+            loggerBean.setQaaLevel(storkAuthenticationRequest.getQaa());
+        }
         loggerBean.setSamlHash(tokenHash);
         loggerBean.setSPMsgId(spSamlId);
-        loggerBean.setMsgId(authnRequest.getSamlId());
+        loggerBean.setMsgId(authnRequest.getId());
     }
 
     /**
      * Sets all the fields to the audit the response.
      *
-     * @param opType            The Operation Type.
-     * @param authnResponse     The Authentication Response object.
+     * @param opType The Operation Type.
+     * @param authnResponse The Authentication Response object.
      * @param inResponseToSPReq The SP's SAML Id.
-     * @see EIDASAuthnRequest
+     * @see EidasAuthenticationRequest
      */
-    private void prepareRespLoggerBean(final String opType,
-                                       final EIDASAuthnResponse authnResponse, final String inResponseToSPReq) {
-        final String hashClassName=getConnectorUtil()!=null && getConnectorUtil().getConfigs()!=null?getConnectorUtil().getConfigs().getProperty(EIDASParameters.HASH_DIGEST_CLASS.toString()):null;
-        final byte[] tokenHash =
-                EIDASUtil.hashPersonalToken(authnResponse.getTokenSaml(), hashClassName);
-        final String message =
-                EIDASValues.SUCCESS.toString() + EIDASValues.EID_SEPARATOR.toString()
-                        + EIDASValues.CITIZEN_CONSENT_LOG.toString();
+    private void prepareRespLoggerBean(String opType, IAuthenticationResponse authnResponse, String inResponseToSPReq) {
+        String message = EIDASValues.SUCCESS.toString() + EIDASValues.EID_SEPARATOR.toString()
+                + EIDASValues.CITIZEN_CONSENT_LOG.toString();
         loggerBean.setTimestamp(DateUtil.currentTimeStamp().toString());
         loggerBean.setOpType(opType);
-        loggerBean.setInResponseTo(authnResponse.getInResponseTo());
+        loggerBean.setInResponseTo(authnResponse.getInResponseToId());
         loggerBean.setInResponseToSPReq(inResponseToSPReq);
         loggerBean.setMessage(message);
-        loggerBean.setSamlHash(tokenHash);
-        loggerBean.setMsgId(authnResponse.getSamlId());
+        loggerBean.setMsgId(authnResponse.getId());
     }
 
     /**
@@ -782,7 +808,7 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
      *
      * @param logger The Audit Logger.
      */
-    public void saveLog(final Logger logger) {
+    public void saveLog(Logger logger) {
         logger.info(LoggingMarkerMDC.SAML_EXCHANGE, loggerBean.toString());
     }
 
@@ -796,7 +822,7 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
      * @param nLoggerBean The loggerBean to set.
      * @see IEIDASLogger
      */
-    public void setLoggerBean(final IEIDASLogger nLoggerBean) {
+    public void setLoggerBean(IEIDASLogger nLoggerBean) {
         this.loggerBean = nLoggerBean;
     }
 
@@ -813,91 +839,36 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
     /**
      * Compares the issuer to the audience restriction.
      *
-     * @param issuer   The stored SAML request issuer.
+     * @param issuer The stored SAML request issuer.
      * @param audience The SAML response audience.
      */
-    private void checkAudienceRestriction(final String issuer,
-                                          final String audience) {
+    private void checkAudienceRestriction(String issuer, String audience) {
 
         if (issuer == null || !issuer.equals(audience)) {
-            LOG.info("ERROR : Audience is null or not valid");
-            throw new InvalidSessionEIDASException(
-                    EIDASUtil.getConfig(EIDASErrors.AUDIENCE_RESTRICTION.errorCode()),
-                    EIDASUtil.getConfig(EIDASErrors.AUDIENCE_RESTRICTION.errorMessage()));
+            LOG.info("ERROR : Audience is null or not valid: audienceRestriction=\"" + audience + "\" vs issuer=\""
+                             + issuer + "\"");
+            throw new InvalidSessionEIDASException(EidasErrors.get(EidasErrorKey.AUDIENCE_RESTRICTION.errorCode()),
+                                                   EidasErrors.get(EidasErrorKey.AUDIENCE_RESTRICTION.errorMessage()));
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public void checkMandatoryAttributes(final EIDASAuthnRequest authnData,
-                                         final String ipUserAddress) {
-
-        if (authnData==null || !AttributeUtil.checkMandatoryAttributes(authnData.getPersonalAttributeList())) {
-            LOG.info("BUSINESS EXCEPTION : Mandatory attribute is missing!");
-            String errorMessage =
-                    messageSource.getMessage(EIDASUtil.getConfig(EIDASErrors.ATT_VERIFICATION_MANDATORY.errorCode()),
-                            new Object[]{EIDASUtil.getConfig(EIDASErrors.ATT_VERIFICATION_MANDATORY.errorCode())},
-                            Locale.getDefault());
-            final byte[] error =
-                    generateErrorAuthenticationResponse(authnData.getSamlId(),
-                            authnData.getIssuer(), authnData.getAssertionConsumerServiceURL(),
-                            ipUserAddress, EIDASUtil.getConfig(EIDASErrors.ATT_VERIFICATION_MANDATORY.errorCode()),
-                            EIDASSubStatusCode.REQUEST_DENIED_URI.toString(), errorMessage);
-            if (LOG.isInfoEnabled()){
-                LOG.info("Missing attributes: " + AttributeUtil.getMissingMandatoryAttributes(authnData.getPersonalAttributeList()));
-            }
-            throw new InternalErrorEIDASException(
-                    EIDASUtil.getConfig(EIDASErrors.ATT_VERIFICATION_MANDATORY.errorCode()),
-                    errorMessage,
-                    EIDASUtil.encodeSAMLToken(error));
-        }
+    @Override
+    public boolean checkMandatoryAttributes(@Nonnull ImmutableAttributeMap attributes) {
+        ProtocolEngineI engine = getSamlEngine(samlSpInstance);
+        return engine.getProtocolProcessor().checkMandatoryAttributes(attributes);
     }
 
-    public void filterServiceSupportedAttrs (final EIDASAuthnRequest authnData, Map<String, String> parameters){
-        final String serviceCode = getCountryCode(authnData, parameters);
-        String serviceMetadataURL=getConnectorUtil().loadConfigServiceMetadataURL(serviceCode);
-        if(StringUtils.isEmpty(serviceMetadataURL)){
-            LOG.info("The service metadata  for"+serviceCode+" is not configured, unable to determine the supported attributes");
-            return;
-        }
-        EIDASSAMLEngine engine=null;
-        try {
-            engine = getSAMLEngineFactory().getEngine(samlSpInstance, getConnectorUtil() == null ? null : getConnectorUtil().getConfigs());
-            metadataProcessor.checkValidMetadataSignature(serviceMetadataURL, engine);
-            IDPSSODescriptor idp=metadataProcessor.getIDPSSODescriptor(serviceMetadataURL);
-            List<PersonalAttribute> paToRemove=new ArrayList<PersonalAttribute>();
-            List<String> supportedAttrNames=new ArrayList<String>();
-            for(Attribute a: idp.getAttributes()){
-                supportedAttrNames.add(a.getName());
-            }
-            IPersonalAttributeList attributeList = authnData.getPersonalAttributeList();
-            for(PersonalAttribute pa: attributeList){
-                if(!supportedAttrNames.contains(pa.getFullName())){
-                    LOG.warn("removing attribute "+pa.getFullName());
-                    paToRemove.add(pa);
-                }
-            }
-            for(PersonalAttribute pa: paToRemove) {
-                attributeList.remove(pa.getName());
-            }
-            authnData.setPersonalAttributeList(attributeList);
-        }catch(SAMLEngineException e){
-            LOG.info("Error filtering supported attributes {}", e);
-            EidasNodeErrorUtil.processSAMLEngineException(e, LOG, EIDASErrors.SAML_ENGINE_NO_METADATA);
-            throw new InternalErrorEIDASException(
-                    EIDASUtil.getConfig(EIDASErrors.SAML_ENGINE_NO_METADATA.errorCode()),
-                    EIDASUtil.getConfig(EIDASErrors.SAML_ENGINE_NO_METADATA.errorMessage()), e);
-        }finally {
-            getSAMLEngineFactory().releaseEngine(engine);
-        }
+    // TODO why are there 2 SAML engines in the connector?
+    public ProtocolEngineI getSamlEngine(@Nonnull String instanceName) {
+        return nodeProtocolEngineFactory.getProtocolEngine(instanceName);
     }
+
     /**
      * Setter for samlSpInstance.
      *
      * @param nSamlSpInstance The new SamlSpInstance value.
      */
-    public void setSamlSpInstance(final String nSamlSpInstance) {
+    public void setSamlSpInstance(String nSamlSpInstance) {
         this.samlSpInstance = nSamlSpInstance;
     }
 
@@ -915,17 +886,8 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
      *
      * @param samlServiceInstance The new samlServiceInstance value.
      */
-    public void setSamlServiceInstance(final String samlServiceInstance) {
+    public void setSamlServiceInstance(String samlServiceInstance) {
         this.samlServiceInstance = samlServiceInstance;
-    }
-
-    /**
-     * Getter for samlServiceInstance.
-     *
-     * @return The samlServiceInstance value.
-     */
-    public String getSamlServiceInstance() {
-        return samlServiceInstance;
     }
 
     /**
@@ -934,7 +896,7 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
      * @param connectorUtil The new connectorUtil value.
      * @see AUCONNECTORUtil
      */
-    public void setConnectorUtil(final AUCONNECTORUtil connectorUtil) {
+    public void setConnectorUtil(AUCONNECTORUtil connectorUtil) {
         this.connectorUtil = connectorUtil;
     }
 
@@ -949,44 +911,29 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
     }
 
     /**
-     * Getter for messageSource.
-     *
-     * @return The messageSource value.
-     * @see MessageSource
-     */
-    public MessageSource getMessageSource() {
-        return messageSource;
-    }
-
-    /**
      * Setter for messageSource.
      *
      * @param nMessageSource The new messageSource value.
      * @see MessageSource
      */
-    public void setMessageSource(final MessageSource nMessageSource) {
+    public void setMessageSource(MessageSource nMessageSource) {
         this.messageSource = nMessageSource;
     }
 
-    @Override
-    public String getMetadata() {
-        return "toBeDone";
-    }
-
-    public String getConnectorMetadataUrl() {
+    private String getConnectorMetadataUrl() {
         return metadataUrl;
     }
 
-    public void setConnectorMetadataUrl(String metadaUrl) {
-        this.metadataUrl = metadaUrl;
+    public void setConnectorMetadataUrl(String metadataUrl) {
+        this.metadataUrl = metadataUrl;
     }
 
-    public MetadataProcessorI getMetadataProcessor() {
-        return metadataProcessor;
+    public MetadataFetcherI getMetadataFetcher() {
+        return metadataFetcher;
     }
 
-    public void setMetadataProcessor(MetadataProcessorI metadataProcessor) {
-        this.metadataProcessor = metadataProcessor;
+    public void setMetadataFetcher(MetadataFetcherI metadataFetcher) {
+        this.metadataFetcher = metadataFetcher;
     }
 
     public String getConnectorResponderMetadataUrl() {
@@ -995,5 +942,9 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
 
     public void setConnectorResponderMetadataUrl(String metadataResponderUrl) {
         this.metadataResponderUrl = metadataResponderUrl;
+    }
+
+    public void setNodeProtocolEngineFactory(ProtocolEngineFactory nodeProtocolEngineFactory) {
+        this.nodeProtocolEngineFactory = nodeProtocolEngineFactory;
     }
 }

@@ -1,10 +1,14 @@
 package eu.eidas.node.auth.service;
 
-import eu.eidas.auth.commons.*;
-
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import eu.eidas.auth.commons.CountrySpecificService;
+import eu.eidas.auth.commons.IEIDASSession;
+import eu.eidas.auth.commons.IPersonalAttributeList;
+import eu.eidas.auth.commons.PersonalAttributeList;
+import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 
 /**
  * acts as an inactive plugin when a country has a plugin configured (and active), but the actual plugin was not loaded
@@ -19,7 +23,7 @@ public class InactiveIntegrationPlugin extends CountrySpecificService{
     public String getIsoCode(){
         return isoCode;
     }
-    public void prepareRequest(HttpServletRequest req, EIDASAuthnRequest authData){
+    public void prepareRequest(HttpServletRequest req, IAuthenticationRequest authData){
         //nothing to do while inactive
     }
     public String getRedirectUrl(HttpServletRequest req){

@@ -1,5 +1,5 @@
 /*
- * Licensed under the EUPL, Version 1.1 or – as soon they will be approved by
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
  * the European Commission - subsequent versions of the EUPL (the "Licence");
  * You may not use this work except in compliance with the Licence. You may
  * obtain a copy of the Licence at:
@@ -14,19 +14,22 @@
  */
 package eu.eidas.samlengineconfig.impl.marshaller;
 
-import eu.eidas.impl.file.FileService;
-import eu.eidas.samlengineconfig.SamlEngineConfiguration;
-import eu.eidas.samlengineconfig.impl.*;
-import eu.eidas.samlengineconfig.impl.tools.EidasConfigManagerUtil;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.io.StringWriter;
+import java.util.Properties;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Marshaller;
 
-import java.io.StringWriter;
-import java.util.Properties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import eu.eidas.impl.file.FileService;
+import eu.eidas.samlengineconfig.SamlEngineConfiguration;
+import eu.eidas.samlengineconfig.impl.EngineInstanceImpl;
+import eu.eidas.samlengineconfig.impl.InstanceConfigurationImpl;
+import eu.eidas.samlengineconfig.impl.JAXBConfigurationParameter;
+import eu.eidas.samlengineconfig.impl.SamlEngineConfigurationImpl;
+import eu.eidas.samlengineconfig.impl.tools.EidasConfigManagerUtil;
 
 /**
  * serialize/deserialize an EngineInstance

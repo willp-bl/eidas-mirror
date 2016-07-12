@@ -1,28 +1,46 @@
 /*
- * Licensed under the EUPL, Version 1.1 or – as soon they will be approved by
- * the European Commission - subsequent versions of the EUPL (the "Licence");
- * You may not use this work except in compliance with the Licence. You may
- * obtain a copy of the Licence at:
+ * Copyright (c) 2016 by European Commission
  *
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
+ * the European Commission - subsequent versions of the EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
  * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the Licence is distributed on an "AS IS" basis, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * Licence for the specific language governing permissions and limitations under
- * the Licence.
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
+ *
+ * This product combines work with different licenses. See the "NOTICE" text
+ * file for details on the various modules and licenses.
+ * The "NOTICE" text file is part of the distribution. Any derivative works
+ * that you distribute must include a readable copy of the "NOTICE" text file.
+ *
  */
 package eu.eidas.auth.engine.metadata;
 
-import eu.eidas.auth.engine.EIDASSAMLEngine;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
+
+import javax.annotation.concurrent.NotThreadSafe;
+
+import com.google.common.annotations.Beta;
 
 import org.opensaml.common.xml.SAMLConstants;
 import org.opensaml.xml.security.credential.Credential;
 import org.opensaml.xml.signature.Signature;
 
-import java.util.HashSet;
-import java.util.Set;
+import eu.eidas.auth.engine.ProtocolEngineI;
 
+/**
+ * @deprecated this code is not encapsulated at all (it exposes its mutable internal state to other classes in the same package)
+ */
+@NotThreadSafe
+@Deprecated
+@Beta
 public class MetadataConfigParams {
     static final String SP_ID_PREFIX="SP";
     static final String IDP_ID_PREFIX="IDP";
@@ -46,14 +64,15 @@ public class MetadataConfigParams {
     Credential spEncryptionCredential;
     Credential spSigningCredential;
     Set<String> protocolBinding=new HashSet<String>();
+    HashMap<String,String> protocolBindingLocation=new HashMap<String,String>();
     //supported protocol: SAML 2
     String spSamlProtocol= SAMLConstants.SAML20P_NS;
     String idpSamlProtocol=SAMLConstants.SAML20P_NS;
     String countryName;
     String nodeUrl;
     String emailAddress;
-    EIDASSAMLEngine idpEngine;
-    EIDASSAMLEngine spEngine;
+    ProtocolEngineI idpEngine;
+    ProtocolEngineI spEngine;
     String assuranceLevel;
     String spType;
     String digestMethods;
@@ -206,19 +225,19 @@ public class MetadataConfigParams {
     public void setEmailAddress(String emailAddress) {
         this.emailAddress = emailAddress;
     }
-    public EIDASSAMLEngine getIdpEngine() {
+    public ProtocolEngineI getIdpEngine() {
         return idpEngine;
     }
 
-    public void setIdpEngine(EIDASSAMLEngine idpEngine) {
+    public void setIdpEngine(ProtocolEngineI idpEngine) {
         this.idpEngine = idpEngine;
     }
 
-    public EIDASSAMLEngine getSpEngine() {
+    public ProtocolEngineI getSpEngine() {
         return spEngine;
     }
 
-    public void setSpEngine(EIDASSAMLEngine spEngine) {
+    public void setSpEngine(ProtocolEngineI spEngine) {
         this.spEngine = spEngine;
     }
 
@@ -232,6 +251,10 @@ public class MetadataConfigParams {
 
     public Set<String> getProtocolBinding() {
         return this.protocolBinding;
+    }
+
+    public HashMap<String, String> getProtocolBindingLocation() {
+        return protocolBindingLocation;
     }
 
     public String getSpType() {

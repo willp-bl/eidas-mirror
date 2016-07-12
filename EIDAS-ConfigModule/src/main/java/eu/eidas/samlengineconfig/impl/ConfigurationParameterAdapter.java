@@ -1,5 +1,5 @@
 /*
- * Licensed under the EUPL, Version 1.1 or – as soon they will be approved by
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
  * the European Commission - subsequent versions of the EUPL (the "Licence");
  * You may not use this work except in compliance with the Licence. You may
  * obtain a copy of the Licence at:
@@ -14,23 +14,23 @@
  */
 package eu.eidas.samlengineconfig.impl;
 
+import java.util.Properties;
+
+import javax.xml.bind.annotation.adapters.XmlAdapter;
+
 import eu.eidas.samlengineconfig.BinaryParameter;
 import eu.eidas.samlengineconfig.ConfigurationParameter;
 import eu.eidas.samlengineconfig.PropsParameter;
 import eu.eidas.samlengineconfig.StringParameter;
 import eu.eidas.samlengineconfig.impl.tools.EidasConfigManagerUtil;
 
-import java.util.Properties;
-
-import javax.xml.bind.annotation.adapters.XmlAdapter;
-
 /**
- * marshaller adapter for ConfigurationParameter 
+ * marshaller adapter for ConfigurationParameter
  */
 public class ConfigurationParameterAdapter extends XmlAdapter<JAXBConfigurationParameter,ConfigurationParameter> {
     private static final String FILE_PREFIX="file";
-    private static final String KEYSTORE_PATH="keystorePath";
-    private static final String METADATA_KEYSTORE_PATH="metadata.keystorePath";
+    private static final String KEYSTORE_PATH="keyStorePath";
+    private static final String METADATA_KEYSTORE_PATH="metadata.keyStorePath";
     private static final String ENCRYPTION_ACTIVATION="encryptionActivation";
     private static final String[] BINARY_PARAMETERS={KEYSTORE_PATH, ENCRYPTION_ACTIVATION,METADATA_KEYSTORE_PATH};
 
@@ -62,12 +62,12 @@ public class ConfigurationParameterAdapter extends XmlAdapter<JAXBConfigurationP
         Properties props=EidasConfigManagerUtil.getInstance().loadProps(parameter.getValue());
         p.setValue(props);
         for(String key:BINARY_PARAMETERS) {
-            Object keystorePath = props.get(key);
-            if (isBinaryParameter(keystorePath)) {
+            Object keyStorePath = props.get(key);
+            if (isBinaryParameter(keyStorePath)) {
                 BinaryParameter bp = new BinaryParameter();
-                bp.setValue(loadBinaryFile(keystorePath.toString()));
+                bp.setValue(loadBinaryFile(keyStorePath.toString()));
                 bp.setName(key);
-                bp.setUrl(keystorePath.toString());
+                bp.setUrl(keyStorePath.toString());
                 props.put(key, bp);
             }
         }

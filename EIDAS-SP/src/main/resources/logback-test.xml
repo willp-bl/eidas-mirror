@@ -9,15 +9,15 @@
 			<param name="ConversionPattern" value="%d{HH:mm:ss:SSS} - %p - %C{1} - %m%n"/>
 		</layout>
 	</appender>
-	
+
 	<logger name="org.opensaml">
-        <level value="info" />
+        <level value="debug" />
     </logger>
-	
+
 
 	<root>
 		<appender-ref ref="MainLogger" />
-		<level value="info" />
+		<level value="debug" />
 	</root>
 
 </configuration>

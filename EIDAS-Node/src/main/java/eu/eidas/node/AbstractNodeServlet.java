@@ -22,15 +22,7 @@
 
 package eu.eidas.node;
 
-import eu.eidas.auth.commons.EIDASParameters;
-import eu.eidas.auth.commons.EIDASUtil;
-import eu.eidas.auth.commons.EIDASValues;
-import eu.eidas.node.logging.LoggingMarkerMDC;
-import eu.eidas.node.logging.LoggingUtil;
-
-import org.slf4j.Logger;
-import org.slf4j.MDC;
-import org.springframework.context.ApplicationContext;
+import java.io.IOException;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
@@ -38,8 +30,14 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import java.io.IOException;
-import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.MDC;
+import org.springframework.context.ApplicationContext;
+
+import eu.eidas.auth.commons.EidasParameterKeys;
+import eu.eidas.auth.commons.EIDASValues;
+import eu.eidas.node.logging.LoggingMarkerMDC;
+import eu.eidas.node.logging.LoggingUtil;
 
 /**
  * Generic EidasNode servlet ancestor.
@@ -74,21 +72,6 @@ public abstract class AbstractNodeServlet extends HttpServlet {
         // Servlet code to renew the session
         getLogger().debug(LoggingMarkerMDC.SECURITY_SUCCESS, "Session RENEWED SessionIdRegenerationInWebApp [domain : {}][path {}][sessionId {}]", request.getServerName(), getServletContext().getContextPath(),currentSession);
         return currentSession;
-    }
-
-    /**
-     * Creates a {@link java.util.Map} with all the parameters from the servletRequest, plus
-     * the Remote Address, Remote Host, Local Address and Local Host. Then returns
-     * the map.
-     *
-     * @return A map with the servletRequest's parameters, both the remote and
-     *         local addresses and the remote and local host.
-     *
-     * @see java.util.Map
-     */
-    protected final Map<String, String> getHttpRequestParameters(HttpServletRequest request) {
-        return EIDASUtil.getHttpRequestParameters(this.getClass().getCanonicalName(), request);
-
     }
 
     /**
@@ -207,7 +190,7 @@ public abstract class AbstractNodeServlet extends HttpServlet {
 
 
     protected final boolean acceptsHttpRedirect(){
-        Boolean acceptGet = ApplicationContextProvider.getNodeParameterBool(EIDASParameters.ALLOW_REDIRECT_BINDING.toString());
+        Boolean acceptGet = ApplicationContextProvider.getNodeParameterBool(EidasParameterKeys.ALLOW_REDIRECT_BINDING.toString());
         return acceptGet!=null && acceptGet;
     }
 }

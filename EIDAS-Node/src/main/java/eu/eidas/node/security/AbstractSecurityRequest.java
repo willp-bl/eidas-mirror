@@ -1,18 +1,16 @@
 package eu.eidas.node.security;
 
-import eu.eidas.auth.commons.EIDASErrors;
-import eu.eidas.auth.commons.EIDASParameters;
-import eu.eidas.auth.commons.EIDASUtil;
+import eu.eidas.auth.commons.EidasErrorKey;
+import eu.eidas.auth.commons.EidasParameterKeys;
 import eu.eidas.auth.commons.EIDASValues;
+import eu.eidas.auth.commons.EidasErrors;
 import eu.eidas.auth.commons.exceptions.SecurityEIDASException;
 import eu.eidas.node.logging.LoggingMarkerMDC;
-
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
-
 import java.util.*;
 
 /**
@@ -69,8 +67,8 @@ public class AbstractSecurityRequest {
     protected final void checkRequest(final String remoteAddr, final int maxTime,
                               final int threshold, final String pathInvoked,
                               final Map<String, List<Long>> listIP) {
-        final String errorMsg = EIDASUtil.getConfig(EIDASErrors.REQUESTS.errorMessage(pathInvoked));
-        final String errorCode = EIDASUtil.getConfig(EIDASErrors.REQUESTS.errorCode(pathInvoked));
+        final String errorMsg = EidasErrors.get(EidasErrorKey.REQUESTS.errorMessage(pathInvoked));
+        final String errorCode = EidasErrors.get(EidasErrorKey.REQUESTS.errorCode(pathInvoked));
 
         synchronized (listIP) {
             // query the table for the request address
@@ -126,8 +124,8 @@ public class AbstractSecurityRequest {
     protected final void checkDomain(final String requestDomain,
                              final String servletClassName, final HttpServletRequest request) {
 
-        final String errorCode = EIDASUtil.getConfig(EIDASErrors.DOMAIN.errorCode(servletClassName));
-        final String errorMsg = EIDASUtil.getConfig(EIDASErrors.DOMAIN.errorMessage(servletClassName));
+        final String errorCode = EidasErrors.get(EidasErrorKey.DOMAIN.errorCode(servletClassName));
+        final String errorMsg = EidasErrors.get(EidasErrorKey.DOMAIN.errorMessage(servletClassName));
 
         final List<String> ltrustedDomains = new ArrayList<String>(Arrays.asList(configurationSecurityBean.getTrustedDomains().split(EIDASValues.ATTRIBUTE_SEP.toString())));
 
@@ -142,7 +140,7 @@ public class AbstractSecurityRequest {
         }
 
         // substring starts after 'http(s)://'
-        final String spUrl = request.getParameter(EIDASParameters.SP_URL.toString());
+        final String spUrl = request.getParameter(EidasParameterKeys.SP_URL.toString());
         if (StringUtils.isNotEmpty(spUrl) && !spUrl.substring(spUrl.indexOf("://")
                 + AbstractSecurityRequest.THREE).startsWith(requestDomain + '/')) {
             LOG.warn(LoggingMarkerMDC.SECURITY_WARNING, "spUrl {} does not belong to the domain : {}", spUrl, requestDomain);

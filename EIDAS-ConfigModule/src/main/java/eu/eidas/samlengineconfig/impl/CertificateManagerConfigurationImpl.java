@@ -1,5 +1,5 @@
 /*
- * Licensed under the EUPL, Version 1.1 or – as soon they will be approved by
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
  * the European Commission - subsequent versions of the EUPL (the "Licence");
  * You may not use this work except in compliance with the Licence. You may
  * obtain a copy of the Licence at:
@@ -14,6 +14,10 @@
  */
 package eu.eidas.samlengineconfig.impl;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+
 import eu.eidas.config.ConfigurationException;
 import eu.eidas.impl.file.FileService;
 import eu.eidas.samlengineconfig.AbstractCertificateConfigurationManager;
@@ -21,10 +25,6 @@ import eu.eidas.samlengineconfig.EngineInstance;
 import eu.eidas.samlengineconfig.SamlEngineConfiguration;
 import eu.eidas.samlengineconfig.impl.marshaller.EngineInstanceUnmarshallerImpl;
 import eu.eidas.samlengineconfig.impl.tools.EidasConfigManagerUtil;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
 
 /**
  * implementation for certificate manager configuration

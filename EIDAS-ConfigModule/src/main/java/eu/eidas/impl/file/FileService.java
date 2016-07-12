@@ -1,5 +1,5 @@
 /*
- * Licensed under the EUPL, Version 1.1 or – as soon they will be approved by
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
  * the European Commission - subsequent versions of the EUPL (the "Licence");
  * You may not use this work except in compliance with the Licence. You may
  * obtain a copy of the Licence at:
@@ -14,17 +14,34 @@
  */
 package eu.eidas.impl.file;
 
+import java.io.Closeable;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Formatter;
+import java.util.InvalidPropertiesFormatException;
+import java.util.List;
+import java.util.Locale;
+import java.util.Properties;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.nio.charset.Charset;
-import java.util.*;
+import eu.eidas.auth.commons.EidasStringUtil;
 
 /**
  * provide file services - reading/writing to disk
  *
+ * @deprecated use the java 7 {@link java.nio.file.FileSystem#newWatchService()} instead, which implements this natively, is thread-safe and does not start a Thread.
  */
+@Deprecated
 public class FileService {
     private static final Logger LOG = LoggerFactory.getLogger(FileService.class.getName());
     private static final int MAX_FILE_SIZE=50000;
@@ -206,13 +223,8 @@ public class FileService {
     public String fileToString(String fileName){
         String fileContents=null;
         byte data[]=loadBinaryFile(fileName);
-        try{
-            if(data!=null && data.length>0) {
-                fileContents = new String(data, "UTF-8");
-            }
-        }catch(IOException ioe){
-            LOG.error("ERROR : IOException: ", ioe.getMessage());
-            LOG.debug("ERROR : IOException: ", ioe);
+        if(data!=null && data.length>0) {
+            fileContents = EidasStringUtil.toString(data);
         }
 
         return fileContents;
@@ -335,7 +347,7 @@ public class FileService {
                     files.addAll(iterateFiles(child, filterBackups));
                 }else if(child.exists()){
                     String completeFileName=child.getAbsolutePath();
-                    if(!filterBackups || !(completeFileName.length()>4 && ".zip".equalsIgnoreCase(completeFileName.substring(completeFileName.length()-4).toLowerCase()))) {
+                    if(!filterBackups || !(completeFileName.length()>4 && ".zip".equalsIgnoreCase(completeFileName.substring(completeFileName.length()-4).toLowerCase(Locale.ENGLISH)))) {
                         files.add(child.getAbsolutePath());
                     }
                 }

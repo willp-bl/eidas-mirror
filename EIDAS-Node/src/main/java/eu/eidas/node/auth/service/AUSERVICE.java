@@ -1,45 +1,62 @@
 /*
  * This work is Open Source and licensed by the European Commission under the
- * conditions of the European Public License v1.1 
- *  
- * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1); 
- * 
- * any use of this file implies acceptance of the conditions of this license. 
- * Unless required by applicable law or agreed to in writing, software 
- * distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT 
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the 
- * License for the specific language governing permissions and limitations 
+ * conditions of the European Public License v1.1
+ *
+ * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1);
+ *
+ * any use of this file implies acceptance of the conditions of this license.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
  * under the License.
  */
 package eu.eidas.node.auth.service;
 
-import java.nio.charset.Charset;
 import java.util.Map;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import com.google.common.collect.ImmutableSet;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.eidas.auth.commons.CitizenConsent;
-import eu.eidas.auth.commons.IPersonalAttributeList;
-import eu.eidas.auth.commons.IEIDASSession;
-import eu.eidas.auth.commons.EIDASErrors;
-import eu.eidas.auth.commons.EIDASParameters;
-import eu.eidas.auth.commons.EIDASUtil;
-import eu.eidas.auth.commons.PersonalAttributeList;
-import eu.eidas.auth.commons.EIDASAuthnRequest;
+import eu.eidas.auth.commons.EIDASStatusCode;
 import eu.eidas.auth.commons.EIDASSubStatusCode;
+import eu.eidas.auth.commons.EidasErrorKey;
+import eu.eidas.auth.commons.EidasErrors;
+import eu.eidas.auth.commons.EidasParameterKeys;
+import eu.eidas.auth.commons.EidasStringUtil;
+import eu.eidas.auth.commons.IEIDASSession;
+import eu.eidas.auth.commons.WebRequest;
+import eu.eidas.auth.commons.attribute.AttributeDefinition;
+import eu.eidas.auth.commons.attribute.AttributeValue;
+import eu.eidas.auth.commons.attribute.AttributeValueMarshaller;
+import eu.eidas.auth.commons.attribute.AttributeValueMarshallingException;
+import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.exceptions.EIDASServiceException;
+import eu.eidas.auth.commons.exceptions.InvalidParameterEIDASException;
+import eu.eidas.auth.commons.light.ILightResponse;
+import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.IResponseMessage;
+import eu.eidas.auth.commons.protocol.eidas.LevelOfAssuranceComparison;
+import eu.eidas.auth.commons.protocol.impl.AuthenticationResponse;
+import eu.eidas.auth.commons.tx.CorrelationMap;
+import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
+import eu.eidas.auth.commons.validation.NormalParameterValidator;
+import eu.eidas.auth.engine.xml.opensaml.SAMLEngineUtils;
 import eu.eidas.node.utils.EidasNodeValidationUtil;
 
 /**
- * The AUSERVICE class deals with the requests coming from the Connector. This class
- * communicates with the IdP and APs in order to authenticate the citizen,
- * validate the attributes provided by him/her, and to request the values of the
+ * The AUSERVICE class deals with the requests coming from the Connector. This class communicates with the IdP and APs
+ * in order to authenticate the citizen, validate the attributes provided by him/her, and to request the values of the
  * citizen's attributes.
  *
- * @author ricardo.ferreira@multicert.com, renato.portela@multicert.com,
- *         luis.felix@multicert.com, hugo.magalhaes@multicert.com,
- *         paulo.ribeiro@multicert.com
+ * @author ricardo.ferreira@multicert.com, renato.portela@multicert.com, luis.felix@multicert.com,
+ *         hugo.magalhaes@multicert.com, paulo.ribeiro@multicert.com
  * @version $Revision: 1.82 $, $Date: 2011-07-07 20:53:51 $
  * @see ISERVICEService
  */
@@ -61,221 +78,299 @@ public final class AUSERVICE implements ISERVICEService {
     private ISERVICESAMLService samlService;
 
     /**
-     * Service for translation related operations.
+     * Service's Util class.
      */
-    private ISERVICETranslatorService transService;
+    private AUSERVICEUtil serviceUtil;
+
+    private String serviceMetadataUrl;
 
     /**
      * {@inheritDoc}
      */
-    public EIDASAuthnRequest processAuthenticationRequest(
-            final Map<String, String> parameters, final IEIDASSession session) {
+    @Override
+    public IAuthenticationRequest processAuthenticationRequest(@Nonnull WebRequest webRequest,
+                                                               @Nullable String relayState,
+                                                               @Nonnull
+                                                                       CorrelationMap<StoredAuthenticationRequest> requestCorrelationMap,
+                                                               @Nonnull String remoteIpAddress) {
 
-        // fetch the samlToken from the request
-        final byte[] samlToken =
-                samlService.getSAMLToken(parameters.get(EIDASParameters.SAML_REQUEST
-                        .toString()));
+        String stringSamlToken = webRequest.getEncodedLastParameterValue(EidasParameterKeys.SAML_REQUEST);
 
-        session.put(EIDASParameters.HTTP_METHOD.toString(), parameters.get(EIDASParameters.HTTP_METHOD.toString()));
+        if (stringSamlToken == null) {
+            LOG.info("BUSINESS EXCEPTION : SAML Token is null");
+            throw new InvalidParameterEIDASException(
+                    EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INVALID_SAML.errorCode()),
+                    EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INVALID_SAML.errorMessage()));
+        }
+
+        byte[] samlToken = EidasStringUtil.decodeBytesFromBase64(stringSamlToken);
+
         // validate samlToken and populate AuthenticationData
-        final EIDASAuthnRequest authData =
-                samlService.processAuthenticationRequest(samlToken, session,
-                        parameters.get(EIDASParameters.REMOTE_ADDR.toString()));
-
-        session.put(EIDASParameters.AUTH_REQUEST.toString(), authData);
+        IAuthenticationRequest authnRequest =
+                samlService.processConnectorRequest(webRequest.getMethod().getValue(), samlToken, remoteIpAddress,
+                                                    relayState);
 
         LOG.trace("Validating destination");
-        EIDASUtil.validateParameter(AUSERVICE.class.getCanonicalName(),
-                EIDASErrors.SERVICE_REDIRECT_URL.toString(), authData.getDestination());
+        NormalParameterValidator.paramName(EidasErrorKey.SERVICE_REDIRECT_URL.toString())
+                .paramValue(authnRequest.getDestination())
+                .validate();
 
-        // normalize attributes from format
-        final IPersonalAttributeList pal =
-                transService.normaliseAttributeNamesFromFormat(authData
-                        .getPersonalAttributeList());
-        citizenService.updateAttributeList(session, pal);
-        return authData;
+        // TODO: should we add an indirection in the returned SAML Request ID here
+        // TODO: to prevent that the SAML Request ID sent to the IdP is the same as the one sent by the Connector
+
+        String updatedRequestId = authnRequest.getId();
+        StoredAuthenticationRequest updatedStoredRequest =
+                new StoredAuthenticationRequest.Builder().remoteIpAddress(webRequest.getRemoteIpAddress())
+                        .relayState(relayState)
+                        .request(authnRequest)
+                        .build();
+        requestCorrelationMap.put(updatedRequestId, updatedStoredRequest);
+
+        citizenService.checkMandatoryAttributes(authnRequest.getRequestedAttributes());
+
+        return authnRequest;
     }
 
     /**
      * {@inheritDoc}
      */
-    public IPersonalAttributeList processCitizenConsent(
-            final Map<String, String> parameters, final IEIDASSession session,
-            final boolean askConsentType) {
+    @Override
+    public IAuthenticationRequest processCitizenConsent(WebRequest webRequest,
+                                                        @Nonnull StoredAuthenticationRequest storedRequest,
+                                                        boolean askConsentType) {
 
-        final EIDASAuthnRequest authData =
-                (EIDASAuthnRequest) session.get(EIDASParameters.AUTH_REQUEST.toString());
+        IAuthenticationRequest authnRequest = storedRequest.getRequest();
+        String remoteAddress = storedRequest.getRemoteIpAddress();
+
+        ImmutableAttributeMap consentedAttributes = authnRequest.getRequestedAttributes();
 
         if (askConsentType) {
             // construct citizen consent from the request
-            final CitizenConsent consent =
-                    citizenService.getCitizenConsent(parameters,
-                            authData.getPersonalAttributeList());
+            CitizenConsent consent =
+                    citizenService.getCitizenConsent(webRequest, authnRequest.getRequestedAttributes());
 
             // checks if all mandatory attributes are present in the consent
-            citizenService.processCitizenConsent(consent, authData,
-                    parameters.get(EIDASParameters.REMOTE_ADDR.toString()), samlService);
+            citizenService.processCitizenConsent(consent, storedRequest, webRequest.getRemoteIpAddress());
             // updates the personalAttributeList, removing the attributes
             // without consent
-            final IPersonalAttributeList pal =
-                    citizenService.updateAttributeList(consent,
-                            authData.getPersonalAttributeList());
+            consentedAttributes =
+                    citizenService.filterConsentedAttributes(consent, authnRequest.getRequestedAttributes());
             // If the personalAttributeList is empty then we must show a error
             // message.
-            if (pal.isEmpty()) {
+            if (consentedAttributes.isEmpty()) {
                 LOG.info("BUSINESS EXCEPTION : Attribute List is empty!");
-                final byte[] samlTokenFail =
-                        samlService.generateErrorAuthenticationResponse(authData,
-                                EIDASUtil.getConfig(EIDASErrors.SERVICE_ATTR_NULL.errorCode()), null,
-                                EIDASUtil.getConfig(EIDASErrors.SERVICE_ATTR_NULL.errorMessage()),
-                                (String) session.get(EIDASParameters.REMOTE_ADDR.toString()), false);
-                throw new EIDASServiceException(EIDASUtil.encodeSAMLToken(samlTokenFail),
-                        EIDASUtil.getConfig(EIDASErrors.SERVICE_ATTR_NULL.errorCode()),
-                        EIDASUtil.getConfig(EIDASErrors.SERVICE_ATTR_NULL.errorMessage()));
+                String errorCode = EidasErrors.get(EidasErrorKey.SERVICE_ATTR_NULL.errorCode());
+                String errorMessage = EidasErrors.get(EidasErrorKey.SERVICE_ATTR_NULL.errorMessage());
+
+                byte[] samlTokenFail = samlService.generateErrorAuthenticationResponse(authnRequest,
+                                                                                       EIDASStatusCode.RESPONDER_URI.toString(),
+                                                                                       errorCode, null, errorMessage,
+                                                                                       remoteAddress, false);
+                throw new ResponseCarryingServiceException(errorCode, errorMessage,
+                                                           EidasStringUtil.encodeToBase64(samlTokenFail),
+                                                           authnRequest.getAssertionConsumerServiceURL(),
+                                                           storedRequest.getRelayState());
             }
-            // updates the list in session
-            citizenService.updateAttributeList(session, pal);
         }
 
-        return transService.deriveAttributesFromFormat(authData
-                .getPersonalAttributeList());
+        citizenService.checkMandatoryAttributes(consentedAttributes);
+
+        return citizenService.updateConsentedAttributes(authnRequest, consentedAttributes);
     }
 
     /**
      * {@inheritDoc}
      */
-    public void processIdPResponse(final Map<String, String> parameters,
-                                   final IEIDASSession session) {
+    @Override
+    public IResponseMessage processIdpResponse(@Nonnull WebRequest webRequest,
+                                               @Nonnull StoredAuthenticationRequest proxyServiceRequest,
+                                               @Nonnull ILightResponse idpResponse) {
 
-        // Test if an error occurred in the IdP
-        sendErrorPage(parameters);
+        IAuthenticationRequest originalRequest = proxyServiceRequest.getRequest();
 
-        LOG.trace("Add values from the IdP to attrList");
-        final String attrList =
-                parameters.get(EIDASParameters.ATTRIBUTE_LIST.toString());
-        if (attrList == null) {
-            LOG.info("ERROR : Personal Attribute List is null!");
-            final EIDASAuthnRequest authData =
-                    (EIDASAuthnRequest) session.get(EIDASParameters.AUTH_REQUEST.toString());
-            final byte[] samlTokenFail =
-                    samlService.generateErrorAuthenticationResponse(authData,
-                            EIDASUtil.getConfig(EIDASErrors.INVALID_ATTRIBUTE_LIST.errorCode()),
-                            null,
-                            EIDASUtil.getConfig(EIDASErrors.INVALID_ATTRIBUTE_LIST.errorMessage()),
-                            (String) session.get(EIDASParameters.REMOTE_ADDR.toString()), true);
-
-            throw new EIDASServiceException(EIDASUtil.encodeSAMLToken(samlTokenFail),
-                    EIDASUtil.getConfig(EIDASErrors.INVALID_ATTRIBUTE_LIST.errorCode()),
-                    EIDASUtil.getConfig(EIDASErrors.INVALID_ATTRIBUTE_LIST.errorMessage()));
+        if (null == idpResponse || idpResponse.getStatus().isFailure()) {
+            LOG.info("ERROR : IdP response Personal Attribute List is null!");
+            return sendFailure(proxyServiceRequest, EidasErrorKey.INVALID_ATTRIBUTE_LIST);
         }
-        final IPersonalAttributeList pal = new PersonalAttributeList();
-        pal.populate(attrList);
-        LOG.trace("Updating the personalAttributeList");
-        citizenService.updateAttributeListValues(session, pal);
+
+        // checks if all mandatory attributes have values.
+        if (!samlService.checkMandatoryAttributes(originalRequest.getRequestedAttributes(),
+                                                  idpResponse.getAttributes())) {
+            LOG.info("BUSINESS EXCEPTION : Mandatory attribute is missing!");
+            return sendFailure(proxyServiceRequest, EidasErrorKey.ATT_VERIFICATION_MANDATORY);
+        }
+
+        // check minimum data set
+        if (!samlService.checkMandatoryAttributeSet(idpResponse.getAttributes())) {
+            LOG.info("ERROR : IdP response Personal Attribute List is missing mandatory values!");
+            return sendFailure(proxyServiceRequest, EidasErrorKey.INVALID_ATTRIBUTE_LIST);
+        }
+
+        if (!EidasNodeValidationUtil.isLoAValid(LevelOfAssuranceComparison.MINIMUM,
+                                                originalRequest.getLevelOfAssurance(),
+                                                idpResponse.getLevelOfAssurance())) {
+            LOG.info("ERROR : IdP response Level of Assurance is to low: requested="
+                             + originalRequest.getLevelOfAssurance(),
+                     " vs response=" + idpResponse.getLevelOfAssurance());
+            return sendFailure(proxyServiceRequest, EidasErrorKey.INVALID_RESPONSE_LOA_VALUE);
+        }
+
+        // update Response Attributes
+
+        IAuthenticationRequest request = proxyServiceRequest.getRequest();
+        ImmutableAttributeMap responseAttributes = idpResponse.getAttributes();
+
+        ImmutableAttributeMap updatedResponseAttributes = updateResponseAttributes(request, responseAttributes);
+
+        AuthenticationResponse.Builder authenticationResponseBuilder = AuthenticationResponse.builder();
+        authenticationResponseBuilder.levelOfAssurance(idpResponse.getLevelOfAssurance())
+                .attributes(updatedResponseAttributes)
+                .inResponseTo(originalRequest.getId());
+
+        authenticationResponseBuilder.id(SAMLEngineUtils.generateNCName())
+                .statusCode(EIDASStatusCode.SUCCESS_URI.toString())
+                .issuer(getServiceMetadataUrl());
+        serviceUtil.setMetadatUrlToAuthnResponse(getServiceMetadataUrl(), authenticationResponseBuilder);
+
+        String currentIpAddress = webRequest.getRemoteIpAddress();
+
+        return samlService.processIdpSpecificResponse(originalRequest, authenticationResponseBuilder.build(),
+                                                      currentIpAddress, true);
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public EIDASAuthnRequest processAPResponse(
-            final Map<String, String> parameters, final IEIDASSession session) {
+    @Nonnull
+    private ImmutableAttributeMap updateResponseAttributes(@Nonnull IAuthenticationRequest request,
+                                                           @Nonnull ImmutableAttributeMap responseAttributes) {
 
-        final EIDASAuthnRequest authDataObj = (EIDASAuthnRequest) session.get(EIDASParameters.AUTH_REQUEST.toString());
+        // As per the spec:
+        // The uniqueness identifier consists of:
+        // 1. The first part is the Nationality Code of the identifier
+        // \uF0B7 This is one of the ISO 3166-1 alpha-2 codes, followed by a slash (\u201C/\u201C))
+        // 2. The second part is the Nationality Code of the destination country or international organization1
+        // \uF0B7 This is one of the ISO 3166-1 alpha-2 codes, followed by a slash (\u201C/\u201C)
+        // 3. The third part a combination of readable characters
+        // \uF0B7 This uniquely identifies the identity asserted in the country of origin but does not necessarily reveal
+        // any discernible correspondence with the subject's actual identifier (for example, username, fiscal number etc)
+        // Example: ES/AT/02635542Y (Spanish eIDNumber for an Austrian SP)
 
-        EIDASAuthnRequest authData = null;
-        try {
-            authData = (EIDASAuthnRequest) authDataObj.clone();
-            if (authData != null){
-                LOG.trace("Loading personalAttributeList from AP");
+        String originCountryCode = request.getOriginCountryCode();
+        String proxyServiceCountryCode = samlService.getCountryCode();
 
-                final String strPal =
-                        parameters.get(EIDASParameters.ATTRIBUTE_LIST.toString());
-                if (strPal == null) {
-                    LOG.info("ERROR : Personal Attribute List is null!");
-                    final byte[] samlTokenFail =
-                            samlService.generateErrorAuthenticationResponse(authData,
-                                    EIDASUtil.getConfig(EIDASErrors.INVALID_ATTRIBUTE_LIST.errorCode()),
-                                    null,
-                                    EIDASUtil.getConfig(EIDASErrors.INVALID_ATTRIBUTE_LIST.errorMessage()),
-                                    (String) session.get(EIDASParameters.REMOTE_ADDR.toString()), true);
+        String identifierPrefix = proxyServiceCountryCode + "/" + originCountryCode + "/";
 
-                    throw new EIDASServiceException(EIDASUtil.encodeSAMLToken(samlTokenFail),
-                            EIDASUtil.getConfig(EIDASErrors.INVALID_ATTRIBUTE_LIST.errorCode()),
-                            EIDASUtil.getConfig(EIDASErrors.INVALID_ATTRIBUTE_LIST.errorMessage()));
+        boolean modified = false;
+
+        ImmutableAttributeMap.Builder updatedResponseAttributes = ImmutableAttributeMap.builder();
+
+        for (final Map.Entry<AttributeDefinition<?>, ImmutableSet<? extends AttributeValue<?>>> entry : responseAttributes
+                .getAttributeMap()
+                .entrySet()) {
+            AttributeDefinition<?> definition = entry.getKey();
+            ImmutableSet<? extends AttributeValue<?>> values = entry.getValue();
+            if (definition.isUniqueIdentifier()) {
+                AttributeValueMarshaller<?> attributeValueMarshaller = definition.getAttributeValueMarshaller();
+                ImmutableSet.Builder<AttributeValue<?>> updatedValues = ImmutableSet.builder();
+                boolean modifiedValues = false;
+                for (final AttributeValue<?> attributeValue : values) {
+                    String value;
+                    try {
+                        value = attributeValueMarshaller.marshal((AttributeValue) attributeValue);
+                    } catch (AttributeValueMarshallingException e) {
+                        // TODO improve this:
+                        throw new IllegalStateException(e);
+                    }
+                    if (!value.startsWith(identifierPrefix)) {
+                        modified = true;
+                        modifiedValues = true;
+                        AttributeValue<?> updated = null;
+                        try {
+                            updated = attributeValueMarshaller.unmarshal(identifierPrefix + value,
+                                                                         attributeValue.isNonLatinScriptAlternateVersion());
+                        } catch (AttributeValueMarshallingException e) {
+                            // TODO improve this:
+                            throw new IllegalStateException(e);
+                        }
+                        updatedValues.add(updated);
+                    } else {
+                        updatedValues.add(attributeValue);
+                    }
                 }
-                IPersonalAttributeList pal = new PersonalAttributeList();
-                pal.populate(strPal);
-
-                citizenService.updateAttributeListValues(session, pal);
-                // Derive Attributes to current Format
-                authData.setPersonalAttributeList(pal);
-                pal =
-                        transService.deriveAttributesToFormat(samlService, session, authData,
-                                parameters.get(EIDASParameters.REMOTE_ADDR.toString()));
-                pal = citizenService.updateAttributeList(session, pal);
-
-                // normalizing names to current format
-                IPersonalAttributeList attrList = null;
-                attrList = transService.normaliseAttributeNamesToFormat((IPersonalAttributeList) pal.clone());
-                authData.setPersonalAttributeList(attrList);
-                // normalizing values to current format
-                attrList =
-                        transService.normaliseAttributeValuesToFormat(samlService, authData,
-                                parameters.get(EIDASParameters.REMOTE_ADDR.toString()));
-                citizenService.updateAttributeList(session, attrList);
-
-                // check if all mandatory attributes have values
-                samlService.checkMandatoryAttributes(authData, 
-                        parameters.get(EIDASParameters.REMOTE_ADDR.toString()));
-                samlService.validateAPResponses(authData, session, parameters.get(EIDASParameters.REMOTE_ADDR.toString()));
-
-                samlService.checkAttributeValues(authData,
-                        parameters.get(EIDASParameters.REMOTE_ADDR.toString()));
-
-                final byte[] auth =
-                        samlService.generateAuthenticationResponse(authData,
-                                (String) session.get(EIDASParameters.REMOTE_ADDR.toString()), true);
-                LOG.trace("Setting attribute SAML_TOKEN");
-
-                authData.setPersonalAttributeList(pal);
-                authData.setTokenSaml(EIDASUtil.encodeSAMLToken(auth).getBytes(Charset.forName("UTF-8")));
+                if (modifiedValues) {
+                    values = updatedValues.build();
+                }
             }
-        } catch (CloneNotSupportedException e) {
-            LOG.info("Clone not done - [PersonalAttribute] Nothing to do.", e.getMessage());
-            LOG.debug("Clone not done - [PersonalAttribute] Nothing to do.", e);
+            updatedResponseAttributes.put((AttributeDefinition) definition, (ImmutableSet) values);
         }
-        return authData;
+
+        if (modified) {
+            return updatedResponseAttributes.build();
+        }
+
+        return responseAttributes;
+    }
+
+    private IResponseMessage sendFailure(StoredAuthenticationRequest storedRequest, EidasErrorKey error) {
+        IAuthenticationRequest originalRequest = storedRequest.getRequest();
+        String errorCode = EidasErrors.get(error.errorCode());
+        String errorMessage = EidasErrors.get(error.errorMessage());
+        if (null == errorCode) {
+            errorCode = EidasErrors.get(EidasErrorKey.INVALID_ATTRIBUTE_LIST.errorCode());
+        }
+        if (null == errorMessage) {
+            errorMessage = EidasErrors.get(EidasErrorKey.INVALID_ATTRIBUTE_LIST.errorMessage());
+        }
+        byte[] samlTokenFail = samlService.generateErrorAuthenticationResponse(originalRequest,
+                                                                               EIDASStatusCode.RESPONDER_URI.toString(),
+                                                                               errorCode, null, errorMessage,
+                                                                               storedRequest.getRemoteIpAddress(),
+                                                                               true);
+        throw new ResponseCarryingServiceException(errorCode, errorMessage,
+                                                   EidasStringUtil.encodeToBase64(samlTokenFail),
+                                                   originalRequest.getAssertionConsumerServiceURL(),
+                                                   storedRequest.getRelayState());
     }
 
     /**
      * {@inheritDoc}
      */
-    public String generateSamlTokenFail(final EIDASAuthnRequest authData,
-                                        final EIDASErrors error, final String ipUserAddress) {
+    @Override
+    public String generateSamlTokenFail(IAuthenticationRequest authData,
+                                        String statusCode,
+                                        EidasErrorKey error,
+                                        String ipUserAddress) {
 
-        final byte[] eauth =
-                samlService.generateErrorAuthenticationResponse(authData,
-                        EIDASUtil.getConfig(error.errorCode()),
-                        EIDASSubStatusCode.REQUEST_DENIED_URI.toString(),
-                        EIDASUtil.getConfig(error.errorMessage()), ipUserAddress, false);
+        return generateSamlTokenFail(authData, statusCode, EidasErrors.get(error.errorCode()),
+                                     EIDASSubStatusCode.REQUEST_DENIED_URI.toString(),
+                                     EidasErrors.get(error.errorMessage()), ipUserAddress, false);
+    }
 
-        return EIDASUtil.encodeSAMLToken(eauth);
+    @Override
+    public String generateSamlTokenFail(IAuthenticationRequest originalRequest,
+                                        String statusCode,
+                                        String errorCode,
+                                        String subCode,
+                                        String errorMessage,
+                                        String ipUserAddress,
+                                        boolean isAuditable) {
+        byte[] samlTokenFail =
+                samlService.generateErrorAuthenticationResponse(originalRequest, statusCode, errorCode, subCode,
+                                                                errorMessage, ipUserAddress, isAuditable);
+
+        return EidasStringUtil.encodeToBase64(samlTokenFail);
     }
 
     /**
      * Generates a exception with an embedded SAML token.
      *
-     * @param parameters A map of parameters to generate the error token.
+     * @param webRequest A map of parameters to generate the error token.
      * @see IEIDASSession
      * @see Map
      */
-    private void sendErrorPage(final Map<String, String> parameters) {
-
-        if (parameters.get(EIDASParameters.ERROR_CODE.toString()) != null) {
-            final String exErrorCode =
-                    EIDASUtil.getConfig(EIDASErrors.AUTHENTICATION_FAILED_ERROR.errorCode());
-            final String exErrorMessage = EIDASUtil.getConfig(EIDASErrors.AUTHENTICATION_FAILED_ERROR.errorMessage());
-            throw new EIDASServiceException(null, exErrorCode, exErrorMessage);
+    private void sendErrorPage(WebRequest webRequest) {
+        if (webRequest.getRequestState().getErrorCode() != null) {
+            String exErrorCode = EidasErrors.get(EidasErrorKey.AUTHENTICATION_FAILED_ERROR.errorCode());
+            String exErrorMessage = EidasErrors.get(EidasErrorKey.AUTHENTICATION_FAILED_ERROR.errorMessage());
+            throw new EIDASServiceException(exErrorCode, exErrorMessage, null);
         }
     }
 
@@ -320,22 +415,40 @@ public final class AUSERVICE implements ISERVICEService {
     }
 
     /**
-     * Setter for transService.
+     * Getter for serviceMetadataUrl
      *
-     * @param theTransService The new transService value.
-     * @see ISERVICETranslatorService
+     * @return serviceMetadataUrl value
      */
-    public void setTransService(final ISERVICETranslatorService theTransService) {
-        this.transService = theTransService;
+    public String getServiceMetadataUrl() {
+        return serviceMetadataUrl;
     }
 
     /**
-     * Getter for transService.
+     * Setter for serviceMetadataUrl.
      *
-     * @return The transService value.
-     * @see ISERVICETranslatorService
+     * @param serviceMetadataUrl The service metadata url value.
      */
-    public ISERVICETranslatorService getTransService() {
-        return transService;
+    public void setServiceMetadataUrl(String serviceMetadataUrl) {
+        this.serviceMetadataUrl = serviceMetadataUrl;
     }
+
+    /**
+     * Getter for serviceUtil
+     *
+     * @return The serviceUtil value
+     * @see AUSERVICEUtil
+     */
+    public AUSERVICEUtil getServiceUtil() {
+        return serviceUtil;
+    }
+
+    /**
+     * Setter for serviceUtil.
+     *
+     * @param serviceUtil The new serviceUtil value.
+     */
+    public void setServiceUtil(AUSERVICEUtil serviceUtil) {
+        this.serviceUtil = serviceUtil;
+    }
+
 }

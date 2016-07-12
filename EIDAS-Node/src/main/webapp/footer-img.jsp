@@ -23,4 +23,7 @@
   ~
   --%>
 
-<footer class="footer"> <img src="resources/skin0/img/logo-eid.svg" alt="<fmt:message key="connecting.europe" bundle="${i18n_eng}"/>" class="logo-cef"> </footer>
+<footer class="footer">
+    <img src="resources/skin0/img/logo-eid.svg" alt="<fmt:message key="connecting.europe" bundle="${i18n_eng}"/>" class="logo-cef">
+    <jsp:include page="buildVersion.jsp"/>
+</footer>

@@ -1,5 +1,5 @@
 /*
- * Licensed under the EUPL, Version 1.1 or – as soon they will be approved by
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
  * the European Commission - subsequent versions of the EUPL (the "Licence");
  * You may not use this work except in compliance with the Licence. You may
  * obtain a copy of the Licence at:
@@ -14,8 +14,7 @@
  */
 package eu.eidas.samlengineconfig.impl.tools;
 
-import eu.eidas.impl.file.FileService;
-import eu.eidas.samlengineconfig.impl.CertificateManagerConfigurationImpl;
+import java.util.Properties;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +22,8 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
-import java.util.Properties;
+import eu.eidas.impl.file.FileService;
+import eu.eidas.samlengineconfig.impl.CertificateManagerConfigurationImpl;
 
 public class EidasConfigManagerUtil implements ApplicationContextAware {
     private static final Logger LOG = LoggerFactory.getLogger(EidasConfigManagerUtil.class.getName());

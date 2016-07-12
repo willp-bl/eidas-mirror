@@ -22,57 +22,54 @@
 
 package eu.eidas.node;
 
+import javax.annotation.Nonnull;
+
 /**
- * See "Effective Java edition 2 (Joshua Bloch - Addison Wesley 20012)" item 30
+ * This enum class contains bean names.
  */
 public enum NodeBeanNames {
-    EIDAS_CONNECTOR_CONTROLLER("connectorController"),
-    EIDAS_SERVICE_CONTROLLER("serviceController"),
-    CALLBACK_URL("callbackURL"),
-    STR_ATTR_LIST("strAttrList"),
-    USERNAME("username"),
-    EIDAS_SERVICE_URL("serviceUrl"),
-    SP_URL("spUrl"),
-    SAML_REQUEST("SAMLRequest"),
-    SAML_RESPONSE("SAMLResponse"),
-    RELAY_STATE("RelayState"),
-    EXCEPTION("exception"),
-    SP_ID("spId"),
-    CITIZEN_CONSENT_URL("citizenConsentUrl"),
-    ATTR_LIST("attrList"),
-    PLACEHOLDER_CONFIG("placeholderConfig"),
-    SYSADMIN_MESSAGE_RESOURCES("sysadminMessageSource"),
-    REDIRECT_URL("redirectUrl"),
-    SAML_TOKEN("samlToken"),
-    SAML_TOKEN_FAIL("samlTokenFail"),
-    QAA_LEVEL("qaaLevel"),
-    PAL("pal"),
-    AP_RESPONSE("springManagedAPResponse"),
-    SECURITY_CONFIG("springManagedSecurityConfig"),
-    EIDAS_SERVICE_BINDING("serviceBinding"),
-    SERVICE_METADATA_GENERATOR("serviceMetadataGeneratorIDP"),
-    SERVICE_AS_REQUESTER_METADATA_GENERATOR("serviceMetadataGeneratorSP"),
-    CONNECTOR_METADATA_GENERATOR("connectorMetadataGeneratorSP"),
+
+    IdP_RESPONSE("springManagedIdPResponse"),
+
     CONNECTOR_AS_IDP_METADATA_GENERATOR("connectorMetadataGeneratorIDP"),
-    EIDAS_ATTRIBUTES_PARAM("eidasAttributes"),
-    LOA_VALUE("LoA"),
+
+    CONNECTOR_METADATA_GENERATOR("connectorMetadataGeneratorSP"),
+
+    EIDAS_CONNECTOR_CONTROLLER("connectorController"),
+
+    EIDAS_SERVICE_BINDING("serviceBinding"), // TODO unused?
+
+    EIDAS_SERVICE_CONTROLLER("serviceController"),
+
+    PLACEHOLDER_CONFIG("placeholderConfig"), // TODO unused?
+
+    SECURITY_CONFIG("springManagedSecurityConfig"),
+
+    SERVICE_AS_REQUESTER_METADATA_GENERATOR("serviceMetadataGeneratorSP"),
+
+    SERVICE_METADATA_GENERATOR("serviceMetadataGeneratorIDP"),
+
+    SYSADMIN_MESSAGE_RESOURCES("sysadminMessageSource"),
+
+    // put the ; on a separate line to make merges easier
     ;
+
     /**
      * constant name.
      */
-    private String name;
+    @Nonnull
+    private final transient String name;
 
     /**
      * Constructor
      * @param name name of the bean
      */
-    NodeBeanNames(final String name){
+    NodeBeanNames(@Nonnull final String name){
         this.name = name;
     }
 
     @Override
     public String toString() {
         return name;
-
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Licensed under the EUPL, Version 1.1 or – as soon they will be approved by
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
  * the European Commission - subsequent versions of the EUPL (the "Licence");
  * You may not use this work except in compliance with the Licence. You may
  * obtain a copy of the Licence at:
@@ -16,39 +16,30 @@ package eu.eidas.auth.engine.core.validator.eidas;
 
 import java.util.regex.Pattern;
 
-import eu.eidas.auth.engine.core.validator.STORKAttributes;
+import javax.xml.namespace.QName;
 
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.opensaml.saml2.core.Attribute;
 import org.opensaml.saml2.core.validator.AttributeSchemaValidator;
 import org.opensaml.xml.XMLObject;
+import org.opensaml.xml.schema.XSAny;
 import org.opensaml.xml.schema.XSString;
 import org.opensaml.xml.util.AttributeMap;
 import org.opensaml.xml.validation.ValidationException;
 
-import javax.xml.namespace.QName;
+import eu.eidas.auth.engine.core.SAMLCore;
+import eu.eidas.auth.engine.core.eidas.spec.EidasSpec;
+import eu.eidas.auth.engine.core.validator.stork.STORKAttributes;
 
+/**
+ * Validates the attributes and values.
+ *
+ * the validation eIdentifier (PERSON_IDENTIFIER & LEGAL_PERSON_IDENTIFIER ) are reported to the connector validation
+ */
+public final class EidasAttributeValidator extends AttributeSchemaValidator {
 
-public class EidasAttributeValidator extends AttributeSchemaValidator {
-
-    private static final String PATTERN_EIDENTIFIER = "^[A-Z]{2}/[A-Z]{2}/[A-Za-z0-9+/=\r\n]+$";
-    private static final String PATTERN_GENDER = "^[MF]{1}$";
-    private static final String PATTERN_COUNTRYCODEOFBIRTH = "^[A-Z]{2}|[A-Z]{4}$";
-    private static final String PATTERN_COUNTRYCODE = "^[A-Z]{2}$";
-    private static final String PATTERN_MARTIALSTATUS = "^[SMPDW]{1}$";
-    private static final String PATTERN_EMAIL = "^[-+.\\w]{1,64}@[-.\\w]{1,64}\\.[-.\\w]{2,6}$";
-    private static final String PATTERN_AGE = "^[0-9]{1,3}$";
-    private static final int MAX_AGE = 120;
-    private static final String PATTERN_ISAGEOVER = PATTERN_AGE;
-    private static final String PATTERN_CITIZENQAALEVEL = "^[1-4]{1}$";
-    public static final String EIDAS_ATTRIBUTE_STATUS_ATTTRIB_NAME = "AttributeStatus";
-
-    public static final QName DEFAULT_EIDAS_ATTRIBUTE_QNAME = new QName(EIDASAttributes.EIDAS10_NS, EIDAS_ATTRIBUTE_STATUS_ATTTRIB_NAME, EIDASAttributes.EIDAS10_PREFIX);
-    public static final String ALLOWED_ATTRIBUTE_STATUS_AVAIL = "Available";
-    public static final String ALLOWED_ATTRIBUTE_STATUS_NOT_AVAIL = "NotAvailable";
-    public static final String ALLOWED_ATTRIBUTE_STATUS_WITHHELD = "Withheld";
-
+    private static final String PATTERN_GENDER_EIDAS = "^(?:Male|Female|Not specified)$";
 
     /**
      * Constructor
@@ -64,95 +55,39 @@ public class EidasAttributeValidator extends AttributeSchemaValidator {
         super.validate(attr);
 
         if (attr.getName() == null) {
-
             throw new ValidationException("Name is required.");
         }
 
         if (attr.getNameFormat() == null) {
-
             throw new ValidationException("NameFormat is required.");
-        }
-
-
-        if (attr.getUnknownAttributes() != null) {
-
-            AttributeMap map = attr.getUnknownAttributes();
-
-            String value = map.get(DEFAULT_EIDAS_ATTRIBUTE_QNAME);
-
-            if (value == null || value.equals(ALLOWED_ATTRIBUTE_STATUS_AVAIL)) {
-                //if AttributeStatus not present, default is "Available" thus AttributeValue must be present
-
-            } else if (!value.equals(ALLOWED_ATTRIBUTE_STATUS_AVAIL) &&
-                    !value.equals(ALLOWED_ATTRIBUTE_STATUS_NOT_AVAIL) &&
-                    !value.equals(ALLOWED_ATTRIBUTE_STATUS_WITHHELD)) {
-
-                throw new ValidationException("AttributeStatus is invalid.");
-            }
-
         }
 
         if (!attr.getAttributeValues().isEmpty()) {
             //validate individual attributes if present
             XMLObject attrValueObject = attr.getAttributeValues().get(0);
 
-            if (!(attrValueObject instanceof XSString)) {
-                //Only validate String attributes
-                return;
-            }
+            // validates only the strings
+            if ((attrValueObject instanceof XSAny)) {
+                String value = ((XSAny) attr.getAttributeValues().get(0)).getTextContent();
+                String attrName = attr.getName();
 
-            String value = ((XSString) attr.getAttributeValues().get(0)).getValue();
-            String attrName = attr.getName();
+                //validate gender
+                validateAttributeValueFormat(value, attrName, EidasSpec.Definitions.GENDER.getNameUri().toASCIIString(),
+                        PATTERN_GENDER_EIDAS);
 
-            //only isAgeOver can be empty if provided
-            if (value == null) {
-                //only isAgeOver can be empty if provided
-                if (attrName.equals(eu.eidas.auth.engine.core.validator.STORKAttributes.STORK_ATTRIBUTE_ISAGEOVER)) {
-                    return;
-                } else {
-                    throw new ValidationException("Provided AttributeValue is empty");
+                //validate dateOfBirth
+                if (attrName.equals(EidasSpec.Definitions.DATE_OF_BIRTH.getNameUri().toASCIIString())) {
+                    verifyDate(value);
                 }
             }
-
-            //validate eIdentifier
-            validateAttributeValueFormat(value, attrName, EIDASAttributes.ATTRIBUTE_PERSONIDENTIFIER, PATTERN_EIDENTIFIER);
-
-            //validate gender
-            validateAttributeValueFormat(value, attrName, EIDASAttributes.ATTRIBUTE_GENDER, PATTERN_GENDER);
-
-            //validate dateOfBirth
-            if (attrName.equals(eu.eidas.auth.engine.core.validator.eidas.EIDASAttributes.ATTRIBUTE_DATEOFBIRTH)) {
-                verifyDate(value);
-            }
-
-            //STILL perform validation
-
-            //validate place of birth
-            validateAttributeValueFormat(value, attrName, STORKAttributes.STORK_ATTRIBUTE_COUNTRYCODEOFBIRTH, PATTERN_COUNTRYCODEOFBIRTH);
-
-            //validate countryCode
-            validateAttributeValueFormat(value, attrName, STORKAttributes.STORK_ATTRIBUTE_NATIONALITYCODE, PATTERN_COUNTRYCODE);
-
-            //validate martialStatus
-            validateAttributeValueFormat(value, attrName, STORKAttributes.STORK_ATTRIBUTE_MARTIALSTATUS, PATTERN_MARTIALSTATUS);
-
-            //validate email
-            validateAttributeValueFormat(value, attrName, STORKAttributes.STORK_ATTRIBUTE_EMAIL, PATTERN_EMAIL);
-
-            //validate age and isAgeOver
-            validateAttributeValueFormat(value, attrName, STORKAttributes.STORK_ATTRIBUTE_AGE, PATTERN_AGE);
-            validateAttributeValueFormat(value, attrName, STORKAttributes.STORK_ATTRIBUTE_ISAGEOVER, PATTERN_ISAGEOVER);
-            if ((attr.getName().equals(STORKAttributes.STORK_ATTRIBUTE_AGE) || attr.getName().equals(STORKAttributes.STORK_ATTRIBUTE_ISAGEOVER)) &&
-                Integer.parseInt(((XSString) attr.getAttributeValues().get(0)).getValue()) > MAX_AGE) {
-                    throw new ValidationException("Maximum age reached");
-            }
-
-            validateAttributeValueFormat(value, attrName, STORKAttributes.STORK_ATTRIBUTE_CITIZENQAALEVEL, PATTERN_CITIZENQAALEVEL);
         }
 
     }
 
-    private void validateAttributeValueFormat(String value, String currentAttrName, String attrNameToTest, String pattern) throws ValidationException {
+    private void validateAttributeValueFormat(String value,
+                                              String currentAttrName,
+                                              String attrNameToTest,
+                                              String pattern) throws ValidationException {
         if (currentAttrName.equals(attrNameToTest) && !Pattern.matches(pattern, value)) {
             throw new ValidationException(attrNameToTest + " has incorrect format.");
         }
@@ -160,30 +95,13 @@ public class EidasAttributeValidator extends AttributeSchemaValidator {
     }
 
     private static void verifyDate(String nodeDate) throws ValidationException {
-        DateTimeFormatter fmt = null;
-
-        switch (nodeDate.length()) {
-            case 4:
-                fmt = DateTimeFormat.forPattern("yyyy");
-                break;
-            case 6:
-                fmt = DateTimeFormat.forPattern("yyyyMM");
-                break;
-            case 8:
-                fmt = DateTimeFormat.forPattern("yyyyMMdd");
-                break;
-            default:
-                throw new ValidationException("Date has wrong format");
-        }
-
+        DateTimeFormatter fmt;
+        fmt = DateTimeFormat.forPattern("yyyy-MM-dd");
         try {
             fmt.parseDateTime(nodeDate);
         } catch (IllegalArgumentException e) {
             throw new ValidationException("Date has wrong format  {}", e);
         }
 
-
     }
-
-
 }

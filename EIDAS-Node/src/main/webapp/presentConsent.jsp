@@ -7,7 +7,7 @@
 <%@ taglib prefix="e" uri="https://www.owasp.org/index.php/OWASP_Java_Encoder_Project" %>
 <%@ taglib prefix="token" uri="https://eidas.europa.eu/" %>
 
-<html lang="en">
+<html>
 
 <head>
     <jsp:include page="htmlHead.jsp"/>
@@ -26,8 +26,10 @@
                 </div>
                 <div class="col-right-content">
                     <jsp:include page="content-security-header-deactivated.jsp"/>
-                    <form id="consentSelector" name="consentSelector" method="post" action="${e:forHtml(citizenConsentUrl)}">
+                    <form id="consentSelector" name="consentSelector" method="post" action="${e:forHtml(citizenConsentUrl)}" class="jsOK" disabled="true">
                         <token:token/>
+                        <input type="hidden" id="requestId" name="requestId"
+                               value="<c:out value='${e:forHtml(requestId)}'/>"/>
                         <% /** Slider 1 */ %>
                         <div id="slider1">
                             <jsp:include page="titleWithAssurance.jsp"/>
@@ -50,9 +52,18 @@
                                                 <li>
                                                     <fmt:message var="displayAttr" key="${attrItem.name}.display" bundle="${i18n_eng}"/>
                                                     <c:if test="${!fn:startsWith(fn:toLowerCase(displayAttr), 'false')}">
-                                                        <fmt:message key="${attrItem.name}" bundle="${i18n_eng}"/>
+                                                        <fmt:message key="${attrItem.friendlyName}" bundle="${i18n_eng}"/>
+                                                        <fmt:message key="${attrItem.friendlyName}Description" bundle="${i18n_eng}" var="tmpDesc" />
+                                                        <c:set var="tmpEmptyValue" value="???${attrItem.friendlyName}Description???" />
+                                                        <c:if test="${tmpEmptyValue ne tmpDesc}">
+                                                            <span>
+                                                                <button type="button" class="btn btn-info" data-toggle="modal" data-target="#attributeModal"
+                                                                    data-attribute-name="<fmt:message key="${attrItem.friendlyName}" bundle="${i18n_eng}"/>"
+                                                                    data-attribute-desc="${tmpDesc}">?</button>
+                                                            </span>
+                                                        </c:if>
                                                     </c:if>
-                                                    <input id="consentSelector_${attrItem.name}" type="hidden" name="${attrItem.name}" value="${attrItem.name}"/>
+                                                    <input id="consentSelector_${attrItem.friendlyName}" type="hidden" name="${attrItem.name}" value="${attrItem.name}"/>
                                                 </li>
                                             </c:if>
                                         </c:forEach>
@@ -72,9 +83,18 @@
                                                 <li>
                                                     <fmt:message var="displayAttr" key="${attrItem.name}.display" bundle="${i18n_eng}"/>
                                                     <c:if test="${!fn:startsWith(fn:toLowerCase(displayAttr), 'false')}">
-                                                        <fmt:message key="${attrItem.name}" bundle="${i18n_eng}"/>
+                                                        <fmt:message key="${attrItem.friendlyName}" bundle="${i18n_eng}"/>
                                                         <%--<label class="checkboxLabel" for="consentSelector_${attrItem.name}"><fmt:message key="${attrItem.name}" bundle="${i18n_eng}"/></label>--%>
-                                                        <input id="consentSelector_${attrItem.name}" type="hidden" name="${attrItem.name}" value="${attrItem.name}"/>
+                                                        <input id="consentSelector_${attrItem.friendlyName}" type="hidden" name="${attrItem.name}" value="${attrItem.name}"/>
+                                                        <fmt:message key="${attrItem.friendlyName}Description" bundle="${i18n_eng}" var="tmpDesc" />
+                                                        <c:set var="tmpEmptyValue" value="???${attrItem.friendlyName}Description???" />
+                                                        <c:if test="${tmpEmptyValue ne tmpDesc}">
+                                                            <span>
+                                                                <button type="button" class="btn btn-info" data-toggle="modal" data-target="#attributeModal"
+                                                                        data-attribute-name="<fmt:message key="${attrItem.friendlyName}" bundle="${i18n_eng}"/>"
+                                                                        data-attribute-desc="${tmpDesc}">?</button>
+                                                            </span>
+                                                        </c:if>
                                                     </c:if>
                                                 </li>
                                             </c:if>
@@ -94,7 +114,7 @@
                                                             <fmt:message key="${attrItem.name}" bundle="${i18n_eng}"/>
 														</li>
                                                         </c:if>
-                                                        <input id="consentSelector_${attrItem.name}" type="hidden" name="${attrItem.name}" value="${attrItem.name}"/>
+                                                        <input id="consentSelector_${attrItem.friendlyName}" type="hidden" name="${attrItem.name}" value="${attrItem.name}"/>
                                                 </c:if>
                                             </c:forEach>
                                         </ul>
@@ -136,12 +156,21 @@
                                                 </c:if>
                                                 <li>
                                                     <c:if test="${fn:startsWith(fn:toLowerCase(displayAttr), 'false')}">
-                                                        <input id="consentSelector_${attrItem.name}" type="hidden" name="${attrItem.name}" value="${attrItem.name}"/>
+                                                        <input id="consentSelector_${attrItem.friendlyName}" type="hidden" name="${attrItem.name}" value="${attrItem.name}"/>
                                                     </c:if>
                                                     <c:if test="${!fn:startsWith(fn:toLowerCase(displayAttr), 'false')}">
-                                                        <p><fmt:message key="${attrItem.name}" bundle="${i18n_eng}"/></p>
-                                                        <input class="js-switch" id="consentSelector_${attrItem.name}" type="checkbox" name="${attrItem.name}" value="true"/>
-                                                        <input id="__checkbox_consentSelector_${attrItem.name}" type="hidden" name="__checkbox_${attrItem.name}" value="true"/>
+                                                        <p><fmt:message key="${attrItem.friendlyName}" bundle="${i18n_eng}"/></p>
+                                                        <fmt:message key="${attrItem.friendlyName}Description" bundle="${i18n_eng}" var="tmpDesc" />
+                                                        <c:set var="tmpEmptyValue" value="???${attrItem.friendlyName}Description???" />
+                                                        <c:if test="${tmpEmptyValue ne tmpDesc}">
+                                                            <span>
+                                                                <button type="button" class="btn btn-info" data-toggle="modal" data-target="#attributeModal"
+                                                                        data-attribute-name="<fmt:message key="${attrItem.friendlyName}" bundle="${i18n_eng}"/>"
+                                                                        data-attribute-desc="${tmpDesc}">?</button>
+                                                            </span>
+                                                        </c:if>
+                                                        <input class="js-switch" id="consentSelector_${attrItem.friendlyName}" type="checkbox" name="${attrItem.name}" value="true"/>
+                                                        <input id="__checkbox_consentSelector_${attrItem.friendlyName}" type="hidden" name="__checkbox_${attrItem.name}" value="true"/>
                                                     </c:if>
                                                 </li>
                                             </c:if>
@@ -161,12 +190,21 @@
                                                 </c:if>
                                                 <li>
                                                     <c:if test="${fn:startsWith(fn:toLowerCase(displayAttr), 'false')}">
-                                                        <input id="consentSelector_${attrItem.name}" type="hidden" name="${attrItem.name}" value="${attrItem.name}"/>
+                                                        <input id="consentSelector_${attrItem.friendlyName}" type="hidden" name="${attrItem.name}" value="${attrItem.name}"/>
                                                     </c:if>
                                                     <c:if test="${!fn:startsWith(fn:toLowerCase(displayAttr), 'false')}">
-                                                        <p><fmt:message key="${attrItem.name}" bundle="${i18n_eng}"/></p>
-                                                        <input class="js-switch" id="consentSelector_${attrItem.name}" type="checkbox" name="${attrItem.name}" value="true"/>
-                                                        <input id="__checkbox_consentSelector_${attrItem.name}" type="hidden" name="__checkbox_${attrItem.name}" value="true"/>
+                                                        <p><fmt:message key="${attrItem.friendlyName}" bundle="${i18n_eng}"/></p>
+                                                        <fmt:message key="${attrItem.friendlyName}Description" bundle="${i18n_eng}" var="tmpDesc" />
+                                                        <c:set var="tmpEmptyValue" value="???${attrItem.friendlyName}Description???" />
+                                                        <c:if test="${tmpEmptyValue ne tmpDesc}">
+                                                            <span>
+                                                                <button type="button" class="btn btn-info" data-toggle="modal" data-target="#attributeModal"
+                                                                        data-attribute-name="<fmt:message key="${attrItem.friendlyName}" bundle="${i18n_eng}"/>"
+                                                                        data-attribute-desc="${tmpDesc}">?</button>
+                                                            </span>
+                                                        </c:if>
+                                                        <input class="js-switch" id="consentSelector_${attrItem.friendlyName}" type="checkbox" name="${attrItem.name}" value="true"/>
+                                                        <input id="__checkbox_consentSelector_${attrItem.friendlyName}" type="hidden" name="__checkbox_${attrItem.name}" value="true"/>
                                                     </c:if>
                                                 </li>
                                             </c:if>
@@ -182,13 +220,13 @@
 												<fmt:message var="displayAttr" key="${attrItem.name}.display" bundle="${i18n_eng}"/>
                                                 <c:if test="${!attrItem.required}">
 													<c:if test="${fn:startsWith(fn:toLowerCase(displayAttr), 'false')}">
-														<input id="consentSelector_${attrItem.name}" type="hidden" name="${attrItem.name}" value="${attrItem.name}"/>
+														<input id="consentSelector_${attrItem.friendlyName}" type="hidden" name="${attrItem.name}" value="${attrItem.name}"/>
 													</c:if>
 													<c:if test="${!fn:startsWith(fn:toLowerCase(displayAttr), 'false')}">
 														<li class="attr_stork_li_slider2">
 																<p><fmt:message key="${attrItem.name}" bundle="${i18n_eng}"/></p>
-																<input class="js-switch" id="consentSelector_${attrItem.name}" type="checkbox" name="${attrItem.name}" value="true"/>
-																<input id="__checkbox_consentSelector_${attrItem.name}" type="hidden" name="__checkbox_${attrItem.name}" value="true"/>
+																<input class="js-switch" id="consentSelector_${attrItem.friendlyName}" type="checkbox" name="${attrItem.name}" value="true"/>
+																<input id="__checkbox_consentSelector_${attrItem.friendlyName}" type="hidden" name="__checkbox_${attrItem.name}" value="true"/>
 														</li>
 													</c:if>
                                                 </c:if>
@@ -216,7 +254,7 @@
                             <jsp:include page="footer-img.jsp"/>
                         </div>
                     </form>
-                    <form id="cancelForm" name="cancelForm" method="post" action="${e:forHtml(redirectUrl)}">
+                    <form id="cancelForm" name="cancelForm" method="post" action="${e:forHtml(redirectUrl)}" class="jsOK" disabled="true">
                         <input type="hidden" id="SAMLResponse" name="SAMLResponse" value="<c:out value='${e:forHtml(samlTokenFail)}'/>"/>
                         <token:token/>
                     </form>
@@ -225,6 +263,8 @@
                             <div class="row">
 								<form id="consentSelectornojs" name="consentSelectornojs" method="post" action="${e:forHtml(citizenConsentUrl)}">
 									<token:token/>
+                                    <input type="hidden" id="requestId" name="requestId"
+                                           value="<c:out value='${e:forHtml(requestId)}'/>"/>
 									<div id="slider3">
                                         <h1 class="title">
                                             <c:out value="${e:forHtml(spId)}"/>
@@ -257,9 +297,9 @@
 															<li>
 																<fmt:message var="displayAttr" key="${attrItem.name}.display" bundle="${i18n_eng}"/>
 																<c:if test="${!fn:startsWith(fn:toLowerCase(displayAttr), 'false')}">
-                                                                    <fmt:message key="${attrItem.name}" bundle="${i18n_eng}"/>
+                                                                    <fmt:message key="${attrItem.friendlyName}" bundle="${i18n_eng}"/>
 																</c:if>
-																<input id="consentSelector_${attrItem.name}" type="hidden" name="${attrItem.name}" value="${attrItem.name}"/>
+																<input id="consentSelector_${attrItem.friendlyName}" type="hidden" name="${attrItem.name}" value="${attrItem.name}"/>
 															</li>
 														</c:if>
 													</c:forEach>
@@ -279,8 +319,8 @@
 															<li>
 																<fmt:message var="displayAttr" key="${attrItem.name}.display" bundle="${i18n_eng}"/>
 																<c:if test="${!fn:startsWith(fn:toLowerCase(displayAttr), 'false')}">
-                                                                    <fmt:message key="${attrItem.name}" bundle="${i18n_eng}"/>
-																	<input id="consentSelector_${attrItem.name}" type="hidden" name="${attrItem.name}" value="${attrItem.name}"/>
+                                                                    <fmt:message key="${attrItem.friendlyName}" bundle="${i18n_eng}"/>
+																	<input id="consentSelector_${attrItem.friendlyName}" type="hidden" name="${attrItem.name}" value="${attrItem.name}"/>
 																</c:if>
 															</li>
 														</c:if>
@@ -301,7 +341,7 @@
                                                                     <%--<label class="checkboxLabel" for="consentSelector_${attrItem.name}"><fmt:message key="${attrItem.name}" bundle="${i18n_eng}"/></label>--%>
 																</li>
                                                                 </c:if>
-                                                                <input id="consentSelector_${attrItem.name}" type="hidden" name="${attrItem.name}" value="${attrItem.name}"/>
+                                                                <input id="consentSelector_${attrItem.friendlyName}" type="hidden" name="${attrItem.name}" value="${attrItem.name}"/>
 															</c:if>
 														</c:forEach>
 													</ul>
@@ -331,8 +371,8 @@
 																</c:if>
 																<c:if test="${!fn:startsWith(fn:toLowerCase(displayAttr), 'false')}">
 																	<p><fmt:message key="${attrItem.name}" bundle="${i18n_eng}"/></p>
-																	<input class="js-switch" id="consentSelector_${attrItem.name}" type="checkbox" name="${attrItem.name}" value="true"/>
-																	<input id="__checkbox_consentSelector_${attrItem.name}" type="hidden" name="__checkbox_${attrItem.name}" value="true"/>
+																	<input class="js-switch" id="consentSelector_${attrItem.friendlyName}" type="checkbox" name="${attrItem.name}" value="true"/>
+																	<input id="__checkbox_consentSelector_${attrItem.friendlyName}" type="hidden" name="__checkbox_${attrItem.name}" value="true"/>
 																</c:if>
 															</li>
 														</c:if>
@@ -352,12 +392,12 @@
 															</c:if>
 															<li>
 																<c:if test="${fn:startsWith(fn:toLowerCase(displayAttr), 'false')}">
-																	<input id="consentSelector_${attrItem.name}" type="hidden" name="${attrItem.name}" value="${attrItem.name}"/>
+																	<input id="consentSelector_${attrItem.friendlyName}" type="hidden" name="${attrItem.name}" value="${attrItem.name}"/>
 																</c:if>
 																<c:if test="${!fn:startsWith(fn:toLowerCase(displayAttr), 'false')}">
 																	<p><fmt:message key="${attrItem.name}" bundle="${i18n_eng}"/></p>
-																	<input class="js-switch" id="consentSelector_${attrItem.name}" type="checkbox" name="${attrItem.name}" value="true"/>
-																	<input id="__checkbox_consentSelector_${attrItem.name}" type="hidden" name="__checkbox_${attrItem.name}" value="true"/>
+																	<input class="js-switch" id="consentSelector_${attrItem.friendlyName}" type="checkbox" name="${attrItem.name}" value="true"/>
+																	<input id="__checkbox_consentSelector_${attrItem.friendlyName}" type="hidden" name="__checkbox_${attrItem.name}" value="true"/>
 																</c:if>
 															</li>
 														</c:if>
@@ -373,13 +413,13 @@
                                                             <fmt:message var="displayAttr" key="${attrItem.name}.display" bundle="${i18n_eng}"/>
 															<c:if test="${!attrItem.required}">
                                                                 <c:if test="${fn:startsWith(fn:toLowerCase(displayAttr), 'false')}">
-                                                                    <input id="consentSelector_${attrItem.name}" type="hidden" name="${attrItem.name}" value="${attrItem.name}"/>
+                                                                    <input id="consentSelector_${attrItem.friendlyName}" type="hidden" name="${attrItem.name}" value="${attrItem.name}"/>
                                                                 </c:if>
                                                                 <c:if test="${!fn:startsWith(fn:toLowerCase(displayAttr), 'false')}">
                                                                     <li class="attr_stork_li_slider2">
                                                                             <p><fmt:message key="${attrItem.name}" bundle="${i18n_eng}"/></p>
-                                                                            <input class="js-switch" id="consentSelector_${attrItem.name}" type="checkbox" name="${attrItem.name}" value="true"/>
-                                                                            <input id="__checkbox_consentSelector_${attrItem.name}" type="hidden" name="__checkbox_${attrItem.name}" value="true"/>
+                                                                            <input class="js-switch" id="consentSelector_${attrItem.friendlyName}" type="checkbox" name="${attrItem.name}" value="true"/>
+                                                                            <input id="__checkbox_consentSelector_${attrItem.friendlyName}" type="hidden" name="__checkbox_${attrItem.name}" value="true"/>
                                                                     </li>
                                                                 </c:if>
 															</c:if>
@@ -413,7 +453,7 @@
                                     </p>
                                     <jsp:include page="footer-img.jsp"/>
                                 </form>
-							
+
 							</div>
                         </span>
                     </noscript>
@@ -423,6 +463,7 @@
     </div>
 </main>
 <jsp:include page="helpPages/modal_loa.jsp"/>
+<jsp:include page="helpPages/modal_attribute.jsp"/>
 <jsp:include page="footerScripts.jsp"/>
 <script type="text/javascript" src="js/presentConsent.js"></script>
 <script type="text/javascript" src="js/autocompleteOff.js"></script>

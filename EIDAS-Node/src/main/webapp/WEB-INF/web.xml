@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<web-app version="2.4" xmlns="http://java.sun.com/xml/ns/j2ee"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee   http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd">
+
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://java.sun.com/xml/ns/javaee"
+         xmlns:web="http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd" id="WebApp_ID" version="2.5">
+
 
     <security-constraint>
         <web-resource-collection>
@@ -24,7 +26,7 @@
         <filter-class>eu.eidas.node.security.SecurityRequestFilter</filter-class>
         <init-param>
             <param-name>includedServlets</param-name>
-            <param-value>CountrySelector,ServiceProvider</param-value>
+            <param-value>ServiceProvider</param-value>
         </init-param>
     </filter>
     <filter>
@@ -84,7 +86,19 @@
 		<param-name>resteasy.scan.resources</param-name>
 		<param-value>false</param-value>
 	</context-param>
-	
+    <context-param>
+        <param-name>buildDate</param-name>
+        <param-value>${timestamp}</param-value>
+    </context-param>
+    <context-param>
+        <param-name>projectVersion</param-name>
+        <param-value>${project.version}</param-value>
+    </context-param>
+    <context-param>
+        <param-name>samlVersion</param-name>
+        <param-value>${saml.version}</param-value>
+    </context-param>
+
     <!-- Spring request listener : used by struts -->
     <listener>
             <listener-class>org.springframework.web.context.request.RequestContextListener</listener-class>
@@ -109,13 +123,6 @@
     </servlet>
 
     <servlet>
-        <description>CountrySelector</description>
-        <display-name>CountrySelectorServlet</display-name>
-        <servlet-name>CountrySelectorServlet</servlet-name>
-        <servlet-class>eu.eidas.node.connector.CountrySelectorServlet</servlet-class>
-    </servlet>
-
-    <servlet>
         <description>Connector MetadataGenerator</description>
         <display-name>ConnectorMetadataGeneratorServlet</display-name>
         <servlet-name>ConnectorMetadataGeneratorServlet</servlet-name>
@@ -129,12 +136,6 @@
         <display-name>ColleagueRequestServlet</display-name>
         <servlet-name>ColleagueRequestServlet</servlet-name>
         <servlet-class>eu.eidas.node.service.ColleagueRequestServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <description>APResponse</description>
-        <display-name>APResponseServlet</display-name>
-        <servlet-name>APResponseServlet</servlet-name>
-        <servlet-class>eu.eidas.node.service.APResponseServlet</servlet-class>
     </servlet>
     <servlet>
         <description>IdPResponse</description>
@@ -153,30 +154,10 @@
     <!-- Specific servlets -->
 
     <servlet>
-        <description>APSelector</description>
-        <display-name>APSelectorServlet</display-name>
-        <servlet-name>APSelectorServlet</servlet-name>
-        <servlet-class>eu.eidas.node.APSelectorServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <description>SpecificIdPResponse</description>
-        <display-name>SpecificIdPResponseServlet</display-name>
-        <servlet-name>SpecificIdPResponseServlet</servlet-name>
-        <servlet-class>eu.eidas.node.SpecificIdPResponseServlet</servlet-class>
-    </servlet>
-
-    <servlet>
         <description>CitizenConsent</description>
         <display-name>CitizenConsentServlet</display-name>
         <servlet-name>CitizenConsentServlet</servlet-name>
         <servlet-class>eu.eidas.node.service.CitizenConsentServlet</servlet-class>
-    </servlet>
-
-    <servlet>
-        <description>CitizenAuthentication</description>
-        <display-name>CitizenAuthenticationServlet</display-name>
-        <servlet-name>CitizenAuthenticationServlet</servlet-name>
-        <servlet-class>eu.eidas.node.CitizenAuthenticationServlet</servlet-class>
     </servlet>
 
     <servlet>
@@ -245,17 +226,10 @@
     <servlet-name>CitizenConsentServlet</servlet-name>
         <url-pattern>/CitizenConsent</url-pattern>
     </servlet-mapping>
-    <servlet-mapping>
-    <servlet-name>APResponseServlet</servlet-name>
-        <url-pattern>/ApResponse</url-pattern>
-    </servlet-mapping>
+
     <servlet-mapping>
         <servlet-name>IdPResponseServlet</servlet-name>
         <url-pattern>/IdpResponse</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>CountrySelectorServlet</servlet-name>
-        <url-pattern>/CountrySelector</url-pattern>
     </servlet-mapping>
 
     <servlet-mapping>
@@ -274,18 +248,6 @@
     </servlet-mapping-->
 
     <!-- Specific servlet -->
-    <servlet-mapping>
-        <servlet-name>APSelectorServlet</servlet-name>
-        <url-pattern>/APSelector</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>SpecificIdPResponseServlet</servlet-name>
-        <url-pattern>/SpecificIdPResponse</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>CitizenAuthenticationServlet</servlet-name>
-        <url-pattern>/CitizenAuthentication</url-pattern>
-    </servlet-mapping>
     <servlet-mapping>
         <servlet-name>SignatureCreatorResponseServlet</servlet-name>
         <url-pattern>/SignatureCreatorResponse</url-pattern>

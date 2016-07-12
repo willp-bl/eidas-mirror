@@ -19,29 +19,19 @@ import com.hazelcast.core.HazelcastInstance;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
-import org.opensaml.xml.signature.SignableXMLObject;
-
 /**
  * implements a caching service using hazelcast
  */
 public class DistributedMetadataCaching extends AbstractMetadataCaching {
-    private static final String METADATA_CACHE="eidasmetadata";
-    private ConcurrentMap<String, SerializedEntityDescriptor> map=createMap();
-    private String mapName = METADATA_CACHE;
+    private ConcurrentMap<String, SerializedEntityDescriptor> map;
+    private String cacheName;
     private String hazelcastXmlConfigClassPathFileName;
-
-    public DistributedMetadataCaching(){
-        super();
-    }
-    protected Map<String, SerializedEntityDescriptor> getMap(){
-        return map;
-    }
 
     private synchronized ConcurrentMap<String, SerializedEntityDescriptor> createMap(){
         ConcurrentMap<String, SerializedEntityDescriptor> map=null;
         Config config = new Config();
         HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
-        map = h.getMap(mapName);
+        map = h.getMap(cacheName);
         if(map!=null && !map.isEmpty()) {
             map.clear();
         }
@@ -49,12 +39,20 @@ public class DistributedMetadataCaching extends AbstractMetadataCaching {
 
     }
 
-    public String getMapName() {
-        return mapName;
+    protected Map<String, SerializedEntityDescriptor> getMap(){
+        if (map == null) {
+            map = createMap();
+        }
+        return map;
     }
 
-    public void setMapName(String mapName) {
-        this.mapName = mapName;
+
+    public String getCacheName() {
+        return this.cacheName;
+    }
+
+    public void setCacheName(String cacheName) {
+        this.cacheName = cacheName;
     }
 
     public String getHazelcastXmlConfigClassPathFileName() {

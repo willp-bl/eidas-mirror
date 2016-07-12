@@ -1,5 +1,5 @@
 /*
- * Licensed under the EUPL, Version 1.1 or – as soon they will be approved by
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
  * the European Commission - subsequent versions of the EUPL (the "Licence");
  * You may not use this work except in compliance with the Licence. You may
  * obtain a copy of the Licence at:
@@ -14,15 +14,15 @@
  */
 package eu.eidas.config;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+
 import eu.eidas.config.node.EIDASNodeCountry;
 import eu.eidas.config.node.EIDASNodeMetaconfigProvider;
 import eu.eidas.config.node.EIDASNodeParameter;
 import eu.eidas.config.samlmetadata.MetadataRepository;
 import eu.eidas.samlengineconfig.SamlEngineConfiguration;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
 
 /**
  * eidas.xml mapper

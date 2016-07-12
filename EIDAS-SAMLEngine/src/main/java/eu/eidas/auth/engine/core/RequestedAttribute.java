@@ -1,11 +1,11 @@
-/* 
- * Licensed under the EUPL, Version 1.1 or – as soon they will be approved by
+/*
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
  * the European Commission - subsequent versions of the EUPL (the "Licence");
  * You may not use this work except in compliance with the Licence. You may
  * obtain a copy of the Licence at:
- * 
+ *
  * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the Licence is distributed on an "AS IS" basis, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -15,20 +15,20 @@
 
 package eu.eidas.auth.engine.core;
 
+import java.util.List;
+
 import org.opensaml.common.SAMLObject;
 import org.opensaml.xml.AttributeExtensibleXMLObject;
 import org.opensaml.xml.XMLObject;
-
-import javax.xml.namespace.QName;
-import java.util.List;
+import org.opensaml.xml.schema.XSBooleanValue;
 
 /**
  * The Interface RequestedAttribute.
- * 
+ *
  * @author fjquevedo
  */
 public interface RequestedAttribute extends SAMLObject,
-	AttributeExtensibleXMLObject {
+	AttributeExtensibleXMLObject , org.opensaml.saml2.metadata.RequestedAttribute{
 
 
     /** Element local name. */
@@ -60,72 +60,77 @@ public interface RequestedAttribute extends SAMLObject,
 
     /**
      * Gets the name.
-     * 
+     *
      * @return the name
      */
     String getName();
 
     /**
      * Sets the name.
-     * 
+     *
      * @param name the new name
      */
     void setName(String name);
 
     /**
      * Gets the name format.
-     * 
+     *
      * @return the name format
      */
     String getNameFormat();
 
     /**
      * Sets the name format.
-     * 
+     *
      * @param nameFormat the new name format
      */
     void setNameFormat(String nameFormat);
 
     /**
      * Gets the friendly name.
-     * 
+     *
      * @return the friendly name
      */
     String getFriendlyName();
 
     /**
      * Sets the friendly name.
-     * 
+     *
      * @param friendlyName the new friendly name
      */
     void setFriendlyName(String friendlyName);
 
-    /**
+/*    *//**
      * Gets the checks if is required.
-     * 
+     *
      * @return the checks if is required
-     */
-    String isRequired();
+     *//*
+    String isRequired();*/
 
     /**
      * Gets the checks if is required xs boolean.
-     * 
+     *
      * @return the checks if is required xs boolean
      */
     String getIsRequiredXSBoolean();
 
     /**
      * Sets the checks if is required.
-     * 
+     *
      * @param newIsRequired the new checks if is required
      */
     void setIsRequired(String newIsRequired);
 
     /**
      * Gets the attribute values.
-     * 
+     *
      * @return the attribute values
      */
     List<XMLObject> getAttributeValues();
 
+    XSBooleanValue isRequiredXSBoolean();
+
+    void setIsRequired(Boolean aBoolean);
+
+    void setIsRequired(XSBooleanValue xsBooleanValue);
 }

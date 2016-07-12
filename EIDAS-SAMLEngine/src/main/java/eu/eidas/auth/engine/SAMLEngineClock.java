@@ -5,7 +5,7 @@ import org.joda.time.DateTime;
 /**
  * Represents the SAMLEngine its internal clock.
  */
-public interface SAMLEngineClock {
+public interface SamlEngineClock {
 
     /**
      * Obtains the current time as determined by the clock.

@@ -7,8 +7,8 @@
  * You may obtain a copy of the Licence at:
  * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the Licence is distributed on an "AS IS" basis,
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Licence for the specific language governing permissions and
  * limitations under the Licence.
@@ -115,19 +115,19 @@ public class PropertiesUtil extends PropertyPlaceholderConfigurer implements IEI
     }
 
     public static void checkConnectorActive(){
-        String active = getConfigParameter(EIDASParameters.EIDAS_CONNECTOR_ACTIVE.toString());
+        String active = getConfigParameter(EidasParameterKeys.EIDAS_CONNECTOR_ACTIVE.toString());
         if (active != null && !Boolean.valueOf(active)) {
             String msg = "Connector module is inactive by configuration setting";
             LOG.warn(msg);
-            throw new EidasNodeException(EIDASUtil.getConfig(EIDASErrors.SP_COUNTRY_SELECTOR_INVALID.errorCode()), EIDASUtil.getConfig(EIDASErrors.SP_COUNTRY_SELECTOR_INVALID.errorMessage()));
+            throw new EidasNodeException(EidasErrors.get(EidasErrorKey.SP_COUNTRY_SELECTOR_INVALID.errorCode()), EidasErrors.get(EidasErrorKey.SP_COUNTRY_SELECTOR_INVALID.errorMessage()));
         }
     }
     public static void checkProxyServiceActive(){
-        String active = getConfigParameter(EIDASParameters.EIDAS_SERVICE_ACTIVE.toString());
+        String active = getConfigParameter(EidasParameterKeys.EIDAS_SERVICE_ACTIVE.toString());
         if (active != null && !Boolean.valueOf(active)) {
             String msg = "ProxyService module is inactive by configuration setting";
             LOG.warn(msg);
-            throw new EidasNodeException(EIDASUtil.getConfig(EIDASErrors.SP_COUNTRY_SELECTOR_INVALID.errorCode()), EIDASUtil.getConfig(EIDASErrors.SP_COUNTRY_SELECTOR_INVALID.errorMessage()));
+            throw new EidasNodeException(EidasErrors.get(EidasErrorKey.SP_COUNTRY_SELECTOR_INVALID.errorCode()), EidasErrors.get(EidasErrorKey.SP_COUNTRY_SELECTOR_INVALID.errorMessage()));
         }
     }
 
@@ -148,7 +148,10 @@ public class PropertiesUtil extends PropertyPlaceholderConfigurer implements IEI
         }
         return null;
     }
-
+    
+    public static boolean hasPropertyMap(){
+        return propertiesMap != null;
+    }
 
 }
 

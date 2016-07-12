@@ -25,27 +25,29 @@
                     <h1 class="title">
                         <span><fmt:message key="eidas.title" bundle="${i18n_eng}"/></span>
                     </h1>
+
                     <h2><fmt:message key="colleagueRequestRedirect.text" bundle="${i18n_eng}"/></h2>
-                    <form name="redirectForm" method="${e:forHtml(binding)}" action="${e:forHtml(serviceUrl)}" >
+
+                    <form name="redirectForm" method="${e:forHtml(binding)}" action="${e:forHtml(serviceUrl)}">
                         <input type="hidden" id="SAMLRequest" name="SAMLRequest" value="${e:forHtml(SAMLRequest)}"/>
                         <input type="hidden" id="relayState" name="RelayState" value="${e:forHtml(RelayState)}"/>
                         <token:token/>
                     </form>
                     <noscript>
-                    <form id="redirectFormNoJs" name="redirectFormNoJs" method="post" action="${e:forHtml(serviceUrl)}">
-                        <input type="hidden" id="consentValue_SAMLRequest" name="SAMLRequest" value="${e:forHtml(SAMLRequest)}"/>
-                        <input type="hidden" id="consentValue_relayState" name="RelayState" value="${e:forHtml(RelayState)}"/>
-                        <p class="box-btn">
-                            <input type="submit" id="ConsentValue_button" class="btn btn-next" value="<fmt:message key='accept.button' bundle="${i18n_eng}"/>"/>
-                        </p>
-                    </form>
+                        <form id="redirectFormNoJs" name="redirectFormNoJs" method="post" action="${e:forHtml(serviceUrl)}">
+                            <input type="hidden" id="consentValue_SAMLRequest" name="SAMLRequest" value="${e:forHtml(SAMLRequest)}"/>
+                            <input type="hidden" id="consentValue_relayState" name="RelayState" value="${e:forHtml(RelayState)}"/>
+                            <p class="box-btn">
+                                <input type="submit" id="ConsentValue_button" class="btn btn-next" value="<fmt:message key='accept.button' bundle="${i18n_eng}"/>"/>
+                            </p>
+                        </form>
                     </noscript>
+                    <jsp:include page="footer-img.jsp"/>
                 </div>
             </div>
         </div>
     </div>
 </main>
-<jsp:include page="footerScripts.jsp"/>
 <script type="text/javascript" src="js/autocompleteOff.js"></script>
 <script type="text/javascript" src="js/redirectOnload.js"></script>
 </body>

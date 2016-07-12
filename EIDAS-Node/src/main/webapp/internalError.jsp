@@ -1,5 +1,7 @@
 <%@ page import="org.slf4j.LoggerFactory" %>
 <%@ page import="org.slf4j.Logger" %>
+<%@ page import="eu.eidas.node.security.ExtendedServletResponseWrapper" %>
+<%@ page import="eu.eidas.node.security.SecurityResponseHeaderHelper" %>
 <!DOCTYPE html>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
@@ -13,6 +15,15 @@
 <%-- ***********************************************************************************
             This page is for handling server/unexpected errors
  *********************************************************************************** --%>
+
+<%
+    /*  Check if the servlet has removed CSP headers added by filter before */
+    if (!(response instanceof ExtendedServletResponseWrapper)
+            || !((ExtendedServletResponseWrapper) response).hasCSPHeaders()) {
+        /* if the response was rewritten or no CSP flags, place them back if needed */
+        new SecurityResponseHeaderHelper().populateResponseHeader(request, response);
+    }
+%>
 
 <html>
 
@@ -65,6 +76,7 @@
                         }
                     %>
                     <div id="cspMessage" class="warningCsp"></div>
+                    <jsp:include page="footer-img.jsp"/>
                  </div>
             </div>
         </div>

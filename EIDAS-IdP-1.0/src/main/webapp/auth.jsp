@@ -6,9 +6,9 @@
 <%@page import="java.net.URL"%>
 <%@page import="java.io.InputStream"%>
 <%@page import="java.util.Enumeration"%>
-<%@page import="eu.eidas.auth.commons.EIDASParameters"%>
+<%@page import="eu.eidas.auth.commons.EidasParameterKeys"%>
 <%
-	String samlToken = request.getParameter(EIDASParameters.SAML_REQUEST.toString());
+	String samlToken = request.getParameter(EidasParameterKeys.SAML_REQUEST.toString());
 	String signAssertion = request.getParameter("signAssertion");
 	String encryptAssertion = request.getParameter("encryptAssertion");
 %>
@@ -39,6 +39,9 @@
 					<form id="authenticationForm" name="authentication" method="post" action="Login">
 						<div class="form-group">
 							<label for="username">Username</label>
+							<span>
+								<button type="button" class="btn btn-info" data-toggle="modal" data-target="#loaModal">Test user</button>
+							</span>
 							<input type="text" class="form-control" id="username" name="username"/>
 						</div>
 						<div class="form-group">
@@ -61,7 +64,7 @@
 						<input type="hidden" name="samlToken" value="<%=samlToken%>"/>
 						<input type="hidden" name="signAssertion" value="<%=signAssertion%>"/>
 						<input type="hidden" name="encryptAssertion" value="<%=encryptAssertion%>"/>
-						<button type="button" id="idpSubmitbutton" class="btn btn-default btn-lg btn-block" onclick="$('#authenticationForm').submit();">Submit</button>
+						<button type="submit" id="idpSubmitbutton" class="btn btn-default btn-lg btn-block">Submit</button>
 					</form>
 				</div>
 			</div>
@@ -69,5 +72,6 @@
 	</div>
 </div>
 <jsp:include page="footer.jsp"/>
+<jsp:include page="modal_user.jsp"/>
 </body>
 </html>

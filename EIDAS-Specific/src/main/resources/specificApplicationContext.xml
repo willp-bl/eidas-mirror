@@ -1,107 +1,139 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
-	xmlns:util="http://www.springframework.org/schema/util"
-	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
-						http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
-						http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.5.xsd">
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
 
-	<!-- MAP -->
-	<util:map id="derivedImpls" map-class="java.util.Hashtable">
-		<entry key="age" value-ref="deriveAge" />
-		<entry key="isAgeOver" value-ref="deriveIsAgeOver" />
-        <entry key="eIdentifier" value-ref="deriveEid" />
-        <entry key="PersonIdentifier" value-ref="deriveEidasEid" />
-        <entry key="LegalPersonIdentifier" value-ref="deriveEidasEid" />
-	</util:map>
+    <import resource="classpath:environmentContext.xml" />
 
-	<util:map id="normaliseImpls" map-class="java.util.Hashtable">
-		<entry key="dateOfBirth" value-ref="normaliseDateOfBirth" />
-	</util:map>
+<!--
 
-	<util:map id="validateImpls" map-class="java.util.Hashtable">
-		<entry key="gender" value-ref="validateGender" />
-		<entry key="countryCodeOfBirth" value-ref="validateCountryCodeOfBirth" />
-		<entry key="nationalityCode" value-ref="validateNationalityCode" />
-		<entry key="maritalStatus" value-ref="validateMaritalStatus" />
-	</util:map>
+    // Defining the specificConfigRepository using an environment variable
 
-    <!-- Specific Bean -->
-    <bean id="specificNode" class="${specific.node}">
+    <bean id="specificConfigRepository" class="java.lang.String">
+        <constructor-arg value="#{systemEnvironment['EIDAS_CONFIG_REPOSITORY']}" />
+    </bean>
+
+-->
+<!--
+
+    // Defining the specificConfigRepository using a System property
+
+    <bean id="specificConfigRepository" class="java.lang.String">
+        <constructor-arg value="#{systemProperties['EIDAS_CONFIG_REPOSITORY']}" />
+    </bean>
+
+-->
+    <!-- Defining the eidasConfigRepository using a plain String -->
+    <bean id="specificConfigRepository" class="java.lang.String">
+        <constructor-arg value="#{eidasConfigRepository}"/>
+	</bean>
+
+    <bean id="specificConfigFilePath" class="java.lang.String">
+        <constructor-arg value="#{specificConfigRepository}eidas_Specific.xml" />
+    </bean>
+
+    <bean id="SpecificSamlEngineConfigurationFactory" class="eu.eidas.auth.engine.configuration.dom.ProtocolEngineConfigurationFactory" scope="singleton">
+   		<constructor-arg value="SpecificSamlEngine.xml"/>
+   		<constructor-arg value="#{specificConfigFilePath}"/>
+   	</bean>
+
+   	<bean id="SpecificProtocolEngineFactory" class="eu.eidas.auth.engine.ProtocolEngineFactory" scope="singleton">
+   		<constructor-arg ref="SpecificSamlEngineConfigurationFactory"/>
+   	</bean>
+
+    <bean id="specificSpRequestCorrelationMap" class="eu.eidas.auth.commons.tx.StoredAuthenticationRequestCorrelationMap">
+        <!-- SAME as defined in applicationContext.xml for the connector node -->
+        <constructor-arg ref="springServiceCMapspecificSpCorProvider#{distributedEnvSuffix.toString()}"/>
+    </bean>
+    <bean id="specificConnectorLightRequestCorrelationMap" class="eu.eidas.auth.commons.tx.StoredLightRequestCorrelationMap">
+        <constructor-arg ref="springConnectorCMapspecificLightCorProvider#{distributedEnvSuffix.toString()}"/>
+    </bean>
+    <bean id="specificProxyServiceLightRequestCorrelationMap" class="eu.eidas.auth.commons.tx.StoredLightRequestCorrelationMap">
+        <constructor-arg ref="springServiceCMapspecificLightCorProvider#{distributedEnvSuffix.toString()}"/>
+    </bean>
+    <bean id="specificIdpRequestCorrelationMap" class="eu.eidas.auth.commons.tx.StoredAuthenticationRequestCorrelationMap">
+        <constructor-arg ref="springServiceCMapspecificIdpCorProvider#{distributedEnvSuffix.toString()}"/>
+    </bean>
+
+    <!-- Correlation maps provided by Hazelcast for distributed environment, use these in productions! -->
+    <!-- Authreq correlation maps -->
+    <bean id="springServiceCMapspecificIdpCorProviderProd" class="eu.eidas.auth.commons.cache.ConcurrentMapServiceDistributedImpl" lazy-init="true">
+        <property name="hazelcastXmlConfigClassPathFileName" value="hazelcast.xml"/>
+        <property name="cacheName" value="specificIdpRequestCorrelationCacheService"/>
+    </bean>
+    <!-- LightRq correlation maps -->
+    <bean id="springConnectorCMapspecificLightCorProviderProd" class="eu.eidas.auth.commons.cache.ConcurrentMapServiceDistributedImpl" lazy-init="true">
+        <property name="hazelcastXmlConfigClassPathFileName" value="hazelcast.xml"/>
+        <property name="cacheName" value="specificConnectorLtRequestCorrelationCacheService"/>
+    </bean>
+    <bean id="springServiceCMapspecificLightCorProviderProd" class="eu.eidas.auth.commons.cache.ConcurrentMapServiceDistributedImpl" lazy-init="true">
+        <property name="hazelcastXmlConfigClassPathFileName" value="hazelcast.xml"/>
+        <property name="cacheName" value="specificServiceLtRequestCorrelationCacheService"/>
+    </bean>
+    <!-- Correlation maps for simple dev mode -->
+    <!-- Authreq correlation maps for DEV -->
+    <bean id="springServiceCMapspecificIdpCorProviderDev" class="eu.eidas.auth.commons.cache.ConcurrentMapServiceDefaultImpl">
+        <property name="expireAfterAccess" value="1800"/>
+        <property name="maximumSize" value="1000"/>
+    </bean>
+    <bean id="springConnectorCMapspecificLightCorProviderDev" class="eu.eidas.auth.commons.cache.ConcurrentMapServiceDefaultImpl">
+        <property name="expireAfterAccess" value="1800"/>
+        <property name="maximumSize" value="1000"/>
+    </bean>
+    <bean id="springServiceCMapspecificLightCorProviderDev" class="eu.eidas.auth.commons.cache.ConcurrentMapServiceDefaultImpl">
+        <property name="expireAfterAccess" value="1800"/>
+        <property name="maximumSize" value="1000"/>
+    </bean>
+
+
+    <!-- Specific Bean for the ProxyService node-->
+    <bean id="specificServiceNode" class="eu.eidas.node.auth.specific.SpecificEidasService">
         <property name="specificProps" ref="placeholderConfig" />
-        <property name="derivedImpls" ref="derivedImpls" />
-        <property name="normaliseImpls" ref="normaliseImpls" />
-        <property name="validateImpls" ref="validateImpls" />
-        <property name="samlEngineFactory" ref="samlEngineFactory" />
+        <property name="protocolEngineFactory" ref="SpecificProtocolEngineFactory" />
         <property name="serviceProperties" ref="nodeProps" />
         <property name="samlEngine" value="${service.saml.idp:Specific}" />
         <property name="serviceMetadataUrl" value="${service.metadata.url}"/>
         <property name="serviceRequesterMetadataUrl" value="${service.requester.metadata.url}"/>
         <property name="serviceMetadataActive" value="${service.metadata.activate:true}"/>
+        <property name="idpMetadataUrl" value="${idp.metadata.url}"/>
+
+        <property name="callBackURL" value="${service.specificidpredirect.url}" />
+
+        <property name="proxyServiceRequestCorrelationMap" ref="specificProxyServiceLightRequestCorrelationMap"/>
+        <property name="specificIdpRequestCorrelationMap" ref="specificIdpRequestCorrelationMap"/>
     </bean>
 
-    <!-- Attribute Value Derivation -->
-	<bean id="normaliseDateOfBirth" class="${dateOfBirth.implemention}">
-		<property name="pattern" value="${dateOfBirth.stork.format}" />
-		<property name="hasSeparator" value="${dateOfBirth.hasSeparator}" />
-		<property name="specificSeparator" value="${dateOfBirth.specific.separator}" />
-	</bean>
-
-	<!-- Derivation -->
-	<bean id="deriveAge" class="${derive.age.impl}">
-		<property name="pattern" value="${dateOfBirth.stork.format}" />
-		<property name="hasSeparator" value="${dateOfBirth.hasSeparator}" />
-		<property name="specificSeparator" value="${dateOfBirth.specific.separator}" />
-	</bean>
-
-	<bean id="deriveIsAgeOver" class="${derive.isAgeOver.impl}">
-		<property name="pattern" value="${dateOfBirth.stork.format}" />
-		<property name="hasSeparator" value="${dateOfBirth.hasSeparator}" />
-		<property name="specificSeparator" value="${dateOfBirth.specific.separator}" />
-	</bean>
-
-    <bean id="deriveEid" class="${derive.eId.impl}">
-        <property name="destCountry" value="${service.countrycode}" />
+    <!-- Specific Bean for the Connector node-->
+    <bean id="specificConnectorNode" class="eu.eidas.node.auth.specific.SpecificEidasConnector">
+        <property name="specificProps" ref="placeholderConfig" />
+        <property name="protocolEngineFactory" ref="SpecificProtocolEngineFactory" />
+        <property name="serviceProperties" ref="nodeProps" />
+        <property name="samlEngine" value="${service.saml.sp:SP-Connector}" />
+        <property name="spUrl" value="${sp.returnURL}" />
+        <property name="specificSpRequestCorrelationMap" ref="specificSpRequestCorrelationMap"/>
+        <property name="connectorRequestCorrelationMap" ref="specificConnectorLightRequestCorrelationMap"/>
+        <property name="metadataFetcher" ref="nodeMetadataFetcher"/>
     </bean>
-
-    <bean id="deriveEidasEid" class="${derive.eIDASID.impl}">
-        <property name="destCountry" value="${service.countrycode}" />
-    </bean>
-
-    <!-- Validation -->
-	<bean id="validateGender" class="${validate.gender.impl}" />
-	<bean id="validateCountryCodeOfBirth" class="${validate.countryCodeOfBirth.impl}" />
-	<bean id="validateNationalityCode" class="${validate.nationalityCode.impl}" />
-	<bean id="validateMaritalStatus" class="${validate.maritalStatus.impl}" />
 
     <!-- IdP replies here -->
     <bean id="springManagedSpecificIdPResponse" class="eu.eidas.node.SpecificIdPBean"
           scope="prototype">
         <property name="session" ref="serviceSession" />
-        <property name="specificNode" ref="specificNode" />
-    </bean>
-
-    <!-- Connect to AP -->
-    <bean id="springManagedAPSelector" class="eu.eidas.node.APSelectorBean"
-          scope="prototype">
-        <property name="specificEidasNode" ref="specificNode" />
-        <property name="session" ref="serviceSession" />
-        <property name="sigModuleExists" value="${sigModule.exists}" />
-        <property name="externalAP" value="${external.ap}" />
-        <property name="numberOfAps" value="${ap.number}" />
-        <property name="callbackURL" value="${service.specificapredirect.url}" />
-        <property name="sigCreatorModuleURL" value="${signedDoc.sigCreatorModuleURL}" />
-        <property name="dataURL" value="${signedDoc.DataURL}" />
-        <property name="attribute" value="signedDoc" />
+        <property name="specificNode" ref="specificServiceNode" />
     </bean>
 
     <!-- Connect to IdP -->
     <bean id="springManagedCitizenAuthentication" class="eu.eidas.node.CitizenAuthenticationBean"
           scope="prototype">
         <property name="session" ref="serviceSession" />
-        <property name="specAuthenticationNode" ref="specificNode" />
+        <property name="specAuthenticationNode" ref="specificServiceNode" />
         <property name="externalAuth" value="${external.authentication}" />
         <property name="idpUrl" value="${idp.url}" />
+    </bean>
+
+    <!-- Connector receives specific request/response here -->
+    <bean id="springManagedSpecificConnectorBean" class="eu.eidas.node.SpecificConnectorBean" scope="prototype">
+        <property name="specificConnectorNode" ref="specificConnectorNode" />
     </bean>
 
     <!-- Handles Signature Creator Response -->
@@ -118,5 +150,15 @@
         <property name="attribute" value="signedDoc" />
     </bean>
 
+    <bean id="springManagedSpecificProxyService" class="eu.eidas.node.specificcommunication.SpecificProxyServiceImpl" scope="prototype">
+        <property name="signResponseAssertion" value="true"/>
+        <property name="citizenAuthentication" ref="springManagedCitizenAuthentication"/>
+        <property name="specificIdPResponse" ref="springManagedSpecificIdPResponse"/>
+    </bean>
+
+    <bean id="springManagedSpecificConnector" class="eu.eidas.node.specificcommunication.SpecificConnectorImpl" scope="prototype">
+        <property name="signResponseAssertion" value="true"/>
+        <property name="specificConnectorBean" ref="springManagedSpecificConnectorBean"/>
+    </bean>
 
 </beans>

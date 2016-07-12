@@ -22,7 +22,7 @@
 
 package eu.eidas.node;
 
-import eu.eidas.auth.commons.EIDASParameters;
+import eu.eidas.auth.commons.EidasParameterKeys;
 import eu.eidas.auth.commons.EIDASValues;
 import eu.eidas.auth.commons.exceptions.AbstractEIDASException;
 import eu.eidas.auth.commons.exceptions.EIDASServiceException;
@@ -111,7 +111,7 @@ public final class InternalExceptionHandlerServlet extends AbstractNodeServlet {
             }else if (exception.getCause() instanceof AbstractEIDASException) {
                 LOG.trace("Exception is instanceOf AbstractEIDASException");
                 retVal = "/EidasNodeExceptionHandler";
-                Object phase=request.getSession().getAttribute(EIDASParameters.SAML_PHASE.toString());
+                Object phase=request.getSession().getAttribute(EidasParameterKeys.SAML_PHASE.toString());
                 if(EIDASValues.EIDAS_SERVICE_REQUEST.equals(phase) || EIDASValues.EIDAS_SERVICE_RESPONSE.equals(phase)){
                     retVal="/ServiceExceptionHandler";
                 }
@@ -126,7 +126,7 @@ public final class InternalExceptionHandlerServlet extends AbstractNodeServlet {
             }
 
             //Integer statusCode = (Integer) request.getAttribute("javax.servlet.error.status_code"); NEVER used
-            request.setAttribute(NodeBeanNames.EXCEPTION.toString(), exception);
+            request.setAttribute(NodeParameterNames.EXCEPTION.toString(), exception);
 
             //Forward to error page
             RequestDispatcher dispatcher = getServletContext().getRequestDispatcher(retVal);

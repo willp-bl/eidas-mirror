@@ -1,11 +1,11 @@
-/* 
- * Licensed under the EUPL, Version 1.1 or – as soon they will be approved by
+/*
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
  * the European Commission - subsequent versions of the EUPL (the "Licence");
  * You may not use this work except in compliance with the Licence. You may
  * obtain a copy of the Licence at:
- * 
+ *
  * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the Licence is distributed on an "AS IS" basis, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -26,24 +26,24 @@ import eu.eidas.auth.engine.core.stork.CitizenCountryCode;
 
 /**
  * The Class CitizenCountryCodeImpl.
- * 
+ *
  * @author fjquevedo
  */
 public class CitizenCountryCodeImpl extends AbstractSAMLObject implements CitizenCountryCode {
 
     /** The citizen country code. */
     private String citizenCountryCode;
-    
+
     /**
      * Instantiates a new sP country impl.
-     * 
+     *
      * @param namespaceURI the namespace uri
      * @param elementLocalName the element local name
      * @param namespacePrefix the namespace prefix
-     */   
+     */
     protected CitizenCountryCodeImpl(final String namespaceURI,
 	    final String elementLocalName, final String namespacePrefix) {
-	super(namespaceURI, elementLocalName, namespacePrefix);	
+	super(namespaceURI, elementLocalName, namespacePrefix);
     }
 
     /**

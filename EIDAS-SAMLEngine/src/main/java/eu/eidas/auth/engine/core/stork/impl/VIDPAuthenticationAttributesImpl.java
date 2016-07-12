@@ -1,11 +1,11 @@
-/* 
- * Licensed under the EUPL, Version 1.1 or – as soon they will be approved by
+/*
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
  * the European Commission - subsequent versions of the EUPL (the "Licence");
  * You may not use this work except in compliance with the Licence. You may
  * obtain a copy of the Licence at:
- * 
+ *
  * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the Licence is distributed on an "AS IS" basis, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -21,17 +21,16 @@ import java.util.List;
 
 import org.opensaml.common.impl.AbstractSignableSAMLObject;
 import org.opensaml.xml.XMLObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import eu.eidas.auth.engine.core.stork.CitizenCountryCode;
 import eu.eidas.auth.engine.core.stork.SPInformation;
 import eu.eidas.auth.engine.core.stork.VIDPAuthenticationAttributes;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * The Class VIDPAuthenticationAttributesImpl.
- * 
+ *
  * @author fjquevedo
  */
 public final class VIDPAuthenticationAttributesImpl extends AbstractSignableSAMLObject implements
@@ -40,35 +39,35 @@ VIDPAuthenticationAttributes {
     private static final Logger LOGGER = LoggerFactory.getLogger(VIDPAuthenticationAttributesImpl.class.getName());
     /** The citizen country code. */
     private CitizenCountryCode citizenCountryCode;
-    
+
     /** The SP information. */
     private SPInformation spInformation;
 
 	/**
      * Instantiates a new requested attributes implement.
-     * 
+     *
      * @param namespaceURI the namespace URI
      * @param elementLocalName the element local name
      * @param namespacePrefix the namespace prefix
      */
     protected VIDPAuthenticationAttributesImpl(final String namespaceURI,
-	    final String elementLocalName, final String namespacePrefix) {	
+	    final String elementLocalName, final String namespacePrefix) {
 	super(namespaceURI, elementLocalName, namespacePrefix);
     }
-    
-   
+
+
     /**
      * getCitizenCountryCode.
-     * 
+     *
      * @return the citizen country code
-     */    
+     */
     public CitizenCountryCode getCitizenCountryCode() {
     	return citizenCountryCode;
     }
-    
+
     /**
      * getSPInformation
-     * 
+     *
      * @return the SP information
      */
     public SPInformation getSPInformation() {
@@ -77,7 +76,7 @@ VIDPAuthenticationAttributes {
 
     /**
      * Gets the ordered children.
-     * 
+     *
      * @return the ordered children
      *
      */
@@ -86,38 +85,38 @@ VIDPAuthenticationAttributes {
 
 	children.add(citizenCountryCode);
 	children.add(spInformation);
-		
+
 	if (getSignature() != null) {
 	    children.add(getSignature());
 	}
-	
+
 	return Collections.unmodifiableList(children);
 
     }
 
     /**
      * Gets the signature reference id.
-     * 
+     *
      * @return the signature reference id
      *
      */
     public String getSignatureReferenceID() {
 	return null;
     }
-    
+
     /**
      * Sets the citizen country code.
-     * 
+     *
      * @param newCitizenCountryCode the new citizen country code
      *
      */
     public void setCitizenCountryCode(CitizenCountryCode newCitizenCountryCode) {
-	this.citizenCountryCode = prepareForAssignment(this.citizenCountryCode, newCitizenCountryCode);	
-    }    
-    
+	this.citizenCountryCode = prepareForAssignment(this.citizenCountryCode, newCitizenCountryCode);
+    }
+
     /**
      * Sets the SP information.
-     * 
+     *
      * @param newSPInformation the new SP information
      *
      */

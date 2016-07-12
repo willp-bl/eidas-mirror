@@ -7,4 +7,16 @@
 	<entry key="EncryptTo.CB">false</entry>
 	<entry key="DecryptFrom.CB">false</entry>
 
+	<entry key="EncryptTo.CC">false</entry>
+	<entry key="DecryptFrom.CC">false</entry>
+
+	<entry key="EncryptTo.CD">false</entry>
+	<entry key="DecryptFrom.CD">false</entry>
+
+	<entry key="EncryptTo.CF">false</entry>
+	<entry key="DecryptFrom.CF">false</entry>
+
+	<entry key="EncryptTo.BE">true</entry>
+	<entry key="DecryptFrom.BE">true</entry>
+
 </properties>

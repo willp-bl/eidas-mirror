@@ -31,7 +31,9 @@
                 </div>
                 <jsp:include page="leftColumn.jsp"/>
                 <div class="col-md-6">
-                    <form id="countrySelector" name="countrySelector" action="<s:property value="nodeUrl" />" target="_parent" onsubmit="setSAMRequestMethod();">
+                    <form id="countrySelector" name="countrySelector" action="<s:property value="defaultActionUrl" />" target="_parent" onsubmit="setSAMRequestMethod();">
+                        <input type="hidden" id="postLocationUrl" name="postLocationUrl" value="<s:property value="postActionUrl" />">
+                        <input type="hidden" id="redirectLocationUrl" name="redirectLocationUrl" value="<s:property value="redirectActionUrl" />">
                         <div class="form-group">
                             <label for="country"><s:property value="%{getText('destinationCountryId')}"/></label>
                             <input type="text" name="country" value="<s:property value="citizen"/>" id="country" class="form-control"/>
@@ -58,6 +60,8 @@
                     </form>
                     <form id="samlRequestXML" name="samlRequestXML" action="reSign">
                         <input type="hidden" id="samlRequestBinding" name="samlRequestBinding" value="POST">
+                        <input type="hidden" id="samlRequestLocation" name="samlRequestLocation" value="<s:property value="defaultActionUrl" />">
+                        <input type="hidden" id="citizenCountryCode" name="citizenCountryCode" value="<s:property value="citizen"/>">
                         <div class="button-group">
                             <button type="button" id="encodeButton" class="btn btn-default btn-lg btn-block" OnClick="signAndEncodeSAMLRequest();">Re-sign and Encode</button>
                             <button type="button" id="decodeButton" class="btn btn-default btn-lg btn-block" OnClick="decodeSAMLRequest();">Decode</button>

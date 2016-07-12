@@ -12,11 +12,11 @@
 
 
 	<logger name="org.opensaml">
-        <level value="info" />
+        <level value="debug" />
     </logger>
 
 	<root>
-		<priority value="info" />
+		<priority value="debug" />
 		<appender-ref ref="FILE" />
 	</root>
 

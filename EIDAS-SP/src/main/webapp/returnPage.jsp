@@ -52,19 +52,19 @@
 								</tr>
 							</thead>
 							<tbody>
-								<s:iterator value="attrList" status="idx">
+								<s:iterator value="attrMap.keySet()" var="definition">
 									<tr>
 										<td>
-											<s:property value="attrList[#idx.index].name"/>
+											<s:property value="#definition.getNameUri()"/>
 										</td>
 										<td>
-											<s:property value="attrList[#idx.index].displayValue"/>
+											<s:property value="attrMap.get(#definition)"/>
 										</td>
 										<td>
-											<s:property value="attrList[#idx.index].complexValue"/>
+											<!--s:property value="attrList[#idx.index].complexValue"/-->
 										</td>
 										<td>
-											<s:property value="attrList[#idx.index].status"/>
+											<!--s:property value="attrList[#idx.index].status"/-->
 										</td>
 									</tr>
 								</s:iterator>

@@ -1,430 +1,385 @@
+/*
+ * Copyright (c) 2016 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
+ * the European Commission - subsequent versions of the EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
+ *
+ * This product combines work with different licenses. See the "NOTICE" text
+ * file for details on the various modules and licenses.
+ * The "NOTICE" text file is part of the distribution. Any derivative works
+ * that you distribute must include a readable copy of the "NOTICE" text file.
+ *
+ */
+
 package eu.eidas.sp;
 
-import java.util.*;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
+import java.util.ResourceBundle;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import eu.eidas.auth.commons.*;
-import eu.eidas.auth.engine.EIDASSAMLEngine;
-import eu.eidas.auth.engine.core.eidas.EidasAttributesTypes;
-import eu.eidas.auth.engine.core.validator.eidas.EIDASAttributes;
-import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
-
-import org.apache.struts2.interceptor.ServletRequestAware;
-import org.apache.struts2.interceptor.ServletResponseAware;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.google.common.collect.ImmutableSortedSet;
 import com.opensymphony.xwork2.Action;
 import com.opensymphony.xwork2.ActionSupport;
 
+import org.apache.struts2.interceptor.ServletRequestAware;
+import org.apache.struts2.interceptor.ServletResponseAware;
+import org.opensaml.saml2.metadata.EntityDescriptor;
+import org.opensaml.saml2.metadata.IDPSSODescriptor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import eu.eidas.auth.commons.EidasStringUtil;
+import eu.eidas.auth.commons.attribute.AttributeDefinition;
+import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
+import eu.eidas.auth.commons.protocol.IRequestMessage;
+import eu.eidas.auth.commons.protocol.eidas.LevelOfAssurance;
+import eu.eidas.auth.commons.protocol.eidas.LevelOfAssuranceComparison;
+import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.impl.EidasSamlBinding;
+import eu.eidas.auth.commons.protocol.impl.SamlBindingUri;
+import eu.eidas.auth.engine.ProtocolEngineFactory;
+import eu.eidas.auth.engine.ProtocolEngineI;
+import eu.eidas.auth.engine.metadata.MetadataSignerI;
+import eu.eidas.auth.engine.metadata.MetadataUtil;
+import eu.eidas.auth.engine.xml.opensaml.SAMLEngineUtils;
+import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
+import eu.eidas.sp.metadata.SpMetadataFetcher;
+
 /**
- * 
  * @author iinigo
- * This Action Generates a SAML Request with the data given by the user, then sends it to the selected node
- *
+ *         This Action Generates a SAML Request with the data given by the user, then sends it to the selected node
  */
 
 public class IndexAction extends ActionSupport implements ServletRequestAware, ServletResponseAware {
 
     private static final long serialVersionUID = 3660074009157921579L;
-	
-	static final Logger LOGGER = LoggerFactory.getLogger(IndexAction.class.getName());
-    public static final String ACTION_REDIRECT = "redirect";
+
+    static final Logger LOGGER = LoggerFactory.getLogger(IndexAction.class.getName());
     public static final String ACTION_POPULATE = "populate";
-    public static final String ATTRIBUTE_SIGNED_DOC = "signedDoc";
-    private static final String SPTYPE_PARAM="spType";
+    private static final String SPTYPE_PARAM = "spType";
+
+    private final ProtocolEngineI protocolEngine = ProtocolEngineFactory.getDefaultProtocolEngine(Constants.SP_CONF);
 
     private HttpServletRequest request;
-	private String SAMLRequest;
-	private String samlRequestXML;	
+    private String SAMLRequest;
+    private String samlRequestXML;
 
-	private static Properties configs; 
-	private static List<Country> countries;
-	private static List<PersonalAttribute> storkAttributeList;
-	private static List<PersonalAttribute> eidasAttributeList;
+    private static Properties configs;
+    private static List<Country> countries;
+    private static List<AttributeDefinition> storkAttributeList;
+    private static List<AttributeDefinition> eidasAttributeList;
 
-	private static String spId;
-	private static String providerName;
-	private static String spSector;
-	//private static String spInstitution;
-	private static String spApplication;
-	private static String spCountry;
-	
-	/*Requested parameters*/
-	private String nodeUrl; 
-	private String nodeUrl2;	
-	private String qaa;
-	private String citizen;
-	private String returnUrl;
-	private String eidasloa;
-	private String eidasloaCompareType;
-	private String eidasNameIdentifier;
-	private String eidasSPType;
-	Map<String, String> eidasAttribsInverseMap=inverseMap(EIDASAttributes.ATTRIBUTES_TO_SHORTNAMES);
-	private static boolean eidasNodeOnly=true;
+    private static String spId;
+    private static String providerName;
+    private static String spSector;
+    private static String spApplication;
+    private static ResourceBundle resourceBundle;
 
+    /*Requested parameters*/
+    private String nodeMetadataUrl;
+    private String postLocationUrl;
+    private String redirectLocationUrl;
 
-	private static void loadGlobalConfig(){
-		configs = SPUtil.loadSPConfigs();
-		spId = configs.getProperty(Constants.PROVIDER_NAME);
-		providerName = configs.getProperty(Constants.PROVIDER_NAME);
-		spSector = configs.getProperty(Constants.SP_SECTOR);
-		//spInstitution = configs.getProperty(Constants.PROVIDER_NAME);
-		spApplication = configs.getProperty(Constants.SP_APLICATION);
-		spCountry = configs.getProperty(Constants.SP_COUNTRY);
-		countries = new ArrayList<Country> ();
-        storkAttributeList = new ArrayList<PersonalAttribute>();
-        eidasAttributeList = new ArrayList<PersonalAttribute>();
-		eidasNodeOnly=!(Boolean.FALSE.toString().equalsIgnoreCase(configs.getProperty(Constants.SP_EIDAS_ONLY)));
+    private String nodeUrl;
+    private String nodeUrl2;
+    private String qaa;
+    private String citizen;
+    private String returnUrl;
+    private String eidasloa;
+    private String eidasloaCompareType;
+    private String eidasNameIdentifier;
+    private String eidasSPType;
 
+    private static boolean eidasNodeOnly = true;
+
+    private final SpMetadataFetcher metadataFetcher = new SpMetadataFetcher();
+
+    private static void loadGlobalConfig() {
+        configs = SPUtil.loadSPConfigs();
+        spId = configs.getProperty(Constants.PROVIDER_NAME);
+        providerName = configs.getProperty(Constants.PROVIDER_NAME);
+        spSector = configs.getProperty(Constants.SP_SECTOR);
+        spApplication = configs.getProperty(Constants.SP_APLICATION);
+        countries = new ArrayList<Country>();
+        eidasAttributeList = new ArrayList<AttributeDefinition>();
+        eidasNodeOnly = !(Boolean.FALSE.toString().equalsIgnoreCase(configs.getProperty(Constants.SP_EIDAS_ONLY)));
+        resourceBundle = ResourceBundle.getBundle(Constants.SYSADMIN_RESOURCE_BUNDLE_BASE_NAME);
     }
+
     /**
- 	 * Fill the data in the JSP that is shown to the user in order to fill the requested data to generate a saml request
+     * Fill the data in the JSP that is shown to the user in order to fill the requested data to generate a saml request
+     *
      * @return ACTION_REDIRECT
      */
-	public String populate() {		
-				
-		IndexAction.loadGlobalConfig();
+    public String populate() throws EIDASSAMLEngineException {
 
-		returnUrl = configs.getProperty(Constants.SP_RETURN);
-		qaa = configs.getProperty(Constants.SP_QAALEVEL);		
+        IndexAction.loadGlobalConfig();
 
-		int numCountries = Integer.parseInt(configs.getProperty(Constants.COUNTRY_NUMBER));
-		for(int i=1;i<=numCountries;i++){
-			Country country = new Country(i,configs.getProperty("country" + Integer.toString(i) + ".name"), configs.getProperty("country" + Integer.toString(i) + ".url"), configs.getProperty("country" + Integer.toString(i) + ".countrySelector"));
-			countries.add(country);
+        returnUrl = configs.getProperty(Constants.SP_RETURN);
+        qaa = configs.getProperty(Constants.SP_QAALEVEL);
+
+        int numCountries = Integer.parseInt(configs.getProperty(Constants.COUNTRY_NUMBER));
+        for (int i = 1; i <= numCountries; i++) {
+            Country country = new Country(i, configs.getProperty("country" + Integer.toString(i) + ".name"), configs.getProperty("country" + Integer.toString(i) + ".url"),
+                    configs.getProperty("country" + Integer.toString(i) + ".countrySelector"), configs.getProperty("country" + Integer.toString(i) + ".metadata.url"));
+            countries.add(country);
             LOGGER.info(country.toString());
-		}
-		
-		int nAttr = Integer.parseInt( configs.getProperty(Constants.ATTRIBUTE_NUMBER));
-		
-
-		for(int i=1; i<=nAttr; i++){
-			PersonalAttribute pa = new PersonalAttribute();
-			pa.setName(configs.getProperty("attribute"+ i +".name"));
-			
-			String value = configs.getProperty("attribute"+ i + ".value");
-			if(value != null){
-				List<String> aux= new ArrayList<String>();
-				aux.add(value);
-				pa.setValue(aux);
-			}
-			
-			storkAttributeList.add(pa);
-		}
-
-		if(configs.getProperty(Constants.EIDAS_ATTRIBUTE_NUMBER)!=null) {
-			nAttr = Integer.parseInt(configs.getProperty(Constants.EIDAS_ATTRIBUTE_NUMBER));
-			for (int i = 1; i <= nAttr; i++) {
-				PersonalAttribute pa = new PersonalAttribute();
-				String attribName=configs.getProperty("eidas.attribute" + i + ".name");
-				pa.setName(attribName);
-
-				String value = configs.getProperty("eidas.attribute" + i + ".value");
-				if (value != null) {
-					List<String> aux = new ArrayList<String>();
-					aux.add(value);
-					pa.setValue(aux);
-				}
-				String searchAttrName=attribName;
-				if(configs.containsKey(MAPPING_ATTR_PREFIX+attribName)){
-					searchAttrName=configs.getProperty(MAPPING_ATTR_PREFIX+attribName);
-				}
-				if(eidasAttribsInverseMap.containsKey(searchAttrName)){
-					String fullName=eidasAttribsInverseMap.get(searchAttrName);
-					pa.setFullName(fullName);
-					EidasAttributesTypes eat = EIDASAttributes.getAttributeType(fullName);
-					pa.setEidasNaturalPersonAttr(eat == EidasAttributesTypes.NATURAL_PERSON_MANDATORY || eat == EidasAttributesTypes.NATURAL_PERSON_OPTIONAL);
-					pa.setEidasLegalPersonAttr(eat == EidasAttributesTypes.LEGAL_PERSON_MANDATORY || eat == EidasAttributesTypes.LEGAL_PERSON_OPTIONAL);
-					pa.setIsRequired(eat == EidasAttributesTypes.NATURAL_PERSON_MANDATORY || eat == EidasAttributesTypes.LEGAL_PERSON_MANDATORY);
-				}
-
-				eidasAttributeList.add(pa);
-			}
-		}
-
-		return ACTION_POPULATE;
-	}
-	
-
-	private Map<String, String> inverseMap(Map<String, String> theMap){
-		Map<String, String> result=new HashMap<String, String>();
-		for(Map.Entry<String, String> entry:theMap.entrySet()){
-			result.put(entry.getValue(), entry.getKey());
-		}
-		return result;
-	}
-	
-/**
- * Set the request to send to the country selector
- * @return ACTION_REDIRECT
- */
-public String redirect(){		
-		
-	StringBuilder strBld = new StringBuilder();
-    IPersonalAttributeList pAttList = new PersonalAttributeList();
-	
-	//Iterate through the request parameters looking for SAML Engine attributes
-    PersonalAttribute attrSigned = null;
-	for (Enumeration enu = request.getParameterNames(); enu.hasMoreElements();)  {
-		String parameterName = (String) enu.nextElement();
-		if(configs.containsValue(parameterName)){
-			//Iterate through the request parameters looking for SAML Engine attribute types*/
-			for (Enumeration en = request.getParameterNames(); en.hasMoreElements();)  {
-				String parameterType = (String) en.nextElement();
-				if(parameterType.equals(parameterName + "Type")){
-					if(!"none".equals(request.getParameter(parameterType))){
-						//Construct attributes string in order to send it to the country selector in the Connector
-                        PersonalAttribute attr = new PersonalAttribute();
-                        attr.setName(parameterName);
-                        Boolean attrType = Boolean.valueOf(request.getParameter(parameterType));
-                        attr.setIsRequired(attrType.booleanValue());
- 						
-						//Iterate through the request parameters looking for SAML Engine attribute values
-						for (Enumeration e = request.getParameterNames(); e.hasMoreElements();)  {
-							String parameterValue = (String) e.nextElement();
-							if(parameterValue.equals(parameterName + "Value")){
-								List<String> value = new ArrayList<String>();
-								value.add(request.getParameter(parameterValue));  
-								attr.setValue(value);
-							}				
-						}
-                        // Correction of the signedDoc issue causing the rest of the string to be ignored (1/2)
-                        // This attribute will be added as latest for causing xml string to be closed
-                        if (ATTRIBUTE_SIGNED_DOC.equals(attr.getName())){
-                            attrSigned = attr;
-                        } else {
-                            strBld.append(attr.toString());
-                        }
-                        pAttList.add(attr);
-
-					}
-				}				
-			}
-		}
-	}
-    // Correction of the signedDoc issue causing the rest of the string to be ignored (2/2)
-	if (attrSigned != null) {
-        strBld.append(attrSigned.toString());
-    }
-	request.setAttribute(EIDASParameters.ATTRIBUTE_LIST.toString(), strBld.toString());
-	request.setAttribute(EIDASParameters.PROVIDER_NAME_VALUE.toString(), providerName);
-	request.setAttribute(EIDASParameters.SP_URL.toString(), returnUrl);
-	request.setAttribute(EIDASParameters.SP_QAALEVEL.toString(), qaa);
-	request.setAttribute("nodeCountryForm", nodeUrl2);
-	
-	//new parameters
-	request.setAttribute(EIDASParameters.SPSECTOR.toString(), spSector);
-//	request.setAttribute("spInstitution", spInstitution);
-	request.setAttribute(EIDASParameters.SPAPPLICATION.toString(), spApplication);
-	request.setAttribute(EIDASParameters.SPCOUNTRY.toString(), spCountry);
-	
-	//V-IDP parameters
-	request.setAttribute(EIDASParameters.SP_ID.toString(), spId);
-
-	String metadataUrl=configs.getProperty(Constants.SP_METADATA_URL);
-	if(metadataUrl!=null && !metadataUrl.isEmpty() && SPUtil.isMetadataEnabled()) {
-		request.setAttribute(EIDASParameters.SP_METADATA_URL.toString(), metadataUrl);
-	}
-
-
-	return ACTION_REDIRECT;
-	
-	}
-	
-
-	private static final String MAPPING_ATTR_PREFIX="mapping.attribute.";
-	/**
-	 * Generates de Saml Request with the data given by the user
-     * @return Action.SUCCESS
-	 */
-	public String execute(){
-						
-		IPersonalAttributeList pAttList = new PersonalAttributeList();
-        boolean eIdasRequest=false;
-		//Iterate through the request parameters looking for SAML Engine attributes
-		for (Enumeration enu = request.getParameterNames(); enu.hasMoreElements();)  {
-			String parameterName = (String) enu.nextElement();
-            if(SPTYPE_PARAM.equalsIgnoreCase(parameterName)){
-                eIdasRequest=true;
-            }
-			if(configs.containsValue(parameterName)){
-				//Iterate through the request parameters looking for SAML Engine attribute types
-				for (Enumeration en = request.getParameterNames(); en.hasMoreElements();)  {
-					//Create a personal attribute with the attribute and its type
-					String parameterType = (String) en.nextElement();
-					if(parameterType.equals(parameterName + "Type")){
-						if(!"none".equals(request.getParameter(parameterType))){
-							PersonalAttribute att = new PersonalAttribute();
-							if(configs.containsKey(MAPPING_ATTR_PREFIX+parameterName)){
-								att.setName((String)configs.get(MAPPING_ATTR_PREFIX+parameterName));
-							}else {
-								att.setName(request.getParameter(parameterName));
-							}
-							if("true".equals(request.getParameter(parameterType)))
-								att.setIsRequired(true);
-							else
-								att.setIsRequired(false);
-							//Iterate through the request parameters looking for SAML Engine attribute types
-							for (Enumeration e = request.getParameterNames(); e.hasMoreElements();)  {
-								//Create a personal attribute with the attribute and its type
-								String parameterValue = (String) e.nextElement();
-								if(parameterValue.equals(parameterName + "Value")){
-									List<String> aux= new ArrayList<String>();
-									aux.add(request.getParameter(parameterValue));
-									att.setValue(aux);
-								}
-							}
-							pAttList.add(att);							
-						}
-					}
-				}
-			}
-		}	
-		byte[] token = null;
-		
-		EIDASAuthnRequest authnRequest = new EIDASAuthnRequest();
-		
-		authnRequest.setDestination(nodeUrl);
-		authnRequest.setProviderName(providerName);
-		if(qaa!=null) {
-			authnRequest.setQaa(Integer.parseInt(qaa));
-		}
-		authnRequest.setPersonalAttributeList(pAttList);
-        if(eIdasRequest) {
-            if(EidasLoaLevels.getLevel(eidasloa)==null) {
-                authnRequest.setEidasLoA(EidasLoaLevels.LOW.stringValue());
-            }else {
-                authnRequest.setEidasLoA(eidasloa);
-            }
-            authnRequest.setSPType(eidasSPType);
-			authnRequest.setEidasLoACompareType(EidasLoaCompareType.getCompareType(eidasloaCompareType).stringValue());
-			authnRequest.setEidasNameidFormat(eidasNameIdentifier);
-			authnRequest.setBinding(EIDASAuthnRequest.BINDING_EMPTY);
-        }else{
-    		authnRequest.setAssertionConsumerServiceURL(returnUrl);
         }
-		String metadataUrl=configs.getProperty(Constants.SP_METADATA_URL);
-		if(metadataUrl!=null && !metadataUrl.isEmpty() && SPUtil.isMetadataEnabled()) {
-			authnRequest.setIssuer(metadataUrl);
-		}
-		
-		//new parameters
-		authnRequest.setSpSector(spSector);
-//		authnRequest.setSpInstitution(spInstitution);
-		authnRequest.setSpApplication(spApplication);
-		authnRequest.setSpCountry(request.getParameter("connector_ms_input"));
-		
-		//V-IDP parameters
-		authnRequest.setCitizenCountryCode(citizen);
-		authnRequest.setSPID(spId);
-		
-		try{
-			EIDASSAMLEngine engine = SPUtil.createSAMLEngine(Constants.SP_CONF);
-            engine.initRequestedAttributes(pAttList);
-			authnRequest = engine.generateEIDASAuthnRequest(authnRequest);
-		}catch(EIDASSAMLEngineException e){
-			LOGGER.error(e.getMessage());
-			throw new ApplicationSpecificServiceException("Could not generate token for Saml Request", e.getErrorMessage());
-		}	
-				
-		token = authnRequest.getTokenSaml();
-		
-		SAMLRequest = EIDASUtil.encodeSAMLToken(token);
-		samlRequestXML = new String(token);
-		
-		return Action.SUCCESS;
-	}
+
+        ImmutableSortedSet<AttributeDefinition<?>> eidasAttributeDefinitions = protocolEngine.getProtocolProcessor().getAllSupportedAttributes();
+        eidasAttributeList.addAll(eidasAttributeDefinitions);
+
+        return ACTION_POPULATE;
+    }
+
+    /**
+     * Generates de Saml Request with the data given by the user
+     *
+     * @return Action.SUCCESS
+     */
+
+    public String execute() {
+
+        final ImmutableSortedSet<AttributeDefinition<?>> allSupportedAttributesSet =
+                protocolEngine.getProtocolProcessor().getAllSupportedAttributes();
+        List<AttributeDefinition<?>> reqAttrList = new ArrayList<AttributeDefinition<?>>(allSupportedAttributesSet);
+        byte[] token = null;
+
+        //remove attributes the SP decides not to send (for testing purpose)
+        for (AttributeDefinition<?> attributeDefinition : allSupportedAttributesSet) {
+            String attributeName = request.getParameter(attributeDefinition.getNameUri().toASCIIString());
+            if (attributeName == null || "none".equals(request.getParameter(attributeName + "Type"))) {
+                reqAttrList.remove(attributeDefinition);
+            }
+        }
+
+        ImmutableAttributeMap reqAttrMap = new ImmutableAttributeMap.Builder().putAll(reqAttrList).build();
+
+        // build the request
+        EidasAuthenticationRequest.Builder reqBuilder = new EidasAuthenticationRequest.Builder();
+        reqBuilder.destination(nodeUrl);
+        reqBuilder.providerName(providerName);
+        if (qaa != null) {
+            //TODO quick fix for having a flow working end-to-end check if this is correct: removed setting of qaa
+//            reqBuilder.qaa(Integer.parseInt(qaa));
+        }
+        reqBuilder.requestedAttributes(reqAttrMap);
+            if (LevelOfAssurance.getLevel(eidasloa) == null) {
+                reqBuilder.levelOfAssurance(LevelOfAssurance.LOW.stringValue());
+            } else {
+                reqBuilder.levelOfAssurance(eidasloa);
+            }
+            reqBuilder.spType(eidasSPType);
+            reqBuilder.levelOfAssuranceComparison(LevelOfAssuranceComparison.fromString(eidasloaCompareType).stringValue());
+            reqBuilder.nameIdFormat(eidasNameIdentifier);
+            reqBuilder.binding(EidasSamlBinding.EMPTY.getName());
+
+        String metadataUrl = configs.getProperty(Constants.SP_METADATA_URL);
+        if (metadataUrl != null && !metadataUrl.isEmpty() && SPUtil.isMetadataEnabled()) {
+            reqBuilder.issuer(metadataUrl);
+        }
+
+        //TODO quick fix for having a flow working end-to-end check if this is correct: removed setting of spSector and spApplication
+//        reqBuilder.spSector(spSector);
+//        reqBuilder.spApplication(spApplication);
+        reqBuilder.serviceProviderCountryCode(request.getParameter("connector_ms_input"));
+        //V-IDP parameters
+        reqBuilder.citizenCountryCode(citizen);
+        //TODO quick fix for having a flow working end-to-end check if this is correct: removed setting of spId
+//        reqBuilder.spId(spId);
+
+        IRequestMessage binaryRequestMessage;
+
+        try {
+            //TODO quick fix for having a flow working end-to-end check if this is correct: generated missing id
+            reqBuilder.id(SAMLEngineUtils.generateNCName());
+            binaryRequestMessage = protocolEngine.generateRequestMessage(reqBuilder.build(), nodeMetadataUrl);
+        } catch (EIDASSAMLEngineException e) {
+            LOGGER.error(e.getMessage());
+            final String errorMessage = getErrorMessageFromBundle(e.getErrorCode(), e.getErrorMessage());
+            throw new ApplicationSpecificServiceException("Could not generate token for Saml Request", errorMessage);
+        }
+
+        token = binaryRequestMessage.getMessageBytes();
+
+        samlRequestXML = EidasStringUtil.toString(token);
+        SAMLRequest = EidasStringUtil.encodeToBase64(token);
+
+        return Action.SUCCESS;
+    }
+
+    private String getErrorMessageFromBundle(final String errorCode, final String errorMessage){
+        return MessageFormat.format(resourceBundle.getString(errorMessage), errorCode);
+    }
+
+    private void setDefaultURLsFromMetadata(final String metadataURL) throws EIDASSAMLEngineException {
+        final String postSSOSLocationURL = getSSOSLocation(metadataURL, SamlBindingUri.SAML2_POST);
+        setPostLocationUrl(postSSOSLocationURL);
+        setNodeUrl(postSSOSLocationURL);
+
+        final String redirectSSOSLocation = getSSOSLocation(metadataURL, SamlBindingUri.SAML2_REDIRECT);
+        setRedirectLocationUrl(redirectSSOSLocation);
+    }
+
+    private String getSSOSLocation(String metadataUrl, SamlBindingUri binding) throws EIDASSAMLEngineException {
+        MetadataSignerI metadataSigner = (MetadataSignerI) protocolEngine.getSigner();
+        EntityDescriptor entityDescriptor =
+                metadataFetcher.getEntityDescriptor(metadataUrl, metadataSigner);
+        IDPSSODescriptor idPSSODescriptor = MetadataUtil.getIDPSSODescriptor(entityDescriptor);
+        return MetadataUtil.getSingleSignOnUrl(idPSSODescriptor, binding);
+    }
 
 
-	public List<PersonalAttribute> getStorkAttributeList() {
-		return storkAttributeList;
-	}
-	public List<PersonalAttribute> getEidasAttributeList() {
-		return eidasAttributeList;
-	}
+    public List<AttributeDefinition> getStorkAttributeList() {
+        return storkAttributeList;
+    }
 
-	public void setSAMLRequest(String samlToken) {
-		this.SAMLRequest = samlToken;
-	}
+    public List<AttributeDefinition> getEidasAttributeList() {
+        return eidasAttributeList;
+    }
 
-	public String getSAMLRequest() {
-		return SAMLRequest;
-	}	
+    public void setSAMLRequest(String samlToken) {
+        this.SAMLRequest = samlToken;
+    }
 
-	public String getQaa() {
-		return qaa;
-	}
+    public String getSAMLRequest() {
+        return SAMLRequest;
+    }
 
-	public void setQaa(String qaa) {
-		this.qaa = qaa;
-	}	
-	
-	public String getSpId() {
-		return spId;
-	}
+    public String getQaa() {
+        return qaa;
+    }
 
-	public String getProviderName() {
-		return providerName;
-	}
+    public void setQaa(String qaa) {
+        this.qaa = qaa;
+    }
 
-	public String getCitizen() {
-		return citizen;
-	}
+    public String getSpId() {
+        return spId;
+    }
 
-	public void setCitizen(String citizen) {
-		this.citizen = citizen;
-	}
+    public String getProviderName() {
+        return providerName;
+    }
 
-	public void setCitizenEidas(String citizen) {
-		setCitizen(citizen);
-	}
+    public String getCitizen() {
+        return citizen;
+    }
 
-	public String getSamlRequestXML() {
-		return samlRequestXML;
-	}
+    public void setCitizen(String citizen) {
+        this.citizen = citizen;
+    }
 
-	public void setSamlRequestXML(String samlRequestXML) {
-		this.samlRequestXML = samlRequestXML;
-	}
-	
-	public String getReturnUrl() {
-		return returnUrl;
-	}
+    public void setCitizenEidas(String citizen) {
+        setCitizen(citizen);
+    }
 
-	public void setReturnUrl(String returnUrl) {
-		this.returnUrl = returnUrl;
-	}	
-	
-	public String getNodeUrl() {
-		return nodeUrl;
-	}
+    public String getSamlRequestXML() {
+        return samlRequestXML;
+    }
 
-	public void setNodeUrl(String nodeUrl) {
-		this.nodeUrl = nodeUrl;
-	}
-	
-	public List<Country> getCountries() {
-		return countries;
-	}
+    public void setSamlRequestXML(String samlRequestXML) {
+        this.samlRequestXML = samlRequestXML;
+    }
+
+    public String getReturnUrl() {
+        return returnUrl;
+    }
+
+    public void setReturnUrl(String returnUrl) {
+        this.returnUrl = returnUrl;
+    }
+
+    public String getNodeUrl() {
+        return nodeUrl;
+    }
+
+    public void setNodeUrl(String nodeUrl) {
+        this.nodeUrl = nodeUrl;
+    }
+
+    public String getNodeMetadataUrl() {
+        return nodeMetadataUrl;
+    }
+
+    public String getPostLocationUrl() {
+        return postLocationUrl;
+    }
+
+    private void setPostLocationUrl(String postLocationUrl) {
+        this.postLocationUrl = postLocationUrl;
+    }
+
+    public String getRedirectLocationUrl() {
+        return redirectLocationUrl;
+    }
+
+    private void setRedirectLocationUrl(String redirectLocationUrl) {
+        this.redirectLocationUrl = redirectLocationUrl;
+    }
+
+    public void setNodeMetadataUrl(final String nodeMetadataUrl) throws EIDASSAMLEngineException {
+        this.nodeMetadataUrl = nodeMetadataUrl;
+
+        setDefaultURLsFromMetadata(nodeMetadataUrl);
+    }
 
 
-	public void setServletRequest(HttpServletRequest request) {
-		this.request = request;
-	}
+    /**
+     * Method to be used to return the correct URL based on
+     * metadata ssos location. If metadata has been read in EIDAS mode returns
+     * the post location ssos contained in the metadata or
+     * returns nodeUrl otherwise. This allows to be able to function eihter in
+     * EIDAS or STORK mode respectively.
+     *
+     * @return a default URL string
+     */
+    public String getDefaultActionUrl() {
+        return getPostActionUrl();
+    }
 
-	public void setServletResponse(HttpServletResponse response) {
-	}
-	
-	public String getNodeUrl2() {
-		return nodeUrl2;
-	}
+    public String getPostActionUrl() {
+        return postLocationUrl != null ? postLocationUrl : nodeUrl;
+    }
 
-	public void setNodeUrl2(String nodeUrl2) {
-		this.nodeUrl2 = nodeUrl2;
-	}
+    public String getRedirectActionUrl() {
+        return redirectLocationUrl != null ? redirectLocationUrl : nodeUrl;
+    }
+
+    public List<Country> getCountries() {
+        return countries;
+    }
+
+    @Override
+    public void setServletRequest(HttpServletRequest request) {
+        this.request = request;
+    }
+
+    @Override
+    public void setServletResponse(HttpServletResponse response) {
+    }
+
+    public String getNodeUrl2() {
+        return nodeUrl2;
+    }
+
+    public void setNodeUrl2(String nodeUrl2) {
+        this.nodeUrl2 = nodeUrl2;
+    }
 
     public String getEidasloa() {
         return eidasloa;
@@ -434,38 +389,39 @@ public String redirect(){
         this.eidasloa = eidasloa;
     }
 
-	public String getEidasloaCompareType() {
-		return eidasloaCompareType;
-	}
+    public String getEidasloaCompareType() {
+        return eidasloaCompareType;
+    }
 
-	public void setEidasloaCompareType(String eidasloaCompareType) {
-		this.eidasloaCompareType = eidasloaCompareType;
-	}
+    public void setEidasloaCompareType(String eidasloaCompareType) {
+        this.eidasloaCompareType = eidasloaCompareType;
+    }
 
-	public String getEidasNameIdentifier() {
-		return eidasNameIdentifier;
-	}
+    public String getEidasNameIdentifier() {
+        return eidasNameIdentifier;
+    }
 
-	public void setEidasNameIdentifier(String eidasNameIdentifier) {
-		this.eidasNameIdentifier = eidasNameIdentifier;
-	}
+    public void setEidasNameIdentifier(String eidasNameIdentifier) {
+        this.eidasNameIdentifier = eidasNameIdentifier;
+    }
 
-	public String getEidasSPType() {
-		return eidasSPType;
-	}
+    public String getEidasSPType() {
+        return eidasSPType;
+    }
 
-	public void setEidasSPType(String eidasSPType) {
-		this.eidasSPType = eidasSPType;
-	}
+    public void setEidasSPType(String eidasSPType) {
+        this.eidasSPType = eidasSPType;
+    }
 
-	public boolean isEidasNodeOnly() {
-		return eidasNodeOnly;
-	}
+    public boolean isEidasNodeOnly() {
+        return eidasNodeOnly;
+    }
 
-	public void setEidasNodeOnly(boolean eidasNodeOnly) {
-		IndexAction.setGlobalEidasNodeOnly(eidasNodeOnly);
-	}
-	public static void setGlobalEidasNodeOnly(boolean eidasNodeOnly) {
-		IndexAction.eidasNodeOnly = eidasNodeOnly;
-	}
+    public void setEidasNodeOnly(boolean eidasNodeOnly) {
+        IndexAction.setGlobalEidasNodeOnly(eidasNodeOnly);
+    }
+
+    public static void setGlobalEidasNodeOnly(boolean eidasNodeOnly) {
+        IndexAction.eidasNodeOnly = eidasNodeOnly;
+    }
 }

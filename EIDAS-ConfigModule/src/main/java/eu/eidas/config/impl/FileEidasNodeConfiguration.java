@@ -1,5 +1,5 @@
 /*
- * Licensed under the EUPL, Version 1.1 or – as soon they will be approved by
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
  * the European Commission - subsequent versions of the EUPL (the "Licence");
  * You may not use this work except in compliance with the Licence. You may
  * obtain a copy of the Licence at:
@@ -14,6 +14,16 @@
  */
 package eu.eidas.config.impl;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Properties;
+
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import eu.eidas.config.EIDASNodeConfiguration;
 import eu.eidas.config.impl.samlmetadata.MetadataRepositoryImpl;
 import eu.eidas.config.node.EIDASNodeCountry;
@@ -22,12 +32,6 @@ import eu.eidas.config.node.EIDASNodeParameter;
 import eu.eidas.config.samlmetadata.MetadataRepository;
 import eu.eidas.samlengineconfig.impl.CertificateManagerConfigurationImpl;
 import eu.eidas.samlengineconfig.impl.tools.EidasConfigManagerUtil;
-
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.*;
 
 /**
  *

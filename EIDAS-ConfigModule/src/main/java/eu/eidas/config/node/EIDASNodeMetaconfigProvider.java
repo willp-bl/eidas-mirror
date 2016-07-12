@@ -1,5 +1,5 @@
 /*
- * Licensed under the EUPL, Version 1.1 or – as soon they will be approved by
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
  * the European Commission - subsequent versions of the EUPL (the "Licence");
  * You may not use this work except in compliance with the Licence. You may
  * obtain a copy of the Licence at:
@@ -14,9 +14,12 @@
  */
 package eu.eidas.config.node;
 
-import eu.eidas.config.impl.EIDASNodeConfFile;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import java.util.*;
+import eu.eidas.config.impl.EIDASNodeConfFile;
 
 /**
  * stores metadata information and performs operation on it

@@ -36,6 +36,18 @@ public class InvalidParameterEIDASException extends AbstractEIDASException {
     final String errorMessage) {
     super(errorCode, errorMessage);
   }
+
+  /**
+   * Exception Constructor with two Strings representing the errorCode and errorMessage as parameters and the
+   * Throwable cause.
+   *
+   * @param errorCode The error code value.
+   * @param errorMessage The error code message value.
+   * @param cause The throwable object.
+   */
+  public InvalidParameterEIDASException(final String errorCode, final String errorMessage, final Throwable cause) {
+    super(errorCode, errorMessage, cause);
+  }
   
   /**
    * Exception Constructor with one String representing the encoded samlToken.

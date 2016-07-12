@@ -294,3 +294,21 @@ h3.text-error {
   color: #fff;
   text-shadow: none;
 }
+
+/*=======================================MODAL===================================*/
+/*===============================================================================*/
+.btn.btn-info {
+  padding: 0;
+  width: 58px;
+  height: 18px;
+  font-size: 12px;
+  font-weight: bold;
+  line-height: 12px;
+}
+.modal-header {
+  padding: 10px 10px 20px;
+  border-bottom: 1px solid #B3B3B3;
+}
+.modal-footer {
+  border-top: 1px solid #B3B3B3;
+}

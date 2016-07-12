@@ -1,75 +1,342 @@
 /*
  * This work is Open Source and licensed by the European Commission under the
- * conditions of the European Public License v1.1 
- *  
- * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1); 
- * 
- * any use of this file implies acceptance of the conditions of this license. 
- * Unless required by applicable law or agreed to in writing, software 
- * distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT 
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the 
- * License for the specific language governing permissions and limitations 
+ * conditions of the European Public License v1.1
+ *
+ * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1);
+ *
+ * any use of this file implies acceptance of the conditions of this license.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
  * under the License.
  */
 package eu.eidas.auth.commons;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.NavigableMap;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicLong;
 
-import eu.eidas.auth.commons.exceptions.InternalErrorEIDASException;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.annotation.concurrent.NotThreadSafe;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 
 import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import eu.eidas.auth.commons.attribute.AttributeDefinition;
+import eu.eidas.auth.commons.attribute.AttributeRegistry;
+import eu.eidas.auth.commons.attribute.AttributeValue;
+import eu.eidas.auth.commons.attribute.AttributeValueMarshaller;
+import eu.eidas.auth.commons.attribute.AttributeValueMarshallingException;
+import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
+import eu.eidas.auth.commons.attribute.PersonType;
 
 /**
- * This class is a bean used to store the information relative to the
- * PersonalAttributeList.
+ * This class is a bean used to store the information relative to the PersonalAttributeList.
+ *
  * @see PersonalAttribute
+ * @deprecated use {@link eu.eidas.auth.commons.attribute.ImmutableAttributeMap} instead.
  */
-@SuppressWarnings("PMD")
-public final class PersonalAttributeList extends
-        ConcurrentHashMap<String, PersonalAttribute> implements IPersonalAttributeList {
+@NotThreadSafe
+@Deprecated
+public final class PersonalAttributeList implements IPersonalAttributeList {
 
     /**
-     * Logger object.
+     * A {@link java.util.Map} key.
      */
-    private static final Logger LOG = LoggerFactory
-            .getLogger(PersonalAttributeList.class.getName());
+    private abstract static class AbstractKey {
+
+        @Nonnull
+        private final String key;
+
+        AbstractKey(@Nonnull String key) {
+            this.key = key;
+        }
+
+        @Nonnull
+        final String getKey() {
+            return key;
+        }
+
+        @Override
+        public final boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || !(o instanceof AbstractKey)) {
+                return false;
+            }
+
+            AbstractKey other = (AbstractKey) o;
+
+            return key.equals(other.key);
+
+        }
+
+        @Override
+        public final int hashCode() {
+            return key.hashCode();
+        }
+    }
 
     /**
-     * Serial id.
+     * A {@link java.util.Map} key which preserves the order of insertion.
      */
-    private static final long serialVersionUID = 7375127363889975062L;
+    private static final class CustomKey extends AbstractKey implements Comparable<CustomKey> {
+
+        private final long index;
+
+        CustomKey(long index, @Nonnull String key) {
+            super(key);
+            this.index = index;
+        }
+
+        long getIndex() {
+            return index;
+        }
+
+        @Override
+        public int compareTo(@Nonnull CustomKey o) {
+            return Long.compare(index, o.index);
+        }
+    }
 
     /**
-     * Hash with the latest fetched attribute name alias.
+     * A {@link java.util.Map} key used only for Map retrieval operations such as {@link java.util.Map#get(Object)}.
      */
-    private final transient Map<String, Integer> latestAttrAlias =
-            new HashMap<String, Integer>();
+    private static final class RetrievalKey extends AbstractKey {
+
+        RetrievalKey(@Nonnull String key) {
+            super(key);
+        }
+    }
 
     /**
-     * Hash with mapping number of alias or the attribute name.
-     */
-    private final transient Map<String, Integer> attrAliasNumber =
-            new HashMap<String, Integer>();
-    private transient List<String> insertOrder = new ArrayList<String>();
-
-    /**
-     * Obtain the insertOrder Collection
+     * Unfortunately {@link java.util.concurrent.ConcurrentLinkedQueue} does not provide a {@link
+     * Collection#equals(Object)} method.
      *
-     * @return defensive copy of the collection
+     * @param <E> the type of the items
      */
-    List<String> getInsertOrder() {
-        return Collections.unmodifiableList(this.insertOrder);
+    private static final class ConcurrentLinkedQueue<E> extends java.util.concurrent.ConcurrentLinkedQueue<E> {
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == this) {
+                return true;
+            }
+            if (!(o instanceof ConcurrentLinkedQueue)) {
+                return false;
+            }
+
+            Iterator<E> e1 = ConcurrentLinkedQueue.this.iterator();
+            Iterator<?> e2 = ((ConcurrentLinkedQueue<?>) o).iterator();
+            while (e1.hasNext() && e2.hasNext()) {
+                E o1 = e1.next();
+                Object o2 = e2.next();
+                if (!(o1 == null ? o2 == null : o1.equals(o2))) {
+                    return false;
+                }
+            }
+            return !(e1.hasNext() || e2.hasNext());
+        }
+
+        @Override
+        public int hashCode() {
+            return super.hashCode();
+        }
+    }
+
+    /**
+     * Static factory method to copy a {@link PersonalAttributeList}.
+     * <p/>
+     * This method is more robust and flexible than implementing {@link #clone()}.
+     *
+     * @param copy the instance to copy
+     * @return a copy of the given argument
+     */
+    @Nonnull
+    public static PersonalAttributeList copyOf(@Nonnull IPersonalAttributeList copy) {
+        PersonalAttributeList list = new PersonalAttributeList();
+        for (final PersonalAttribute personalAttribute : copy) {
+            list.add(personalAttribute);
+        }
+        return list;
+    }
+
+    /**
+     * Static factory method to copy an {@link eu.eidas.auth.commons.attribute.ImmutableAttributeMap} as a {@link
+     * PersonalAttributeList}.
+     * <p/>
+     *
+     * @param copy the instance to copy
+     * @return a copy of the given argument
+     */
+    @Nonnull
+    public static PersonalAttributeList copyOf(@Nonnull ImmutableAttributeMap copy) {
+        PersonalAttributeList list = new PersonalAttributeList();
+        if (null != copy) {
+            for (final Map.Entry<AttributeDefinition<?>, ImmutableSet<? extends AttributeValue<?>>> entry : copy.getAttributeMap()
+                    .entrySet()) {
+                AttributeDefinition<?> attributeDefinition = entry.getKey();
+                ImmutableSet<? extends AttributeValue<?>> values = entry.getValue();
+                PersonalAttribute personalAttribute =
+                        new PersonalAttribute(attributeDefinition.getNameUri().toASCIIString(),
+                                              attributeDefinition.getFriendlyName());
+                personalAttribute.setEidasLegalPersonAttr(
+                        PersonType.LEGAL_PERSON == attributeDefinition.getPersonType());
+                personalAttribute.setEidasNaturalPersonAttr(
+                        PersonType.NATURAL_PERSON == attributeDefinition.getPersonType());
+                personalAttribute.setIsRequired(attributeDefinition.isRequired());
+                ImmutableList.Builder<String> builder = ImmutableList.builder();
+                // do not marshal, we need raw values to be displayed
+                /*AttributeValueMarshaller<?> attributeValueMarshaller =
+                        attributeDefinition.getAttributeValueMarshaller();*/
+                for (final AttributeValue value : values) {
+                    //try {
+                        //builder.add(attributeValueMarshaller.marshal(value));
+                        builder.add(value.getValue().toString());
+                    /*} catch (AttributeValueMarshallingException e) {
+                        throw new IllegalStateException(e);
+                    }*/
+                }
+                personalAttribute.setValue(builder.build());
+                list.add(personalAttribute);
+            }
+        }
+        return list;
+    }
+
+    /**
+     * Static factory method to convert a {@link PersonalAttributeList} into an {@link
+     * eu.eidas.auth.commons.attribute.ImmutableAttributeMap}.
+     * <p/>
+     *
+     * @param copy the instance to copy
+     * @return a copy of the given argument
+     */
+    @Nonnull
+    public static ImmutableAttributeMap copyOf(@Nonnull IPersonalAttributeList copy,
+                                               @Nonnull AttributeRegistry... attributeRegistries) {
+        ImmutableAttributeMap.Builder builder = ImmutableAttributeMap.builder();
+        for (final PersonalAttribute personalAttribute : copy) {
+            AttributeDefinition<?> attributeDefinition = getByName(personalAttribute.getName(), attributeRegistries);
+            if (!personalAttribute.isEmptyValue()) {
+                List<String> personalAttributeValue = personalAttribute.getValue();
+                ImmutableSet<AttributeValue<?>> attributeValues =
+                        toAttributeValues(attributeDefinition, personalAttributeValue);
+                builder.put((AttributeDefinition) attributeDefinition, (ImmutableSet) attributeValues);
+            } else if (!personalAttribute.isEmptyComplexValue()) {
+                builder.put(attributeDefinition, personalAttribute.getComplexValue().toString());
+            } else if (personalAttribute.isEmpty()) {
+                builder.put(attributeDefinition);
+            }
+
+        }
+        return builder.build();
+    }
+
+    public static ImmutableSet<AttributeValue<?>> toAttributeValues(AttributeDefinition<?> attributeDefinition,
+                                                                    List<String> personalAttributeValues) {
+        AttributeValueMarshaller<?> attributeValueMarshaller = attributeDefinition.getAttributeValueMarshaller();
+        ImmutableSet.Builder<AttributeValue<?>> setBuilder = ImmutableSet.builder();
+        for (final String value : personalAttributeValues) {
+            try {
+                setBuilder.add(attributeValueMarshaller.unmarshal(value, false));
+            } catch (AttributeValueMarshallingException e) {
+                throw new IllegalStateException(e);
+            }
+        }
+        return setBuilder.build();
+    }
+
+    private static AttributeDefinition getByName(String name, @Nonnull AttributeRegistry... attributeRegistries) {
+        for (AttributeRegistry attributeRegistry : attributeRegistries) {
+            AttributeDefinition attributeDefinition = attributeRegistry.getByName(name);
+            if (null != attributeDefinition) {
+                return attributeDefinition;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Static factory method to convert a {@link PersonalAttributeList} into an {@link
+     * eu.eidas.auth.commons.attribute.ImmutableAttributeMap}. Only retains/copies the attributes where an
+     * attributeDefinition is found in the attributeRegistry
+     * <p/>
+     *
+     * @param copy the instance to copy
+     * @param attributeRegistries the attribute registry where the attributes from copy are searched for
+     * @return a copy of the given argument
+     */
+    @Nonnull
+    public static ImmutableAttributeMap retainAttrsExistingInRegistry(@Nonnull IPersonalAttributeList copy,
+                                                                      @Nonnull
+                                                                              AttributeRegistry... attributeRegistries) {
+        ImmutableAttributeMap.Builder builder = ImmutableAttributeMap.builder();
+        for (final PersonalAttribute personalAttribute : copy) {
+            AttributeDefinition<?> attributeDefinition = getByName(personalAttribute.getName(), attributeRegistries);
+            if (null != attributeDefinition) {
+                if (!personalAttribute.isEmptyValue()) {
+                    List<String> personalAttributeValue = personalAttribute.getValue();
+                    ImmutableSet<AttributeValue<?>> attributeValues =
+                            toAttributeValues(attributeDefinition, personalAttributeValue);
+                    builder.put((AttributeDefinition) attributeDefinition, (ImmutableSet) attributeValues);
+                } else if (!personalAttribute.isEmptyComplexValue()) {
+                    builder.put(attributeDefinition, personalAttribute.getComplexValue().toString());
+                } else if (personalAttribute.isEmpty()) {
+                    builder.put(attributeDefinition);
+                }
+            }
+        }
+        return builder.build();
+    }
+
+    @Nullable
+    public static PersonalAttributeList fromString(@Nullable String personalAttributeListString) {
+        if (null == personalAttributeListString) {
+            return null;
+        }
+        return PersonalAttributeString.fromStringList(personalAttributeListString);
+    }
+
+    @Nullable
+    public static String toString(@Nullable PersonalAttributeList personalAttributeList) {
+        if (null == personalAttributeList) {
+            return null;
+        }
+        return PersonalAttributeString.toStringList(personalAttributeList);
+    }
+
+    private final AtomicLong sequence = new AtomicLong(Long.MIN_VALUE);
+
+    /**
+     * Do not inherit from CHM but compose it.
+     */
+    private final ConcurrentMap<CustomKey, ConcurrentLinkedQueue<PersonalAttribute>> map;
+
+    private NavigableMap<CustomKey, ConcurrentLinkedQueue<PersonalAttribute>> asNavigableMap() {
+        return new TreeMap<CustomKey, ConcurrentLinkedQueue<PersonalAttribute>>(map);
+    }
+
+    private PersonalAttributeList(@Nonnull ConcurrentMap<CustomKey, ConcurrentLinkedQueue<PersonalAttribute>> map) {
+        this.map = map;
     }
 
     /**
      * Default constructor.
      */
     public PersonalAttributeList() {
-        // The best practices recommend to call the super constructor.
-        super();
+        this(new ConcurrentHashMap<CustomKey, ConcurrentLinkedQueue<PersonalAttribute>>());
     }
 
     /**
@@ -77,228 +344,210 @@ public final class PersonalAttributeList extends
      *
      * @param capacity The initial capacity for the PersonalAttributeList.
      */
-    public PersonalAttributeList(final int capacity) {
-        super(capacity);
+    public PersonalAttributeList(int capacity) {
+        this(new ConcurrentHashMap<CustomKey, ConcurrentLinkedQueue<PersonalAttribute>>(capacity));
     }
 
     /**
      * {@inheritDoc}
      */
+    @Nonnull
+    @Override
     public Iterator<PersonalAttribute> iterator() {
-        return new OrderedAttributeIterator(this);
-    }
+        final Iterator<ConcurrentLinkedQueue<PersonalAttribute>> outerIterator = map.values().iterator();
+        Iterator<PersonalAttribute> personalAttributeIterator = new Iterator<PersonalAttribute>() {
 
-    /**
-     * {@inheritDoc}
-     */
-    public PersonalAttribute get(final Object key) {
-        String attrName = (String) key;
+            Iterator<PersonalAttribute> currentInnerIterator;
 
-        if (this.latestAttrAlias.containsKey(key)) {
-            attrName = attrName + this.latestAttrAlias.get(key);
-        } else {
-            if (this.attrAliasNumber.containsKey(key)) {
-                this.latestAttrAlias.put(attrName, this.attrAliasNumber.get(key));
+            @Override
+            public boolean hasNext() {
+                return (currentInnerIterator != null && currentInnerIterator.hasNext()) || outerIterator.hasNext();
             }
-        }
-        return super.get(attrName);
-    }
 
-    /**
-     * {@inheritDoc}
-     */
-    public void add(final PersonalAttribute value) {
-        if (value != null) {
-            this.put(value.getName(), value);
-        }
-    }
+            @Override
+            public PersonalAttribute next() {
+                if (null == currentInnerIterator || !currentInnerIterator.hasNext()) {
+                    currentInnerIterator = outerIterator.next().iterator();
 
-    /**
-     * {@inheritDoc}
-     */
-    public PersonalAttribute put(final String key, final PersonalAttribute val) {
-        if (StringUtils.isNotEmpty(key) && val != null) {
-            // Validate if attribute name already exists!
-            String attrAlias = key;
-            if (this.containsKey(attrAlias)) {
-                if (!val.isEmptyValue() && StringUtils.isNumeric(val.getValue().get(0))) {
-                    final String attrValue = val.getValue().get(0);
-                    attrAlias = key + attrValue;
-                    this.attrAliasNumber.put(key, Integer.valueOf(attrValue));
-                } else {
-                    final PersonalAttribute attr = super.get(key);
-                    if (!attr.isEmptyValue()
-                            && StringUtils.isNumeric(attr.getValue().get(0))) {
-                        attrAlias = key + attr.getValue().get(0);
-                        super.put(key, (PersonalAttribute) attr);
-                        this.attrAliasNumber.put(key, null);
-                    }
                 }
-            } else {
-                insertOrder.add(key);
+                return currentInnerIterator.next();
             }
-            return super.put(attrAlias, val);
-        } else {
+
+            @Override
+            public void remove() {
+                if (null != currentInnerIterator) {
+                    currentInnerIterator.remove();
+                }
+                if (null != currentInnerIterator && !currentInnerIterator.hasNext() && null != outerIterator) {
+                        outerIterator.remove();
+                }
+            }
+        };
+        return personalAttributeIterator;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Nullable
+    @Override
+    public PersonalAttribute getByFriendlyName(@Nonnull String friendlyName) {
+        Collection<PersonalAttribute> values = values();
+        if (null == values) {
             return null;
         }
+        for (final PersonalAttribute value : values) {
+            if (value.getFriendlyName().equals(friendlyName)) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Nullable
+    @Override
+    public Collection<PersonalAttribute> values(@Nullable String key) {
+        if (null == key) {
+            return null;
+        }
+        ConcurrentLinkedQueue<PersonalAttribute> personalAttributes = map.get(asRetrievalKey(key));
+        if (null == personalAttributes || personalAttributes.isEmpty()) {
+            return null;
+        }
+        return personalAttributes;
+    }
+
+    private AbstractKey asRetrievalKey(String attrName) {
+        return new RetrievalKey(attrName);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean add(@Nullable PersonalAttribute value) {
+        if (null == value) {
+            return false;
+        }
+        String key = value.getName();
+        if (StringUtils.isEmpty(key)) {
+            return false;
+        }
+        ConcurrentLinkedQueue<PersonalAttribute> existingList = map.get(asRetrievalKey(key));
+        if (null == existingList) {
+            ConcurrentLinkedQueue<PersonalAttribute> newList = new ConcurrentLinkedQueue<PersonalAttribute>();
+            newList.offer(value);
+            existingList = map.putIfAbsent(new CustomKey(sequence.getAndIncrement(), key), newList);
+            if (null == existingList) {
+                return true;
+//            } else {
+//                // already inserted in another thread
+//                sequence.decrementAndGet();
+            }
+        }
+        return existingList.offer(value);
     }
 
     @Override
-    public PersonalAttribute remove(Object key) {
-        insertOrder.remove(key);
-        return super.remove(key);
+    public int size() {
+        int size = 0;
+        for (final ConcurrentLinkedQueue<PersonalAttribute> personalAttributes : map.values()) {
+            size += personalAttributes.size();
+        }
+        return size;
+    }
+
+    @Override
+    public boolean containsFriendlyName(String friendlyName) {
+        return null != getByFriendlyName(friendlyName);
+    }
+
+    @Override
+    public PersonalAttribute getFirst(PersonalAttribute personalAttribute) {
+        if (null == personalAttribute) {
+            return null;
+        }
+        String key = personalAttribute.getName();
+        if (StringUtils.isEmpty(key)) {
+            return null;
+        }
+        ConcurrentLinkedQueue<PersonalAttribute> personalAttributes = map.get(asRetrievalKey(key));
+        if (null == personalAttributes) {
+            return null;
+        }
+        return personalAttributes.peek();
+    }
+
+    @Override
+    public boolean contains(PersonalAttribute personalAttribute) {
+        if (null == personalAttribute) {
+            return false;
+        }
+        String key = personalAttribute.getName();
+        if (StringUtils.isEmpty(key)) {
+            return false;
+        }
+        return map.containsKey(asRetrievalKey(key));
+    }
+
+    @Nullable
+    @Override
+    public PersonalAttribute removeByFriendlyName(@Nonnull String friendlyName) {
+        for (Iterator<ConcurrentLinkedQueue<PersonalAttribute>> i = map.values().iterator(); i.hasNext(); ) {
+            ConcurrentLinkedQueue<PersonalAttribute> queue = i.next();
+            PersonalAttribute personalAttribute = queue.peek();
+            if (null != personalAttribute && personalAttribute.getFriendlyName().equals(friendlyName)) {
+                i.remove();
+                return personalAttribute;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Collection<PersonalAttribute> values() {
+        Collection<ConcurrentLinkedQueue<PersonalAttribute>> values = asNavigableMap().values();
+        ImmutableList.Builder<PersonalAttribute> builder = new ImmutableList.Builder<PersonalAttribute>();
+        for (final ConcurrentLinkedQueue<PersonalAttribute> value : values) {
+            builder.addAll(value);
+        }
+        return builder.build();
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return map.isEmpty();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        PersonalAttributeList that = (PersonalAttributeList) o;
+
+        return map != null ? map.equals(that.map) : that.map == null;
+
+    }
+
+    @Override
+    public int hashCode() {
+        return map != null ? map.hashCode() : 0;
     }
 
     /**
-     * {@inheritDoc}
+     * Use {@link #toString(PersonalAttributeList)} instead.
      */
-    public void populate(final String attrList) {
-        final StringTokenizer strToken =
-                new StringTokenizer(attrList, EIDASValues.ATTRIBUTE_SEP.toString());
-
-        while (strToken.hasMoreTokens()) {
-            final PersonalAttribute persAttr = new PersonalAttribute();
-            String[] tuples =
-                    strToken.nextToken().split(EIDASValues.ATTRIBUTE_TUPLE_SEP.toString(),
-                            AttributeConstants.NUMBER_TUPLES.intValue());
-
-            // Convert to the new format if needed!
-            tuples = convertFormat(tuples);
-
-            if (AttributeUtil.hasValidTuples(tuples)) {
-                final int attrValueIndex =
-                        AttributeConstants.ATTR_VALUE_INDEX.intValue();
-                final String tmpAttrValue =
-                        tuples[attrValueIndex].substring(1,
-                                tuples[attrValueIndex].length() - 1);
-                final String[] vals =
-                        tmpAttrValue.split(EIDASValues.ATTRIBUTE_VALUE_SEP.toString());
-
-                persAttr.setName(tuples[AttributeConstants.ATTR_NAME_INDEX.intValue()]);
-                persAttr.setIsRequired(Boolean
-                        .valueOf(tuples[AttributeConstants.ATTR_TYPE_INDEX.intValue()]));
-                // check if it is a complex value
-                if (tuples[AttributeConstants.ATTR_NAME_INDEX.intValue()]
-                        .equals(EIDASParameters.COMPLEX_ADDRESS_VALUE.toString())) {
-                    persAttr.setComplexValue(createComplexValue(vals));
-                } else {
-                    persAttr.setValue(createValues(vals));
-                }
-
-                if (tuples.length == AttributeConstants.NUMBER_TUPLES.intValue()) {
-                    persAttr.setStatus(tuples[AttributeConstants.ATTR_STATUS_INDEX
-                            .intValue()]);
-                }
-                this.put(tuples[AttributeConstants.ATTR_NAME_INDEX.intValue()],
-                        persAttr);
-
-            } else {
-                LOG.info("BUSINESS EXCEPTION : Invalid personal attribute list tuples");
-            }
-
-        }
+    @Nonnull
+    @Override
+    public String toString() {
+        return PersonalAttributeString.toStringList(this);
     }
-
-  /**
-  * Returns a copy of this <tt>IPersonalAttributeList</tt> instance.
-  *
-  * @return The copy of this IPersonalAttributeList.
-  */
-  public Object clone() {
-      try {
-          PersonalAttributeList theClone= (PersonalAttributeList)super.clone();
-          theClone.insertOrder=new ArrayList<String>(insertOrder);
-          return theClone;
-      } catch (CloneNotSupportedException e) {
-          throw new InternalErrorEIDASException(
-                  EIDASUtil.getConfig(EIDASErrors.INTERNAL_ERROR.errorCode()),
-                  EIDASUtil.getConfig(EIDASErrors.INTERNAL_ERROR.errorMessage()), e);
-      }
-  }
-
-  /**
-   * Creates a string in the following format.
-   *
-   * attrName:attrType:[attrValue1,attrValue2=attrComplexValue]:attrStatus;
-   *
-   * @return {@inheritDoc}
-   */
-  @Override
-  public String toString() {
-      final StringBuilder strBuilder = new StringBuilder();
-      final Iterator<String> iteratorInsertOrder = insertOrder.iterator();
-      while (iteratorInsertOrder.hasNext()) {
-          String key = iteratorInsertOrder.next();
-          final PersonalAttribute attr = get(key);
-          strBuilder.append(attr.toString());
-          if (isNumberAlias(key)) {
-              strBuilder.append(get(key).toString());
-          }
-      }
-      return strBuilder.toString();
-  }
-
-    /**
-     * Validates and creates the attribute's complex values.
-     *
-     * @param values The complex values.
-     * @return The {@link Map} with the complex values.
-     * @see Map
-     */
-    private Map<String, String> createComplexValue(final String[] values) {
-        final Map<String, String> complexValue = new HashMap<String, String>();
-        for (final String val : values) {
-            final String[] tVal = val.split("=");
-            if (StringUtils.isNotEmpty(val) && tVal.length == 2) {
-                complexValue.put(tVal[0], AttributeUtil.unescape(tVal[1]));
-            }
-        }
-        return complexValue;
-    }
-
-    /**
-     * Validates and creates the attribute values.
-     *
-     * @param vals The attribute values.
-     * @return The {@link List} with the attribute values.
-     * @see List
-     */
-    private List<String> createValues(final String[] vals) {
-        final List<String> values = new ArrayList<String>();
-        for (final String val : vals) {
-            if (StringUtils.isNotEmpty(val)) {
-                values.add(AttributeUtil.unescape(val));
-            }
-        }
-        return values;
-    }
-
-    //////////////////
-    /**
-     * Converts the attribute tuple (attrName:attrType...) to the new format.
-     *
-     * @param tuples The attribute tuples to convert.
-     * @return The attribute tuples in the new format.
-     */
-    private String[] convertFormat(final String[] tuples) {
-        final String[] newFormatTuples =
-                new String[AttributeConstants.NUMBER_TUPLES.intValue()];
-        if (tuples != null) {
-            System.arraycopy(tuples, 0, newFormatTuples, 0, tuples.length);
-
-            for (int i = tuples.length; i < newFormatTuples.length; i++) {
-                if (i == AttributeConstants.ATTR_VALUE_INDEX.intValue()) {
-                    newFormatTuples[i] = "[]";
-                } else {
-                    newFormatTuples[i] = "";
-                }
-            }
-        }
-        return newFormatTuples;
-    }
-
-    public boolean isNumberAlias(String key) {
-        return this.attrAliasNumber.containsKey(key);
-    }
-
 }

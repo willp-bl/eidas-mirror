@@ -1,9 +1,9 @@
 package eu.eidas.node;
 
-import eu.eidas.auth.commons.IEIDASSession;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import eu.eidas.auth.commons.IEIDASSession;
 
 /**
  * Class for handling spring bean definition and use it on the servlets

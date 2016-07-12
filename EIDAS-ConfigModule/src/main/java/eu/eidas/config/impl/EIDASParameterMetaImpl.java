@@ -1,5 +1,5 @@
 /*
- * Licensed under the EUPL, Version 1.1 or – as soon they will be approved by
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
  * the European Commission - subsequent versions of the EUPL (the "Licence");
  * You may not use this work except in compliance with the Licence. You may
  * obtain a copy of the Licence at:
@@ -14,11 +14,15 @@
  */
 package eu.eidas.config.impl;
 
-import eu.eidas.config.node.EIDASNodeParameterMeta;
-
-import javax.xml.bind.annotation.*;
-
 import java.util.Set;
+
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlTransient;
+
+import eu.eidas.config.node.EIDASNodeParameterMeta;
 
 @XmlAccessorType(XmlAccessType.NONE)
 public class EIDASParameterMetaImpl extends EIDASNodeParameterMeta{

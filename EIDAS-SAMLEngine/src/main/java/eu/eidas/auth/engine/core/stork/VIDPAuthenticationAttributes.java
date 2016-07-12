@@ -1,11 +1,11 @@
-/* 
- * Licensed under the EUPL, Version 1.1 or – as soon they will be approved by
+/*
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
  * the European Commission - subsequent versions of the EUPL (the "Licence");
  * You may not use this work except in compliance with the Licence. You may
  * obtain a copy of the Licence at:
- * 
+ *
  * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the Licence is distributed on an "AS IS" basis, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -17,13 +17,13 @@ package eu.eidas.auth.engine.core.stork;
 
 import javax.xml.namespace.QName;
 
-import eu.eidas.auth.engine.core.SAMLCore;
-
 import org.opensaml.common.SAMLObject;
+
+import eu.eidas.auth.engine.core.SAMLCore;
 
 /**
  * The Interface VIDPAuthenticationAttributes.
- * 
+ *
  * @author fjquevedo
  */
 public interface VIDPAuthenticationAttributes extends SAMLObject {
@@ -45,30 +45,30 @@ public interface VIDPAuthenticationAttributes extends SAMLObject {
 
     /**
      * Gets the citizen country code.
-     * 
+     *
      * @return the citizen country code
      */
     CitizenCountryCode getCitizenCountryCode();
-    
+
     /**
      * Sets the citizen country code.
-     * 
+     *
      * @param newCitizenCountryCode the new citizen country code
      */
     void setCitizenCountryCode(CitizenCountryCode newCitizenCountryCode);
-    
+
     /**
      * Gets the SP information
-     * 
+     *
      * @return the SP information
      */
     SPInformation getSPInformation();
-    
+
     /**
      * Sets the SP information
-     * 
+     *
      * @param newSPInformation the new SPInformation
      */
     void setSPInformation(SPInformation newSPInformation);
-     
+
 }

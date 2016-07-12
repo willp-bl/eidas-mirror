@@ -1,41 +1,44 @@
 /*
  * This work is Open Source and licensed by the European Commission under the
- * conditions of the European Public License v1.1 
- *  
- * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1); 
- * 
- * any use of this file implies acceptance of the conditions of this license. 
- * Unless required by applicable law or agreed to in writing, software 
- * distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT 
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the 
- * License for the specific language governing permissions and limitations 
+ * conditions of the European Public License v1.1
+ *
+ * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1);
+ *
+ * any use of this file implies acceptance of the conditions of this license.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
  * under the License.
  */
 package eu.eidas.node.auth.connector;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
-import eu.eidas.auth.commons.*;
-import eu.eidas.node.auth.AUNODEUtil;
-import eu.eidas.node.auth.ConcurrentMapService;
-
+import eu.eidas.auth.commons.cache.ConcurrentMapService;
 import org.apache.commons.lang.StringUtils;
 import org.owasp.esapi.StringUtilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import eu.eidas.auth.commons.EidasParameterKeys;
+import eu.eidas.auth.commons.EIDASValues;
+import eu.eidas.auth.commons.WebRequest;
+import eu.eidas.auth.commons.attribute.AttributeDefinition;
+import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
+import eu.eidas.auth.commons.protocol.eidas.LevelOfAssurance;
+import eu.eidas.node.auth.AUNODEUtil;
+
 /**
- * This Util class is used by {@link AUCONNECTORSAML} and
- * {@link AUCONNECTORCountrySelector} to get a configuration from a loaded
- * configuration file or to validate the SP.
+ * This Util class is used by {@link AUCONNECTORSAML} and {@link AUCONNECTORCountrySelector} to get a configuration from
+ * a loaded configuration file or to validate the SP.
  *
- * @author ricardo.ferreira@multicert.com, renato.portela@multicert.com,
- *         luis.felix@multicert.com, hugo.magalhaes@multicert.com,
- *         paulo.ribeiro@multicert.com
+ * @author ricardo.ferreira@multicert.com, renato.portela@multicert.com, luis.felix@multicert.com,
+ *         hugo.magalhaes@multicert.com, paulo.ribeiro@multicert.com
  * @version $Revision: 1.7 $, $Date: 2011-02-18 02:02:39 $
  */
 public final class AUCONNECTORUtil extends AUNODEUtil {
@@ -65,12 +68,13 @@ public final class AUCONNECTORUtil extends AUNODEUtil {
      */
     private int maxQAA;
 
-    public AUCONNECTORUtil(){
+    public AUCONNECTORUtil() {
         // default constructor for use without concurrentMapService
     }
-    public AUCONNECTORUtil(final ConcurrentMapService concurrentMapService){
-            // Obtaining the anti-replay cache service provider defined in configuration and call it for setting up cache
-            setAntiReplayCache(concurrentMapService.getNewAntiReplayCache());
+
+    public AUCONNECTORUtil(final ConcurrentMapService concurrentMapService) {
+        // Obtaining the anti-replay cache service provider defined in configuration and call it for setting up cache
+        setAntiReplayCache(concurrentMapService.getNewMapCache());
     }
 
     /**
@@ -98,18 +102,15 @@ public final class AUCONNECTORUtil extends AUNODEUtil {
         return loadServiceAttribute(pepId, "metadata.url");
     }
 
-    private String loadServiceAttribute(final String pepId, String paramName){
+    private String loadServiceAttribute(final String pepId, String paramName) {
         String retVal = null;
-        final int nServices =
-                Integer.parseInt(configs.getProperty(EIDASParameters.EIDAS_NUMBER
-                        .toString()));
+        final int nServices = Integer.parseInt(configs.getProperty(EidasParameterKeys.EIDAS_NUMBER.toString()));
         LOG.debug("Number of Service: " + nServices);
 
         // load URL
         for (int i = 1; i <= nServices && retVal == null; i++) {
             final String serviceCons = EIDASValues.EIDAS_SERVICE_PREFIX.index(i);
-            if (configs.containsKey(serviceCons)
-                    && configs.getProperty(serviceCons).equals(pepId)) {
+            if (configs.containsKey(serviceCons) && configs.getProperty(serviceCons).equals(pepId)) {
                 retVal = configs.getProperty(EIDASValues.EIDAS_SERVICE_PREFIX.attribute(paramName, i));
                 LOG.debug("Service URL " + retVal);
             }
@@ -127,17 +128,17 @@ public final class AUCONNECTORUtil extends AUNODEUtil {
      */
     public Long loadConfigServiceTimeSkewInMillis(final String serviceId) {
         LOG.trace("loadConfigServiceTimeSkewInMillis");
-        Long retVal=null;
-        if (StringUtils.isEmpty(serviceId)){
+        Long retVal = null;
+        if (StringUtils.isEmpty(serviceId)) {
             LOG.info("BUSINESS EXCEPTION : the serviceId is empty or null !");
             return Long.valueOf(0);
         }
-        final int nServices = Integer.parseInt(configs.getProperty(EIDASParameters.EIDAS_NUMBER.toString()));
+        final int nServices = Integer.parseInt(configs.getProperty(EidasParameterKeys.EIDAS_NUMBER.toString()));
         LOG.debug("Number of Services: " + nServices);
         for (int i = 1; i <= nServices && retVal == null; i++) {
             final String serviceCons = EIDASValues.EIDAS_SERVICE_PREFIX.index(i);
             if (configs.containsKey(serviceCons) && configs.getProperty(serviceCons).equals(serviceId)) {
-                if (StringUtils.isNotEmpty(configs.getProperty(EIDASValues.EIDAS_SERVICE_PREFIX.skew(i)))){
+                if (StringUtils.isNotEmpty(configs.getProperty(EIDASValues.EIDAS_SERVICE_PREFIX.skew(i)))) {
                     retVal = Long.parseLong(configs.getProperty(EIDASValues.EIDAS_SERVICE_PREFIX.skew(i)));
                     LOG.debug("Service SKEW " + retVal);
                 } else {
@@ -150,144 +151,100 @@ public final class AUCONNECTORUtil extends AUNODEUtil {
     }
 
     /**
-     * Checks if a specific Service Provider has the required access level and if
-     * it is a known Service Provider. 
+     * Checks if a specific Service Provider has the required access level and if it is a known Service Provider.
      *
-     * @param parameters       A map of attributes.
+     * @param parameters A map of attributes.
      * @return true is SP is valid; false otherwise.
      * @see Map
      * @see ICONNECTORSAMLService
      */
-    public boolean validateSP(final Map<String, String> parameters) {
+    public boolean validateSP(WebRequest webRequest) {
+        String spID = webRequest.getRequestState().getSpId();
+        String spQAALevel = webRequest.getRequestState().getQaa();
+        String spLoA = webRequest.getRequestState().getLevelOfAssurance();
+        String loadedSpQAALevel = this.loadConfig(spID + ".qaalevel");
 
-        final String spID = parameters.get(EIDASParameters.SP_ID.toString());
-        final String spQAALevel =
-                parameters.get(EIDASParameters.SP_QAALEVEL.toString());
-        final String spLoA =
-                parameters.get(EIDASParameters.EIDAS_SERVICE_LOA.toString());
-        final String loadedSpQAALevel = this.loadConfig(spID + ".qaalevel");
+        if (spLoA == null && (!this.isValidQAALevel(spQAALevel) || (!bypassValidation && !this.isValidSPQAALevel(
+                spQAALevel, loadedSpQAALevel)))) {
 
-        if (spLoA==null && (!this.isValidQAALevel(spQAALevel)
-                || (!bypassValidation && !this.isValidSPQAALevel(spQAALevel,
-                loadedSpQAALevel)))) {
-
-            LOG.info("BUSINESS EXCEPTION : " + spID + " is untrustable or has an invalid QAALevel: "
-                    + spQAALevel);
+            LOG.info("BUSINESS EXCEPTION : " + spID + " is untrustable or has an invalid QAALevel: " + spQAALevel);
             return false;
-        }else if (spLoA!=null && EidasLoaLevels.getLevel(spLoA)==null){
+        } else if (spLoA != null && LevelOfAssurance.getLevel(spLoA) == null) {
             LOG.info("BUSINESS EXCEPTION : " + spID + " is untrustable or has an invalid LoA: " + spLoA);
             return false;
         }
-        LOG.trace("BUSINESS EXCEPTION : " + spID + " is trustable and has either a valid QAALevel: " + spQAALevel+" or a valid LoA: "+spLoA);
+        LOG.trace("BUSINESS EXCEPTION : " + spID + " is trustable and has either a valid QAALevel: " + spQAALevel
+                          + " or a valid LoA: " + spLoA);
         return true;
     }
 
     /**
-     * Checks if the Service Provider's provider name matches the configured
-     * certificate alias. 
-     *
-     * @param providerName The SP's provider name.
-     * @param spCertAlias  The configured SP's alias.
-     * @return true if the SP's alias validations succeeded.
-     */
-    public boolean validateSPCertAlias(final String providerName,
-                                       final String spCertAlias) {
-
-        boolean retVal = true;
-
-        final String providerNameAlias =
-                providerName + EIDASValues.VALIDATION_SUFFIX.toString();
-        final String pnAliasConf = (String) getConfigs().get(providerNameAlias);
-
-        if (StringUtils.isBlank(pnAliasConf)) {
-            LOG.info("BUSINESS EXCEPTION : Couldn't get alias' conf value!");
-            retVal = false;
-        } else {
-            if (!EIDASValues.NONE.toString().equalsIgnoreCase(pnAliasConf)) {
-                retVal =
-                        StringUtils.lowerCase(pnAliasConf).equals(
-                                StringUtils.lowerCase(spCertAlias));
-            }
-        }
-
-        LOG.trace("Alias validation return value: " + retVal);
-        return retVal;
-    }
-
-    /**
-     * Checks if the configured QAALevel is greater than minQAALevel and less than
-     * maxQAALevel.
+     * Checks if the configured QAALevel is greater than minQAALevel and less than maxQAALevel.
      *
      * @param qaaLevel The QAA Level to validate.
      * @return True if the qaaLevel is valid. False otherwise.
      */
     private boolean isValidQAALevel(final String qaaLevel) {
-        return StringUtils.isNumeric(qaaLevel)
-                && Integer.parseInt(qaaLevel) >= this.getMinQAA()
+        return StringUtils.isNumeric(qaaLevel) && Integer.parseInt(qaaLevel) >= this.getMinQAA()
                 && Integer.parseInt(qaaLevel) <= this.getMaxQAA();
     }
 
     /**
-     * Checks if the requested SP's QAALevel is less than configured SP's
-     * QAALevel.
+     * Checks if the requested SP's QAALevel is less than configured SP's QAALevel.
      *
-     * @param spQAALevel   The QAA Level of the SP.
+     * @param spQAALevel The QAA Level of the SP.
      * @param confQAALevel The QAA Level from the configurations.
      * @return True if spQAALevel is valid. False otherwise.
      */
-    private boolean isValidSPQAALevel(final String spQAALevel,
-                                      final String confQAALevel) {
+    private boolean isValidSPQAALevel(final String spQAALevel, final String confQAALevel) {
 
-        return StringUtils.isNumeric(spQAALevel)
-                && StringUtils.isNumeric(confQAALevel)
+        return StringUtils.isNumeric(spQAALevel) && StringUtils.isNumeric(confQAALevel)
                 && Integer.parseInt(confQAALevel) >= Integer.parseInt(spQAALevel);
     }
 
-    private boolean checkPermission(final String permission, final IPersonalAttributeList attributeList){
+    private boolean checkPermission(final String permission, ImmutableAttributeMap requestedAttributes) {
         LOG.trace("List of permitted attributes: " + permission);
         // Creates an array list from a String in the format perm1;perm2;permN;.
-        final String[] perms =
-                permission.split(EIDASValues.ATTRIBUTE_SEP.toString());
-        final List<String> permissions =
-                new ArrayList<String>(Arrays.asList(perms));
-        for (final PersonalAttribute pa : attributeList) {
-            if (!permissions.contains(pa.getName())) {
-                LOG.trace("False:No Permission - " + pa.getName());
+        final String[] perms = permission.split(EIDASValues.ATTRIBUTE_SEP.toString());
+        final Set<String> permissions = new HashSet<String>(Arrays.asList(perms));
+        for (final AttributeDefinition definition : requestedAttributes.getDefinitions()) {
+            if (!permissions.contains(definition.getFriendlyName())) {
+                LOG.trace("False:No Permission - " + definition.getFriendlyName());
                 return false;
             }
         }
         return true;
 
     }
+
     /**
-     * Checks if the Service provider, with the ID spID has access to the
-     * requested attributes.
+     * Checks if the Service provider, with the ID spID has access to the requested attributes.
      *
-     * @param spId          The id of the SP.
+     * @param spId The id of the SP.
      * @param attributeList The requested attributes.
      * @return True if the SP has access to the contents, False otherwise.
-     * @see IPersonalAttributeList
      */
-    public boolean checkContents(final String spId,
-                                 final IPersonalAttributeList attributeList) {
+    @Deprecated
+    public boolean checkContents(String spId, ImmutableAttributeMap requestedAttributes) {
 
-      final String permission = StringUtilities.isEmpty(loadConfig(spId)) ?
-              loadConfig(EIDASValues.DEFAULT.toString()): loadConfig(spId);
+        String loadConfig = loadConfig(spId);
+        final String permission =
+                StringUtilities.isEmpty(loadConfig) ? loadConfig(EIDASValues.DEFAULT.toString()) : loadConfig;
 
-      if(!StringUtilities.isEmpty(permission)) {
-        if (EIDASValues.ALL.toString().equals(permission)) {
-          LOG.debug("True:ALL_VALUES");
-          return true;
-        } else if (EIDASValues.NONE.toString().equals(permission)) {
-          LOG.debug("False:NO_VALUES");
-          return false;
+        if (!StringUtilities.isEmpty(permission)) {
+            if (EIDASValues.ALL.toString().equals(permission)) {
+                LOG.debug("True:ALL_VALUES");
+                return true;
+            } else if (EIDASValues.NONE.toString().equals(permission)) {
+                LOG.debug("False:NO_VALUES");
+                return false;
+            } else {
+                return checkPermission(permission, requestedAttributes);
+            }
         } else {
-            return checkPermission(permission, attributeList);
+            LOG.debug("No attribute configuration found!");
+            return false;
         }
-      }else{
-        LOG.debug("No attribute configuration found!");
-        return false;
-      }
     }
 
     /**

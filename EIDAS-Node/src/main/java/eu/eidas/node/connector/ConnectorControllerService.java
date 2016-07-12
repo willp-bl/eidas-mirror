@@ -1,25 +1,26 @@
 /*
  * This work is Open Source and licensed by the European Commission under the
- * conditions of the European Public License v1.1 
- *  
- * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1); 
- * 
- * any use of this file implies acceptance of the conditions of this license. 
- * Unless required by applicable law or agreed to in writing, software 
- * distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT 
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the 
- * License for the specific language governing permissions and limitations 
+ * conditions of the European Public License v1.1
+ *
+ * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1);
+ *
+ * any use of this file implies acceptance of the conditions of this license.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
  * under the License.
  */
 package eu.eidas.node.connector;
 
-
-import eu.eidas.auth.commons.IEIDASSession;
-import eu.eidas.node.auth.connector.ICONNECTORService;
-import eu.eidas.node.logging.LoggingMarkerMDC;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import eu.eidas.auth.commons.tx.CorrelationMap;
+import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
+import eu.eidas.auth.commons.tx.StoredLightRequest;
+import eu.eidas.node.auth.connector.ICONNECTORService;
+import eu.eidas.node.specificcommunication.ISpecificConnector;
 
 public final class ConnectorControllerService {
 
@@ -30,21 +31,20 @@ public final class ConnectorControllerService {
     /**
      * Connector service.
      */
-    private transient ICONNECTORService connectorService;
+    private ICONNECTORService connectorService;
 
-    /**
-     * Object that stores the session parameters.
-     */
-    private IEIDASSession session;
+    private CorrelationMap<StoredLightRequest> specificSpRequestCorrelationMap;
 
+    private CorrelationMap<StoredAuthenticationRequest> connectorRequestCorrelationMap;
+
+    private ISpecificConnector specificConnector;
 
     /**
      * URL of the Connector authentication service.
      */
     private String nodeAuth;
 
-
-  public String getAssertionConsUrl() {
+    public String getAssertionConsUrl() {
         return assertionConsUrl;
     }
 
@@ -54,15 +54,17 @@ public final class ConnectorControllerService {
 
     /**
      * Setter for connectorService.
+     *
      * @param connectorService The new connectorService value.
      * @see ICONNECTORService
      */
-    public void setConnectorService(final ICONNECTORService connectorService) {
+    public void setConnectorService(ICONNECTORService connectorService) {
         this.connectorService = connectorService;
     }
 
     /**
      * Getter for connectorService.
+     *
      * @return The connectorService value.
      * @see ICONNECTORService
      */
@@ -71,36 +73,12 @@ public final class ConnectorControllerService {
     }
 
     /**
-     * Setter for the session object.
-     * @param nSession The new session value.
-     * @see IEIDASSession
-     */
-    public void setSession(final IEIDASSession nSession) {
-        if (nSession != null){
-            this.session = nSession;
-        }
-        LOG.info(LoggingMarkerMDC.SESSION_CONTENT, "Connector EIDAS-SESSION : setting a new session, size is " + this.session.size());
-    }
-
-    /**
-     * Getter for the session object.
-     *
-     * @return The session object.
-     *
-     * @see IEIDASSession
-     */
-    public IEIDASSession getSession() {
-        return session;
-    }
-
-
-    /**
      * Setter for nodeAuth.
      *
      * @param nodeAuth The new nodeAuth value.
      */
     public void setNodeAuth(final String nodeAuth) {
-      this.nodeAuth = nodeAuth;
+        this.nodeAuth = nodeAuth;
     }
 
     /**
@@ -109,15 +87,40 @@ public final class ConnectorControllerService {
      * @return The nodeAuth value.
      */
     public String getNodeAuth() {
-      return nodeAuth;
+        return nodeAuth;
     }
 
-  @Override
+    public CorrelationMap<StoredLightRequest> getSpecificSpRequestCorrelationMap() {
+        return specificSpRequestCorrelationMap;
+    }
+
+    public void setSpecificSpRequestCorrelationMap(CorrelationMap<StoredLightRequest> specificSpRequestCorrelationMap) {
+        this.specificSpRequestCorrelationMap = specificSpRequestCorrelationMap;
+    }
+
+    public CorrelationMap<StoredAuthenticationRequest> getConnectorRequestCorrelationMap() {
+        return connectorRequestCorrelationMap;
+    }
+
+    public void setConnectorRequestCorrelationMap(CorrelationMap<StoredAuthenticationRequest> connectorRequestCorrelationMap) {
+        this.connectorRequestCorrelationMap = connectorRequestCorrelationMap;
+    }
+
+    public ISpecificConnector getSpecificConnector() {
+        return specificConnector;
+    }
+
+    public void setSpecificConnector(ISpecificConnector specificConnector) {
+        this.specificConnector = specificConnector;
+    }
+
+    @Override
     public String toString() {
         return "ConnectorControllerService{" +
                 ", assertionConsUrl='" + assertionConsUrl + '\'' +
                 ", connectorService=" + connectorService +
-                ", session=" + session +
+                ", specificSpRequestCorrelationMap=" + specificSpRequestCorrelationMap +
+                ", connectorRequestCorrelationMap=" + connectorRequestCorrelationMap +
                 '}';
     }
 }

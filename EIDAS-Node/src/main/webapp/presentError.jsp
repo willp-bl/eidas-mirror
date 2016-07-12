@@ -1,3 +1,5 @@
+<%@ page import="eu.eidas.node.security.SecurityResponseHeaderHelper" %>
+<%@ page import="eu.eidas.node.security.ExtendedServletResponseWrapper" %>
 <!DOCTYPE html>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
@@ -6,6 +8,15 @@
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="e" uri="https://www.owasp.org/index.php/OWASP_Java_Encoder_Project" %>
 <%@ taglib prefix="token" uri="https://eidas.europa.eu/" %>
+
+<%
+    /*  Check if the servlet has removed CSP headers added by filter before */
+    if (!(response instanceof ExtendedServletResponseWrapper)
+            || !((ExtendedServletResponseWrapper) response).hasCSPHeaders()) {
+        /* if the response was rewritten or no CSP flags, place them back if needed */
+        new SecurityResponseHeaderHelper().populateResponseHeader(request, response);
+    }
+%>
 
 <html lang="en">
 

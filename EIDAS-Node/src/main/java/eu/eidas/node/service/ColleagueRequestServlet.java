@@ -22,29 +22,45 @@
 
 package eu.eidas.node.service;
 
-import eu.eidas.auth.commons.*;
-import eu.eidas.auth.engine.core.eidas.EidasAttributesTypes;
-import eu.eidas.auth.engine.core.validator.eidas.EIDASAttributes;
-import eu.eidas.node.NodeBeanNames;
-import eu.eidas.node.NodeViewNames;
-import eu.eidas.node.utils.EidasAttributesUtil;
-import eu.eidas.node.utils.HttpUtil;
-import eu.eidas.node.utils.PropertiesUtil;
-import eu.eidas.node.utils.SessionHolder;
-
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import java.io.IOException;
-import java.util.*;
+import com.google.common.collect.Sets;
 
-public class ColleagueRequestServlet extends AbstractServiceServlet{
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import eu.eidas.auth.commons.EIDASStatusCode;
+import eu.eidas.auth.commons.EIDASValues;
+import eu.eidas.auth.commons.EidasErrorKey;
+import eu.eidas.auth.commons.EidasParameterKeys;
+import eu.eidas.auth.commons.IPersonalAttributeList;
+import eu.eidas.auth.commons.IncomingRequest;
+import eu.eidas.auth.commons.PersonalAttribute;
+import eu.eidas.auth.commons.PersonalAttributeList;
+import eu.eidas.auth.commons.WebRequest;
+import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.stork.IStorkAuthenticationRequest;
+import eu.eidas.auth.commons.tx.CorrelationMap;
+import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
+import eu.eidas.auth.engine.core.eidas.spec.EidasSpec;
+import eu.eidas.node.NodeBeanNames;
+import eu.eidas.node.NodeParameterNames;
+import eu.eidas.node.NodeViewNames;
+import eu.eidas.node.service.validation.NodeParameterValidator;
+import eu.eidas.node.utils.EidasAttributesUtil;
+import eu.eidas.node.utils.PropertiesUtil;
+import eu.eidas.node.utils.SessionHolder;
+
+public class ColleagueRequestServlet extends AbstractServiceServlet {
+
     private static final Logger LOG = LoggerFactory.getLogger(ColleagueRequestServlet.class.getName());
 
     @Override
@@ -53,98 +69,113 @@ public class ColleagueRequestServlet extends AbstractServiceServlet{
     }
 
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        if(acceptsHttpRedirect()) {
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        if (acceptsHttpRedirect()) {
             doPost(request, response);
-        }else {
+        } else {
             LOG.warn("BUSINESS EXCEPTION : redirect binding is not allowed");//TODO: send back an error?
         }
     }
 
     /**
      * Post method
+     *
      * @param request
      * @param response
      * @throws ServletException
      * @throws IOException
      */
     @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
         PropertiesUtil.checkProxyServiceActive();
         // Obtaining the assertion consumer url from SPRING context
-        ServiceControllerService controllerService= (ServiceControllerService) getApplicationContext().getBean(NodeBeanNames.EIDAS_SERVICE_CONTROLLER.toString());
+        ServiceControllerService controllerService = (ServiceControllerService) getApplicationContext().getBean(
+                NodeBeanNames.EIDAS_SERVICE_CONTROLLER.toString());
 
-        final IEIDASSession session = controllerService.getSession();
-        LOG.trace("Session content before clear " + session);
-        session.clear();
-        LOG.trace("== SESSION : Clear");
+        CorrelationMap<StoredAuthenticationRequest> requestCorrelationMap = controllerService.getProxyServiceRequestCorrelationMap();
+
         // Prevent cookies from being accessed through client-side script WITHOUT renew of session.
         setHTTPOnlyHeaderToSession(false, request, response);
         SessionHolder.setId(request.getSession());
-        request.getSession().setAttribute(EIDASParameters.SAML_PHASE.toString(), EIDASValues.EIDAS_SERVICE_REQUEST);
+        request.getSession().setAttribute(EidasParameterKeys.SAML_PHASE.toString(), EIDASValues.EIDAS_SERVICE_REQUEST);
 
         // Obtains the parameters from httpRequest
-        final Map<String, String> httpParameters = getHttpRequestParameters(request);
+        WebRequest webRequest = new IncomingRequest(request);
 
         // Validating the only HTTP parameter: SAMLRequest.
-        final String samlRequest = httpParameters.get(EIDASParameters.SAML_REQUEST.toString());
-        EIDASUtil.validateParameter(this.getClass().getCanonicalName(), EIDASParameters.SAML_REQUEST.toString(), samlRequest, EIDASErrors.COLLEAGUE_REQ_INVALID_SAML);
+        String samlRequest = webRequest.getEncodedLastParameterValue(EidasParameterKeys.SAML_REQUEST);
+        NodeParameterValidator.paramName(EidasParameterKeys.SAML_REQUEST)
+                .paramValue(samlRequest)
+                .eidasError(EidasErrorKey.COLLEAGUE_REQ_INVALID_SAML)
+                .validate();
 
         // Storing the Remote Address and Host for auditing proposes.
-        session.put(EIDASParameters.REMOTE_ADDR.toString(), httpParameters.get(EIDASParameters.REMOTE_ADDR.toString()));
+        String remoteIpAddress = webRequest.getRemoteIpAddress();
 
         // Validating the optional HTTP Parameter relayState.
-        final String relayState = httpParameters.get(EIDASParameters.RELAY_STATE.toString());
+        String relayState = webRequest.getEncodedLastParameterValue(NodeParameterNames.RELAY_STATE.toString());
         LOG.debug("Saving ProxyService relay state. " + relayState);
-        session.put(EIDASParameters.RELAY_STATE.toString(), relayState);
-        httpParameters.put(EIDASParameters.HTTP_METHOD.toString(), request.getMethod());
+
         // Obtaining the authData
-        final EIDASAuthnRequest authData = controllerService.getProxyService().processAuthenticationRequest(httpParameters, session);
-        if (!StringUtils.isBlank(relayState)) { // RelayState's HTTP Parameter is optional!
-            EIDASUtil.validateParameter(this.getClass().getCanonicalName(), EIDASParameters.RELAY_STATE.toString(), relayState, EIDASErrors.SPROVIDER_SELECTOR_INVALID_RELAY_STATE);
+        IAuthenticationRequest authData = controllerService.getProxyService()
+                .processAuthenticationRequest(webRequest, relayState, requestCorrelationMap, remoteIpAddress);
+        if (StringUtils.isNotBlank(relayState)) { // RelayState's HTTP Parameter is optional!
+            NodeParameterValidator.paramName(NodeParameterNames.RELAY_STATE)
+                    .paramValue(relayState)
+                    .eidasError(EidasErrorKey.SPROVIDER_SELECTOR_INVALID_RELAY_STATE)
+                    .validate();
         }
         // Validating the personal attribute list
-        final IPersonalAttributeList persAttrList = authData.getPersonalAttributeList();
-        EIDASUtil.validateParameter(this.getClass().getCanonicalName(), EIDASParameters.ATTRIBUTE_LIST.toString(), persAttrList);
+        IPersonalAttributeList persAttrList = PersonalAttributeList.copyOf(authData.getRequestedAttributes());
         List<PersonalAttribute> attrList = new ArrayList<PersonalAttribute>();
-        Boolean eidasAttributes=false;
-        for(PersonalAttribute pa:persAttrList){
-            //should use the iterator because it provides the items in their insert order
-            EidasAttributesTypes eat = EIDASAttributes.getAttributeType(pa.getFullName());
-            pa.setEidasLegalPersonAttr(eat!=null &&(eat==EidasAttributesTypes.LEGAL_PERSON_MANDATORY||eat==EidasAttributesTypes.LEGAL_PERSON_OPTIONAL));
-            pa.setEidasNaturalPersonAttr(eat != null && (eat == EidasAttributesTypes.NATURAL_PERSON_MANDATORY || eat == EidasAttributesTypes.NATURAL_PERSON_OPTIONAL));
-            if(eat!=null){
-                eidasAttributes=true;
-            }
+
+        boolean hasEidasAttributes = !Sets.intersection(EidasSpec.REGISTRY.getAttributes(),
+                                                        authData.getRequestedAttributes().getDefinitions()).isEmpty();
+        //ImmutablePersonalAttributeSet
+        for (PersonalAttribute pa : persAttrList) {
             attrList.add(pa);
         }
         String redirectUrl = authData.getAssertionConsumerServiceURL();
         LOG.debug("RedirectUrl: " + redirectUrl);
         // Validating the citizenConsentUrl
-        EIDASUtil.validateParameter(this.getClass().getCanonicalName(),EIDASParameters.EIDAS_SERVICE_REDIRECT_URL.toString(), controllerService.getCitizenConsentUrl(), EIDASErrors.COLLEAGUE_REQ_INVALID_DEST_URL);
-        LOG.debug("sessionId is on cookies () or fromURL ", request.isRequestedSessionIdFromCookie(), request.isRequestedSessionIdFromURL());
-        request.setAttribute(NodeBeanNames.SAML_TOKEN_FAIL.toString(), controllerService.getProxyService().generateSamlTokenFail(authData, EIDASErrors.CITIZEN_RESPONSE_MANDATORY, httpParameters.get(EIDASParameters.REMOTE_ADDR.toString())));
-        request.setAttribute(NodeBeanNames.SP_ID.toString(), authData.getProviderName());
-        request.setAttribute(NodeBeanNames.QAA_LEVEL.toString(), authData.getQaa());
-        request.setAttribute(NodeBeanNames.LOA_VALUE.toString(), EidasAttributesUtil.getUserFriendlyLoa(authData.getEidasLoA()));
-        request.setAttribute(NodeBeanNames.CITIZEN_CONSENT_URL.toString(), encodeURL(controllerService.getCitizenConsentUrl(), response)); // Correct URl redirect cookie implementation
-        request.setAttribute(NodeBeanNames.ATTR_LIST.toString(), attrList);
-        request.setAttribute(NodeBeanNames.REDIRECT_URL.toString(), encodeURL(redirectUrl, response));// Correct URl redirect cookie implementation
-        request.setAttribute(NodeBeanNames.EIDAS_ATTRIBUTES_PARAM.toString(), eidasAttributes);
+        NodeParameterValidator.paramName(EidasParameterKeys.EIDAS_SERVICE_REDIRECT_URL)
+                .paramValue(controllerService.getCitizenConsentUrl())
+                .eidasError(EidasErrorKey.COLLEAGUE_REQ_INVALID_DEST_URL)
+                .validate();
+        LOG.debug("sessionId is on cookies () or fromURL ", request.isRequestedSessionIdFromCookie(),
+                  request.isRequestedSessionIdFromURL());
 
-        if (controllerService.isAskConsentType()) {
-            RequestDispatcher dispatcher = request.getRequestDispatcher(encodeURL(NodeViewNames.EIDAS_SERVICE_PRESENT_CONSENT.toString(), response));
-            dispatcher.forward(request, response);
-        } else {
-            String forwardUrl;
-            if(request.getMethod()==EIDASAuthnRequest.BINDING_REDIRECT) {
-                forwardUrl = HttpUtil.rebuildGetUrl(NodeViewNames.EIDAS_SERVICE_NO_CONSENT.toString(), request, response);
-            }else {
-                forwardUrl = encodeURL(NodeViewNames.EIDAS_SERVICE_NO_CONSENT.toString(), response);
-            }
-            RequestDispatcher dispatcher = request.getRequestDispatcher(forwardUrl);
-            dispatcher.forward(request, response);
+        request.setAttribute(NodeParameterNames.SAML_TOKEN_FAIL.toString(), controllerService.getProxyService()
+                .generateSamlTokenFail(authData, EIDASStatusCode.REQUESTER_URI.toString(), EidasErrorKey.CITIZEN_RESPONSE_MANDATORY, remoteIpAddress));
+
+        request.setAttribute(EidasParameterKeys.SP_ID.toString(), authData.getProviderName());
+        if (authData instanceof IStorkAuthenticationRequest) {
+            request.setAttribute(NodeParameterNames.QAA_LEVEL.toString(),
+                                 ((IStorkAuthenticationRequest) authData).getQaa());
         }
-    }
 
+        request.setAttribute(NodeParameterNames.LOA_VALUE.toString(),
+                             EidasAttributesUtil.getUserFriendlyLoa(authData.getLevelOfAssurance()));
+        request.setAttribute(NodeParameterNames.CITIZEN_CONSENT_URL.toString(),
+                             encodeURL(controllerService.getCitizenConsentUrl(),
+                                       response)); // Correct URl redirect cookie implementation
+        request.setAttribute(NodeParameterNames.ATTR_LIST.toString(), attrList);
+        request.setAttribute(NodeParameterNames.REDIRECT_URL.toString(),
+                             encodeURL(redirectUrl, response));// Correct URl redirect cookie implementation
+        request.setAttribute(NodeParameterNames.EIDAS_ATTRIBUTES_PARAM.toString(), Boolean.valueOf(hasEidasAttributes));
+
+        request.setAttribute(NodeParameterNames.REQUEST_ID.toString(), authData.getId());
+        request.setAttribute(NodeParameterNames.COLLEAGUE_REQUEST.toString(), authData);
+
+        NodeViewNames forwardUrl;
+        if (controllerService.isAskConsentType()) {
+            forwardUrl = NodeViewNames.EIDAS_SERVICE_PRESENT_CONSENT;
+        } else {
+            forwardUrl = NodeViewNames.EIDAS_SERVICE_NO_CONSENT;
+        }
+        RequestDispatcher dispatcher = request.getRequestDispatcher(forwardUrl.toString());
+        dispatcher.forward(request, response);
+    }
 }

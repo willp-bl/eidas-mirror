@@ -1,5 +1,5 @@
 /*
- * Licensed under the EUPL, Version 1.1 or – as soon they will be approved by
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
  * the European Commission - subsequent versions of the EUPL (the "Licence");
  * You may not use this work except in compliance with the Licence. You may
  * obtain a copy of the Licence at:
@@ -14,20 +14,20 @@
  */
 package eu.eidas.config.impl;
 
-import eu.eidas.config.impl.marshaller.EIDASMetadataUnmarshallerImpl;
-import eu.eidas.config.node.EIDASNodeMetaconfigProvider;
-import eu.eidas.config.node.EIDASNodeParameterCategory;
-import eu.eidas.config.node.EIDASNodeParameterMeta;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import eu.eidas.auth.commons.EidasStringUtil;
+import eu.eidas.config.impl.marshaller.EIDASMetadataUnmarshallerImpl;
+import eu.eidas.config.node.EIDASNodeMetaconfigProvider;
+import eu.eidas.config.node.EIDASNodeParameterCategory;
+import eu.eidas.config.node.EIDASNodeParameterMeta;
 
 /**
  *
@@ -92,7 +92,7 @@ public class EIDASNodeMetaconfigProviderImpl extends EIDASNodeMetaconfigProvider
             is = EIDASNodeMetaconfigProviderImpl.class.getResourceAsStream("/EIDASNodemetadata.xml");
             byte data[]=new byte[is.available()];
             is.read(data);
-            holder = (new EIDASMetadataUnmarshallerImpl()).readNodeMetadataFromString(new String(data, Charset.forName("UTF-8")));
+            holder = new EIDASMetadataUnmarshallerImpl().readNodeMetadataFromString(EidasStringUtil.toString(data));
         }catch(IOException ioe){
             LOG.error("error loading parameter metadata", ioe.getMessage());
             LOG.debug("error loading parameter metadata", ioe);

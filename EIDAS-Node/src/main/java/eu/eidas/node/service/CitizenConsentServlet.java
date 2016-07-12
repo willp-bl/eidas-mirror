@@ -22,30 +22,33 @@
 
 package eu.eidas.node.service;
 
-import eu.eidas.auth.commons.*;
-import eu.eidas.auth.commons.exceptions.AbstractEIDASException;
-import eu.eidas.auth.commons.exceptions.InvalidSessionEIDASException;
-import eu.eidas.node.ApplicationContextProvider;
-import eu.eidas.node.NodeBeanNames;
-import eu.eidas.node.NodeViewNames;
-import eu.eidas.node.auth.service.AUSERVICEUtil;
-import eu.eidas.node.security.Token;
-import eu.eidas.node.utils.HttpUtil;
+import java.io.IOException;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import java.io.IOException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-/**
- * @author vanegdi
- */
+import eu.eidas.auth.commons.EidasErrorKey;
+import eu.eidas.auth.commons.EidasErrors;
+import eu.eidas.auth.commons.IncomingRequest;
+import eu.eidas.auth.commons.WebRequest;
+import eu.eidas.auth.commons.exceptions.AbstractEIDASException;
+import eu.eidas.auth.commons.exceptions.InvalidSessionEIDASException;
+import eu.eidas.auth.commons.light.impl.LightRequest;
+import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
+import eu.eidas.auth.commons.tx.CorrelationMap;
+import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
+import eu.eidas.node.NodeBeanNames;
+import eu.eidas.node.NodeParameterNames;
+import eu.eidas.node.security.Token;
+import eu.eidas.node.specificcommunication.ISpecificProxyService;
+import eu.eidas.node.specificcommunication.exception.SpecificException;
+
 public class CitizenConsentServlet extends AbstractServiceServlet {
+
     private static final Logger LOG = LoggerFactory.getLogger(CitizenConsentServlet.class.getName());
 
     @Override
@@ -54,10 +57,11 @@ public class CitizenConsentServlet extends AbstractServiceServlet {
     }
 
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        if(acceptsHttpRedirect()) {
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        if (acceptsHttpRedirect()) {
             doPost(request, response);
-        }else {
+        } else {
             LOG.info("DoGet called but redirect binding is not allowed");
         }
     }
@@ -65,58 +69,63 @@ public class CitizenConsentServlet extends AbstractServiceServlet {
     /**
      * Post method
      *
-     * @param request
-     * @param response
+     * @param request the request
+     * @param response the response
      * @throws javax.servlet.ServletException
      * @throws java.io.IOException
      */
     @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
         try {
-            ServiceControllerService controllerService = (ServiceControllerService) getApplicationContext().getBean(NodeBeanNames.EIDAS_SERVICE_CONTROLLER.toString());
-            final IEIDASSession session = controllerService.getSession();
-            synchronized (session) {
-                LOG.debug("Session content " + session);
-                if (session.get(EIDASParameters.AUTH_REQUEST.toString()) == null || session.get(EIDASParameters.REMOTE_ADDR.toString()) == null) {
-                    LOG.info("BUSINESS EXCEPTION : Session is null or has missing attributes!");
-                    throw new InvalidSessionEIDASException(EIDASUtil.getConfig(EIDASErrors.INVALID_SESSION.errorCode()),
-                            EIDASUtil.getConfig(EIDASErrors.INVALID_SESSION.errorMessage()));
-                }
+            ServiceControllerService controllerService = (ServiceControllerService) getApplicationContext().getBean(
+                    NodeBeanNames.EIDAS_SERVICE_CONTROLLER.toString());
+
+            // We arrive with an attribute if there was no consent:
+            String samlRequestId = (String) request.getAttribute(NodeParameterNames.REQUEST_ID.toString());
+            StoredAuthenticationRequest storedRequest = null;
+
+            if (null == samlRequestId) {
+                // We arrive with a parameter if there was a consent and the consent form was submitted:
+                samlRequestId = request.getParameter(NodeParameterNames.REQUEST_ID.toString());
             }
+
+            if (null != samlRequestId) {
+                CorrelationMap<StoredAuthenticationRequest> requestCorrelationMap =
+                        controllerService.getProxyServiceRequestCorrelationMap();
+                storedRequest = requestCorrelationMap.get(samlRequestId);
+            }
+
+            if (null == storedRequest) {
+                LOG.info("BUSINESS EXCEPTION : Session is null or has missing attributes!");
+                throw new InvalidSessionEIDASException(EidasErrors.get(EidasErrorKey.INVALID_SESSION.errorCode()),
+                                                       EidasErrors.get(EidasErrorKey.INVALID_SESSION.errorMessage()));
+            }
+
+            request.setAttribute(NodeParameterNames.REQUEST_ID.toString(), samlRequestId);
 
             // Prevent cookies from being accessed through client-side script.
             setHTTPOnlyHeaderToSession(false, request, response);
             // Checking for CSRF token
-            if(controllerService.isAskConsentType()) {
+            if (controllerService.isAskConsentType()) {
                 Token.checkToken(request);
             }
             // Obtains the parameters from httpRequest
-            IPersonalAttributeList attrList = controllerService.getProxyService().processCitizenConsent(getHttpRequestParameters(request), session, controllerService.isAskConsentType());
-            // Correct URl redirect cookie implementation
-            String callbackURL=encodeURL(controllerService.getCallBackURL(), response);
+            WebRequest webRequest = new IncomingRequest(request);
+            IAuthenticationRequest authenticationRequest = controllerService.getProxyService()
+                    .processCitizenConsent(webRequest, storedRequest, controllerService.isAskConsentType());
 
-            request.setAttribute(NodeBeanNames.ATTR_LIST.toString(), attrList);
-            request.setAttribute(NodeBeanNames.CALLBACK_URL.toString(), callbackURL);
-            boolean signIdpResponseAssertion=false, forceEncryptIdpResponse=false;
-            AUSERVICEUtil util= ApplicationContextProvider.getApplicationContext().getBean(AUSERVICEUtil.class);
-            if(util!=null && util.getConfigs()!=null && Boolean.valueOf(util.getConfigs().getProperty(EIDASParameters.RESPONSE_SIGN_ASSERTION.toString()))) {
-                signIdpResponseAssertion=true;
-            }
-            if(util!=null && util.getConfigs()!=null && Boolean.valueOf(util.getConfigs().getProperty(EIDASParameters.RESPONSE_ENCRYPT_ASSERTION.toString()))) {
-                forceEncryptIdpResponse = true;
-            }
-            request.setAttribute(EIDASParameters.RESPONSE_SIGN_ASSERTION.toString(), signIdpResponseAssertion);
-            request.setAttribute(EIDASParameters.RESPONSE_ENCRYPT_ASSERTION.toString(), forceEncryptIdpResponse);
+            // send the request to the specific module:
+            ISpecificProxyService specificProxyService = controllerService.getSpecificProxyService();
+            LightRequest specificRequest = LightRequest.builder(authenticationRequest).build();
+            specificProxyService.sendRequest(specificRequest, request, response);
 
-            String citizenAuthURL=NodeViewNames.CITIZEN_AUTHENTICATION.toString();
-            if(request.getMethod()==EIDASAuthnRequest.BINDING_REDIRECT) {
-                citizenAuthURL = HttpUtil.rebuildGetUrl(citizenAuthURL, request, response);
-            }
-            RequestDispatcher dispatcher = request.getRequestDispatcher(citizenAuthURL);
-            dispatcher.forward(request, response);
         } catch (AbstractEIDASException e) {
-            LOG.info("BUSINESS EXCEPTION : ", e.getErrorMessage());
+            LOG.info("BUSINESS EXCEPTION : " + e, e);
             throw e;
+        } catch (SpecificException e) {
+            LOG.info("BUSINESS EXCEPTION : " + e, e);
+            throw new ServletException(e);
         }
     }
 }

@@ -14,25 +14,22 @@
 package eu.eidas.node.auth.metadata;
 
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 
+import com.google.common.cache.CacheBuilder;
 
 /**
  * implements a caching service using hashmap
  */
-public class SimpleMetadataCaching extends AbstractMetadataCaching {
-    private ConcurrentMap<String, SerializedEntityDescriptor> map;
+public final class SimpleMetadataCaching extends AbstractMetadataCaching {
 
-    public SimpleMetadataCaching(){
-        super();
-    }
-    protected Map<String, SerializedEntityDescriptor> getMap(){
-        if(map==null){
-            synchronized(this) {
-                map = new ConcurrentHashMap<String, SerializedEntityDescriptor>();
-            }
-        }
+    private final ConcurrentMap<String, SerializedEntityDescriptor> map = CacheBuilder.newBuilder()
+            .expireAfterAccess(1L, TimeUnit.DAYS)
+            .maximumSize(10000L).<String, SerializedEntityDescriptor>build().asMap();
+
+    @Override
+    protected Map<String, SerializedEntityDescriptor> getMap() {
         return map;
     }
 }

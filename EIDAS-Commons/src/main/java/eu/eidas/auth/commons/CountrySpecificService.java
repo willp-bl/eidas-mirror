@@ -4,13 +4,15 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
+
 /**
  * handler for specific actions for a country
  */
 public abstract class CountrySpecificService {
     private boolean active=false;
     public static final String SAML_RESPONSE_ERROR="SAML_RESPONSE_ERROR";
-    public CountrySpecificService() {
+    protected CountrySpecificService() {
     }
 
     /**
@@ -25,7 +27,7 @@ public abstract class CountrySpecificService {
      * @param authData
      * enrich the request with parameters needed by the country web component (included in eDAIS Node)
      */
-    public abstract void prepareRequest(HttpServletRequest req, EIDASAuthnRequest authData);
+    public abstract void prepareRequest(HttpServletRequest req, IAuthenticationRequest authData);
 
     /**
      *

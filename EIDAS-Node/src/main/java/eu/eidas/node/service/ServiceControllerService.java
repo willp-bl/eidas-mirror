@@ -22,41 +22,27 @@
 
 package eu.eidas.node.service;
 
-import eu.eidas.auth.commons.IEIDASSession;
+import eu.eidas.auth.commons.tx.CorrelationMap;
+import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
 import eu.eidas.node.auth.service.ISERVICEService;
-import eu.eidas.node.logging.LoggingMarkerMDC;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import eu.eidas.node.specificcommunication.ISpecificProxyService;
 
 public class ServiceControllerService {
-    private static final Logger LOG = LoggerFactory.getLogger(ServiceControllerService.class.getName());
 
-    private IEIDASSession session;
+    private CorrelationMap<StoredAuthenticationRequest> proxyServiceRequestCorrelationMap;
+
+    private ISpecificProxyService specificProxyService;
+
     private boolean askConsentType;
+
     private String citizenConsentUrl;
-    private String callBackURL;
 
-
-    /**
-     * Setter for the session object.
-     * @param nSession The new session value.
-     * @see IEIDASSession
-     */
-    public final void setSession(final IEIDASSession nSession) {
-        if (nSession != null){
-            this.session = nSession;
-        }
-        LOG.info(LoggingMarkerMDC.SESSION_CONTENT, "ProxyService EIDAS-SESSION : setting a new session, size is " + this.session.size());
+    public CorrelationMap<StoredAuthenticationRequest> getProxyServiceRequestCorrelationMap() {
+        return proxyServiceRequestCorrelationMap;
     }
 
-    /**
-     * Getter for the session object.
-     * @return The session object.
-     * @see IEIDASSession
-     */
-    public final IEIDASSession getSession() {
-        return session;
+    public void setProxyServiceRequestCorrelationMap(CorrelationMap<StoredAuthenticationRequest> proxyServiceRequestCorrelationMap) {
+        this.proxyServiceRequestCorrelationMap = proxyServiceRequestCorrelationMap;
     }
 
     public boolean isAskConsentType() {
@@ -75,14 +61,6 @@ public class ServiceControllerService {
         this.citizenConsentUrl = citizenConsentUrl;
     }
 
-    public String getCallBackURL() {
-        return callBackURL;
-    }
-
-    public void setCallBackURL(String callBackURL) {
-        this.callBackURL = callBackURL;
-    }
-
     /**
      * ProxyService service.
      */
@@ -96,14 +74,22 @@ public class ServiceControllerService {
         this.proxyService = proxyService;
     }
 
+    public ISpecificProxyService getSpecificProxyService() {
+        return specificProxyService;
+    }
+
+    public void setSpecificProxyService(ISpecificProxyService specificProxyService) {
+        this.specificProxyService = specificProxyService;
+    }
+
     @Override
     public String toString() {
         return "ServiceControllerService{" +
                 "askConsentType=" + askConsentType +
                 ", citizenConsentUrl='" + citizenConsentUrl + '\'' +
                 ", proxyService=" + proxyService +
-                ", callBackURL=" + callBackURL +
-                ", session=" + session +
+                ", proxyServiceRequestCorrelationMap=" + proxyServiceRequestCorrelationMap +
+                ", specificProxyService=" + specificProxyService +
                 '}';
     }
 }
