@@ -22,10 +22,29 @@ The release also includes the following changes :
 + dynamic configuration for properties used by the SAML Engine, these properties have been extracted from the eIDAS-Node general configuration and allow a more granular configuration (eidas.xml, eidas-specific.xml);
 + implementation of the minimum data set validation based on the attribute registry;
 +implementation of a stable light-weight abstraction layer, exposed as an API and shipped as a library, on top of the OpenSAML library, which would wrap up all the low-level SAML boilerplate code;
-+ implementation of two namespaces http://eidas.europa.eu/attributes/naturalperson and http://eidas.europa.eu/attributes/legalperson; and
-+ remote code execution during object deserialization correction - upgrade the dependency version to commons-collection 3.2.2.
++ implementation of two namespaces http://eidas.europa.eu/attributes/naturalperson and http://eidas.europa.eu/attributes/legalperson;
++ remote code execution during object deserialization correction - upgrade the dependency version to commons-collection 3.2.2; and
++ removal of copyrighted images.
 
 N.B. For compatibility, some APIs  from 1.0.2 have been kept from previous unofficial releases but declared as deprecated. They could disappear in a future release, replaced by the new already provided implementation.
+
+Known bugs in this release
+=================================================
+Error: in logs: "Caused by: java.security.InvalidKeyException: Illegal key size at javax.crypto.Cipher.checkCryptoPerm(Cipher.java:1039"
+Problem: Connector to SP response issuer is set to "http://<url>/EidasNode/ConnectorMetadata" instead of "http://<url>/EidasNode/ConnectorResponderMetadata"
+Issue tracker: https://ec.europa.eu/cefdigital/tracker/browse/EID-25  and
+               https://webgate.ec.europa.eu/CITnet/jira/browse/EIDESIGDSI-45
+Suggested solution: recompile AUCONNECTORSAML.java class (method: processProxyServiceResponse) with the followin change. 
+	Instead of:
+                 AuthenticationResponse connectorResponse = new AuthenticationResponse.Builder(authnResponse).inResponseTo(serviceProviderRequestSamlId)
+                          .issuer(connectorAuthnRequest.getIssuer())
+                          .build();
+        use:
+                 AuthenticationResponse connectorResponse = new AuthenticationResponse.Builder(authnResponse).inResponseTo(serviceProviderRequestSamlId)
+                          .issuer(getConnectorResponderMetadataUrl())
+                          .build();
+
+For further information please contact CEF eID.
 
 ####################### previous releases #######################
 
@@ -53,7 +72,7 @@ The architectural improvements of the Specific module will:
 - Extend the Specific module to cover communications between Service Provider and eIDAS-Node Connector as well as the communications between Identity Provider and the eIDAS-Node Proxy Service. 
 
 Version 1.0 includes the following:
-+ Improvement of the software look and feel; 
++ Improvement of the software look and feel (please note that this user interface visual design is provided for demo purposes and is not intended to be used for your production version);
 + Renaming of the STORK references to eIDAS terminology;
 + Modifications of the eIDAS-Node related to the technical specification:
                 Parametrisation of the signing certificate of the metadata;
