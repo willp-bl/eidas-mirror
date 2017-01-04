@@ -10,7 +10,7 @@ Version 1.0 does not contain any improvements to or enhancements of the Specific
 - Extend the Specific module to cover communications between Service Provider and eIDAS-Node Connector as well as the communications between Identity Provider and the eIDAS-Node Proxy Service. 
 
 Version 1.0 includes the following:
-+ Improvement of the software look and feel; 
++ Improvement of the software look and feel (please note that this user interface visual design is provided for demo purposes and is not intended to be used for your production version); 
 + Renaming of the STORK references to eIDAS terminology;
 + Modifications of the eIDAS-Node related to the technical specification:
                 Parametrisation of the signing certificate of the metadata;
@@ -29,13 +29,18 @@ Extend eIDAS compliance to include communication between IDP and the eIDAS-Node;
                 
 + Security : Update of third party libraries to the latest version(Bouncycastle-XMLSec-XML Santuario-Xalan-Commons-httpClient); 
 + Migration from Maven 2 to Maven 3;
-+ provide new sample of eIDAS Keystore (double key + metadata signature) provided for each  binary.
++ provide new sample of eIDAS Keystore (double key + metadata signature) provided for each  binary;
++ Removal of copyrighted images.
                 
 List of conformance documents and requirements:
 - eIDAS Interoperability Architecture v1.0
 - eIDAS Message Format v1.0
 - eIDAS SAML Attribute Profile v1.0
 - eIDAS - Crypto Requirements for the Interop Framework v1.0
+
+
+For further information please contact CEF eID.
+
 
 ####################### previous releases #######################
 eIDAS Node Build 0.9 Content
