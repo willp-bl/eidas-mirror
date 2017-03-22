@@ -38,9 +38,9 @@ public class PropertiesBasedFileMarshaller<T> implements FileMarshaller<T> {
     @Nonnull
     private final PropertiesConverter<T> propertiesConverter;
 
-    public PropertiesBasedFileMarshaller(@Nonnull PropertiesConverter<T> propertiesConverter) {
-        Preconditions.checkNotNull(propertiesConverter, "propertiesConverter");
-        this.propertiesConverter = propertiesConverter;
+    public PropertiesBasedFileMarshaller(@Nonnull PropertiesConverter<T> propsConverter) {
+        Preconditions.checkNotNull(propsConverter, "propertiesConverter");
+        propertiesConverter = propsConverter;
     }
 
     @Override

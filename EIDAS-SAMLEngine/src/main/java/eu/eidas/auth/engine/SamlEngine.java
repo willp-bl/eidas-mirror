@@ -22,71 +22,14 @@
 
 package eu.eidas.auth.engine;
 
-import java.io.IOException;
-import java.io.StringWriter;
-import java.nio.charset.Charset;
-import java.nio.charset.CharsetEncoder;
-import java.security.cert.X509Certificate;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.xml.namespace.QName;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-
 import com.google.common.annotations.Beta;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-
-import org.apache.commons.lang.StringUtils;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-import org.opensaml.Configuration;
-import org.opensaml.common.SAMLVersion;
-import org.opensaml.common.SignableSAMLObject;
-import org.opensaml.common.xml.SAMLConstants;
-import org.opensaml.saml2.common.Extensions;
-import org.opensaml.saml2.core.Assertion;
-import org.opensaml.saml2.core.Attribute;
-import org.opensaml.saml2.core.AttributeStatement;
-import org.opensaml.saml2.core.AuthnContextClassRef;
-import org.opensaml.saml2.core.AuthnRequest;
-import org.opensaml.saml2.core.Conditions;
-import org.opensaml.saml2.core.Issuer;
-import org.opensaml.saml2.core.NameIDPolicy;
-import org.opensaml.saml2.core.Response;
-import org.opensaml.saml2.core.Status;
-import org.opensaml.saml2.core.StatusCode;
-import org.opensaml.saml2.core.StatusMessage;
-import org.opensaml.saml2.core.Subject;
-import org.opensaml.saml2.core.SubjectConfirmation;
-import org.opensaml.saml2.core.SubjectConfirmationData;
-import org.opensaml.xml.Namespace;
-import org.opensaml.xml.XMLObject;
-import org.opensaml.xml.schema.impl.XSAnyImpl;
-import org.opensaml.xml.schema.impl.XSStringImpl;
-import org.opensaml.xml.signature.KeyInfo;
-import org.opensaml.xml.validation.ValidationException;
-import org.opensaml.xml.validation.ValidatorSuite;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import eu.eidas.auth.commons.EidasErrorKey;
 import eu.eidas.auth.commons.EidasStringUtil;
-import eu.eidas.auth.commons.attribute.AttributeDefinition;
+import eu.eidas.auth.commons.attribute.*;
 import eu.eidas.auth.commons.attribute.AttributeValue;
-import eu.eidas.auth.commons.attribute.AttributeValueMarshaller;
-import eu.eidas.auth.commons.attribute.AttributeValueMarshallingException;
-import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.light.IResponseStatus;
 import eu.eidas.auth.commons.light.impl.ResponseStatus;
 import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
@@ -106,15 +49,42 @@ import eu.eidas.auth.engine.configuration.dom.SamlEngineConfigurationFactory;
 import eu.eidas.auth.engine.core.ExtensionProcessorI;
 import eu.eidas.auth.engine.core.SAMLExtensionFormat;
 import eu.eidas.auth.engine.core.eidas.GenericEidasAttributeType;
-import eu.eidas.auth.engine.xml.opensaml.AssertionUtil;
-import eu.eidas.auth.engine.xml.opensaml.BuilderFactoryUtil;
-import eu.eidas.auth.engine.xml.opensaml.CertificateUtil;
-import eu.eidas.auth.engine.xml.opensaml.SAMLEngineUtils;
-import eu.eidas.auth.engine.xml.opensaml.XmlSchemaUtil;
+import eu.eidas.auth.engine.xml.opensaml.*;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineRuntimeException;
 import eu.eidas.samlengineconfig.CertificateConfigurationManager;
 import eu.eidas.util.Preconditions;
+import org.apache.commons.lang.StringUtils;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.opensaml.Configuration;
+import org.opensaml.common.SAMLVersion;
+import org.opensaml.common.SignableSAMLObject;
+import org.opensaml.common.xml.SAMLConstants;
+import org.opensaml.saml2.common.Extensions;
+import org.opensaml.saml2.core.*;
+import org.opensaml.xml.Namespace;
+import org.opensaml.xml.XMLObject;
+import org.opensaml.xml.schema.impl.XSAnyImpl;
+import org.opensaml.xml.schema.impl.XSStringImpl;
+import org.opensaml.xml.signature.KeyInfo;
+import org.opensaml.xml.validation.ValidationException;
+import org.opensaml.xml.validation.ValidatorSuite;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.xml.namespace.QName;
+import javax.xml.transform.*;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.security.cert.X509Certificate;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Due to business constraints, this class is part of the contract with a DG Taxud project, so keep it as is.
@@ -125,6 +95,7 @@ import eu.eidas.util.Preconditions;
  */
 @Deprecated
 @Beta
+@SuppressWarnings("all")
 public final class SamlEngine extends AbstractSamlEngine implements SamlEngineI {
 
     private static final class LazyDefaultSamlEngines {
@@ -323,10 +294,8 @@ public final class SamlEngine extends AbstractSamlEngine implements SamlEngineI 
         list.add(getExtensionProcessor().generateAttrSimple(attributeDefinition, builder.build()));
     }
 
-    private static final CharsetEncoder LATIN_1_CHARSET_ENCODER = Charset.forName("ISO-8859-1").newEncoder();
-
     public static boolean needsTransliteration(String v) {
-        return !LATIN_1_CHARSET_ENCODER.canEncode(v);
+        return AttributeValueTransliterator.needsTransliteration(v);
     }
 
     @Nullable
@@ -1449,7 +1418,7 @@ public final class SamlEngine extends AbstractSamlEngine implements SamlEngineI 
     /**
      * Validate SAML.
      *
-     * @param tokenSaml the token SAML
+     * @param requestBytes the token SAML
      * @return the signable SAML object
      * @throws EIDASSAMLEngineException the EIDASSAML engine exception
      */
@@ -1616,7 +1585,7 @@ public final class SamlEngine extends AbstractSamlEngine implements SamlEngineI 
     /**
      * Resigns the saml token checking previously if it is encrypted
      *
-     * @param tokenSaml
+     * @param requestBytes
      * @return
      * @throws EIDASSAMLEngineException
      * @deprecated information missing about whom to encrypt the response for

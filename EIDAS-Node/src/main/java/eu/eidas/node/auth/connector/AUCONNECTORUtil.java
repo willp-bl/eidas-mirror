@@ -74,7 +74,7 @@ public final class AUCONNECTORUtil extends AUNODEUtil {
 
     public AUCONNECTORUtil(final ConcurrentMapService concurrentMapService) {
         // Obtaining the anti-replay cache service provider defined in configuration and call it for setting up cache
-        setAntiReplayCache(concurrentMapService.getNewMapCache());
+        setAntiReplayCache(concurrentMapService.getConfiguredMapCache());
     }
 
     /**

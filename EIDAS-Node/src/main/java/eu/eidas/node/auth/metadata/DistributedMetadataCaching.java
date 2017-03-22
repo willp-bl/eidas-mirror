@@ -15,6 +15,9 @@ package eu.eidas.node.auth.metadata;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import eu.eidas.auth.commons.cache.HazelcastInstanceInitializer;
+import eu.eidas.auth.commons.exceptions.InvalidParameterEIDASException;
+import eu.eidas.node.ApplicationContextProvider;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
@@ -23,43 +26,36 @@ import java.util.concurrent.ConcurrentMap;
  * implements a caching service using hazelcast
  */
 public class DistributedMetadataCaching extends AbstractMetadataCaching {
-    private ConcurrentMap<String, SerializedEntityDescriptor> map;
-    private String cacheName;
-    private String hazelcastXmlConfigClassPathFileName;
 
-    private synchronized ConcurrentMap<String, SerializedEntityDescriptor> createMap(){
-        ConcurrentMap<String, SerializedEntityDescriptor> map=null;
-        Config config = new Config();
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
-        map = h.getMap(cacheName);
-        if(map!=null && !map.isEmpty()) {
-            map.clear();
-        }
-        return map;
+    protected ConcurrentMap<String, SerializedEntityDescriptor> map;
+    protected String cacheName;
+    protected HazelcastInstanceInitializer hazelcastInstanceInitializer;
 
-    }
-
+    @Override
     protected Map<String, SerializedEntityDescriptor> getMap(){
         if (map == null) {
-            map = createMap();
+            if (getCacheName() == null) {
+                throw new InvalidParameterEIDASException("Distributed Cache Configuration mismatch");
+            }
+            HazelcastInstance instance = Hazelcast.getHazelcastInstanceByName(hazelcastInstanceInitializer.getHazelcastInstanceName());
+            return instance.getMap(getCacheName());
         }
         return map;
     }
 
-
     public String getCacheName() {
-        return this.cacheName;
+        return cacheName;
     }
-
     public void setCacheName(String cacheName) {
         this.cacheName = cacheName;
     }
 
-    public String getHazelcastXmlConfigClassPathFileName() {
-        return hazelcastXmlConfigClassPathFileName;
+    public HazelcastInstanceInitializer getHazelcastInstanceInitializer() {
+        return hazelcastInstanceInitializer;
     }
 
-    public void setHazelcastXmlConfigClassPathFileName(String hazelcastXmlConfigClassPathFileName) {
-        this.hazelcastXmlConfigClassPathFileName = hazelcastXmlConfigClassPathFileName;
+    public void setHazelcastInstanceInitializer(HazelcastInstanceInitializer hazelcastInstanceInitializer) {
+        this.hazelcastInstanceInitializer = hazelcastInstanceInitializer;
     }
+
 }

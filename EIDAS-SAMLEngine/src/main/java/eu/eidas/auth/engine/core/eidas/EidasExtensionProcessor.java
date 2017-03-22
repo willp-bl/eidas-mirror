@@ -103,6 +103,9 @@ import eu.eidas.auth.engine.xml.opensaml.SAMLEngineUtils;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import eu.eidas.util.Preconditions;
 
+/**
+ * @deprecated ()
+ */
 @Deprecated
 @NotThreadSafe
 public final class EidasExtensionProcessor implements ExtensionProcessorI {
@@ -121,17 +124,7 @@ public final class EidasExtensionProcessor implements ExtensionProcessorI {
 
     public static final Marker SAML_EXCHANGE = MarkerFactory.getMarker("SAML_EXCHANGE");
 
-    @Override
-    public String getRequestValidatorId() {
-        return EIDAS_REQUEST_VALIDATOR_SUITE_ID;
-    }
-
     private static final String EIDAS_RESPONSE_VALIDATOR_SUITE_ID = "eidasResponseValidatorSuiteId";
-
-    @Override
-    public String getResponseValidatorId() {
-        return EIDAS_RESPONSE_VALIDATOR_SUITE_ID;
-    }
 
     /**
      * The default instance only implements the eIDAS specification without any additional attribute.
@@ -160,16 +153,34 @@ public final class EidasExtensionProcessor implements ExtensionProcessorI {
     @Nullable
     private final MetadataSignerI metadataSigner;
 
-    public EidasExtensionProcessor(@Nonnull String eidasAttributesFileName,
-                                   @Nonnull String additionalAttributesFileName,
-                                   @Nullable MetadataFetcherI metadataFetcher,
-                                   @Nullable MetadataSignerI metadataSigner) {
-        Preconditions.checkNotNull(eidasAttributesFileName, "eidasAttributesFileName");
-        Preconditions.checkNotNull(additionalAttributesFileName, "additionalAttributesFileName");
-        this.eidasAttributeRegistry = AttributeRegistries.fromFile(eidasAttributesFileName);
-        this.additionalAttributeRegistry = AttributeRegistries.fromFile(additionalAttributesFileName);
-        this.metadataFetcher = metadataFetcher;
-        this.metadataSigner = metadataSigner;
+    public static final AttributeRegistry.AttributeDefinitionFilter MANDATORY_LEGAL_FILTER =
+            new AttributeRegistry.AttributeDefinitionFilter() {
+                @Override
+                public boolean accept(@Nonnull AttributeDefinition<?> attributeDefinition) {
+                    return attributeDefinition.isRequired()
+                            && attributeDefinition.getPersonType() == PersonType.LEGAL_PERSON;
+                }
+            };
+
+    public static final AttributeRegistry.AttributeDefinitionFilter MANDATORY_NATURAL_FILTER =
+            new AttributeRegistry.AttributeDefinitionFilter() {
+                @Override
+                public boolean accept(@Nonnull AttributeDefinition<?> attributeDefinition) {
+                    return attributeDefinition.isRequired()
+                            && attributeDefinition.getPersonType() == PersonType.NATURAL_PERSON;
+                }
+            };
+
+    public EidasExtensionProcessor(@Nonnull String eidasAttributesFileNameVal,
+                                   @Nonnull String additionalAttributesFileNameVal,
+                                   @Nullable MetadataFetcherI metadataFetcherVal,
+                                   @Nullable MetadataSignerI metadataSignerVal) {
+        Preconditions.checkNotNull(eidasAttributesFileNameVal, "eidasAttributesFileName");
+        Preconditions.checkNotNull(additionalAttributesFileNameVal, "additionalAttributesFileName");
+        eidasAttributeRegistry = AttributeRegistries.fromFile(eidasAttributesFileNameVal);
+        additionalAttributeRegistry = AttributeRegistries.fromFile(additionalAttributesFileNameVal);
+        metadataFetcher = metadataFetcherVal;
+        metadataSigner = metadataSignerVal;
         if (null == metadataFetcher || null == metadataSigner) {
             metadataEncryptionHelper = null;
             metadataSignatureHelper = null;
@@ -179,16 +190,16 @@ public final class EidasExtensionProcessor implements ExtensionProcessorI {
         }
     }
 
-    public EidasExtensionProcessor(@Nonnull AttributeRegistry eidasAttributeRegistry,
-                                   @Nonnull AttributeRegistry additionalAttributeRegistry,
-                                   @Nullable MetadataFetcherI metadataFetcher,
-                                   @Nullable MetadataSignerI metadataSigner) {
-        Preconditions.checkNotNull(eidasAttributeRegistry, "eidasAttributeRegistry");
-        Preconditions.checkNotNull(additionalAttributeRegistry, "additionalAttributeRegistry");
-        this.eidasAttributeRegistry = eidasAttributeRegistry;
-        this.additionalAttributeRegistry = additionalAttributeRegistry;
-        this.metadataFetcher = metadataFetcher;
-        this.metadataSigner = metadataSigner;
+    public EidasExtensionProcessor(@Nonnull AttributeRegistry eidasAttributeRegistryVal,
+                                   @Nonnull AttributeRegistry additionalAttributeRegistryVal,
+                                   @Nullable MetadataFetcherI metadataFetcherVal,
+                                   @Nullable MetadataSignerI metadataSignerVal) {
+        Preconditions.checkNotNull(eidasAttributeRegistryVal, "eidasAttributeRegistry");
+        Preconditions.checkNotNull(additionalAttributeRegistryVal, "additionalAttributeRegistry");
+        eidasAttributeRegistry = eidasAttributeRegistryVal;
+        additionalAttributeRegistry = additionalAttributeRegistryVal;
+        metadataFetcher = metadataFetcherVal;
+        metadataSigner = metadataSignerVal;
         if (null == metadataFetcher || null == metadataSigner) {
             metadataEncryptionHelper = null;
             metadataSignatureHelper = null;
@@ -198,22 +209,35 @@ public final class EidasExtensionProcessor implements ExtensionProcessorI {
         }
     }
 
+    @SuppressWarnings("squid:S2637")
     public EidasExtensionProcessor(@Nonnull AttributeRegistry additionalAttributeRegistry,
                                    @Nullable MetadataFetcherI metadataFetcher,
                                    @Nullable MetadataSignerI metadataSigner) {
         this(EidasSpec.REGISTRY, additionalAttributeRegistry, metadataFetcher, metadataSigner);
     }
 
+    @SuppressWarnings("squid:S2637")
     public EidasExtensionProcessor(@Nonnull String additionalAttributesFileName,
                                    @Nullable MetadataFetcherI metadataFetcher,
                                    @Nullable MetadataSignerI metadataSigner) {
         this(EidasSpec.REGISTRY, AttributeRegistries.fromFile(additionalAttributesFileName), metadataFetcher,
-             metadataSigner);
+                metadataSigner);
     }
 
+    @SuppressWarnings("squid:S2637")
     public EidasExtensionProcessor(@Nullable MetadataFetcherI metadataFetcher,
                                    @Nullable MetadataSignerI metadataSigner) {
         this(EidasSpec.REGISTRY, AttributeRegistries.empty(), metadataFetcher, metadataSigner);
+    }
+
+    @Override
+    public String getRequestValidatorId() {
+        return EIDAS_REQUEST_VALIDATOR_SUITE_ID;
+    }
+
+    @Override
+    public String getResponseValidatorId() {
+        return EIDAS_RESPONSE_VALIDATOR_SUITE_ID;
     }
 
     @Nonnull
@@ -224,7 +248,7 @@ public final class EidasExtensionProcessor implements ExtensionProcessorI {
             throws EIDASSAMLEngineException {
 
         // Validate mandatory parameters
-        request = validateAuthenticationRequest(request, serviceIssuer);
+        IAuthenticationRequest validRequest = validateAuthenticationRequest(request, serviceIssuer);
 
         String id = SAMLEngineUtils.generateNCName();
 
@@ -240,18 +264,18 @@ public final class EidasExtensionProcessor implements ExtensionProcessorI {
         // Add parameter Mandatory
         samlRequest.setIsPassive(Boolean.FALSE);
 
-        samlRequest.setAssertionConsumerServiceURL(request.getAssertionConsumerServiceURL());
+        samlRequest.setAssertionConsumerServiceURL(validRequest.getAssertionConsumerServiceURL());
 
-        samlRequest.setProviderName(request.getProviderName());
+        samlRequest.setProviderName(validRequest.getProviderName());
 
         // Add protocol binding
-        samlRequest.setProtocolBinding(getProtocolBinding(request, coreProperties));
+        samlRequest.setProtocolBinding(getProtocolBinding(validRequest, coreProperties));
 
         // Add parameter optional
         // Destination is mandatory
         // The application must to know the destination
-        if (StringUtils.isNotBlank(request.getDestination())) {
-            samlRequest.setDestination(request.getDestination());
+        if (StringUtils.isNotBlank(validRequest.getDestination())) {
+            samlRequest.setDestination(validRequest.getDestination());
         }
 
         // Consent is optional. Set from SAMLEngine.xml - consent.
@@ -259,8 +283,8 @@ public final class EidasExtensionProcessor implements ExtensionProcessorI {
 
         Issuer issuer = BuilderFactoryUtil.generateIssuer();
 
-        if (request.getIssuer() != null) {
-            issuer.setValue(SAMLEngineUtils.getValidIssuerValue(request.getIssuer()));
+        if (validRequest.getIssuer() != null) {
+            issuer.setValue(SAMLEngineUtils.getValidIssuerValue(validRequest.getIssuer()));
         } else {
             issuer.setValue(coreProperties.getRequester());
         }
@@ -272,13 +296,13 @@ public final class EidasExtensionProcessor implements ExtensionProcessorI {
         }
 
         samlRequest.setIssuer(issuer);
-        addRequestedAuthnContext(request, samlRequest);
+        addRequestedAuthnContext(validRequest, samlRequest);
 
         // Generate format extensions.
-        Extensions formatExtensions = generateExtensions(coreProperties, request);
+        Extensions formatExtensions = generateExtensions(coreProperties, validRequest);
         // add the extensions to the SAMLAuthnRequest
         samlRequest.setExtensions(formatExtensions);
-        addNameIDPolicy(samlRequest, request.getNameIdFormat());
+        addNameIDPolicy(samlRequest, validRequest.getNameIdFormat());
 
         return samlRequest;
     }
@@ -631,24 +655,6 @@ public final class EidasExtensionProcessor implements ExtensionProcessorI {
         return builder.build();
     }
 
-    public static final AttributeRegistry.AttributeDefinitionFilter MANDATORY_LEGAL_FILTER =
-            new AttributeRegistry.AttributeDefinitionFilter() {
-                @Override
-                public boolean accept(@Nonnull AttributeDefinition<?> attributeDefinition) {
-                    return attributeDefinition.isRequired()
-                            && attributeDefinition.getPersonType() == PersonType.LEGAL_PERSON;
-                }
-            };
-
-    public static final AttributeRegistry.AttributeDefinitionFilter MANDATORY_NATURAL_FILTER =
-            new AttributeRegistry.AttributeDefinitionFilter() {
-                @Override
-                public boolean accept(@Nonnull AttributeDefinition<?> attributeDefinition) {
-                    return attributeDefinition.isRequired()
-                            && attributeDefinition.getPersonType() == PersonType.NATURAL_PERSON;
-                }
-            };
-
     public ImmutableSortedSet<AttributeDefinition<?>> getFilteredAttributes(
             @Nonnull AttributeRegistry.AttributeDefinitionFilter filter) {
 
@@ -982,8 +988,8 @@ public final class EidasExtensionProcessor implements ExtensionProcessorI {
             LOG.info("Mandatory naturalPerson attributes not requested : " + mandatoryNaturalAttributes.toString());
         }
         // either all the legal or all the natural mandatory attributes MUST be requested/returned:
-        return ((!requestedLegalSet || mandatoryLegalAttributes.isEmpty()) && (!requestedNaturalSet
-                || mandatoryNaturalAttributes.isEmpty()));
+        return (!requestedLegalSet || mandatoryLegalAttributes.isEmpty()) && (!requestedNaturalSet
+                || mandatoryNaturalAttributes.isEmpty());
 
     }
 
@@ -1048,6 +1054,7 @@ public final class EidasExtensionProcessor implements ExtensionProcessorI {
 
     @Nullable
     @Override
+    @SuppressWarnings("squid:S2583")
     public String getServiceUrl(@Nonnull String issuer, @Nonnull SamlBindingUri bindingUri)
             throws EIDASSAMLEngineException {
         if (null == metadataFetcher || null == metadataSigner) {
@@ -1075,6 +1082,7 @@ public final class EidasExtensionProcessor implements ExtensionProcessorI {
      * @since 1.1
      */
     @Nonnull
+    @SuppressWarnings("squid:S2583")
     private Set<String> getSupportedAttributes(@Nonnull String issuer) throws EIDASSAMLEngineException {
         if (null == metadataFetcher || null == metadataSigner || null == issuer) {
             return Collections.emptySet();
@@ -1096,6 +1104,7 @@ public final class EidasExtensionProcessor implements ExtensionProcessorI {
     }
 
     @Override
+    @SuppressWarnings("squid:S2583")
     public boolean isAcceptableHttpRequest(@Nonnull IAuthenticationRequest authnRequest, @Nullable String httpMethod) {
         try {
             if (metadataFetcher == null || null == metadataSigner) {
@@ -1111,14 +1120,14 @@ public final class EidasExtensionProcessor implements ExtensionProcessorI {
             SPSSODescriptor spDesc = MetadataUtil.getSPSSODescriptor(entityDescriptor);
 
             String metadataAssertionUrl = MetadataUtil.getAssertionConsumerUrl(spDesc);
-            if ((StringUtils.isEmpty(metadataAssertionUrl) || (authnRequest.getAssertionConsumerServiceURL() != null
-                    && !authnRequest.getAssertionConsumerServiceURL().equals(metadataAssertionUrl)))) {
+            if (StringUtils.isEmpty(metadataAssertionUrl) || (authnRequest.getAssertionConsumerServiceURL() != null
+                    && !authnRequest.getAssertionConsumerServiceURL().equals(metadataAssertionUrl))) {
                 throw new InternalErrorEIDASException(
                         EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INVALID_SAML.errorCode()),
                         EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INVALID_SAML.errorMessage()));
             }
 
-            if (StringUtils.isNotBlank(httpMethod)) {
+            if (httpMethod != null && StringUtils.isNotBlank(httpMethod)) {
                 boolean isBindingValid = false;
                 for (AssertionConsumerService asc : spDesc.getAssertionConsumerServices()) {
                     if (httpMethod.equalsIgnoreCase(SAMLEngineUtils.getBindingMethod(asc.getBinding()))) {
@@ -1162,6 +1171,7 @@ public final class EidasExtensionProcessor implements ExtensionProcessorI {
 
     @Nonnull
     @Override
+    @SuppressWarnings("squid:S2583")
     public Response marshallErrorResponse(@Nonnull IAuthenticationRequest request,
                                           @Nonnull IAuthenticationResponse response,
                                           @Nonnull String ipAddress,
@@ -1223,6 +1233,7 @@ public final class EidasExtensionProcessor implements ExtensionProcessorI {
     }
 
     @Nonnull
+    @Override
     public IAuthenticationResponse unmarshallErrorResponse(@Nonnull IAuthenticationResponse errorResponse,
                                                            @Nonnull Response samlErrorResponse,
                                                            @Nonnull String ipAddress,
@@ -1242,6 +1253,7 @@ public final class EidasExtensionProcessor implements ExtensionProcessorI {
      *
      * @param xmlObject
      */
+    @Override
     public void registerResponseNamespace(@Nonnull XMLObject xmlObject) {
         LOG.trace("Set namespaces.");
         xmlObject.getNamespaceManager()
@@ -1463,6 +1475,7 @@ public final class EidasExtensionProcessor implements ExtensionProcessorI {
 
     @Nonnull
     @Override
+    @SuppressWarnings("squid:S2583")
     public IAuthenticationResponse unmarshallResponse(@Nonnull Response response,
                                                       boolean verifyBearerIpAddress,
                                                       @Nullable String userIpAddress,

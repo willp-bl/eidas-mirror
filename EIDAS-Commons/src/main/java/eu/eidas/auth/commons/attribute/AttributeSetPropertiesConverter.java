@@ -126,9 +126,9 @@ public enum AttributeSetPropertiesConverter implements PropertiesConverter<Immut
 
         private final transient int length;
 
-        Suffix(@Nonnull String value) {
-            this.value = value;
-            this.length = value.length();
+        Suffix(@Nonnull String val) {
+            value = val;
+            length = value.length();
         }
 
         @Nonnull

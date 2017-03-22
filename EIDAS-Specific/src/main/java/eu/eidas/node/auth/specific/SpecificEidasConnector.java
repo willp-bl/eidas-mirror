@@ -5,13 +5,14 @@ import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import eu.eidas.auth.commons.EIDASValues;
 import eu.eidas.auth.commons.EidasErrorKey;
 import eu.eidas.auth.commons.EidasErrors;
 import eu.eidas.auth.commons.EidasParameterKeys;
 import eu.eidas.auth.commons.IEIDASConfigurationProxy;
 import eu.eidas.auth.commons.WebRequest;
+import eu.eidas.auth.commons.exceptions.EidasNodeException;
 import eu.eidas.auth.commons.exceptions.InternalErrorEIDASException;
-import eu.eidas.auth.commons.exceptions.InvalidParameterEIDASException;
 import eu.eidas.auth.commons.exceptions.InvalidSessionEIDASException;
 import eu.eidas.auth.commons.light.ILightRequest;
 import eu.eidas.auth.commons.light.ILightResponse;
@@ -20,6 +21,7 @@ import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.IAuthenticationResponse;
 import eu.eidas.auth.commons.protocol.IResponseMessage;
 import eu.eidas.auth.commons.protocol.eidas.IEidasAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.eidas.SpType;
 import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.impl.AuthenticationResponse;
 import eu.eidas.auth.commons.tx.BinaryAuthenticationExchange;
@@ -37,6 +39,8 @@ import eu.eidas.auth.specific.IAUConnector;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 
 import static eu.eidas.auth.engine.xml.opensaml.SAMLEngineUtils.generateNCName;
+import static org.apache.commons.lang.StringUtils.isBlank;
+import static org.apache.commons.lang.StringUtils.isNotBlank;
 
 /**
  * This class is specific on the connector side and should be modified by each member state if they want to use any
@@ -60,7 +64,7 @@ public class SpecificEidasConnector implements IAUConnector {
      */
     private IEIDASConfigurationProxy specificProps;
 
-    private Properties serviceProperties;
+    private Properties configs;
 
     private ProtocolEngineFactory protocolEngineFactory;
 
@@ -102,12 +106,12 @@ public class SpecificEidasConnector implements IAUConnector {
         this.specificProps = specificProps;
     }
 
-    public Properties getServiceProperties() {
-        return serviceProperties;
+    public Properties getConfigs() {
+        return configs;
     }
 
-    public void setServiceProperties(Properties serviceProperties) {
-        this.serviceProperties = serviceProperties;
+    public void setConfigs(Properties configs) {
+        this.configs = configs;
     }
 
     public String getSamlEngine() {
@@ -134,6 +138,13 @@ public class SpecificEidasConnector implements IAUConnector {
         this.metadataFetcher = metadataFetcher;
     }
 
+    // Implement this unique ID generation based on the specific protocol.
+    // It is an override point only if the ID cannot be presented at XXXProtocolProcessor level.
+    protected String generateLRId(IAuthenticationRequest serviceProviderRequest) {
+        String id = generateNCName();
+        return id;
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -141,6 +152,7 @@ public class SpecificEidasConnector implements IAUConnector {
     public ILightRequest processAuthenticationRequest(WebRequest webRequest, byte[] requestFromSP) {
 
         String ipAddress = webRequest.getRemoteIpAddress();
+        String relayState = webRequest.getRelayState();
         String citizenCountryCode = webRequest.getEncodedLastParameterValue(EidasParameterKeys.COUNTRY);
         try {
 
@@ -148,6 +160,9 @@ public class SpecificEidasConnector implements IAUConnector {
 
             IAuthenticationRequest serviceProviderRequest =
                     protocolEngine.unmarshallRequestAndValidate(requestFromSP, citizenCountryCode);
+
+            //validate the SPType
+            validateSPType((EidasAuthenticationRequest) serviceProviderRequest);
 
             // Get the assertionConsumerUrl from metadata and validate
             String assertionConsumerUrl = MetadataUtil.getAssertionConsumerUrlFromMetadata(metadataFetcher,
@@ -164,22 +179,26 @@ public class SpecificEidasConnector implements IAUConnector {
                             .assertionConsumerServiceURL(assertionConsumerUrl)
                             .build();
 
-            LightRequest lightRequest = LightRequest.builder(serviceProviderRequest).id(generateNCName()).build();
+            String lightRequestId = generateLRId(serviceProviderRequest);
+
+            LightRequest lightRequest = LightRequest.builder(serviceProviderRequest).id(lightRequestId).build();
 
             specificSpRequestCorrelationMap.put(lightRequest.getId(), StoredAuthenticationRequest.builder()
                     .remoteIpAddress(ipAddress)
                     .request(serviceProviderRequest)
+                    .relayState(relayState)
                     .build());
             connectorRequestCorrelationMap.put(lightRequest.getId(), StoredLightRequest.builder()
                     .remoteIpAddress(ipAddress)
                     .request(lightRequest)
+                    .relayState(relayState)
                     .build());
 
             return lightRequest;
 
-        } catch (Exception e) {
+        } catch (EIDASSAMLEngineException e) {
             LOG.error("Error processing the Authentication Request", e);
-            throw new InvalidParameterEIDASException(
+            throw new InternalErrorEIDASException(
                     EidasErrors.get(EidasErrorKey.SPROVIDER_SELECTOR_INVALID_SAML.errorCode()),
                     EidasErrors.get(EidasErrorKey.SPROVIDER_SELECTOR_INVALID_SAML.errorMessage()), e);
         }
@@ -277,5 +296,17 @@ public class SpecificEidasConnector implements IAUConnector {
                                                    EidasErrors.get(EidasErrorKey.SESSION.errorMessage()));
         }
         return authenticationRequest;
+    }
+
+    private void validateSPType(EidasAuthenticationRequest eidasAuthenticationRequest) {
+        SpType spType = eidasAuthenticationRequest.getSpType();
+        String metadataSpType = configs.getProperty(EIDASValues.EIDAS_SPTYPE.toString());
+
+        if ((isNotBlank(metadataSpType) && spType != null && !metadataSpType.equalsIgnoreCase(spType.toString()))
+                || (isBlank(metadataSpType) && spType == null)) {
+            LOG.error("BUSINESS EXCEPTION : SPType "+ spType +" is not supported ");
+            throw new EidasNodeException(EidasErrors.get(EidasErrorKey.CONNECTOR_INVALID_SPTYPE.errorCode()),
+                                         EidasErrors.get(EidasErrorKey.CONNECTOR_INVALID_SPTYPE.errorMessage()));
+        }
     }
 }

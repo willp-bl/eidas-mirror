@@ -38,17 +38,17 @@ public final class PropertiesBasedStreamMarshaller<T> implements StreamMarshalle
     private final PropertiesConverter<T> propertiesConverter;
 
     public PropertiesBasedStreamMarshaller(@Nonnull PropertiesFormat propertiesFormat,
-                                           @Nonnull PropertiesConverter<T> propertiesConverter) {
+                                           @Nonnull PropertiesConverter<T> propsConverter) {
         Preconditions.checkNotNull(propertiesFormat, "propertiesFormat");
-        Preconditions.checkNotNull(propertiesConverter, "propertiesConverter");
+        Preconditions.checkNotNull(propsConverter, "propertiesConverter");
         this.useXml = PropertiesFormat.XML == propertiesFormat;
-        this.propertiesConverter = propertiesConverter;
+        propertiesConverter = propsConverter;
     }
 
-    public PropertiesBasedStreamMarshaller(boolean useXml, @Nonnull PropertiesConverter<T> propertiesConverter) {
-        Preconditions.checkNotNull(propertiesConverter, "propertiesConverter");
+    public PropertiesBasedStreamMarshaller(boolean useXml, @Nonnull PropertiesConverter<T> propsConverter) {
+        Preconditions.checkNotNull(propsConverter, "propertiesConverter");
         this.useXml = useXml;
-        this.propertiesConverter = propertiesConverter;
+        propertiesConverter = propsConverter;
     }
 
     @Override

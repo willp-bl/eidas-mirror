@@ -163,13 +163,15 @@ public class TestMDGenerator {
                 spSSO.getKeyDescriptors().get(0).getKeyInfo().getX509Datas().get(0).getX509Certificates().get(0);
         assertNotNull(xmlCert);
         //check that the signature conforms to saml2
-        SAMLSignatureProfileValidator sigProfValidator = new SAMLSignatureProfileValidator();
-        sigProfValidator.validate(spSSO.getSignature());
-        //check that spSSO matches the signature
-        SignatureValidator sigValidator =
+        if (spSSO.getSignature() != null) {
+            SAMLSignatureProfileValidator sigProfValidator = new SAMLSignatureProfileValidator();
+            sigProfValidator.validate(spSSO.getSignature());
+            //check that spSSO matches the signature
+            SignatureValidator sigValidator =
 //                new SignatureValidator(CertificateUtil.toCredential(spSSO.getKeyDescriptors().get(0).getKeyInfo()));
-                new SignatureValidator(((MetadataSignerI)engine.getSigner()).getPublicMetadataSigningCredential());
-        sigValidator.validate(spSSO.getSignature());
+                    new SignatureValidator(((MetadataSignerI) engine.getSigner()).getPublicMetadataSigningCredential());
+            sigValidator.validate(spSSO.getSignature());
+        }
     }
 
     Signature createSampleSignature() {

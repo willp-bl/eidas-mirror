@@ -5,12 +5,14 @@ import javax.annotation.Nonnull;
 import eu.eidas.auth.commons.attribute.AttributeValue;
 import eu.eidas.util.Preconditions;
 
+import java.io.Serializable;
+
 /**
  * Abstract AttributeValue
  *
  * @since 1.1
  */
-public abstract class AbstractAttributeValue<T> implements AttributeValue<T> {
+public abstract class AbstractAttributeValue<T extends Serializable> implements AttributeValue<T> {
 
     private static final long serialVersionUID = 7154869930698510327L;
 
@@ -25,10 +27,10 @@ public abstract class AbstractAttributeValue<T> implements AttributeValue<T> {
      */
     private final boolean nonLatinScriptAlternateVersion;
 
-    protected AbstractAttributeValue(@Nonnull T value, boolean nonLatinScriptAlternateVersion) {
-        Preconditions.checkNotNull(value, "value");
-        this.value = value;
-        this.nonLatinScriptAlternateVersion = nonLatinScriptAlternateVersion;
+    protected AbstractAttributeValue(@Nonnull T val, boolean nonLatinScriptAlternateVer) {
+        Preconditions.checkNotNull(val, "value");
+        value = val;
+        nonLatinScriptAlternateVersion = nonLatinScriptAlternateVer;
     }
 
     @Nonnull
@@ -43,6 +45,7 @@ public abstract class AbstractAttributeValue<T> implements AttributeValue<T> {
     }
 
     @Override
+    @SuppressWarnings("squid:S2097")
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -57,7 +60,6 @@ public abstract class AbstractAttributeValue<T> implements AttributeValue<T> {
             return false;
         }
         return value.equals(that.getValue());
-
     }
 
     @Override

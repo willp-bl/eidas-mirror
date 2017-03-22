@@ -5,6 +5,7 @@ import javax.xml.namespace.QName;
 import org.joda.time.DateTime;
 import org.opensaml.Configuration;
 import org.opensaml.common.SAMLVersion;
+import org.opensaml.common.xml.SAMLConstants;
 import org.opensaml.saml2.common.Extensions;
 import org.opensaml.saml2.common.impl.ExtensionsBuilder;
 import org.opensaml.saml2.core.Assertion;
@@ -140,13 +141,23 @@ public final class BuilderFactoryUtil {
     }
 
     /**
-     * Generate extension.
+     * Generate protocol extension.
      *
      * @return the extensions
      */
     public static Extensions generateExtension() {
         ExtensionsBuilder extensionsBuilder = new ExtensionsBuilder();
-        return extensionsBuilder.buildObject("urn:oasis:names:tc:SAML:2.0:protocol", "Extensions", "saml2p");
+        return extensionsBuilder.buildObject(SAMLConstants.SAML20P_NS, "Extensions", "saml2p");
+    }
+
+    /**
+     * Generate metadata extension.
+     *
+     * @return the extensions
+     */
+    public static Extensions generateMetadataExtension() {
+        ExtensionsBuilder extensionsBuilder = new ExtensionsBuilder();
+        return extensionsBuilder.buildObject(SAMLConstants.SAML20MD_NS, "Extensions", "md");
     }
 
     /**

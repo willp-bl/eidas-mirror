@@ -21,6 +21,51 @@ import eu.eidas.util.Preconditions;
  */
 public final class IncomingRequest implements WebRequest {
 
+    @Nonnull
+    private final Method method;
+
+    @Nonnull
+    private final ImmutableMap<String, ImmutableList<String>> parameterMap;
+
+    @Nonnull
+    private final String remoteIpAddress;
+
+    @Nullable
+    private final String relayState;
+
+    @Nonnull
+    private final RequestState requestState = new IncomingRequestState();
+
+    public IncomingRequest(@Nonnull HttpServletRequest request) {
+        Preconditions.checkNotNull(request, "request");
+        String httpMethod = request.getMethod();
+        Method webMethod = Method.fromString(httpMethod);
+        parameterMap = newParameterMap(request);
+        method = webMethod;
+        remoteIpAddress = getRemoteAddress(request);
+        relayState = getRelayStateFromRequest(request);
+        if (webMethod == null) {
+            throw new IllegalArgumentException("HTTP method \"" + httpMethod + "\" is not supported");
+        }
+    }
+
+    public IncomingRequest(@Nonnull Method webMethod,
+                           @Nonnull ImmutableMap<String, ImmutableList<String>> parameters,
+                           @Nonnull String remoteIpAddr,
+                           @Nullable String relaySt) {
+        method = webMethod;
+        parameterMap = parameters;
+        remoteIpAddress = remoteIpAddr;
+        relayState = relaySt;
+    }
+
+    public IncomingRequest(@Nonnull Method webMethod,
+                           @Nonnull Map<String, String[]> parameterMap,
+                           @Nonnull String remoteIpAddress,
+                           @Nullable String relayState) {
+        this(webMethod, newParameterMap(parameterMap), remoteIpAddress, relayState);
+    }
+
     @Nullable
     private static String encodeForHtmlAttribute(@Nullable String value) {
         if (null == value) {
@@ -61,6 +106,21 @@ public final class IncomingRequest implements WebRequest {
     }
 
     /**
+     * Returns RelayState if supplied in request
+     *
+     * @param request the current request.
+     * @return the remote address from the given request taking into account reverse proxy <em>X-FORWARDED-FOR</em>
+     * headers.
+     * @since 1.1
+     */
+    @Nonnull
+    public static String getRelayStateFromRequest(@Nonnull HttpServletRequest request) {
+        final String relayState = request.getParameter(EidasParameterKeys.RELAY_STATE.toString());
+        return relayState;
+    }
+
+
+    /**
      * Returns an immutable Map of request parameters associated with their corresponding values.
      *
      * @param request the current request
@@ -95,44 +155,6 @@ public final class IncomingRequest implements WebRequest {
             mapBuilder.put(parameterName, listBuilder.build());
         }
         return mapBuilder.build();
-    }
-
-    @Nonnull
-    private final Method method;
-
-    @Nonnull
-    private final ImmutableMap<String, ImmutableList<String>> parameterMap;
-
-    @Nonnull
-    private final String remoteIpAddress;
-
-    @Nonnull
-    private final RequestState requestState = new IncomingRequestState();
-
-    public IncomingRequest(@Nonnull HttpServletRequest request) {
-        Preconditions.checkNotNull(request, "request");
-        String httpMethod = request.getMethod();
-        Method webMethod = Method.fromString(httpMethod);
-        if (null == webMethod) {
-            throw new IllegalArgumentException("HTTP method \"" + httpMethod + "\" is not supported");
-        }
-        parameterMap = newParameterMap(request);
-        method = webMethod;
-        remoteIpAddress = getRemoteAddress(request);
-    }
-
-    public IncomingRequest(@Nonnull Method method,
-                           @Nonnull ImmutableMap<String, ImmutableList<String>> parameterMap,
-                           @Nonnull String remoteIpAddress) {
-        this.method = method;
-        this.parameterMap = parameterMap;
-        this.remoteIpAddress = remoteIpAddress;
-    }
-
-    public IncomingRequest(@Nonnull Method method,
-                           @Nonnull Map<String, String[]> parameterMap,
-                           @Nonnull String remoteIpAddress) {
-        this(method, newParameterMap(parameterMap), remoteIpAddress);
     }
 
     @Override
@@ -241,4 +263,11 @@ public final class IncomingRequest implements WebRequest {
     public RequestState getRequestState() {
         return requestState;
     }
+
+    @Override
+    @Nonnull
+    public String getRelayState() {
+        return relayState;
+    }
+
 }

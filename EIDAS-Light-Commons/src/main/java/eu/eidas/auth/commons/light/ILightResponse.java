@@ -27,6 +27,8 @@ import javax.annotation.Nullable;
 
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 
+import java.io.Serializable;
+
 /**
  * Interface for the Lightweight Response processed in the specific module.
  * <p>
@@ -34,7 +36,7 @@ import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
  *
  * @since 1.1
  */
-public interface ILightResponse {
+public interface ILightResponse extends Serializable{
 
     /**
      * Returns the response attributes if the response is a success response , or an empty map if the response is a

@@ -13,28 +13,29 @@
  */
 package eu.eidas.node.connector;
 
-import eu.eidas.node.NodeBeanNames;
-import eu.eidas.node.utils.EidasNodeMetadataGenerator;
-import eu.eidas.node.utils.PropertiesUtil;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.io.IOException;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import java.io.IOException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import eu.eidas.node.NodeBeanNames;
+import eu.eidas.node.utils.EidasNodeMetadataGenerator;
+import eu.eidas.node.utils.PropertiesUtil;
 
 /**
  * generates metadata used to communicate with the Connector.
  */
+@SuppressWarnings("squid:S1989") // due to the code uses correlation maps, not http sessions
 public class ConnectorMetadataGeneratorServlet extends AbstractConnectorServlet{
     /**
      * Logger object.
      */
     private static final Logger LOG = LoggerFactory.getLogger(ConnectorMetadataGeneratorServlet.class.getName());
-    //TODO: Connector responder metadata generator belongs in fact to a Connector Specific module  
+    //TODO: Connector responder metadata generator belongs in fact to a Connector Specific module
     private static final String IDP_METADATA_URL="/ConnectorResponderMetadata";
 
     @Override
@@ -43,7 +44,7 @@ public class ConnectorMetadataGeneratorServlet extends AbstractConnectorServlet{
     }
 
     //the Connector presents itself as either an IdP or a SP
-    //IdP: will use SP-Connector SAMLEngine (since it is an IdP for a SP)
+    //IdP: will use SP-Specific SAMLEngine (since it is an IdP for a SP)
     //SP: will use Connector-Service SAMLEngine
 
     @Override

@@ -25,22 +25,22 @@
 %>
 
 <head>
-    <jsp:include page="htmlHead.jsp"/>
+    <jsp:include page="internal/htmlHead.jsp"/>
     <title><fmt:message key="eidas.title" bundle="${i18n_eng}"/></title>
 </head>
 <body>
 <main>
 
     <div class="wrapper">
-        <jsp:include page="centralSlider.jsp"/>
-        <jsp:include page="leftColumn.jsp"/>
+        <jsp:include page="internal/centralSlider.jsp"/>
+        <jsp:include page="internal/leftColumn.jsp"/>
         <div class="col-right">
             <div class="col-right-inner">
                 <div class="clearfix">
                     <div class="menu-top"> <a class="item text-minus" href="#"></a> <a class="item text-plus" href="#"></a> <a class="item contrast" href="#"></a> </div>
                 </div>
                 <div class="col-right-content">
-                    <jsp:include page="content-security-header-deactivated.jsp"/>
+                    <jsp:include page="internal/content-security-header-deactivated.jsp"/>
                     <h1 class="title">
                         <span><fmt:message key="eidas.title" bundle="${i18n_eng}"/></span>
                     </h1>
@@ -55,7 +55,7 @@
                     </div>
                     <div id="cspMessage" class="warningCsp"></div>
                     <h2 class="sub-title text-highlight"><fmt:message key="thank.message" bundle="${i18n_error}" /></h2>
-                    <jsp:include page="footer-img.jsp"/>
+                    <jsp:include page="internal/footer-img.jsp"/>
                 </div>
             </div>
         </div>

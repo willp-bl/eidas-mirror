@@ -39,11 +39,6 @@ public class EidasAuthnStatementValidator extends
             throw new ValidationException("AuthnInstant is required.");
         }
 
-        if (stmnt.getSubjectLocality() == null) {
-
-            throw new ValidationException("SubjectLocality is required.");
-        }
-
     }
 
 

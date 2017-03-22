@@ -10,7 +10,7 @@
 <html lang="en">
 
 <head>
-	<jsp:include page="htmlHead.jsp"/>
+	<jsp:include page="internal/htmlHead.jsp"/>
 	<title><fmt:message key="consent.page.title" bundle="${i18n_eng}"/></title>
 	<script type="text/javascript" src="js/base64.js"></script>
 </head>
@@ -18,17 +18,17 @@
 <body>
 <main>
 	<div class="wrapper">
-		<jsp:include page="centralSlider.jsp"/>
-		<jsp:include page="leftColumn.jsp"/>
+		<jsp:include page="internal/centralSlider.jsp"/>
+		<jsp:include page="internal/leftColumn.jsp"/>
 		<div class="col-right">
 			<div class="col-right-inner">
 				<div class="clearfix">
 					<div class="menu-top"> <a class="item text-minus" href="#"></a> <a class="item text-plus" href="#"></a> <a class="item contrast" href="#"></a> </div>
 				</div>
 				<div class="col-right-content">
-					<jsp:include page="content-security-header-deactivated.jsp"/>
+					<jsp:include page="internal/content-security-header-deactivated.jsp"/>
 					<form id="consentSelector" name="consentSelector" method="post" action="${e:forHtml(redirectUrl)}">
-						<jsp:include page="titleWithAssurance.jsp"/>
+						<jsp:include page="internal/titleWithAssurance.jsp"/>
 						<p id="stepstatusjs" name="stepstatusjs" class="step-status"><fmt:message key="common.step" bundle="${i18n_eng}"/> <span>3</span> | 3</p>
 						<h2 class="sub-title"><fmt:message key="citizenConsent.resume" bundle="${i18n_eng}"/></h2>
 						<div class="row"><% /** Mandatory attributes are here */ %>
@@ -112,14 +112,14 @@
 						<button type="button" id="buttonCancel" class="btn btn-opposite"><span><fmt:message key="common.cancel" bundle="${i18n_eng}"/></span></button>
 						<button type="button" id="buttonNext" class="btn btn-next btn-submit"><span><fmt:message key="common.submit" bundle="${i18n_eng}"/></span></button>
 					</p>
-					<jsp:include page="footer-img.jsp"/>
+					<jsp:include page="internal/footer-img.jsp"/>
 				</div>
 			</div>
 		</div>
 	</div>
 </main>
 <jsp:include page="helpPages/modal_loa.jsp"/>
-<jsp:include page="footerScripts.jsp"/>
+<jsp:include page="internal/footerScripts.jsp"/>
 <script type="text/javascript" src="js/citizenConsent.js"></script>
 <script type="text/javascript" src="js/autocompleteOff.js"></script>
 </body>

@@ -39,8 +39,12 @@
                             <input type="text" name="country" value="<s:property value="citizen"/>" id="country" class="form-control"/>
                         </div>
                         <div class="form-group">
+                            <label for="country"><s:property value="%{getText('relayState')}"/></label>
+                            <input type="text" id=relayState" name="RelayState" value="MyRelayState" class="form-control"/>
+                        </div>
+                        <div class="form-group">
                             <label for="SAMLRequest"><s:property value="%{getText('SAMLRequestId')}"/></label>
-                            <textarea class="form-control" rows="8" id="SAMLRequest" name="SAMLRequest"><s:property value="SAMLRequest"/></textarea>
+                            <textarea class="form-control" rows="8" id="SAMLRequest" name="SAMLRequest"><s:property value="samlRequest"/></textarea>
                         </div>
                         <div class="form-group">
                             <div class="radio-inline-group">

@@ -59,6 +59,7 @@ import eu.eidas.node.utils.EidasAttributesUtil;
 import eu.eidas.node.utils.PropertiesUtil;
 import eu.eidas.node.utils.SessionHolder;
 
+@SuppressWarnings("squid:S1989") // due to the code uses correlation maps, not http sessions
 public class ColleagueRequestServlet extends AbstractServiceServlet {
 
     private static final Logger LOG = LoggerFactory.getLogger(ColleagueRequestServlet.class.getName());

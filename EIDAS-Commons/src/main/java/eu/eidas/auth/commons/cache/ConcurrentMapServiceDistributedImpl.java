@@ -16,34 +16,32 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class ConcurrentMapServiceDistributedImpl implements ConcurrentMapService {
     private static final Logger LOG = LoggerFactory.getLogger(ConcurrentMapServiceDistributedImpl.class.getName());
-    private String cacheName;
-    private String hazelcastXmlConfigClassPathFileName;
 
+    protected String cacheName;
+    protected HazelcastInstanceInitializer hazelcastInstanceInitializer;
+
+    @Override
+    public ConcurrentMap getConfiguredMapCache() {
+        if (getCacheName() == null) {
+            throw new InvalidParameterEIDASException("Distributed Cache Configuration mismatch");
+        }
+        HazelcastInstance instance = Hazelcast.getHazelcastInstanceByName(hazelcastInstanceInitializer.getHazelcastInstanceName());
+        return instance.getMap(getCacheName());
+    }
+
+    public String getCacheName() {
+        return cacheName;
+    }
     public void setCacheName(String cacheName) {
         this.cacheName = cacheName;
     }
 
-    public void setHazelcastXmlConfigClassPathFileName(String hazelcastXmlConfigClassPathFileName) {
-        this.hazelcastXmlConfigClassPathFileName = hazelcastXmlConfigClassPathFileName;
+    public HazelcastInstanceInitializer getHazelcastInstanceInitializer() {
+        return hazelcastInstanceInitializer;
     }
 
-    @Override
-    public ConcurrentMap getNewMapCache() {
-        if (cacheName == null) {
-            throw new InvalidParameterEIDASException("Distributed Cache Configuration mismatch");
-        }
-        Config cfg;
-        if (hazelcastXmlConfigClassPathFileName != null) {
-            LOG.trace("loading hazelcast config from " + hazelcastXmlConfigClassPathFileName);
-            cfg = new ClasspathXmlConfig(hazelcastXmlConfigClassPathFileName);
-        } else {
-            LOG.trace("loading hazelcast config from <DEFAULT>");
-            cfg = new Config();
-        }
-        MapConfig mapCfg = new MapConfig();
-        mapCfg.setName(cacheName);
-        HazelcastInstance instance = Hazelcast.newHazelcastInstance(cfg);
-        cfg.addMapConfig(mapCfg);
-        return instance.getMap(this.cacheName);
+    public void setHazelcastInstanceInitializer(HazelcastInstanceInitializer hazelcastInstanceInitializer) {
+        this.hazelcastInstanceInitializer = hazelcastInstanceInitializer;
     }
+
 }

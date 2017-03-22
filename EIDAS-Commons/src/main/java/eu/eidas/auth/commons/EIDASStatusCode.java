@@ -43,6 +43,12 @@ public enum EIDASStatusCode {
     // put the ; on a separate line to make merges easier
     ;
 
+    /**
+     * Represents the constant's value.
+     */
+    @Nonnull
+    private final transient String value;
+
     private static final EnumMapper<String, EIDASStatusCode> MAPPER =
             new EnumMapper<String, EIDASStatusCode>(new KeyAccessor<String, EIDASStatusCode>() {
 
@@ -53,6 +59,15 @@ public enum EIDASStatusCode {
                 }
             }, Canonicalizers.trimLowerCase(), values());
 
+    /**
+     * Solo Constructor.
+     *
+     * @param val The Constant value.
+     */
+    EIDASStatusCode(@Nonnull String val) {
+        value = val;
+    }
+
     @Nullable
     public static EIDASStatusCode fromString(@Nonnull String val) {
         return MAPPER.fromKey(val);
@@ -60,21 +75,6 @@ public enum EIDASStatusCode {
 
     public static EnumMapper<String, EIDASStatusCode> mapper() {
         return MAPPER;
-    }
-
-    /**
-     * Represents the constant's value.
-     */
-    @Nonnull
-    private final transient String value;
-
-    /**
-     * Solo Constructor.
-     *
-     * @param val The Constant value.
-     */
-    EIDASStatusCode(@Nonnull String val) {
-        this.value = val;
     }
 
     @Nonnull

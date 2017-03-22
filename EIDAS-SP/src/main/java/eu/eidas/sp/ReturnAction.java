@@ -1,34 +1,26 @@
 package eu.eidas.sp;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.opensymphony.xwork2.Action;
 import com.opensymphony.xwork2.ActionSupport;
-
+import eu.eidas.auth.commons.EidasStringUtil;
+import eu.eidas.auth.commons.attribute.AttributeDefinition;
+import eu.eidas.auth.commons.attribute.AttributeValue;
+import eu.eidas.auth.commons.protocol.IAuthenticationResponse;
+import eu.eidas.auth.engine.ProtocolEngineFactory;
+import eu.eidas.auth.engine.ProtocolEngineI;
+import eu.eidas.encryption.exception.UnmarshallException;
+import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.struts2.interceptor.ServletRequestAware;
 import org.apache.struts2.interceptor.ServletResponseAware;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.eidas.auth.commons.EidasStringUtil;
-import eu.eidas.auth.commons.attribute.AttributeDefinition;
-import eu.eidas.auth.commons.attribute.AttributeValue;
-import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
-import eu.eidas.auth.commons.protocol.IAuthenticationResponse;
-import eu.eidas.auth.engine.ProtocolEngineFactory;
-import eu.eidas.auth.engine.ProtocolEngineI;
-import eu.eidas.encryption.exception.UnmarshallException;
-import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.Properties;
 
 import static eu.eidas.sp.Constants.SP_CONF;
 
@@ -37,6 +29,7 @@ import static eu.eidas.sp.Constants.SP_CONF;
  *
  * @author iinigo
  */
+@SuppressWarnings("squid:S1948") //TODO get rid of Struts
 public class ReturnAction extends ActionSupport implements ServletRequestAware, ServletResponseAware {
 
     private static final long serialVersionUID = 3660074009157921579L;
@@ -45,6 +38,7 @@ public class ReturnAction extends ActionSupport implements ServletRequestAware, 
 
     static final Logger logger = LoggerFactory.getLogger(IndexAction.class.getName());
 
+    @SuppressWarnings("squid:S00116") //parameter as-is
     private String SAMLResponse;
 
     private String samlResponseXML;
@@ -58,26 +52,26 @@ public class ReturnAction extends ActionSupport implements ServletRequestAware, 
     private Properties configs;
 
     private String providerName;
-    //private static String spUrl;
 
     /**
-     * Translates the SAMLResponse to XML format in order to be shown in the JSP
+     * Translates the samlResponse to XML format in order to be shown in the JSP
      *
      * @return
      */
+    @Override
     public String execute() {
 
         configs = SPUtil.loadSPConfigs();
 
         providerName = configs.getProperty(Constants.PROVIDER_NAME);
+        String metadataUrl = configs.getProperty(Constants.SP_METADATA_URL);
 
         byte[] decSamlToken = EidasStringUtil.decodeBytesFromBase64(SAMLResponse);
         samlResponseXML = EidasStringUtil.toString(decSamlToken);
         try {
             SpProtocolEngineI engine = SpProtocolEngineFactory.getSpProtocolEngine(SP_CONF);
             //validate SAML Token
-            IAuthenticationResponse response =
-                    engine.unmarshallResponseAndValidate(decSamlToken, request.getRemoteHost(), 0, null);
+            engine.unmarshallResponseAndValidate(decSamlToken, request.getRemoteHost(), 0, metadataUrl);
 
             boolean encryptedResponse = SPUtil.isEncryptedSamlResponse(decSamlToken);
             if (encryptedResponse) {
@@ -108,22 +102,22 @@ public class ReturnAction extends ActionSupport implements ServletRequestAware, 
     public String populate() {
 
         IAuthenticationResponse authnResponse;
-        ImmutableAttributeMap personalAttributeList = null;
-
-        //spUrl = configs.getProperty(Constants.SP_URL);
 
         //Decodes SAML Response
         byte[] decSamlToken = EidasStringUtil.decodeBytesFromBase64(SAMLResponse);
 
-        //Get SAMLEngine instance
+        configs = SPUtil.loadSPConfigs();
+        String metadataUrl = configs.getProperty(Constants.SP_METADATA_URL);
 
+        //Get SAMLEngine instance
         try {
             ProtocolEngineI engine = ProtocolEngineFactory.getDefaultProtocolEngine(SP_CONF);
             //validate SAML Token
-            authnResponse = engine.unmarshallResponseAndValidate(decSamlToken, request.getRemoteHost(), 0, null);
+            authnResponse = engine.unmarshallResponseAndValidate(decSamlToken, request.getRemoteHost(), 0, metadataUrl);
 
         } catch (EIDASSAMLEngineException e) {
             logger.error(e.getMessage());
+            logger.error("", e);
             if (StringUtils.isEmpty(e.getErrorDetail())) {
                 throw new ApplicationSpecificServiceException(SAML_VALIDATION_ERROR, e.getErrorMessage());
             } else {
@@ -134,15 +128,18 @@ public class ReturnAction extends ActionSupport implements ServletRequestAware, 
         if (authnResponse.isFailure()) {
             throw new ApplicationSpecificServiceException("Saml Response is fail", authnResponse.getStatusMessage());
         } else {
-            attrMap = authnResponse.getAttributes().getAttributeMap();//= new HashMap<AttributeDefinition<?>, List<String>>();
+            attrMap = authnResponse.getAttributes().getAttributeMap();
             return "populate";
         }
     }
 
+    @Override
     public void setServletRequest(HttpServletRequest request) {
         this.request = request;
     }
 
+    @Override
+    @SuppressWarnings("squid:S1186")
     public void setServletResponse(HttpServletResponse response) {
     }
 

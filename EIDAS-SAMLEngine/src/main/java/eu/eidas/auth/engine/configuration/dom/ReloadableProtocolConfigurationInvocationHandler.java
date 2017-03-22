@@ -19,6 +19,8 @@ import eu.eidas.auth.engine.core.ProtocolCipherI;
 import eu.eidas.auth.engine.core.ProtocolProcessorI;
 import eu.eidas.auth.engine.core.ProtocolSignerI;
 import eu.eidas.auth.engine.core.SamlEngineCoreProperties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * ReloadableConfiguration InvocationHandler
@@ -28,9 +30,32 @@ import eu.eidas.auth.engine.core.SamlEngineCoreProperties;
 @VisibleForTesting
 public final class ReloadableProtocolConfigurationInvocationHandler<T> implements InvocationHandler {
 
+    /**
+     * The logger.
+     */
+    private static final Logger LOG = LoggerFactory.getLogger(ReloadableProtocolConfigurationInvocationHandler.class);
+
+    @Nonnull
+    private final String name;
+
+    @Nonnull
+    private final SingletonAccessor<ImmutableMap<String, ProtocolEngineConfiguration>> fileAccessor;
+
+    @Nonnull
+    private final ConfigurationGetter<T> getter;
+
     interface ConfigurationGetter<T> {
 
         T get(@Nonnull ProtocolEngineConfiguration configuration);
+    }
+
+    ReloadableProtocolConfigurationInvocationHandler(@Nonnull final String nameVal,
+                                                     @Nonnull
+                                                     final SingletonAccessor<ImmutableMap<String, ProtocolEngineConfiguration>> fileAccessorVal,
+                                                     @Nonnull final ConfigurationGetter<T> getterVal) {
+        name = nameVal;
+        fileAccessor = fileAccessorVal;
+        getter = getterVal;
     }
 
     @Nonnull
@@ -126,24 +151,6 @@ public final class ReloadableProtocolConfigurationInvocationHandler<T> implement
                                                (Class<? extends T>) proxiedObject.getClass(), invocationHandler);
     }
 
-    @Nonnull
-    private final String name;
-
-    @Nonnull
-    private final SingletonAccessor<ImmutableMap<String, ProtocolEngineConfiguration>> fileAccessor;
-
-    @Nonnull
-    private final ConfigurationGetter<T> getter;
-
-    ReloadableProtocolConfigurationInvocationHandler(@Nonnull final String name,
-                                                     @Nonnull
-                                                     final SingletonAccessor<ImmutableMap<String, ProtocolEngineConfiguration>> fileAccessor,
-                                                     @Nonnull final ConfigurationGetter<T> getter) {
-        this.name = name;
-        this.fileAccessor = fileAccessor;
-        this.getter = getter;
-    }
-
     public T getProxiedObject() {
         ProtocolEngineConfiguration configuration = getNamedConfiguration(name, fileAccessor);
         return getter.get(configuration);
@@ -161,6 +168,7 @@ public final class ReloadableProtocolConfigurationInvocationHandler<T> implement
             }
             return method.invoke(instance, args);
         } catch (InvocationTargetException e) {
+            LOG.error("", e);
             throw e.getTargetException();
         }
     }

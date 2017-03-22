@@ -96,9 +96,9 @@ public abstract class AbstractProtocolEngine {
     @Nonnull
     private final ProtocolConfigurationAccessor configurationAccessor;
 
-    protected AbstractProtocolEngine(@Nonnull ProtocolConfigurationAccessor configurationAccessor) {
-        Preconditions.checkNotNull(configurationAccessor, "configurationAccessor");
-        this.configurationAccessor = configurationAccessor;
+    protected AbstractProtocolEngine(@Nonnull ProtocolConfigurationAccessor configAccessor) {
+        Preconditions.checkNotNull(configAccessor, "configurationAccessor");
+        configurationAccessor = configAccessor;
     }
 
     /**
@@ -110,8 +110,8 @@ public abstract class AbstractProtocolEngine {
         ProtocolDecrypterI protocolDecrypter = getProtocolDecrypter();
         if (null != protocolDecrypter) {
             if (protocolDecrypter.isResponseEncryptionMandatory()) {
-                throw new EIDASSAMLEngineException(EidasErrorKey.SAML_ENGINE_UNENCRYPTED_RESPONSE.errorCode(),
-                                                   EidasErrorKey.SAML_ENGINE_UNENCRYPTED_RESPONSE.errorMessage());
+                throw new EIDASSAMLEngineException(EidasErrorKey.SAML_ENGINE_DECRYPTING_RESPONSE.errorCode(),
+                                                   EidasErrorKey.SAML_ENGINE_DECRYPTING_RESPONSE.errorMessage());
             }
         }
     }
@@ -150,6 +150,7 @@ public abstract class AbstractProtocolEngine {
     }
 
     @Nonnull
+    @SuppressWarnings("squid:S2583")
     protected ProtocolEngineConfiguration getConfiguration() {
         try {
             ProtocolEngineConfiguration protocolEngineConfiguration = configurationAccessor.get();
@@ -299,9 +300,12 @@ public abstract class AbstractProtocolEngine {
                 LOG.debug("Encryption Executing...");
                 responseToSign = getProtocolEncrypter().encryptSamlResponse(responseToSign, destinationCertificate);
                 LOG.debug("Encryption finished: " + responseToSign);
-            } else {
-                LOG.debug("Encryption not performed, no matching certificate for issuer=" + request.getIssuer()
-                                  + " and country=" + request.getOriginCountryCode());
+            } else if (getProtocolEncrypter().isEncryptionEnabled(request.getOriginCountryCode())) {
+                LOG.error(SAML_EXCHANGE, "BUSINESS EXCEPTION : encryption cannot be performed, no matching certificate for issuer="+ request.getIssuer()
+                        + " and country=" + request.getOriginCountryCode());
+                throw new EIDASSAMLEngineException(EidasErrorKey.SAML_ENGINE_INVALID_CERTIFICATE.errorCode(),
+                        EidasErrorKey.SAML_ENGINE_INVALID_CERTIFICATE.errorMessage());
+
             }
         } else if (!SAMLEngineUtils.isErrorSamlResponse(responseToSign)) {
             checkSendingUnencryptedResponsesAllowed();
@@ -328,9 +332,9 @@ public abstract class AbstractProtocolEngine {
     }
 
     /**
-     * Method that unmarshalls a SAML Object from a byte array representation to an XML Object.
+     * Method that unmarshalls a SAML Object from a dom document representation to an XML Object.
      *
-     * @param samlToken Byte array representation of a SAML Object
+     * @param document DOM Document representation of a SAML Object
      * @return XML Object (superclass of SAMLObject)
      * @throws EIDASSAMLEngineException the SAML engine exception
      */
@@ -353,25 +357,26 @@ public abstract class AbstractProtocolEngine {
      */
     protected final Response validateSignatureAndDecrypt(Response response) throws EIDASSAMLEngineException {
         LOG.debug("Validate response Signature");
+        Response validResponse = response;
         X509Certificate signatureCertificate =
-                getProtocolProcessor().getResponseSignatureCertificate(response.getIssuer().getValue());
-        getSigner().validateSignature(response,
+                getProtocolProcessor().getResponseSignatureCertificate(validResponse.getIssuer().getValue());
+        getSigner().validateSignature(validResponse,
                                       null == signatureCertificate ? null : ImmutableSet.of(signatureCertificate));
 
         if (null != getProtocolDecrypter()) {
-            if (!response.getEncryptedAssertions().isEmpty()) {
+            if (!validResponse.getEncryptedAssertions().isEmpty()) {
                 // DECRYPT THE SAMLObject AFTER VALIDATION
                 LOG.debug("Decryption Executing...");
-                response = getProtocolDecrypter().decryptSamlResponse(response);
+                validResponse = getProtocolDecrypter().decryptSamlResponse(validResponse);
                 if (LOG.isTraceEnabled()) {
-                    LOG.trace("Decryption finished: " + EidasStringUtil.toString(marshall(response)));
+                    LOG.trace("Decryption finished: " + EidasStringUtil.toString(marshall(validResponse)));
                 } else {
                     LOG.debug("Decryption finished.");
                 }
-            } else if (StatusCode.SUCCESS_URI.equals(response.getStatus().getStatusCode().getValue())) {
+            } else if (StatusCode.SUCCESS_URI.equals(validResponse.getStatus().getStatusCode().getValue())) {
                 checkReceivingUnencryptedResponsesAllowed();
             }
         }
-        return response;
+        return validResponse;
     }
 }

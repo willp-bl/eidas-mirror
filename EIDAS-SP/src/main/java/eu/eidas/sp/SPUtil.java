@@ -43,17 +43,16 @@ import org.xml.sax.SAXException;
 import eu.eidas.auth.commons.xml.DocumentBuilderFactoryUtil;
 import eu.eidas.auth.commons.xml.opensaml.OpenSamlHelper;
 import eu.eidas.encryption.exception.UnmarshallException;
-import eu.eidas.samlengineconfig.CertificateConfigurationManager;
 
 public class SPUtil {
 
+    SPUtil() {};
+
     private static final Logger LOG = LoggerFactory.getLogger(SPUtil.class);
 
-    private static final String SAML_ENGINE_LOCATION_VAR = "SP_CONF_LOCATION";
+    private static final String NO_ASSERTION = "no assertion found";
 
-    private static CertificateConfigurationManager spSamlEngineConfig = null;
-
-    private static final String[] PATH_PREFIXES = {"file://", "file:/", "file:"};
+    private static final String ASSERTION_XPATH = "//*[local-name()='Assertion']";
 
     private static Properties loadConfigs(String path) throws IOException {
         Properties properties = new Properties();
@@ -61,11 +60,12 @@ public class SPUtil {
         return properties;
     }
 
-    public static Properties loadSPConfigs() throws ApplicationSpecificServiceException {
+    public static Properties loadSPConfigs() {
         try {
             return SPUtil.loadConfigs(Constants.SP_PROPERTIES);
         } catch (IOException e) {
             LOG.error(e.getMessage());
+            LOG.error("", e);
             throw new ApplicationSpecificServiceException("Could not load configuration file", e.getMessage());
         }
     }
@@ -79,28 +79,36 @@ public class SPUtil {
                 properties.getProperty(Constants.SP_METADATA_ACTIVATE));
     }
 
-/*    public static ProtocolEngine createCompatibleSAMLEngine(String samlEngineName, EidasExtensionProcessor extProc) throws EIDASSAMLEngineException {
-        return createEidasSAMLEngine(samlEngineName, extProc);
+    /**
+     * @return true when the metadata support should be active
+     */
+    public static boolean isMetadataHttpFetchEnabled() {
+        Properties properties = SPUtil.loadSPConfigs();
+        return properties.getProperty(Constants.SP_METADATA_HTTPFETCH) == null || Boolean.parseBoolean(
+                properties.getProperty(Constants.SP_METADATA_HTTPFETCH));
     }
 
-    public static ProtocolEngine createEidasSAMLEngine(String samlEngineName) throws EIDASSAMLEngineException {
-        return createEidasSAMLEngine(samlEngineName, null);
-    }*/
-
-    private static String getLocation(String location) {
-        if (location != null) {
-            for (String prefix : PATH_PREFIXES) {
-                if (location.startsWith(prefix)) {
-                    return location.substring(prefix.length());
-                }
-            }
-        }
-        return location;
+    /**
+     * @return metadata directory
+     */
+    public static String getMetadataRepositoryPath() {
+        Properties properties = SPUtil.loadSPConfigs();
+        return properties.getProperty(Constants.SP_METADATA_REPOPATH);
     }
 
-    private static final String NO_ASSERTION = "no assertion found";
+    /**
+     * @return true metadata signature must be validated for those not in trusted list
+     */
+    public static boolean isValidateEntityDescriptorSignatureEnabled() {
+        Properties properties = SPUtil.loadSPConfigs();
+        return properties.getProperty(Constants.SP_METADATA_VALIDATESIGN) == null || Boolean.parseBoolean(
+                properties.getProperty(Constants.SP_METADATA_VALIDATESIGN));
+    }
 
-    private static final String ASSERTION_XPATH = "//*[local-name()='Assertion']";
+    public static String getTrustedEntityDescriptors() {
+        Properties properties = SPUtil.loadSPConfigs();
+        return properties.getProperty(Constants.SP_METADATA_TRUSTEDDS, "");
+    }
 
     /**
      * Returns true when the input contains an encrypted SAML Response

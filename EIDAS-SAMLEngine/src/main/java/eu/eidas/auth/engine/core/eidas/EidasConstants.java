@@ -15,5 +15,5 @@ package eu.eidas.auth.engine.core.eidas;
 
 public final class EidasConstants {
     private EidasConstants(){}
-    public static String LEVEL_OF_ASSURANCE_NAME="urn:oasis:names:tc:SAML:attribute:assurance-certification";
+    public static final String LEVEL_OF_ASSURANCE_NAME="urn:oasis:names:tc:SAML:attribute:assurance-certification";
 }

@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <instances>
 
-    <!-- ******************** SP-Connector ******************** -->
+    <!-- ******************** SP-Specific ******************** -->
 
-   	<instance name="SP-Connector">
+   	<instance name="SP-Specific">
    		<configuration name="SamlEngineConf">
-   			<parameter name="fileConfiguration" value="SamlEngine_SP-Connector.xml" />
+   			<parameter name="fileConfiguration" value="SamlEngine_SP-Specific.xml" />
    		</configuration>
 
    		<configuration name="SignatureConf">
    			<parameter name="class"
    				value="eu.eidas.auth.engine.core.impl.SignSW" />
-   			<parameter name="fileConfiguration" value="SignModule_SP-Connector.xml" />
+   			<parameter name="fileConfiguration" value="SignModule_SP-Specific.xml" />
    		</configuration>
 
            <configuration name="EncryptionConf">
@@ -20,7 +20,7 @@
                           value="eu.eidas.auth.engine.core.impl.EncryptionSW" />
                <!-- Settings specific module
                     responseTo/FromPointAlias & requestTo/FromPointAlias parameters will be added -->
-               <parameter name="fileConfiguration" value="EncryptModule_SP-Connector.xml" />
+               <parameter name="fileConfiguration" value="EncryptModule_SP-Specific.xml" />
            </configuration>
 
            <!-- Settings for the ExtensionProcessor module -->
@@ -48,12 +48,12 @@
            </configuration>
    	</instance>
 
-	<!-- ******************** Specific ******************** -->
+	<!-- ******************** Specific-IdP ******************** -->
 	<!-- Configuration name -->
-	<instance name="Specific">
+	<instance name="Specific-IdP">
 		<!-- Configurations parameters ProtocolEngine -->
 		<configuration name="SamlEngineConf">
-			<parameter name="fileConfiguration" value="SamlEngine_Specific.xml" />
+			<parameter name="fileConfiguration" value="SamlEngine_Specific-IdP.xml" />
 		</configuration>
 
 		<!-- Settings module signature -->
@@ -62,7 +62,7 @@
 			<parameter name="class"
 				value="eu.eidas.auth.engine.core.impl.SignSW" />
 			<!-- Settings specific module -->
-			<parameter name="fileConfiguration" value="SignModule_Specific.xml" />
+			<parameter name="fileConfiguration" value="SignModule_Specific-IdP.xml" />
 		</configuration>
 
         <configuration name="EncryptionConf">
@@ -71,7 +71,7 @@
                        value="eu.eidas.auth.engine.core.impl.EncryptionSW" />
             <!-- Settings specific module
                  responseTo/FromPointAlias & requestTo/FromPointAlias parameters will be added -->
-            <parameter name="fileConfiguration" value="EncryptModule_Specific.xml" />
+            <parameter name="fileConfiguration" value="EncryptModule_Specific-IdP.xml" />
         </configuration>
 
         <!-- Settings for the ExtensionProcessor module -->

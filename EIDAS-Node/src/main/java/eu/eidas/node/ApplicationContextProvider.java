@@ -42,40 +42,8 @@ public class ApplicationContextProvider implements ApplicationContextAware {
     private static void setGlobalAppContext(ApplicationContext ctx){
         applicationContext = ctx;
         booleanMap=new HashMap<String, Boolean>();
-        //check production flag
-        AUSERVICEUtil util= ApplicationContextProvider.getApplicationContext().getBean(AUSERVICEUtil.class);
-        if( Boolean.parseBoolean(util.getConfigs().getProperty(EIDASValues.EIDAS_PRODUCTION.toString()))){
-            resetParamsForProduction(util.getConfigs());
-        }
-
     }
 
-    private static void resetParamsForProduction(Properties props){
-        //do not allow self signed certificates
-        props.setProperty(CertificateValidator.DISALLOW_SELF_SIGNED_CERTIFICATE_PROPERTY, "true");
-        //do check certificates validiy period
-        props.setProperty(CertificateValidator.CHECK_VALIDITY_PERIOD_PROPERTY, "true");
-        //activate metadata
-        props.setProperty(EIDASValues.METADATA_ACTIVE.toString(), "true");
-
-        //validate binding
-        props.setProperty(EidasParameterKeys.VALIDATE_BINDING.toString(), "true");
-
-        //enable content security settings
-        ConfigurationSecurityBean securityBean = applicationContext.getBean(ConfigurationSecurityBean.class);
-        securityBean.setIncludeHSTS(true);
-        securityBean.setIncludeMozillaDirectives(true);
-        securityBean.setIncludeXContentTypeOptions(true);
-        securityBean.setIncludeXFrameOptions(true);
-        securityBean.setIsContentSecurityPolicyActive(true);
-
-        //enforce citizen country the same as ServiceProxy country
-        AUCONNECTORSAML auConnectorSaml=applicationContext.getBean(AUCONNECTORSAML.class);
-        auConnectorSaml.setCheckCitizenCertificateServiceCertificate(true);
-
-        //enforce reponse encryption
-        props.setProperty(EIDASValues.RESPONSE_ENCRYPTION_MANDATORY.toString(), "true");
-    }
     private static Map<String, Boolean> booleanMap=new HashMap<String, Boolean>();
     public static Boolean getNodeParameterBool(String parameterName){
         if(!booleanMap.containsKey(parameterName)){

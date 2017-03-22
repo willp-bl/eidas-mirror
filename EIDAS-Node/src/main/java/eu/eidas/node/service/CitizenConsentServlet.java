@@ -47,6 +47,7 @@ import eu.eidas.node.security.Token;
 import eu.eidas.node.specificcommunication.ISpecificProxyService;
 import eu.eidas.node.specificcommunication.exception.SpecificException;
 
+@SuppressWarnings("squid:S1989") // due to the code uses correlation maps, not http sessions
 public class CitizenConsentServlet extends AbstractServiceServlet {
 
     private static final Logger LOG = LoggerFactory.getLogger(CitizenConsentServlet.class.getName());

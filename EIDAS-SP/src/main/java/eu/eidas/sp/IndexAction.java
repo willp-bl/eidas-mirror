@@ -22,26 +22,9 @@
 
 package eu.eidas.sp;
 
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
-import java.util.ResourceBundle;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import com.google.common.collect.ImmutableSortedSet;
 import com.opensymphony.xwork2.Action;
 import com.opensymphony.xwork2.ActionSupport;
-
-import org.apache.struts2.interceptor.ServletRequestAware;
-import org.apache.struts2.interceptor.ServletResponseAware;
-import org.opensaml.saml2.metadata.EntityDescriptor;
-import org.opensaml.saml2.metadata.IDPSSODescriptor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import eu.eidas.auth.commons.EidasStringUtil;
 import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
@@ -57,25 +40,38 @@ import eu.eidas.auth.engine.metadata.MetadataSignerI;
 import eu.eidas.auth.engine.metadata.MetadataUtil;
 import eu.eidas.auth.engine.xml.opensaml.SAMLEngineUtils;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
-import eu.eidas.sp.metadata.SpMetadataFetcher;
+import eu.eidas.sp.metadata.SPCachingMetadataFetcher;
+import org.apache.struts2.interceptor.ServletRequestAware;
+import org.apache.struts2.interceptor.ServletResponseAware;
+import org.opensaml.saml2.metadata.EntityDescriptor;
+import org.opensaml.saml2.metadata.IDPSSODescriptor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
+import java.util.ResourceBundle;
 
 /**
  * @author iinigo
  *         This Action Generates a SAML Request with the data given by the user, then sends it to the selected node
  */
-
+@SuppressWarnings("squid:S1948") //TODO get rid of Struts
 public class IndexAction extends ActionSupport implements ServletRequestAware, ServletResponseAware {
 
     private static final long serialVersionUID = 3660074009157921579L;
 
-    static final Logger LOGGER = LoggerFactory.getLogger(IndexAction.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(IndexAction.class);
     public static final String ACTION_POPULATE = "populate";
-    private static final String SPTYPE_PARAM = "spType";
 
     private final ProtocolEngineI protocolEngine = ProtocolEngineFactory.getDefaultProtocolEngine(Constants.SP_CONF);
 
     private HttpServletRequest request;
-    private String SAMLRequest;
+    private String samlRequest;
     private String samlRequestXML;
 
     private static Properties configs;
@@ -85,8 +81,6 @@ public class IndexAction extends ActionSupport implements ServletRequestAware, S
 
     private static String spId;
     private static String providerName;
-    private static String spSector;
-    private static String spApplication;
     private static ResourceBundle resourceBundle;
 
     /*Requested parameters*/
@@ -106,14 +100,12 @@ public class IndexAction extends ActionSupport implements ServletRequestAware, S
 
     private static boolean eidasNodeOnly = true;
 
-    private final SpMetadataFetcher metadataFetcher = new SpMetadataFetcher();
+    private final SPCachingMetadataFetcher metadataFetcher = new SPCachingMetadataFetcher();
 
     private static void loadGlobalConfig() {
         configs = SPUtil.loadSPConfigs();
         spId = configs.getProperty(Constants.PROVIDER_NAME);
         providerName = configs.getProperty(Constants.PROVIDER_NAME);
-        spSector = configs.getProperty(Constants.SP_SECTOR);
-        spApplication = configs.getProperty(Constants.SP_APLICATION);
         countries = new ArrayList<Country>();
         eidasAttributeList = new ArrayList<AttributeDefinition>();
         eidasNodeOnly = !(Boolean.FALSE.toString().equalsIgnoreCase(configs.getProperty(Constants.SP_EIDAS_ONLY)));
@@ -152,12 +144,13 @@ public class IndexAction extends ActionSupport implements ServletRequestAware, S
      * @return Action.SUCCESS
      */
 
+    @Override
     public String execute() {
 
         final ImmutableSortedSet<AttributeDefinition<?>> allSupportedAttributesSet =
                 protocolEngine.getProtocolProcessor().getAllSupportedAttributes();
         List<AttributeDefinition<?>> reqAttrList = new ArrayList<AttributeDefinition<?>>(allSupportedAttributesSet);
-        byte[] token = null;
+        byte[] token;
 
         //remove attributes the SP decides not to send (for testing purpose)
         for (AttributeDefinition<?> attributeDefinition : allSupportedAttributesSet) {
@@ -178,15 +171,15 @@ public class IndexAction extends ActionSupport implements ServletRequestAware, S
 //            reqBuilder.qaa(Integer.parseInt(qaa));
         }
         reqBuilder.requestedAttributes(reqAttrMap);
-            if (LevelOfAssurance.getLevel(eidasloa) == null) {
-                reqBuilder.levelOfAssurance(LevelOfAssurance.LOW.stringValue());
-            } else {
-                reqBuilder.levelOfAssurance(eidasloa);
-            }
-            reqBuilder.spType(eidasSPType);
-            reqBuilder.levelOfAssuranceComparison(LevelOfAssuranceComparison.fromString(eidasloaCompareType).stringValue());
-            reqBuilder.nameIdFormat(eidasNameIdentifier);
-            reqBuilder.binding(EidasSamlBinding.EMPTY.getName());
+        if (LevelOfAssurance.getLevel(eidasloa) == null) {
+            reqBuilder.levelOfAssurance(LevelOfAssurance.LOW.stringValue());
+        } else {
+            reqBuilder.levelOfAssurance(eidasloa);
+        }
+        reqBuilder.spType(eidasSPType);
+        reqBuilder.levelOfAssuranceComparison(LevelOfAssuranceComparison.fromString(eidasloaCompareType).stringValue());
+        reqBuilder.nameIdFormat(eidasNameIdentifier);
+        reqBuilder.binding(EidasSamlBinding.EMPTY.getName());
 
         String metadataUrl = configs.getProperty(Constants.SP_METADATA_URL);
         if (metadataUrl != null && !metadataUrl.isEmpty() && SPUtil.isMetadataEnabled()) {
@@ -210,6 +203,7 @@ public class IndexAction extends ActionSupport implements ServletRequestAware, S
             binaryRequestMessage = protocolEngine.generateRequestMessage(reqBuilder.build(), nodeMetadataUrl);
         } catch (EIDASSAMLEngineException e) {
             LOGGER.error(e.getMessage());
+            LOGGER.error("", e);
             final String errorMessage = getErrorMessageFromBundle(e.getErrorCode(), e.getErrorMessage());
             throw new ApplicationSpecificServiceException("Could not generate token for Saml Request", errorMessage);
         }
@@ -217,7 +211,7 @@ public class IndexAction extends ActionSupport implements ServletRequestAware, S
         token = binaryRequestMessage.getMessageBytes();
 
         samlRequestXML = EidasStringUtil.toString(token);
-        SAMLRequest = EidasStringUtil.encodeToBase64(token);
+        samlRequest = EidasStringUtil.encodeToBase64(token);
 
         return Action.SUCCESS;
     }
@@ -252,12 +246,12 @@ public class IndexAction extends ActionSupport implements ServletRequestAware, S
         return eidasAttributeList;
     }
 
-    public void setSAMLRequest(String samlToken) {
-        this.SAMLRequest = samlToken;
+    public void setSamlRequest(String samlToken) {
+        this.samlRequest = samlToken;
     }
 
-    public String getSAMLRequest() {
-        return SAMLRequest;
+    public String getSamlRequest() {
+        return samlRequest;
     }
 
     public String getQaa() {
@@ -370,6 +364,7 @@ public class IndexAction extends ActionSupport implements ServletRequestAware, S
     }
 
     @Override
+    @SuppressWarnings("squid:S1186")
     public void setServletResponse(HttpServletResponse response) {
     }
 

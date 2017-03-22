@@ -25,7 +25,18 @@ import eu.eidas.samlengineconfig.CertificateConfigurationManager;
 import eu.eidas.util.Preconditions;
 
 /**
- * ProtocolEngineFactory
+ * Factory creating {@link ProtocolEngine} instances.
+ * <p>
+ * Protocol engines are created from a {@link eu.eidas.auth.engine.configuration.ProtocolEngineConfiguration} which are
+ * created by a {@link eu.eidas.auth.engine.configuration.dom.ProtocolEngineConfigurationFactory}.
+ * <p>
+ * One can create one's own ProtocolEngineConfigurationFactory and use it to create one's own ProtocolEngineFactory.
+ * <p>
+ * There is a default ProtocolEngineFactory: {@link eu.eidas.auth.engine.DefaultProtocolEngineFactory} which uses the
+ * default configuration files.
+ * <p>
+ * One can use the convenient method {@link #getDefaultProtocolEngine(String)} to obtain the default ProtocolEngine
+ * created from the default configuration files.
  *
  * @since 1.1
  */

@@ -1,13 +1,8 @@
 package eu.eidas.node.auth.service;
 
-import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import eu.eidas.auth.commons.CountrySpecificService;
-import eu.eidas.auth.commons.IEIDASSession;
-import eu.eidas.auth.commons.IPersonalAttributeList;
-import eu.eidas.auth.commons.PersonalAttributeList;
 import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 
 /**
@@ -31,17 +26,6 @@ public class InactiveIntegrationPlugin extends CountrySpecificService{
     }
     public boolean isCountryResponse(HttpServletRequest req){
         return allowRequestThroughFilter(req);
-    }
-    public IPersonalAttributeList extractSAMLResponse(HttpServletRequest req,IEIDASSession session){
-        return new PersonalAttributeList();
-    }
-
-    public boolean isResponseReady(HttpServletRequest req,IEIDASSession session){
-        return false;
-    }
-
-    public void performNextStep(ServletContext ctx, HttpServletRequest req,HttpServletResponse response, IEIDASSession session){
-        //nothing to do while inactive
     }
 
 }

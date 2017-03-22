@@ -25,6 +25,8 @@ import eu.eidas.auth.engine.ProtocolEngineI;
 import eu.eidas.engine.exceptions.EIDASMetadataProviderException;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 
+import java.util.List;
+
 /**
  * Obtains and processes SAML2 metadata objects associated with SAML requests and responses.
  *
@@ -39,21 +41,25 @@ public interface MetadataProcessorI {
      * @return the entity descriptor associated with the given url.
      * @throws throws EIDASMetadataProviderException
      */
-    EntityDescriptor getEntityDescriptor(@Nonnull String url) throws EIDASMetadataProviderException;
+    //TODO vargata
+//    EntityDescriptor getEntityDescriptor(@Nonnull String url) throws EIDASMetadataProviderException;
 
+/*
     /**
      * @param url the url of the metadata file
      * @return the first SPSSODescriptor found in the descriptor associated with the url
      * @throws EIDASMetadataProviderException
      */
-    SPSSODescriptor getSPSSODescriptor(@Nonnull String url) throws EIDASMetadataProviderException;
+    //TODO vargata
+//    SPSSODescriptor getSPSSODescriptor(@Nonnull String url) throws EIDASMetadataProviderException;
 
     /**
      * @param url the url of the metadata file
      * @return the first IDPSSODescriptor found in the descriptor associated with the url
      * @throws EIDASMetadataProviderException
      */
-    IDPSSODescriptor getIDPSSODescriptor(@Nonnull String url) throws EIDASMetadataProviderException;
+    //TODO vargata
+//    IDPSSODescriptor getIDPSSODescriptor(@Nonnull String url) throws EIDASMetadataProviderException;
 
     /**
      * check the signature of the descriptor found at the url
@@ -62,5 +68,9 @@ public interface MetadataProcessorI {
      * @param engine the samlEngine instance used to validate the signature of the metadata file
      * @throws EIDASMetadataProviderException when the signature is not trusted by the engine
      */
-    void checkValidMetadataSignature(@Nonnull String url, @Nonnull ProtocolEngineI engine) throws EIDASSAMLEngineException;
+    //TODO vargata
+//    void checkValidMetadataSignature(@Nonnull String url, @Nonnull ProtocolEngineI engine) throws EIDASSAMLEngineException;
+
+    void addListenerContentChanged( IStaticMetadataChangeListener listener);
+    List<EntityDescriptorContainer> getEntityDescriptors();
 }

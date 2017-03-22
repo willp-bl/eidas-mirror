@@ -50,8 +50,8 @@ import eu.eidas.auth.commons.EidasStringUtil;
 import eu.eidas.auth.commons.IEIDASLogger;
 import eu.eidas.auth.commons.RequestState;
 import eu.eidas.auth.commons.WebRequest;
+import eu.eidas.auth.commons.attribute.AttributeValue;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
-import eu.eidas.auth.commons.attribute.impl.StringAttributeValue;
 import eu.eidas.auth.commons.exceptions.InternalErrorEIDASException;
 import eu.eidas.auth.commons.exceptions.InvalidParameterEIDASException;
 import eu.eidas.auth.commons.exceptions.InvalidSessionEIDASException;
@@ -268,13 +268,6 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
 
         return EidasStringUtil.decodeBytesFromBase64(strSamlToken);
     }
-
-/*    @Nonnull
-    @Override
-    public ISpRequestResult processSpRequest(@Nonnull ILightRequest fromSpLightRequest)
-            throws EIDASSAMLEngineException {
-        return null;
-    }*/
 
     /**
      * {@inheritDoc}
@@ -533,7 +526,7 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
 
             AuthenticationResponse connectorResponse =
                     new AuthenticationResponse.Builder(authnResponse).inResponseTo(serviceProviderRequestSamlId)
-                            .issuer(connectorAuthnRequest.getIssuer())
+                            .issuer(getConnectorResponderMetadataUrl())
                             .build();
 
             return new AuthenticationExchange(storedConnectorRequest, connectorResponse);
@@ -559,18 +552,20 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
         }
 
     }
+
+    @SuppressWarnings("squid:S2583")
     private void checkIdentifierFormat(IAuthenticationResponse authnResponse) throws InternalErrorEIDASException {
-        String patterEidentifier = "^[A-Z]{2}/[A-Z]{2}/[A-Za-z0-9+/=\r\n]+$";
+        String patterEidentifier = "^[A-Z]{2}/[A-Z]{2}/.+$";
         if (authnResponse.getAttributes() != null){
             ImmutableSet personIdentifier = authnResponse.getAttributes().getAttributeValuesByNameUri(EidasSpec.Definitions.PERSON_IDENTIFIER.getNameUri().toASCIIString());
             if (personIdentifier != null && !personIdentifier.isEmpty()){
-                if (!Pattern.matches(patterEidentifier, ((StringAttributeValue)personIdentifier.iterator().next()).getValue())) {
+                if (!Pattern.matches(patterEidentifier, ((AttributeValue<String>)personIdentifier.iterator().next()).getValue())) {
                     throw new InternalErrorEIDASException(EidasErrorKey.COLLEAGUE_RESP_INVALID_SAML.errorCode(), "Person Identifier has an invalid format.");
                 }
             }
             ImmutableSet legalPersonIdentifier = authnResponse.getAttributes().getAttributeValuesByNameUri(EidasSpec.Definitions.LEGAL_PERSON_IDENTIFIER.getNameUri().toASCIIString());
             if (legalPersonIdentifier != null  && !legalPersonIdentifier.isEmpty()){
-                if (!Pattern.matches(patterEidentifier, ((StringAttributeValue)legalPersonIdentifier.iterator().next()).getValue())) {
+                if (!Pattern.matches(patterEidentifier, ((AttributeValue<String>)legalPersonIdentifier.iterator().next()).getValue())) {
                     throw new InternalErrorEIDASException(EidasErrorKey.COLLEAGUE_RESP_INVALID_SAML.errorCode(), "Legal person Identifier has an invalid format.");
                 }
 
@@ -675,7 +670,7 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
      * Generates a request SAML token based on an authentication request.
      *
      * @param instance String containing the SAML configuration to load.
-     * @param authData An authentication request to generate the SAML token.
+     * @param request An authentication request to generate the SAML token.
      * @return An authentication request with the embedded SAML token.
      * @see EidasAuthenticationRequest
      */

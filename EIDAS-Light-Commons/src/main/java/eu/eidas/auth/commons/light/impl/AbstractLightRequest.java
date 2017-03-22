@@ -175,7 +175,6 @@ public abstract class AbstractLightRequest implements ILightRequest, Serializabl
     /**
      * @serial
      */
-    @Nonnull
     private final String citizenCountryCode;
 
     /**
@@ -187,7 +186,6 @@ public abstract class AbstractLightRequest implements ILightRequest, Serializabl
     /**
      * @serial
      */
-    @Nonnull
     private final String issuer;
 
     /**
@@ -224,7 +222,6 @@ public abstract class AbstractLightRequest implements ILightRequest, Serializabl
         requestedAttributes = builder.requestedAttributes;
     }
 
-    @Nonnull
     @Override
     public final String getCitizenCountryCode() {
         return citizenCountryCode;

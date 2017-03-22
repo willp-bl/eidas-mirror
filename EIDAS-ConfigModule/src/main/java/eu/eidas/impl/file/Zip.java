@@ -51,10 +51,13 @@ public class Zip {
             zip(sourceFiles,relativeFileNames, destinationFileName);
         }
     }
+
+    @SuppressWarnings("squid:S2095")
     public static void zip (List<String> sourceFiles, List<String> sourceFilesNames, String destinationFileName) throws ConfigurationException {
         ZipOutputStream out = null;
+        FileInputStream fi = null;
+        BufferedInputStream origin = null;
         try {
-            BufferedInputStream origin = null;
             FileOutputStream dest = new
                     FileOutputStream(destinationFileName);
             out = new ZipOutputStream(new BufferedOutputStream(dest));
@@ -67,7 +70,7 @@ public class Zip {
                 if(sourceFilesNames!=null && sourceFilesNames.size()>i){
                     entryName=sourceFilesNames.get(i);
                 }
-                FileInputStream fi = new FileInputStream(file);
+                fi = new FileInputStream(file);
                 origin = new BufferedInputStream(fi, BUFFER_SIZE);
                 ZipEntry entry = new ZipEntry(entryName);
                 out.putNextEntry(entry);
@@ -75,19 +78,25 @@ public class Zip {
                 while ((count = origin.read(data, 0, BUFFER_SIZE)) != -1) {
                     out.write(data, 0, count);
                 }
-                origin.close();
             }
-            out.close();
         } catch (Exception e) {
             LOG.error("error during backup {}", e);
             throw new ConfigurationException("", "", e);
-        }finally{
-            if(out!=null){
+        } finally {
+            if (out != null){
                 try {
                     out.close();
                 }catch(IOException ioe){
                     LOG.error("ERROR : cannot close output stream {}", ioe.getMessage());
                     LOG.debug("ERROR : cannot close output stream {}", ioe);
+                }
+            }
+            if (origin != null) {
+                try {
+                    origin.close();
+                }catch(IOException ioe){
+                    LOG.error("ERROR : cannot close input stream {}", ioe.getMessage());
+                    LOG.debug("ERROR : cannot close input stream {}", ioe);
                 }
             }
         }

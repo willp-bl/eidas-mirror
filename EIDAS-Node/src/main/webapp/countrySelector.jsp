@@ -19,5 +19,5 @@
     <input type="submit" id="submit_button" value="<fmt:message key='submit.button' bundle="${i18n_eng}"/>"/>
 </form>
 
-<jsp:include page="content-security-header-deactivated.jsp"/>
+<jsp:include page="internal/content-security-header-deactivated.jsp"/>
 <script type="text/javascript" src="js/autocompleteOff.js"></script>

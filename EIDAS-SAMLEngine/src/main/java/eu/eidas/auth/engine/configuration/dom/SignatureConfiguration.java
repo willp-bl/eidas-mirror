@@ -22,6 +22,8 @@ public final class SignatureConfiguration {
 
     private final boolean disallowedSelfSignedCertificate;
 
+    private final boolean responseSignAssertions;
+
     @Nonnull
     private final KeyStore.PrivateKeyEntry signatureKeyAndCertificate;
 
@@ -39,6 +41,7 @@ public final class SignatureConfiguration {
 
     public SignatureConfiguration(boolean checkedValidityPeriod,
                                   boolean disallowedSelfSignedCertificate,
+                                  boolean responseSignAssertions,
                                   @Nonnull KeyStore.PrivateKeyEntry signatureKeyAndCertificate,
                                   @Nonnull ImmutableSet<X509Certificate> trustedCertificates,
                                   @Nullable String signatureAlgorithm,
@@ -49,6 +52,7 @@ public final class SignatureConfiguration {
 
         this.checkedValidityPeriod = checkedValidityPeriod;
         this.disallowedSelfSignedCertificate = disallowedSelfSignedCertificate;
+        this.responseSignAssertions = responseSignAssertions;
         this.signatureKeyAndCertificate = signatureKeyAndCertificate;
         this.trustedCertificates = trustedCertificates;
         this.signatureAlgorithm = signatureAlgorithm;
@@ -89,6 +93,10 @@ public final class SignatureConfiguration {
         return disallowedSelfSignedCertificate;
     }
 
+    public boolean isResponseSignAssertions() {
+        return responseSignAssertions;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -104,6 +112,9 @@ public final class SignatureConfiguration {
             return false;
         }
         if (disallowedSelfSignedCertificate != that.disallowedSelfSignedCertificate) {
+            return false;
+        }
+        if (responseSignAssertions != that.responseSignAssertions) {
             return false;
         }
         if (signatureKeyAndCertificate != null ? !signatureKeyAndCertificate.equals(that.signatureKeyAndCertificate)
@@ -130,6 +141,7 @@ public final class SignatureConfiguration {
     public int hashCode() {
         int result = (checkedValidityPeriod ? 1 : 0);
         result = 31 * result + (disallowedSelfSignedCertificate ? 1 : 0);
+        result = 31 * result + (responseSignAssertions ? 1 : 0);
         result = 31 * result + (signatureKeyAndCertificate != null ? signatureKeyAndCertificate.hashCode() : 0);
         result = 31 * result + (trustedCertificates != null ? trustedCertificates.hashCode() : 0);
         result = 31 * result + (signatureAlgorithm != null ? signatureAlgorithm.hashCode() : 0);
@@ -144,6 +156,7 @@ public final class SignatureConfiguration {
         return "SignatureConfiguration{" +
                 "checkedValidityPeriod=" + checkedValidityPeriod +
                 ", disallowedSelfSignedCertificate=" + disallowedSelfSignedCertificate +
+                ", responseSignAssertions=" + responseSignAssertions +
                 ", signatureKeyAndCertificate=" + signatureKeyAndCertificate +
                 ", trustedCertificates=" + trustedCertificates +
                 ", signatureAlgorithm='" + signatureAlgorithm + '\'' +

@@ -124,8 +124,7 @@ public class AUCONNECTORTestCase {
     }
 
     /**
-     * Test method for eu.eidas.node.auth.connector.AUCONNECTOR#getAuthenticationRequest(java.util.Map,
-     * eu.eidas.auth.commons.IEIDASSession)} . Must Succeed.
+     * Test method for eu.eidas.node.auth.connector.AUCONNECTOR#getAuthenticationRequest(java.util.Map)} . Must Succeed.
      */
     @Test
     @Ignore

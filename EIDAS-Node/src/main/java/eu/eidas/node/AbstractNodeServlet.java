@@ -80,11 +80,12 @@ public abstract class AbstractNodeServlet extends HttpServlet {
      *
      * @param renewSession indicates that the session cookie will be renewed
      */
+    @SuppressWarnings("squid:S2254")  // it is just setting param to a cookie
     protected final void setHTTPOnlyHeaderToSession(final boolean renewSession, HttpServletRequest request, HttpServletResponse response) {
         if (request != null && request.getSession(false) != null) {
             // Renewing the session if necessary
-            String currentSession = null;
-            String messageLog=null;
+            String currentSession;
+            String messageLog;
             if (renewSession){
                 currentSession = sessionIdRegenerationInWebApp(request);
                 messageLog = "http session Renewed : {}";

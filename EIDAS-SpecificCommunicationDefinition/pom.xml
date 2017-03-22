@@ -5,7 +5,6 @@
     <artifactId>eidas-specific-communication-definition</artifactId>
     <packaging>jar</packaging>
     <name>eIDAS Specific Communication Definition</name>
-    <version>1.1.0</version>
     <description>
         Separated specific modules used to define the communication protocol used in the communications.
         Provides Java Interfaces to plug specific integration on SP and IdP sides.
@@ -13,7 +12,7 @@
     <parent>
         <groupId>eu.eidas</groupId>
         <artifactId>eidas-parent</artifactId>
-        <version>1.1.0</version>
+        <version>1.2.0</version>
         <relativePath>../EIDAS-Parent/pom.xml</relativePath>
     </parent>
 
@@ -34,16 +33,6 @@
         <dependency>
             <groupId>commons-lang</groupId>
             <artifactId>commons-lang</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-log4j12</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
     </dependencies>
 

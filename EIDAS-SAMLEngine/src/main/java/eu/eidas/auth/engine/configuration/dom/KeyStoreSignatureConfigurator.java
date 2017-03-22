@@ -84,6 +84,8 @@ public final class KeyStoreSignatureConfigurator {
             throws SamlEngineConfigurationException {
         boolean checkedValidityPeriod = CertificateValidator.isCheckedValidityPeriod(properties);
         boolean disallowedSelfSignedCertificate = CertificateValidator.isDisallowedSelfSignedCertificate(properties);
+        boolean responseSignAssertions = Boolean.parseBoolean(
+                StringUtils.trim(SignatureKey.RESPONSE_SIGN_ASSERTIONS.getAsString(properties)));
 
         String serialNumber = SignatureKey.SERIAL_NUMBER.getAsString(properties);
         String issuer = SignatureKey.ISSUER.getAsString(properties);
@@ -97,7 +99,7 @@ public final class KeyStoreSignatureConfigurator {
                 getPrivateSigningKeyAndCertificate(properties, SignatureKey.METADATA_PREFIX.getKey(), serialNumber,
                                                    issuer);
 
-        return new SignatureConfiguration(checkedValidityPeriod, disallowedSelfSignedCertificate,
+        return new SignatureConfiguration(checkedValidityPeriod, disallowedSelfSignedCertificate, responseSignAssertions,
                                           signatureKeyAndCertificate, trustedCertificates, signatureAlgorithm,
                                           signatureAlgorithmWhiteListStr, metadataSigningKeyAndCertificate);
     }

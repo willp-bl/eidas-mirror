@@ -6,9 +6,8 @@ import com.opensymphony.xwork2.ActionSupport;
 public class AuthenticateCitizenAction extends ActionSupport{
 
 	private static final long serialVersionUID = -7243683543548722148L;
-	
+
 	private String SAMLRequest;
-	private String encryptAssertion;
 
 	public String execute(){
 		return Action.SUCCESS;
@@ -28,11 +27,4 @@ public class AuthenticateCitizenAction extends ActionSupport{
 		return SAMLRequest;
 	}
 
-	public String getEncryptAssertion() {
-		return encryptAssertion;
-	}
-
-	public void setEncryptAssertion(String encryptAssertion) {
-		this.encryptAssertion = encryptAssertion;
-	}
 }

@@ -24,9 +24,6 @@ import javax.annotation.Nullable;
 import javax.annotation.concurrent.ThreadSafe;
 
 import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import eu.eidas.auth.commons.lang.Canonicalizers;
 import eu.eidas.auth.commons.lang.EnumMapper;
 import eu.eidas.auth.commons.lang.KeyAccessor;
@@ -54,6 +51,9 @@ public final class PersonalAttribute {
          */
         NOT_AVAILABLE("NotAvailable");
 
+        @Nonnull
+        private final transient String value;
+
         private static final EnumMapper<String, Status> MAPPER =
                 new EnumMapper<String, Status>(new KeyAccessor<String, Status>() {
 
@@ -64,6 +64,10 @@ public final class PersonalAttribute {
                     }
                 }, Canonicalizers.trimLowerCase(), values());
 
+        Status(@Nonnull String val) {
+            value = val;
+        }
+
         @Nullable
         public static Status fromString(@Nonnull String val) {
             return MAPPER.fromKey(val);
@@ -71,13 +75,6 @@ public final class PersonalAttribute {
 
         public static EnumMapper<String, Status> mapper() {
             return MAPPER;
-        }
-
-        @Nonnull
-        private final transient String value;
-
-        Status(@Nonnull String value) {
-            this.value = value;
         }
 
         @Nonnull
@@ -91,29 +88,6 @@ public final class PersonalAttribute {
             return value;
         }
     }
-
-    /**
-     * Guesses the friendly name from the given full attribute name URI.
-     *
-     * @param name the attribute name URI
-     * @return the guessed friendly name
-     */
-    public static String extractFriendlyName(@Nonnull String name) {
-        Preconditions.checkNotNull(name, "name");
-        if (StringUtils.isBlank(name)) {
-            return StringUtils.EMPTY;
-        }
-        int lastIndexOf = name.lastIndexOf('/');
-        if (lastIndexOf == -1 || lastIndexOf == name.length() - 1) {
-            return name;
-        }
-        return name.substring(lastIndexOf + 1);
-    }
-
-    /**
-     * Logger object.
-     */
-    private static final Logger LOG = LoggerFactory.getLogger(PersonalAttribute.class.getName());
 
     /**
      * Name of the personal attribute as a URI.
@@ -133,13 +107,11 @@ public final class PersonalAttribute {
     /**
      * Values of the personal attribute.
      */
-    @Nonnull
     private List<String> value = Collections.synchronizedList(new ArrayList<String>());
 
     /**
      * Complex values of the personal attribute.
      */
-    @Nonnull
     private Map<String, String> complexValue = Collections.synchronizedMap(new HashMap<String, String>());
 
     /**
@@ -212,9 +184,10 @@ public final class PersonalAttribute {
      * Default Constructor.
      */
     public PersonalAttribute(@Nonnull String name, @Nonnull String friendlyName) {
+        String tmpFriendlyName = friendlyName;
         Preconditions.checkNotNull(name, "name");
-        if (StringUtils.isBlank(friendlyName)) {
-            friendlyName = extractFriendlyName(name);
+        if (StringUtils.isBlank(tmpFriendlyName)) {
+            tmpFriendlyName = extractFriendlyName(name);
         }
         this.name = name;
         this.friendlyName = friendlyName;
@@ -326,6 +299,24 @@ public final class PersonalAttribute {
             return null;
         }
         return new PersonalAttribute(copy, newName, newFriendlyName, false);
+    }
+
+    /**
+     * Guesses the friendly name from the given full attribute name URI.
+     *
+     * @param name the attribute name URI
+     * @return the guessed friendly name
+     */
+    public static String extractFriendlyName(@Nonnull String name) {
+        Preconditions.checkNotNull(name, "name");
+        if (StringUtils.isBlank(name)) {
+            return StringUtils.EMPTY;
+        }
+        int lastIndexOf = name.lastIndexOf('/');
+        if (lastIndexOf == -1 || lastIndexOf == name.length() - 1) {
+            return name;
+        }
+        return name.substring(lastIndexOf + 1);
     }
 
     /**

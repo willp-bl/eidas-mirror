@@ -29,7 +29,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import eu.eidas.auth.commons.EidasStringUtil;
-import eu.eidas.node.logging.logback_integrity.HashFileChecker;
+import eu.eidas.node.logging.integrity.HashFileChecker;
 
 /**
  * @author vanegdi

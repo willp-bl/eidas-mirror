@@ -3,13 +3,12 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>eidas-sp</artifactId>
     <packaging>war</packaging>
-    <name>SP</name>
-    <version>1.1.0</version>
+    <name>eIDAS SP</name>
     <description>eIDAS Service Provider</description>
     <parent>
         <groupId>eu.eidas</groupId>
         <artifactId>eidas-parent</artifactId>
-        <version>1.1.0</version>
+        <version>1.2.0</version>
         <relativePath>../EIDAS-Parent/pom.xml</relativePath>
     </parent>
     <dependencies>
@@ -17,39 +16,11 @@
         <dependency>
             <groupId>eu.eidas</groupId>
             <artifactId>eidas-commons</artifactId>
-            <!--scope>provided</scope-->
-            <exclusions>
-                <exclusion>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>eu.eidas</groupId>
             <artifactId>eidas-saml-engine</artifactId>
-            <scope>compile</scope>
             <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-simple</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>jcl-over-slf4j</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>jul-to-slf4j</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>log4j-over-slf4j</artifactId>
-                </exclusion>
                 <exclusion>
                     <groupId>xalan</groupId>
                     <artifactId>serializer</artifactId>
@@ -74,11 +45,6 @@
         </dependency>
 
         <!-- 2) Dependencies on libraries: -->
-        <!-- Log4J -->
-        <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-        </dependency>
         <!-- bouncyCastle -->
         <dependency>
             <groupId>org.bouncycastle</groupId>
@@ -99,14 +65,14 @@
             <groupId>org.apache.struts</groupId>
             <artifactId>struts2-core</artifactId>
         </dependency>
-
+        <!-- START LOGS -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
+            <artifactId>log4j-over-slf4j</artifactId>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -116,6 +82,12 @@
             <groupId>org.slf4j</groupId>
             <artifactId>jul-to-slf4j</artifactId>
         </dependency>
+        <!-- logback -->
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+        </dependency>
+        <!-- END LOGS -->
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-web</artifactId>
@@ -141,10 +113,23 @@
             <artifactId>xml-apis</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
         <finalName>SP</finalName>
+        <resources>
+            <resource>
+                <directory>${project.basedir}/src/main/resources</directory>
+            </resource>
+            <resource>
+                <directory>${project.basedir}/src/main/config/embedded</directory>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -171,31 +156,29 @@
         </plugins>
     </build>
     <profiles>
+        <!-- tomcat & glassfish profile -->
         <profile>
-            <id>coreDependencies</id>
-            <dependencies>
-                <dependency>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
-                    <version>${log4j.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
-        <profile>
-            <id>encryptionProvider</id>
-            <activation>
-                <jdk>[1.6,)</jdk>
-            </activation>
+            <id>tomcat</id>
             <dependencies>
                 <dependency>
                     <groupId>org.bouncycastle</groupId>
                     <artifactId>bcprov-jdk15on</artifactId>
+                    <!-- overrides the parent's scope which is provided -->
                     <scope>compile</scope>
                 </dependency>
             </dependencies>
         </profile>
+        <!-- websphere profile -->
         <profile>
             <id>websphere</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcprov-jdk15on</artifactId>
+                    <!-- overrides the parent's scope which is provided -->
+                    <scope>compile</scope>
+                </dependency>
+            </dependencies>
             <build>
                 <resources>
                     <resource>
@@ -204,101 +187,19 @@
                 </resources>
             </build>
         </profile>
-        <profile>
-            <id>embedded</id>
-            <build>
-                <finalName>SP</finalName>
-                <resources>
-                    <resource>
-                        <directory>${project.basedir}/src/main/resources</directory>
-                    </resource>
-                    <resource>
-                        <directory>${project.basedir}/src/main/config/embedded</directory>
-                    </resource>
-                </resources>
-            </build>
-        </profile>
+        <!-- weblogic profile -->
         <profile>
             <id>weblogic</id>
             <dependencies>
                 <dependency>
                     <groupId>xml-apis</groupId>
                     <artifactId>xml-apis</artifactId>
-                    <version>${xmlapis.version}</version>
                 </dependency>
-            </dependencies>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-resources-plugin</artifactId>
-                            <version>2.3</version>
-                            <executions>
-                                <execution>
-                                    <id>copy-weblogic-resources</id>
-                                    <phase>process-resources</phase>
-                                    <goals>
-                                        <goal>copy-resources</goal>
-                                    </goals>
-                                    <configuration>
-                                        <outputDirectory>
-                                            ${project.build.directory}/SP/WEB-INF
-                                        </outputDirectory>
-                                        <resources>
-                                            <resource>
-                                                <directory>${project.basedir}/src/main/config/weblogic</directory>
-                                                <filtering>false</filtering>
-                                            </resource>
-                                        </resources>
-                                    </configuration>
-                                </execution>
-                            </executions>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
-        <profile>
-            <id>jBoss6</id>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-resources-plugin</artifactId>
-                            <version>${resources.plugin.version}</version>
-                            <executions>
-                                <execution>
-                                    <id>copy-jboss-resources</id>
-                                    <phase>process-resources</phase>
-                                    <goals>
-                                        <goal>copy-resources</goal>
-                                    </goals>
-                                    <configuration>
-                                        <outputDirectory>
-                                            ${project.build.directory}/${pom.artifactId}-${project.version}/WEB-INF
-                                        </outputDirectory>
-                                        <resources>
-                                            <resource>
-                                                <directory>${project.basedir}/src/main/config/jBoss</directory>
-                                                <filtering>true</filtering>
-                                            </resource>
-                                        </resources>
-                                    </configuration>
-                                </execution>
-                            </executions>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
-        <profile>
-            <id>jBoss7</id>
-            <dependencies>
                 <dependency>
-                    <groupId>xml-apis</groupId>
-                    <artifactId>xml-apis</artifactId>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcprov-jdk15on</artifactId>
+                    <!-- overrides the parent's scope which is provided -->
+                    <scope>compile</scope>
                 </dependency>
             </dependencies>
             <build>
@@ -306,7 +207,92 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-resources-plugin</artifactId>
-                        <version>${resources.plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>copy-weblogic-resources</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>
+                                        ${project.build.directory}/SP/WEB-INF
+                                    </outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.basedir}/src/main/config/weblogic</directory>
+                                            <filtering>false</filtering>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <!-- jboss6 profile -->
+        <profile>
+            <id>jBoss6</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                    <scope>provided</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>log4j-over-slf4j</artifactId>
+                    <scope>provided</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>jcl-over-slf4j</artifactId>
+                    <scope>provided</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>jul-to-slf4j</artifactId>
+                    <scope>provided</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-jboss-resources</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>
+                                        ${project.build.directory}/SP/WEB-INF
+                                    </outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.basedir}/src/main/config/jBoss6</directory>
+                                            <filtering>true</filtering>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <!-- jboss7 profile -->
+        <profile>
+            <id>jBoss7</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
                         <executions>
                             <execution>
                                 <id>copy-jboss-resources</id>
@@ -338,13 +324,6 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>cobertura-maven-plugin</artifactId>
-                        <version>${cobertura.plugin.version}</version>
-                        <configuration>
-                            <formats>
-                                <format>html</format>
-                                <format>xml</format>
-                            </formats>
-                        </configuration>
                     </plugin>
                 </plugins>
             </build>

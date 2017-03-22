@@ -41,6 +41,12 @@ public interface ProtocolDecrypterI extends ProtocolCipherI {
     @Nonnull
     Response decryptSamlResponse(@Nonnull Response authResponse) throws EIDASSAMLEngineException;
 
+    /**
+     * Returns the X.509 certificate used to decrypt encrypted responses.
+     *
+     * @return the X.509 certificate used to decrypt encrypted responses.
+     * @throws EIDASSAMLEngineException if any error occurs
+     */
     @Nonnull
     X509Certificate getDecryptionCertificate() throws EIDASSAMLEngineException;
 }

@@ -45,8 +45,8 @@ public enum DefaultEncryptionAlgorithm {
     @Nonnull
     private final transient String value;
 
-    DefaultEncryptionAlgorithm(@Nonnull String value) {
-        this.value = value;
+    DefaultEncryptionAlgorithm(@Nonnull String val) {
+        value = val;
     }
 
     @Nonnull

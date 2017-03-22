@@ -44,7 +44,6 @@ public interface ILightRequest extends Serializable {
      * @return returns the 2-letter country code as defined in ISO 3166 of the country where the citizen must
      * authenticate.
      */
-    @Nonnull
     String getCitizenCountryCode();
 
     /**
@@ -62,7 +61,6 @@ public interface ILightRequest extends Serializable {
      *
      * @return the issuer of this request.
      */
-    @Nonnull
     String getIssuer();
 
     /**

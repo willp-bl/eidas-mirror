@@ -35,7 +35,6 @@ import eu.eidas.auth.commons.EIDASValues;
 import eu.eidas.auth.commons.EidasErrorKey;
 import eu.eidas.auth.commons.EidasStringUtil;
 import eu.eidas.auth.commons.IEIDASLogger;
-import eu.eidas.auth.commons.IEIDASSession;
 import eu.eidas.auth.commons.IPersonalAttributeList;
 import eu.eidas.auth.commons.PersonalAttributeList;
 import eu.eidas.auth.commons.PersonalAttributeString;
@@ -432,7 +431,7 @@ public final class AUSERVICESAMLTestCase {
 //=base64("<Request>...</Request>")
 
     /**
-     * Test method for {@link AUSERVICESAML#processAuthenticationRequest(byte[], IEIDASSession, String) )}. Testing null
+     * Test method for {@link AUSERVICESAML#processAuthenticationRequest(byte[], String) )}. Testing null
      * saml token. Must return and {@link InternalErrorEIDASException}.
      */
     @Test(expected = InternalErrorEIDASException.class)
@@ -452,7 +451,7 @@ public final class AUSERVICESAMLTestCase {
     }
 
     /**
-     * Test method for {@link AUSERVICESAML#processAuthenticationRequest(byte[], IEIDASSession, String) )}. Testing
+     * Test method for {@link AUSERVICESAML#processAuthenticationRequest(byte[], String) )}. Testing
      * invalid country code in class. Must return and {@link EIDASServiceException}.
      */
     @Test(expected = EIDASServiceException.class)
@@ -511,7 +510,7 @@ public final class AUSERVICESAMLTestCase {
 
         AUSERVICEUtil auserviceutil = new AUSERVICEUtil();
         auserviceutil.setConcurrentMapService(new ConcurrentMapServiceDefaultImpl());
-        auserviceutil.setAntiReplayCache(auserviceutil.getConcurrentMapService().getNewMapCache());
+        auserviceutil.setAntiReplayCache(auserviceutil.getConcurrentMapService().getConfiguredMapCache());
         auserviceutil.setConfigs(CONFIGS);
         auserviceutil.flushReplayCache();
         auconnectorsaml.setServiceUtil(auserviceutil);
@@ -533,7 +532,7 @@ public final class AUSERVICESAMLTestCase {
         // Instantiate the util service for anti replay check
         AUSERVICEUtil auserviceutil = new AUSERVICEUtil();
         auserviceutil.setConcurrentMapService(new ConcurrentMapServiceDefaultImpl());
-        auserviceutil.setAntiReplayCache(auserviceutil.getConcurrentMapService().getNewMapCache());
+        auserviceutil.setAntiReplayCache(auserviceutil.getConcurrentMapService().getConfiguredMapCache());
         auserviceutil.flushReplayCache();
         CONFIGS.setProperty(EIDASValues.NODE_SUPPORT_EIDAS_MESSAGE_FORMAT_ONLY.toString(), "false");
         auserviceutil.setConfigs(CONFIGS);
@@ -548,7 +547,6 @@ public final class AUSERVICESAMLTestCase {
 
         IEIDASLogger mockLoggerBean = mock(IEIDASLogger.class);
         auconnectorsaml.setLoggerBean(mockLoggerBean);
-        IEIDASSession session = mock(IEIDASSession.class);
         auconnectorsaml.setCountryCode(TestingConstants.LOCAL_CONS.toString());
         auconnectorsaml.setMaxQAA(TestingConstants.MAX_QAA_CONS.intValue());
         auconnectorsaml.setMaxQAAlevel(TestingConstants.MAX_QAA_CONS.intValue());
@@ -567,7 +565,7 @@ public final class AUSERVICESAMLTestCase {
 
         // Support to eIDAS message format only
         auserviceutil.setConcurrentMapService(new ConcurrentMapServiceDefaultImpl());
-        auserviceutil.setAntiReplayCache(auserviceutil.getConcurrentMapService().getNewMapCache());
+        auserviceutil.setAntiReplayCache(auserviceutil.getConcurrentMapService().getConfiguredMapCache());
         auserviceutil.flushReplayCache();
         CONFIGS.setProperty(EIDASValues.NODE_SUPPORT_EIDAS_MESSAGE_FORMAT_ONLY.toString(), "true");
         auserviceutil.setConfigs(CONFIGS);
@@ -582,7 +580,6 @@ public final class AUSERVICESAMLTestCase {
 
         IEIDASLogger mockLoggerBean = mock(IEIDASLogger.class);
         auservicesaml.setLoggerBean(mockLoggerBean);
-        IEIDASSession session = mock(IEIDASSession.class);
         auservicesaml.setCountryCode(TestingConstants.LOCAL_CONS.toString());
         auservicesaml.setMaxQAA(TestingConstants.MAX_QAA_CONS.intValue());
         auservicesaml.setMaxQAAlevel(TestingConstants.MAX_QAA_CONS.intValue());

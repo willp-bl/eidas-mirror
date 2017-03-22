@@ -19,7 +19,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.web.context.ContextLoader;
@@ -58,7 +59,7 @@ public final class Updater {
   /**
    * The Logger object.
    */
-  private static final Logger LOG = Logger.getLogger(Updater.class.getClass());
+  private static final Logger LOG = LoggerFactory.getLogger(Updater.class);
     Thread worker=null;
 
   /**
@@ -108,8 +109,7 @@ public final class Updater {
    */
   private void restart() {
     LOG.debug("Restarting application context...");
-    final ApplicationContext ctx =
-      ContextLoader.getCurrentWebApplicationContext();
+    final ApplicationContext ctx = ContextLoader.getCurrentWebApplicationContext();
     ((ConfigurableApplicationContext) ctx).close();
     ((ConfigurableApplicationContext) ctx).refresh();
   }

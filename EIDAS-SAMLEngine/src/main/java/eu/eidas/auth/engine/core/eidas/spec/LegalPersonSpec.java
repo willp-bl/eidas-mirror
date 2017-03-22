@@ -4,6 +4,7 @@ import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.attribute.AttributeRegistries;
 import eu.eidas.auth.commons.attribute.AttributeRegistry;
 import eu.eidas.auth.commons.attribute.PersonType;
+import eu.eidas.auth.commons.attribute.impl.LiteralStringAttributeValueMarshaller;
 import eu.eidas.auth.commons.attribute.impl.StringAttributeValueMarshaller;
 import eu.eidas.auth.commons.protocol.eidas.impl.LegalAddressAttributeValueMarshaller;
 import eu.eidas.auth.commons.protocol.eidas.impl.PostalAddress;
@@ -26,7 +27,7 @@ public final class LegalPersonSpec {
                 .required(true)
                 .uniqueIdentifier(true)
                 .xmlType(Namespace.URI, "LegalPersonIdentifierType", Namespace.PREFIX)
-                .attributeValueMarshaller(new StringAttributeValueMarshaller())
+                .attributeValueMarshaller(new LiteralStringAttributeValueMarshaller())
                 .build();
 
         public static final AttributeDefinition<String> LEGAL_NAME = AttributeDefinition.<String>builder()
@@ -52,7 +53,7 @@ public final class LegalPersonSpec {
                 .friendlyName("VATRegistration")
                 .personType(PersonType.LEGAL_PERSON)
                 .xmlType(Namespace.URI, "VATRegistrationNumberType", Namespace.PREFIX)
-                .attributeValueMarshaller(new StringAttributeValueMarshaller())
+                .attributeValueMarshaller(new LiteralStringAttributeValueMarshaller())
                 .build();
 
         public static final AttributeDefinition<String> TAX_REFERENCE = AttributeDefinition.<String>builder()
@@ -60,7 +61,7 @@ public final class LegalPersonSpec {
                 .friendlyName("TaxReference")
                 .personType(PersonType.LEGAL_PERSON)
                 .xmlType(Namespace.URI, "TaxReferenceType", Namespace.PREFIX)
-                .attributeValueMarshaller(new StringAttributeValueMarshaller())
+                .attributeValueMarshaller(new LiteralStringAttributeValueMarshaller())
                 .build();
 
         public static final AttributeDefinition<String> D_2012_17_EU_IDENTIFIER = AttributeDefinition.<String>builder()
@@ -68,7 +69,7 @@ public final class LegalPersonSpec {
                 .friendlyName("D-2012-17-EUIdentifier")
                 .personType(PersonType.LEGAL_PERSON)
                 .xmlType(Namespace.URI, "D-2012-17-EUIdentifierType", Namespace.PREFIX)
-                .attributeValueMarshaller(new StringAttributeValueMarshaller())
+                .attributeValueMarshaller(new LiteralStringAttributeValueMarshaller())
                 .build();
 
         public static final AttributeDefinition<String> LEI = AttributeDefinition.<String>builder()
@@ -76,7 +77,7 @@ public final class LegalPersonSpec {
                 .friendlyName("LEI")
                 .personType(PersonType.LEGAL_PERSON)
                 .xmlType(Namespace.URI, "LEIType", Namespace.PREFIX)
-                .attributeValueMarshaller(new StringAttributeValueMarshaller())
+                .attributeValueMarshaller(new LiteralStringAttributeValueMarshaller())
                 .build();
 
         public static final AttributeDefinition<String> EORI = AttributeDefinition.<String>builder()
@@ -84,7 +85,7 @@ public final class LegalPersonSpec {
                 .friendlyName("EORI")
                 .personType(PersonType.LEGAL_PERSON)
                 .xmlType(Namespace.URI, "EORIType", Namespace.PREFIX)
-                .attributeValueMarshaller(new StringAttributeValueMarshaller())
+                .attributeValueMarshaller(new LiteralStringAttributeValueMarshaller())
                 .build();
 
         public static final AttributeDefinition<String> SEED = AttributeDefinition.<String>builder()
@@ -92,7 +93,7 @@ public final class LegalPersonSpec {
                 .friendlyName("SEED")
                 .personType(PersonType.LEGAL_PERSON)
                 .xmlType(Namespace.URI, "SEEDType", Namespace.PREFIX)
-                .attributeValueMarshaller(new StringAttributeValueMarshaller())
+                .attributeValueMarshaller(new LiteralStringAttributeValueMarshaller())
                 .build();
 
         public static final AttributeDefinition<String> SIC = AttributeDefinition.<String>builder()
@@ -100,7 +101,7 @@ public final class LegalPersonSpec {
                 .friendlyName("SIC")
                 .personType(PersonType.LEGAL_PERSON)
                 .xmlType(Namespace.URI, "SICType", Namespace.PREFIX)
-                .attributeValueMarshaller(new StringAttributeValueMarshaller())
+                .attributeValueMarshaller(new LiteralStringAttributeValueMarshaller())
                 .build();
 
         private Definitions() {

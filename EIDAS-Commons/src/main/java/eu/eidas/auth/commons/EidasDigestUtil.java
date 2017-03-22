@@ -30,6 +30,9 @@ public final class EidasDigestUtil {
 
     private static final String DEFAULT_DIGEST_ALGORITHM = "SHA-512";
 
+    private EidasDigestUtil() {
+    }
+
     /**
      * Performs the given hash using the given {@link MessageDigest} algorithm name and provider name (optional).
      * <p/>
@@ -64,16 +67,20 @@ public final class EidasDigestUtil {
      */
     @Nonnull
     public static byte[] hash(@Nonnull byte[] bytes, @Nullable String algorithm, @Nullable String provider) {
+
+        String algorithmName;
         if (StringUtils.isEmpty(algorithm)) {
-            algorithm = DEFAULT_DIGEST_ALGORITHM;
+            algorithmName = DEFAULT_DIGEST_ALGORITHM;
+        } else {
+            algorithmName = algorithm;
         }
 
         try {
             MessageDigest messageDigest;
             if (null == provider) {
-                messageDigest = MessageDigest.getInstance(algorithm);
+                messageDigest = MessageDigest.getInstance(algorithmName);
             } else {
-                messageDigest = MessageDigest.getInstance(algorithm, provider);
+                messageDigest = MessageDigest.getInstance(algorithmName, provider);
             }
             return messageDigest.digest(bytes);
         } catch (NoSuchAlgorithmException nsae) {
@@ -110,7 +117,7 @@ public final class EidasDigestUtil {
      */
     @Nonnull
     @Deprecated
-    public static byte[] hashPersonalToken(@Nonnull byte[] samlToken, @Nonnull String className) {
+    public static byte[] hashPersonalToken(@Nonnull byte[] samlToken, String className) {
         try {
             String hashClassName = className;
             if (null == hashClassName || hashClassName.isEmpty()) {
@@ -131,8 +138,5 @@ public final class EidasDigestUtil {
             throw new InternalErrorEIDASException(EidasErrors.get(EidasErrorKey.HASH_ERROR.errorCode()),
                                                   EidasErrors.get(EidasErrorKey.HASH_ERROR.errorMessage()), e);
         }
-    }
-
-    private EidasDigestUtil() {
     }
 }

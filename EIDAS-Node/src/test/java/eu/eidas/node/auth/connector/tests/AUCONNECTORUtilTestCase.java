@@ -29,6 +29,7 @@ import com.hazelcast.core.Hazelcast;
 
 import eu.eidas.auth.commons.cache.ConcurrentMapServiceDefaultImpl;
 import eu.eidas.auth.commons.cache.ConcurrentMapServiceDistributedImpl;
+import eu.eidas.auth.commons.cache.HazelcastInstanceInitializer;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -288,7 +289,7 @@ public class AUCONNECTORUtilTestCase {
     public void testDefaultAntiReplayMechanism() {
         final AUCONNECTORUtil auconnectorutil = new AUCONNECTORUtil();
         auconnectorutil.setConcurrentMapService(new ConcurrentMapServiceDefaultImpl());
-        auconnectorutil.setAntiReplayCache(auconnectorutil.getConcurrentMapService().getNewMapCache());
+        auconnectorutil.setAntiReplayCache(auconnectorutil.getConcurrentMapService().getConfiguredMapCache());
         auconnectorutil.flushReplayCache();
         // This is the first case a SAML id is submitted in the cache
         Assert.assertTrue("FIRST pass of replay attack", auconnectorutil.checkNotPresentInCache(ANTIREPLAY_SAML_ID_A, "EU"));
@@ -302,9 +303,13 @@ public class AUCONNECTORUtilTestCase {
     public void testHazelcastAntiReplayMechanism() {
         final AUCONNECTORUtil auconnectorutil = new AUCONNECTORUtil();
         ConcurrentMapServiceDistributedImpl hazelCache = new ConcurrentMapServiceDistributedImpl();
+        HazelcastInstanceInitializer initializer = new HazelcastInstanceInitializer();
+        initializer.setHazelcastInstanceName("TEST");
+        initializer.initializeInstance();
         hazelCache.setCacheName("myTestCache");
+        hazelCache.setHazelcastInstanceInitializer(initializer);
         auconnectorutil.setConcurrentMapService(hazelCache);
-        auconnectorutil.setAntiReplayCache(auconnectorutil.getConcurrentMapService().getNewMapCache());
+        auconnectorutil.setAntiReplayCache(auconnectorutil.getConcurrentMapService().getConfiguredMapCache());
         auconnectorutil.flushReplayCache();
         // This is the first case a SAML id is submitted in the cache
         Assert.assertTrue("FIRST pass of replay attack", auconnectorutil.checkNotPresentInCache(ANTIREPLAY_SAML_ID_A, "EU"));
@@ -314,14 +319,6 @@ public class AUCONNECTORUtilTestCase {
     @Test(expected=InvalidParameterEIDASException.class)
     public void testHazelCastAntiReplayMechanismFailByNullCache(){
         ConcurrentMapServiceDistributedImpl hazelCache = new ConcurrentMapServiceDistributedImpl();
-        hazelCache.getNewMapCache();
-    }
-    @Test(expected=IllegalArgumentException.class)
-    public void testHazelCastAntiReplayMechanismFail() throws Exception{
-        LOG.info("************************************************************************");
-        ConcurrentMapServiceDistributedImpl hazelCache = new ConcurrentMapServiceDistributedImpl();
-        hazelCache.setCacheName("myTestCache");
-        hazelCache.setHazelcastXmlConfigClassPathFileName("TEST");
-        hazelCache.getNewMapCache();
+        hazelCache.getConfiguredMapCache();
     }
 }

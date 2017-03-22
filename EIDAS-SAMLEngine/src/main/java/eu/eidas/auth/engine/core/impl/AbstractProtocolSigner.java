@@ -1,36 +1,43 @@
 /*
+ * Copyright (c) 2017 by European Commission
+ *
  * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
  * the European Commission - subsequent versions of the EUPL (the "Licence");
- * You may not use this work except in compliance with the Licence. You may
- * obtain a copy of the Licence at:
- *
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
  * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the Licence is distributed on an "AS IS" basis, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * Licence for the specific language governing permissions and limitations under
- * the Licence.
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
+ *
+ * This product combines work with different licenses. See the "NOTICE" text
+ * file for details on the various modules and licenses.
+ * The "NOTICE" text file is part of the distribution. Any derivative works
+ * that you distribute must include a readable copy of the "NOTICE" text file.
+ *
  */
 
 package eu.eidas.auth.engine.core.impl;
 
-import java.security.KeyStore;
-import java.security.cert.X509Certificate;
-import java.util.Collection;
-import java.util.List;
-import java.util.Locale;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-
+import eu.eidas.auth.commons.EidasErrorKey;
+import eu.eidas.auth.engine.configuration.SamlEngineConfigurationException;
+import eu.eidas.auth.engine.configuration.dom.SignatureConfiguration;
+import eu.eidas.auth.engine.core.ProtocolSignerI;
+import eu.eidas.auth.engine.metadata.MetadataSignerI;
+import eu.eidas.auth.engine.xml.opensaml.CertificateUtil;
+import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
+import eu.eidas.util.Preconditions;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.xml.security.signature.XMLSignature;
 import org.opensaml.Configuration;
+import org.opensaml.common.impl.SAMLObjectContentReference;
 import org.opensaml.security.SAMLSignatureProfileValidator;
 import org.opensaml.xml.io.MarshallingException;
 import org.opensaml.xml.security.BasicSecurityConfiguration;
@@ -42,25 +49,20 @@ import org.opensaml.xml.security.keyinfo.KeyInfoGeneratorFactory;
 import org.opensaml.xml.security.keyinfo.KeyInfoGeneratorManager;
 import org.opensaml.xml.security.keyinfo.NamedKeyInfoGeneratorManager;
 import org.opensaml.xml.security.x509.X509Credential;
-import org.opensaml.xml.signature.KeyInfo;
-import org.opensaml.xml.signature.SignableXMLObject;
-import org.opensaml.xml.signature.Signature;
-import org.opensaml.xml.signature.SignatureConstants;
-import org.opensaml.xml.signature.SignatureException;
-import org.opensaml.xml.signature.SignatureValidator;
-import org.opensaml.xml.signature.Signer;
+import org.opensaml.xml.signature.*;
 import org.opensaml.xml.validation.ValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.eidas.auth.commons.EidasErrorKey;
-import eu.eidas.auth.engine.configuration.SamlEngineConfigurationException;
-import eu.eidas.auth.engine.configuration.dom.SignatureConfiguration;
-import eu.eidas.auth.engine.core.ProtocolSignerI;
-import eu.eidas.auth.engine.metadata.MetadataSignerI;
-import eu.eidas.auth.engine.xml.opensaml.CertificateUtil;
-import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
-import eu.eidas.util.Preconditions;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.security.KeyStore;
+import java.security.cert.X509Certificate;
+import java.util.Collection;
+import java.util.List;
+
+import static org.apache.commons.collections.CollectionUtils.isNotEmpty;
+import static org.apache.commons.lang.StringUtils.isNotBlank;
 
 /**
  * The base abstract class for implementations of {@link ProtocolSignerI}.
@@ -87,7 +89,8 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
                             // RIPEMD is not allowed to sign
                             SignatureConstants.ALGO_ID_SIGNATURE_ECDSA_SHA256,
                             SignatureConstants.ALGO_ID_SIGNATURE_ECDSA_SHA384,
-                            SignatureConstants.ALGO_ID_SIGNATURE_ECDSA_SHA512);
+                            SignatureConstants.ALGO_ID_SIGNATURE_ECDSA_SHA512,
+                            XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA256_MGF1);
 
     private static final ImmutableSet<String> ALLOWED_ALGORITHMS_FOR_VERIFYING =
             ImmutableSet.of(SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA256,
@@ -97,7 +100,8 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
                             SignatureConstants.ALGO_ID_SIGNATURE_RSA_RIPEMD160,
                             SignatureConstants.ALGO_ID_SIGNATURE_ECDSA_SHA256,
                             SignatureConstants.ALGO_ID_SIGNATURE_ECDSA_SHA384,
-                            SignatureConstants.ALGO_ID_SIGNATURE_ECDSA_SHA512);
+                            SignatureConstants.ALGO_ID_SIGNATURE_ECDSA_SHA512,
+                            XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA256_MGF1);
 
     private static final ImmutableSet<String> DEFAULT_ALGORITHM_WHITE_LIST =
             ImmutableSet.of(SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA256,
@@ -106,13 +110,14 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
                             // RIPEMD is not allowed to sign
                             SignatureConstants.ALGO_ID_SIGNATURE_ECDSA_SHA256,
                             SignatureConstants.ALGO_ID_SIGNATURE_ECDSA_SHA384,
-                            SignatureConstants.ALGO_ID_SIGNATURE_ECDSA_SHA512);
+                            SignatureConstants.ALGO_ID_SIGNATURE_ECDSA_SHA512,
+                            XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA256_MGF1);
 
     private static final String DEFAULT_DIGEST_ALGORITHM = SignatureConstants.ALGO_ID_DIGEST_SHA512;
 
     private static final ImmutableMap<String, String> SIGNATURE_TO_DIGEST_ALGORITHM_MAP =
-            ImmutableMap.<String, String>builder().put(SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA256,
-                                                       SignatureConstants.ALGO_ID_DIGEST_SHA256)
+            ImmutableMap.<String, String>builder()
+                    .put(SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA256, SignatureConstants.ALGO_ID_DIGEST_SHA256)
                     .put(SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA384, SignatureConstants.ALGO_ID_DIGEST_SHA384)
                     .put(SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA512, SignatureConstants.ALGO_ID_DIGEST_SHA512)
                     // RIPEMD is allowed to verify
@@ -121,7 +126,80 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
                     .put(SignatureConstants.ALGO_ID_SIGNATURE_ECDSA_SHA256, SignatureConstants.ALGO_ID_DIGEST_SHA256)
                     .put(SignatureConstants.ALGO_ID_SIGNATURE_ECDSA_SHA384, SignatureConstants.ALGO_ID_DIGEST_SHA384)
                     .put(SignatureConstants.ALGO_ID_SIGNATURE_ECDSA_SHA512, SignatureConstants.ALGO_ID_DIGEST_SHA512)
+                    .put(XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA256_MGF1, SignatureConstants.ALGO_ID_DIGEST_SHA256)
                     .build();
+
+    private final boolean checkedValidityPeriod;
+
+    private final boolean disallowedSelfSignedCertificate;
+
+    private final boolean responseSignAssertions;
+
+    private final ImmutableSet<String> signatureAlgorithmWhiteList;
+
+    private final X509Credential privateSigningCredential;
+
+    private final X509Credential publicSigningCredential;
+
+    private final X509Credential privateMetadataSigningCredential;
+
+    private final X509Credential publicMetadataSigningCredential;
+
+    private final ImmutableList<X509Credential> trustedCredentials;
+
+    private final String signatureAlgorithm;
+
+    protected AbstractProtocolSigner(@Nonnull SignatureConfiguration signatureConfiguration)
+            throws SamlEngineConfigurationException {
+        this(signatureConfiguration.isCheckedValidityPeriod(),
+                signatureConfiguration.isDisallowedSelfSignedCertificate(),
+                signatureConfiguration.isResponseSignAssertions(),
+                signatureConfiguration.getSignatureKeyAndCertificate(), signatureConfiguration.getTrustedCertificates(),
+                signatureConfiguration.getSignatureAlgorithm(), signatureConfiguration.getSignatureAlgorithmWhiteList(),
+                signatureConfiguration.getMetadataSigningKeyAndCertificate());
+    }
+
+    protected AbstractProtocolSigner(boolean checkedValidityPeriod,
+                                     boolean disallowedSelfSignedCertificate,
+                                     boolean responseSignAssertions,
+                                     @Nonnull KeyStore.PrivateKeyEntry signatureKeyAndCertificate,
+                                     @Nonnull ImmutableSet<X509Certificate> trustedCertificates,
+                                     @Nullable String signatureAlgorithmVal,
+                                     @Nullable String signatureAlgorithmWhiteListStr,
+                                     @Nullable KeyStore.PrivateKeyEntry metadataSigningKeyAndCertificate)
+            throws SamlEngineConfigurationException {
+        Preconditions.checkNotNull(signatureKeyAndCertificate, "signatureKeyAndCertificate");
+        Preconditions.checkNotNull(trustedCertificates, "trustedCertificates");
+        String signatureAlg = signatureAlgorithmVal;
+        if (StringUtils.isBlank(signatureAlg)) {
+            signatureAlg = DEFAULT_SIGNATURE_ALGORITHM;
+        } else {
+            signatureAlg = validateSigningAlgorithm(signatureAlg);
+        }
+        ImmutableSet<String> signatureAlgorithmWhiteSet =
+                WhiteListConfigurator.getAllowedAlgorithms(DEFAULT_ALGORITHM_WHITE_LIST,
+                        ALLOWED_ALGORITHMS_FOR_VERIFYING,
+                        signatureAlgorithmWhiteListStr);
+
+        this.checkedValidityPeriod = checkedValidityPeriod;
+        this.disallowedSelfSignedCertificate = disallowedSelfSignedCertificate;
+        this.responseSignAssertions = responseSignAssertions;
+        trustedCredentials = CertificateUtil.getListOfCredential(trustedCertificates);
+        this.signatureAlgorithmWhiteList = signatureAlgorithmWhiteSet;
+        this.signatureAlgorithm = signatureAlg;
+        privateSigningCredential = CertificateUtil.createCredential(signatureKeyAndCertificate);
+        publicSigningCredential =
+                CertificateUtil.toCredential((X509Certificate) signatureKeyAndCertificate.getCertificate());
+        if (null != metadataSigningKeyAndCertificate) {
+            privateMetadataSigningCredential = CertificateUtil.createCredential(metadataSigningKeyAndCertificate);
+            publicMetadataSigningCredential =
+                    CertificateUtil.toCredential((X509Certificate) metadataSigningKeyAndCertificate.getCertificate());
+        } else {
+            privateMetadataSigningCredential = null;
+            publicMetadataSigningCredential = null;
+        }
+        // setDigestMethodAlgorithm(signatureAlgorithm);
+    }
 
     private static X509Certificate getSignatureCertificate(Signature signature) throws EIDASSAMLEngineException {
         KeyInfo keyInfo = signature.getKeyInfo();
@@ -135,7 +213,7 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
     protected static void setDigestMethodAlgorithm(@Nonnull String signatureAlgorithm)
             throws SamlEngineConfigurationException {
         BasicSecurityConfiguration config = (BasicSecurityConfiguration) Configuration.getGlobalSecurityConfiguration();
-        if (config != null && StringUtils.isNotBlank(signatureAlgorithm)) {
+        if (config != null && isNotBlank(signatureAlgorithm)) {
             String digestAlgorithm = validateDigestAlgorithm(signatureAlgorithm);
             config.setSignatureReferenceDigestMethod(digestAlgorithm);
         } else {
@@ -157,7 +235,7 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
         if (StringUtils.isBlank(signatureAlgorithmName)) {
             return DEFAULT_DIGEST_ALGORITHM;
         }
-        String canonicalAlgorithm = signatureAlgorithmName.trim().toLowerCase(Locale.ENGLISH);
+        String canonicalAlgorithm = signatureAlgorithmName.trim();
         String digestAlgorithm = SIGNATURE_TO_DIGEST_ALGORITHM_MAP.get(canonicalAlgorithm);
         if (null != digestAlgorithm) {
             return digestAlgorithm;
@@ -177,83 +255,16 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
      */
     public static String validateSigningAlgorithm(@Nullable String signatureAlgorithmName)
             throws SamlEngineConfigurationException {
-        if (StringUtils.isBlank(signatureAlgorithmName)) {
+        if (signatureAlgorithmName == null || StringUtils.isBlank(signatureAlgorithmName)) {
             return DEFAULT_SIGNATURE_ALGORITHM;
         }
-
-        String canonicalAlgorithm = signatureAlgorithmName.trim().toLowerCase(Locale.ENGLISH);
+        String canonicalAlgorithm = signatureAlgorithmName.trim();
         if (ALLOWED_ALGORITHMS_FOR_SIGNING.contains(canonicalAlgorithm)) {
             return canonicalAlgorithm;
         }
         String msg = "Signing algorithm \"" + signatureAlgorithmName + "\" is not allowed";
         LOG.error(msg);
         throw new SamlEngineConfigurationException(msg);
-    }
-
-    private final boolean checkedValidityPeriod;
-
-    private final boolean disallowedSelfSignedCertificate;
-
-    private final ImmutableSet<String> signatureAlgorithmWhiteList;
-
-    private final X509Credential privateSigningCredential;
-
-    private final X509Credential publicSigningCredential;
-
-    private final X509Credential privateMetadataSigningCredential;
-
-    private final X509Credential publicMetadataSigningCredential;
-
-    private final ImmutableList<X509Credential> trustedCredentials;
-
-    private final String signatureAlgorithm;
-
-    protected AbstractProtocolSigner(@Nonnull SignatureConfiguration signatureConfiguration)
-            throws SamlEngineConfigurationException {
-        this(signatureConfiguration.isCheckedValidityPeriod(),
-             signatureConfiguration.isDisallowedSelfSignedCertificate(),
-             signatureConfiguration.getSignatureKeyAndCertificate(), signatureConfiguration.getTrustedCertificates(),
-             signatureConfiguration.getSignatureAlgorithm(), signatureConfiguration.getSignatureAlgorithmWhiteList(),
-             signatureConfiguration.getMetadataSigningKeyAndCertificate());
-    }
-
-    protected AbstractProtocolSigner(boolean checkedValidityPeriod,
-                                     boolean disallowedSelfSignedCertificate,
-                                     @Nonnull KeyStore.PrivateKeyEntry signatureKeyAndCertificate,
-                                     @Nonnull ImmutableSet<X509Certificate> trustedCertificates,
-                                     @Nullable String signatureAlgorithm,
-                                     @Nullable String signatureAlgorithmWhiteListStr,
-                                     @Nullable KeyStore.PrivateKeyEntry metadataSigningKeyAndCertificate)
-            throws SamlEngineConfigurationException {
-        Preconditions.checkNotNull(signatureKeyAndCertificate, "signatureKeyAndCertificate");
-        Preconditions.checkNotNull(trustedCertificates, "trustedCertificates");
-        if (StringUtils.isBlank(signatureAlgorithm)) {
-            signatureAlgorithm = DEFAULT_SIGNATURE_ALGORITHM;
-        } else {
-            signatureAlgorithm = validateSigningAlgorithm(signatureAlgorithm);
-        }
-        ImmutableSet<String> signatureAlgorithmWhiteSet =
-                WhiteListConfigurator.getAllowedAlgorithms(DEFAULT_ALGORITHM_WHITE_LIST,
-                                                           ALLOWED_ALGORITHMS_FOR_VERIFYING,
-                                                           signatureAlgorithmWhiteListStr);
-
-        this.checkedValidityPeriod = checkedValidityPeriod;
-        this.disallowedSelfSignedCertificate = disallowedSelfSignedCertificate;
-        trustedCredentials = CertificateUtil.getListOfCredential(trustedCertificates);
-        this.signatureAlgorithmWhiteList = signatureAlgorithmWhiteSet;
-        this.signatureAlgorithm = signatureAlgorithm;
-        privateSigningCredential = CertificateUtil.createCredential(signatureKeyAndCertificate);
-        publicSigningCredential =
-                CertificateUtil.toCredential((X509Certificate) signatureKeyAndCertificate.getCertificate());
-        if (null != metadataSigningKeyAndCertificate) {
-            privateMetadataSigningCredential = CertificateUtil.createCredential(metadataSigningKeyAndCertificate);
-            publicMetadataSigningCredential =
-                    CertificateUtil.toCredential((X509Certificate) metadataSigningKeyAndCertificate.getCertificate());
-        } else {
-            privateMetadataSigningCredential = null;
-            publicMetadataSigningCredential = null;
-        }
-        // setDigestMethodAlgorithm(signatureAlgorithm);
     }
 
     protected void checkCertificateIssuer(X509Certificate certificate) throws EIDASSAMLEngineException {
@@ -349,7 +360,7 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
     }
 
     private boolean isAlgorithmAllowedForVerifying(@Nonnull String signatureAlgorithm) {
-        return StringUtils.isNotBlank(signatureAlgorithm) && getSignatureAlgorithmWhiteList().contains(
+        return isNotBlank(signatureAlgorithm) && getSignatureAlgorithmWhiteList().contains(
                 signatureAlgorithm.trim());
     }
 
@@ -373,6 +384,15 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
         try {
             Signature signature = createSignature(signingCredential);
             signableObject.setSignature(signature);
+
+            // Reference/DigestMethod algorithm is set by default to SHA-1 in OpenSAML
+            String digestAlgorithm = validateDigestAlgorithm(getSignatureAlgorithm());
+            List<ContentReference> contentReferences = signature.getContentReferences();
+            if (isNotEmpty(contentReferences)) {
+                ((SAMLObjectContentReference)contentReferences.get(0)).setDigestAlgorithm(digestAlgorithm);
+            } else {
+                LOG.error("Unable to set DigestMethodAlgorithm - algorithm {} not set", digestAlgorithm);
+            }
 
             LOG.trace("Marshall samlToken.");
             Configuration.getMarshallerFactory().getMarshaller(signableObject).marshall(signableObject);
@@ -462,10 +482,10 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
                                               @Nonnull List<? extends Credential> trustedCredentialList)
             throws EIDASSAMLEngineException {
         // 1) check that we accept the signature algorithm
-        String signatureAlgorithm = signature.getSignatureAlgorithm();
-        LOG.trace("Key algorithm {}", SecurityHelper.getKeyAlgorithmFromURI(signatureAlgorithm));
-        if (!isAlgorithmAllowedForVerifying(signatureAlgorithm)) {
-            LOG.error("ERROR : the algorithm {} used by the signature is not allowed", signatureAlgorithm);
+        String signatureAlgorithmVal = signature.getSignatureAlgorithm();
+        LOG.trace("Key algorithm {}", SecurityHelper.getKeyAlgorithmFromURI(signatureAlgorithmVal));
+        if (!isAlgorithmAllowedForVerifying(signatureAlgorithmVal)) {
+            LOG.error("ERROR : the algorithm {} used by the signature is not allowed", signatureAlgorithmVal);
             throw new EIDASSAMLEngineException(EidasErrorKey.INVALID_SIGNATURE_ALGORITHM.errorCode());
         }
 
@@ -481,5 +501,10 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
             LOG.error("ERROR : Signature Validation Exception: " + e, e);
             throw new EIDASSAMLEngineException(e);
         }
+    }
+
+    @Override
+    public boolean isResponseSignAssertions() {
+        return responseSignAssertions;
     }
 }

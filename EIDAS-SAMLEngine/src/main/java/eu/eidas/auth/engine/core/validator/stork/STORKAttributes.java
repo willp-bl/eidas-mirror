@@ -16,7 +16,8 @@ import java.util.Set;
  * To change this template use File | Settings | File Templates.
  */
 
-
+@Deprecated
+@SuppressWarnings("all")
 public interface STORKAttributes {
 
     String STORK10_NS = "urn:eu:stork:names:tc:STORK:1.0:assertion";

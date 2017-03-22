@@ -10,29 +10,29 @@
 <html>
 
 <head>
-    <jsp:include page="htmlHead.jsp"/>
+    <jsp:include page="internal/htmlHead.jsp"/>
     <title><fmt:message key="consent.page.title" bundle="${i18n_eng}"/></title>
 </head>
 
 <body>
 <main>
     <div class="wrapper">
-        <jsp:include page="centralSlider.jsp"/>
-        <jsp:include page="leftColumn.jsp"/>
+        <jsp:include page="internal/centralSlider.jsp"/>
+        <jsp:include page="internal/leftColumn.jsp"/>
         <div class="col-right">
             <div class="col-right-inner">
                 <div class="clearfix">
                     <div class="menu-top"> <a class="item text-minus" href="#"></a> <a class="item text-plus" href="#"></a> <a class="item contrast" href="#"></a> </div>
                 </div>
                 <div class="col-right-content">
-                    <jsp:include page="content-security-header-deactivated.jsp"/>
+                    <jsp:include page="internal/content-security-header-deactivated.jsp"/>
                     <form id="consentSelector" name="consentSelector" method="post" action="${e:forHtml(citizenConsentUrl)}" class="jsOK" disabled="true">
                         <token:token/>
                         <input type="hidden" id="requestId" name="requestId"
                                value="<c:out value='${e:forHtml(requestId)}'/>"/>
                         <% /** Slider 1 */ %>
                         <div id="slider1">
-                            <jsp:include page="titleWithAssurance.jsp"/>
+                            <jsp:include page="internal/titleWithAssurance.jsp"/>
                             <p class="step-status"><fmt:message key="common.step" bundle="${i18n_eng}"/><span>1</span> | 3</p>
                             <h2 class="sub-title"><fmt:message key="presentConsent.basicInformation" bundle="${i18n_eng}"/></h2>
                             <div class="row"><% /** Mandatory attributes are here */ %>
@@ -133,11 +133,11 @@
                                 <button type="button" class="btn btn-opposite" id="buttonCancelSlide1" name="buttonCancelSlide1"><span><fmt:message key="common.cancel" bundle="${i18n_eng}"/></span></button>
                                 <button type="button" class="btn btn-next" id="buttonNextSlide1" name="buttonNextSlide1"><span><fmt:message key="common.next" bundle="${i18n_eng}"/></span></button>
                             </p>
-                            <jsp:include page="footer-img.jsp"/>
+                            <jsp:include page="internal/footer-img.jsp"/>
                         </div>
                         <% /** Slider 2 */ %>
                         <div id="slider2">
-                            <jsp:include page="titleWithAssurance.jsp"/>
+                            <jsp:include page="internal/titleWithAssurance.jsp"/>
                             <p class="step-status"><fmt:message key="common.step" bundle="${i18n_eng}"/> <span>2</span> | 3</p>
                             <h2 class="sub-title"><fmt:message key="presentConsent.additionalInformation" bundle="${i18n_eng}"/></h2>
                             <div class="row"> <% /** optional  attributes are here */ %>
@@ -251,7 +251,7 @@
                                 <button type="button" class="btn btn-back" id="buttonBackSlide2" name="buttonBackSlide2"><span><fmt:message key="common.back" bundle="${i18n_eng}"/></span></button>
                                 <button type="button" class="btn btn-next" id="buttonNextSlide2" name="buttonNextSlide2"><span><fmt:message key="common.next" bundle="${i18n_eng}"/></span></button>
                             </p>
-                            <jsp:include page="footer-img.jsp"/>
+                            <jsp:include page="internal/footer-img.jsp"/>
                         </div>
                     </form>
                     <form id="cancelForm" name="cancelForm" method="post" action="${e:forHtml(redirectUrl)}" class="jsOK" disabled="true">
@@ -451,7 +451,7 @@
                                     <p class="box-btn">
                                         <button type="submit" class="btn btn-opposite" id="buttonCancelNoScript" name="buttonCancelNoScript"><span>Cancel</span></button>
                                     </p>
-                                    <jsp:include page="footer-img.jsp"/>
+                                    <jsp:include page="internal/footer-img.jsp"/>
                                 </form>
 
 							</div>
@@ -464,7 +464,7 @@
 </main>
 <jsp:include page="helpPages/modal_loa.jsp"/>
 <jsp:include page="helpPages/modal_attribute.jsp"/>
-<jsp:include page="footerScripts.jsp"/>
+<jsp:include page="internal/footerScripts.jsp"/>
 <script type="text/javascript" src="js/presentConsent.js"></script>
 <script type="text/javascript" src="js/autocompleteOff.js"></script>
 </body>

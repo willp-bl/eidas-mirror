@@ -39,7 +39,7 @@ public abstract class AbstractCachingMetadataFetcher extends BaseMetadataFetcher
     @Override
     public EntityDescriptor getEntityDescriptor(@Nonnull String url, @Nonnull MetadataSignerI metadataSigner)
             throws EIDASSAMLEngineException {
-        EntityDescriptor cachedEntityDescriptor = getFromCache(url);
+        EntityDescriptor cachedEntityDescriptor = getFromCache(url, metadataSigner);
 
         if (null != cachedEntityDescriptor) {
             if (cachedEntityDescriptor.isValid()) {
@@ -66,7 +66,7 @@ public abstract class AbstractCachingMetadataFetcher extends BaseMetadataFetcher
     }
 
     @Nullable
-    protected abstract EntityDescriptor getFromCache(@Nonnull String url);
+    protected abstract EntityDescriptor getFromCache(@Nonnull String url, @Nonnull MetadataSignerI metadataSigner) throws EIDASSAMLEngineException;
 
     protected boolean isHttpRetrievalEnabled() {
         return true;

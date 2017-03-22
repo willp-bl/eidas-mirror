@@ -103,7 +103,7 @@ public final class EidasExtensionConfiguration {
 //
 //        }
 
-        EIDASUtil.setConfigs(null);
+        EIDASUtil.loadUtilConfigs();
 
     }
 
@@ -156,7 +156,7 @@ public final class EidasExtensionConfiguration {
 //
 //        }
 
-        EIDASUtil.setConfigs(null);
+        EIDASUtil.loadUtilConfigs();
 
     }
 

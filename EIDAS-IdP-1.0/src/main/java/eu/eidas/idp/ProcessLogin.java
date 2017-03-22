@@ -1,7 +1,5 @@
 package eu.eidas.idp;
 
-import java.nio.charset.Charset;
-import java.nio.charset.CharsetEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -10,7 +8,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.google.common.collect.ImmutableSet;
-import com.ibm.icu.text.Transliterator;
 
 import org.apache.log4j.Logger;
 
@@ -25,6 +22,7 @@ import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.attribute.AttributeValue;
 import eu.eidas.auth.commons.attribute.AttributeValueMarshaller;
 import eu.eidas.auth.commons.attribute.AttributeValueMarshallingException;
+import eu.eidas.auth.commons.attribute.AttributeValueTransliterator;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.exceptions.InternalErrorEIDASException;
 import eu.eidas.auth.commons.exceptions.InvalidParameterEIDASException;
@@ -40,12 +38,11 @@ import eu.eidas.auth.engine.metadata.MetadataSignerI;
 import eu.eidas.auth.engine.metadata.MetadataUtil;
 import eu.eidas.auth.engine.xml.opensaml.SAMLEngineUtils;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
+import eu.eidas.idp.metadata.IDPCachingMetadataFetcher;
 
 public class ProcessLogin {
 
     private static final Logger logger = Logger.getLogger(ProcessLogin.class.getName());
-
-    private static final String SIGN_ASSERTION_PARAM = "signAssertion";
 
     private String samlToken;
 
@@ -53,40 +50,22 @@ public class ProcessLogin {
 
     private String callback;
 
-    private String signAssertion;
-
-    private String encryptAssertion;
-
     private String eidasLoa;
 
     private Properties idpProperties = EIDASUtil.loadConfigs(Constants.IDP_PROPERTIES);
 
-    private final IdpMetadataFetcher idpMetadataFetcher = new IdpMetadataFetcher();
+    private final IDPCachingMetadataFetcher idpMetadataFetcher = new IDPCachingMetadataFetcher();
 
     private Properties loadConfigs(String path) {
         return EIDASUtil.loadConfigs(path);
-    }
-
-    private static final String TRANLITERATOR_ID = "Latin; NFD; [:Nonspacing Mark:] Remove; NFC;";
-
-    private static Transliterator T = Transliterator.getInstance(TRANLITERATOR_ID);
-
-    public static String transliterate(String value) {
-        return T == null ? value : T.transliterate(value);
-    }
-
-    static CharsetEncoder encoder = Charset.forName("ISO-8859-1").newEncoder();
-
-    public static boolean needsTransliteration(String v) {
-        return !encoder.canEncode(v);
     }
 
     public static List<String> getValuesOfAttribute(String attrName, String value) {
         logger.trace("[processAuthentication] Setting: " + attrName + "=>" + value);
         ArrayList<String> tmp = new ArrayList<String>();
         tmp.add(value);
-        if (needsTransliteration(value)) {
-            String trValue = transliterate(value);
+        if (AttributeValueTransliterator.needsTransliteration(value)) {
+            String trValue = AttributeValueTransliterator.transliterate(value);
             tmp.add(trValue);
             logger.trace("[processAuthentication] Setting transliterated: " + attrName + "=>" + trValue);
         }
@@ -100,7 +79,6 @@ public class ProcessLogin {
         String username = request.getParameter("username");
         String password = request.getParameter("password");
         String samlToken = request.getParameter("samlToken");
-        encryptAssertion = request.getParameter("encryptAssertion");
         eidasLoa = request.getParameter("eidasloa");
 
         IAuthenticationRequest authnRequest = validateRequest(samlToken);
@@ -118,8 +96,9 @@ public class ProcessLogin {
             users = loadConfigs("user.properties");
             pass = users.getProperty(username);
         } catch (SecurityEIDASException e) {
+            logger.error(e);
             sendErrorRedirect(authnRequest, request, EIDASSubStatusCode.AUTHN_FAILED_URI,
-                              EidasErrorKey.AUTHENTICATION_FAILED_ERROR.toString());
+                    EidasErrorKey.AUTHENTICATION_FAILED_ERROR.toString());
         }
 
         if (pass == null || (!pass.equals(password))) {
@@ -156,7 +135,11 @@ public class ProcessLogin {
                 for (final String val : values) {
                     AttributeValue<?> attributeValue = null;
                     try {
-                        attributeValue = attributeValueMarshaller.unmarshal(val, false);
+                        if (AttributeValueTransliterator.needsTransliteration(val)) {
+                            attributeValue = attributeValueMarshaller.unmarshal(val, true);
+                        } else {
+                            attributeValue = attributeValueMarshaller.unmarshal(val, false);
+                        }
                     } catch (AttributeValueMarshallingException e) {
                         throw new IllegalStateException(e);
                     }
@@ -177,6 +160,7 @@ public class ProcessLogin {
             authnRequest =
                     engine.unmarshallRequestAndValidate(EidasStringUtil.decodeBytesFromBase64(samlToken), getCountry());
         } catch (Exception e) {
+            logger.error(e);
             throw new InvalidParameterEIDASException(
                     EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INVALID_SAML.errorCode()),
                     EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INVALID_SAML.errorMessage()));
@@ -206,7 +190,7 @@ public class ProcessLogin {
 
             responseAuthReq.attributes(attrMap);
             responseAuthReq.inResponseTo(authnRequest.getId());
-            authnRequest = processRequestCallback(authnRequest, engine);
+            IAuthenticationRequest processedAuthnRequest = processRequestCallback(authnRequest, engine);
             String metadataUrl = idpProperties == null ? null : idpProperties.getProperty(Constants.IDP_METADATA_URL);
             if (metadataUrl != null && !metadataUrl.isEmpty()) {
                 responseAuthReq.issuer(metadataUrl);
@@ -218,17 +202,17 @@ public class ProcessLogin {
 
             AuthenticationResponse response = responseAuthReq.build();
 
-            IResponseMessage responseMessage = null;
+            IResponseMessage responseMessage;
+            boolean signAssertion = engine.getSigner().isResponseSignAssertions();
             try {
-                responseMessage = engine.generateResponseMessage(authnRequest, response, Boolean.parseBoolean(
-                        request.getParameter(SIGN_ASSERTION_PARAM)), remoteAddress);
+                responseMessage = engine.generateResponseMessage(processedAuthnRequest, response, signAssertion, remoteAddress);
                 samlToken = EidasStringUtil.encodeToBase64(responseMessage.getMessageBytes());
 
             } catch (EIDASSAMLEngineException se) {
                 if (se.getErrorDetail().startsWith("Unique Identifier not found:") || se.getErrorDetail()
                         .startsWith("No attribute values in response.")) {
                     // special IdP case when subject cannot be constructed due to missing unique identifier
-                    sendErrorRedirect(authnRequest, request, EIDASSubStatusCode.INVALID_ATTR_NAME_VALUE_URI,
+                    sendErrorRedirect(processedAuthnRequest, request, EIDASSubStatusCode.INVALID_ATTR_NAME_VALUE_URI,
                                       EidasErrorKey.ATT_VERIFICATION_MANDATORY.toString());
                 } else {
                     throw se;
@@ -240,7 +224,6 @@ public class ProcessLogin {
     }
 
     private ProtocolEngineI getSamlEngineInstance() throws EIDASSAMLEngineException {
-        // ProtocolEngine engine = IDPUtil.createSAMLEngine(Constants.SAMLENGINE_NAME);
         return ProtocolEngineFactory.getDefaultProtocolEngine(Constants.SAMLENGINE_NAME);
     }
 
@@ -261,11 +244,11 @@ public class ProcessLogin {
             if (metadataUrl != null && !metadataUrl.isEmpty()) {
                 samlTokenFail.issuer(metadataUrl);
             }
-            authnRequest = processRequestCallback(authnRequest, engine);
+            IAuthenticationRequest processedAuthnRequest = processRequestCallback(authnRequest, engine);
             samlTokenFail.levelOfAssurance(eidasLoa);
             AuthenticationResponse token = samlTokenFail.build();
             IResponseMessage responseMessage =
-                    engine.generateResponseErrorMessage(authnRequest, token, request.getRemoteAddr());
+                    engine.generateResponseErrorMessage(processedAuthnRequest, token, request.getRemoteAddr());
             failureBytes = responseMessage.getMessageBytes();
         } catch (Exception ex) {
             throw new InternalErrorEIDASException("0", "Error generating SAMLToken", ex);
@@ -275,6 +258,7 @@ public class ProcessLogin {
 
     private IAuthenticationRequest processRequestCallback(IAuthenticationRequest authnRequest, ProtocolEngineI engine)
             throws EIDASSAMLEngineException {
+        IAuthenticationRequest newAuthnRequest = authnRequest;
         if (callback == null) {
             EidasAuthenticationRequest.Builder builder =
                     EidasAuthenticationRequest.builder((IEidasAuthenticationRequest) authnRequest);
@@ -283,9 +267,9 @@ public class ProcessLogin {
                                                                         authnRequest);
 
             builder.assertionConsumerServiceURL(callback);
-            authnRequest = builder.build();
+            newAuthnRequest = builder.build();
         }
-        return authnRequest;
+        return newAuthnRequest;
     }
 
     /**
@@ -330,25 +314,4 @@ public class ProcessLogin {
         return callback;
     }
 
-    /**
-     * @param signAssertion the signAssertion to set
-     */
-    public void setSignAssertion(String signAssertion) {
-        this.signAssertion = signAssertion;
-    }
-
-    /**
-     * @return the signAssertion value
-     */
-    public String getSignAssertion() {
-        return signAssertion;
-    }
-
-    public String getEncryptAssertion() {
-        return encryptAssertion;
-    }
-
-    public void setEncryptAssertion(String encryptAssertion) {
-        this.encryptAssertion = encryptAssertion;
-    }
 }

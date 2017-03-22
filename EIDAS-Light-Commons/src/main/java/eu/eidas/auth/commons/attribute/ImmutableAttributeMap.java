@@ -29,9 +29,12 @@ import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -41,6 +44,7 @@ import javax.annotation.concurrent.Immutable;
 import javax.annotation.concurrent.NotThreadSafe;
 import javax.annotation.concurrent.ThreadSafe;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
@@ -91,6 +95,35 @@ public final class ImmutableAttributeMap implements Serializable {
             return attributeValue;
         }
 
+        @Nonnull
+        private static <T> ImmutableSet<AttributeValue<T>> unmarshal(@Nonnull AttributeDefinition<T> attribute,
+                                                                     @Nonnull Iterable<String> marshalledValues) {
+            ImmutableSet.Builder<AttributeValue<T>> setBuilder = ImmutableSet.builder();
+            if (attribute.isTransliterationMandatory()) {
+                for (final String marshalledValue : marshalledValues) {
+                    if (AttributeValueTransliterator.needsTransliteration(marshalledValue)) {
+                        String transliterated = AttributeValueTransliterator.transliterate(marshalledValue);
+                        setBuilder.add(unmarshal(attribute, transliterated, false));
+                        setBuilder.add(unmarshal(attribute, marshalledValue, true));
+                    } else {
+                        setBuilder.add(unmarshal(attribute, marshalledValue, false));
+                    }
+                }
+            } else {
+                for (final String marshalledValue : marshalledValues) {
+                    setBuilder.add(unmarshal(attribute, marshalledValue, false));
+                }
+            }
+            return setBuilder.build();
+        }
+
+        @VisibleForTesting
+        @Nonnull
+        static <T> ImmutableSet<AttributeValue<T>> unmarshal(@Nonnull AttributeDefinition<T> attribute,
+                                                             @Nonnull String... marshalledValues) {
+            return unmarshal(attribute, ImmutableSet.copyOf(marshalledValues));
+        }
+
         /**
          * Typesafe heterogeneous container pattern.
          * <p>
@@ -127,13 +160,29 @@ public final class ImmutableAttributeMap implements Serializable {
             putAll(copy);
         }
 
+        private void validate() throws IllegalArgumentException {
+            for (final Map.Entry<AttributeDefinition<?>, ImmutableSet<? extends AttributeValue<?>>> entry : definitionsToValues
+                    .entrySet()) {
+            }
+        }
+
+        /**
+         * Builds the {@link ImmutableAttributeMap} instance.
+         * <p>
+         * This method first calls the validation logic which iterates over all entries put in the Map and detects
+         * missing transliterations for attribute definitions which are defined as {@code transliterationMandatory ==
+         * true}. When a missing transliteration is detected, an IllegalArgumentException is thrown
+         *
+         * @return the {@link ImmutableAttributeMap} instance.
+         * @throws IllegalArgumentException when the state of the builder is not consistent, for example when a
+         * mandatory transliteration is missing.
+         */
         @Nonnull
         public ImmutableAttributeMap build() {
-            ImmutableAttributeMap result = new ImmutableAttributeMap(this);
-            if (result.isEmpty()) {
+            if (definitionsToValues.isEmpty()) {
                 return EMPTY;
             }
-            return result;
+            return new ImmutableAttributeMap(this);
         }
 
         @Nonnull
@@ -208,11 +257,23 @@ public final class ImmutableAttributeMap implements Serializable {
             return put(attribute, valueSet);
         }
 
+        /**
+         * Puts a value marshalled as a {@code String} which is first unmarshalled and then put into the map.
+         * <p>
+         * <em>Important note</em>: this method automatically transliterates any given value which is not in Latin
+         * Script for attribute definitions which have the {@link AttributeDefinition#isTransliterationMandatory()} flag
+         * set to {@code true}.
+         *
+         * @param attribute the definition
+         * @param primaryValue a value marshalled as a {@code String} which is to be unmarshalled first using the {@link
+         * AttributeDefinition#getAttributeValueMarshaller() attribute-value marshaller}.
+         * @return this Builder
+         * @see #putPrimaryValues(AttributeDefinition, String...)
+         * @since 1.1.1
+         */
         @Nonnull
-        public <T> Builder put(@Nonnull AttributeDefinition<T> attribute, @Nonnull String singleMarshalledValue) {
-            Preconditions.checkNotNull(attribute, "attribute");
-            Preconditions.checkNotNull(singleMarshalledValue, "singleMarshalledValue");
-            return put(attribute, ImmutableSet.of(unmarshal(attribute, singleMarshalledValue, false)));
+        public <T> Builder put(@Nonnull AttributeDefinition<T> attribute, @Nonnull String primaryValue) {
+            return putPrimaryValues(attribute, primaryValue);
         }
 
         /**
@@ -250,23 +311,46 @@ public final class ImmutableAttributeMap implements Serializable {
         }
 
         /**
-         * Puts only values which are not non-latin-script alternate versions.
+         * Puts values marshalled as {@code String}s which are first unmarshalled and then put into the map.
+         * <p>
+         * <em>Important note</em>: this method automatically transliterates values which are not in Latin Script for
+         * attribute definitions which have the {@link AttributeDefinition#isTransliterationMandatory()} flag set to
+         * {@code true}.
          *
          * @param attribute the definition
-         * @param primaryValues values which are not non-latin-script alternate versions
+         * @param primaryValues values marshalled as {@code String}s which are to be unmarshalled first using the {@link
+         * AttributeDefinition#getAttributeValueMarshaller() attribute-value marshaller}.
          * @return this Builder
          */
         @Nonnull
-        public Builder putPrimaryValues(@Nonnull AttributeDefinition<?> attribute,
-                                        @Nonnull Iterable<String> primaryValues) {
+        public <T> Builder putPrimaryValues(@Nonnull AttributeDefinition<T> attribute,
+                                            @Nonnull Iterable<String> primaryValues) {
             Preconditions.checkNotNull(attribute, "attribute");
             Preconditions.checkNotNull(primaryValues, "primaryValues");
 
-            ImmutableSet.Builder<AttributeValue<?>> setBuilder = ImmutableSet.builder();
-            for (final String primaryValue : primaryValues) {
-                setBuilder.add(unmarshal(attribute, primaryValue, false));
-            }
-            return put((AttributeDefinition) attribute, (ImmutableSet) setBuilder.build());
+            return put(attribute, unmarshal(attribute, primaryValues));
+        }
+
+        /**
+         * Puts values marshalled as {@code String}s which are first unmarshalled and then put into the map.
+         * <p>
+         * <em>Important note</em>: this method automatically transliterates values which are not in Latin Script for
+         * attribute definitions which have the {@link AttributeDefinition#isTransliterationMandatory()} flag set to
+         * {@code true}.
+         *
+         * @param attribute the definition
+         * @param primaryValues values marshalled as {@code String}s which are to be unmarshalled first using the {@link
+         * AttributeDefinition#getAttributeValueMarshaller()}  attribute-value marshaller}.
+         * @return this Builder
+         * @since 1.1.1
+         */
+        @Nonnull
+        public <T> Builder putPrimaryValues(@Nonnull AttributeDefinition<T> attribute,
+                                            @Nonnull String... primaryValues) {
+            Preconditions.checkNotNull(attribute, "attribute");
+            Preconditions.checkNotNull(primaryValues, "primaryValues");
+
+            return put(attribute, unmarshal(attribute, primaryValues));
         }
     }
 

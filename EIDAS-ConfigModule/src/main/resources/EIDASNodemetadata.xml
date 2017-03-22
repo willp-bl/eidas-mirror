@@ -125,7 +125,7 @@
         <parameter name="saml.sp">
             <category>parameter.category.label.administer.connector</category>
             <info></info>
-            <label>SP-Connector SAML configuration </label>
+            <label>SP-Specific SAML configuration </label>
             <default></default>
             <file>eidas.xml</file>
         </parameter>
@@ -191,13 +191,6 @@
             <category>parameter.category.label.administer.service</category>
             <info>Method to call after IdP</info>
             <label>URL to be called by the IdP</label>
-            <default></default>
-            <file>eidas.xml</file>
-        </parameter>
-        <parameter name="service.specificapredirect.url">
-            <category>parameter.category.label.administer.service</category>
-            <info>Method to call after AP</info>
-            <label>URL to be called by the AP</label>
             <default></default>
             <file>eidas.xml</file>
         </parameter>

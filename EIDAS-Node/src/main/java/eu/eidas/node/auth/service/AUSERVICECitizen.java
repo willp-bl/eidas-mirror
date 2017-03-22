@@ -148,21 +148,16 @@ public final class AUSERVICECitizen implements ISERVICECitizenService {
 
         for (final Map.Entry<AttributeDefinition<?>, ImmutableSet<? extends AttributeValue<?>>> entry : attributes.getAttributeMap()
                 .entrySet()) {
+
             AttributeDefinition<?> definition = entry.getKey();
             ImmutableSet<? extends AttributeValue<?>> values = entry.getValue();
-            if (null != getProtocolEngine().getProtocolProcessor()
-                    .getAdditionalAttributes()
-                    .getByName(definition.getNameUri())) {
-                // Do not remove sector specific attributes (consent not asked by the EIDAS proxy Service
+
+            String name = definition.getNameUri().toASCIIString();
+            if (definition.isRequired() || citizenConsent.getOptionalList().contains(name)) {
                 consentedAttributes.put((AttributeDefinition) definition, (ImmutableSet) values);
             } else {
-                String name = definition.getNameUri().toASCIIString();
-                if (definition.isRequired() || citizenConsent.getOptionalList().contains(name)) {
-                    consentedAttributes.put((AttributeDefinition) definition, (ImmutableSet) values);
-                } else {
-                    LOG.trace("Removing " + name);
-                    modified = true;
-                }
+                LOG.trace("Removing " + name);
+                modified = true;
             }
         }
 

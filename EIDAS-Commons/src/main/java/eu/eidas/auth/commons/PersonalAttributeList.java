@@ -58,8 +58,8 @@ public final class PersonalAttributeList implements IPersonalAttributeList {
         @Nonnull
         private final String key;
 
-        AbstractKey(@Nonnull String key) {
-            this.key = key;
+        AbstractKey(@Nonnull String keyParam) {
+            key = keyParam;
         }
 
         @Nonnull
@@ -105,6 +105,7 @@ public final class PersonalAttributeList implements IPersonalAttributeList {
         }
 
         @Override
+        @java.lang.SuppressWarnings("squid:S1210")
         public int compareTo(@Nonnull CustomKey o) {
             return Long.compare(index, o.index);
         }
@@ -452,6 +453,7 @@ public final class PersonalAttributeList implements IPersonalAttributeList {
     }
 
     @Override
+    @SuppressWarnings("squid:S2250")
     public int size() {
         int size = 0;
         for (final ConcurrentLinkedQueue<PersonalAttribute> personalAttributes : map.values()) {

@@ -22,13 +22,18 @@ import java.util.MissingResourceException;
 import javax.annotation.Nullable;
 
 import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This utility class contains convenient methods to work with ISO 3166-1 Alpha 3 Country Codes.
  * <p/>
  * Its implementation relies on the JDK {@link java.util.Locale}.
  */
+@SuppressWarnings("squid:S1166")
 public final class CountryCodes {
+
+    private static final Logger LOG = LoggerFactory.getLogger(CountryCodes.class.getName());
 
     private static final Map<String, Locale> ISO_ALPHA2_TO_COUNTRY_LOCALES;
 
@@ -46,11 +51,18 @@ public final class CountryCodes {
                 if (alpha3CountryCode.trim().length() != 0) {
                     iso3ToCountryLocales.put(alpha3CountryCode, countryLocale);
                 }
-            } catch (MissingResourceException ignored) {
+            } catch (MissingResourceException mre) {
+                LOG.trace("CountryCodeAlpha3 not available for "+alpha2CountryCode+" "+mre.getMessage());
             }
         }
         ISO_ALPHA2_TO_COUNTRY_LOCALES = Collections.unmodifiableMap(iso2ToCountryLocales);
         ISO_ALPHA3_TO_COUNTRY_LOCALES = Collections.unmodifiableMap(iso3ToCountryLocales);
+    }
+
+    /**
+     * Private Constructor.
+     */
+    private CountryCodes() {
     }
 
     /**
@@ -73,7 +85,8 @@ public final class CountryCodes {
             if (alpha3Country.trim().length() != 0) {
                 return alpha3Country;
             }
-        } catch (MissingResourceException ignored) {
+        } catch (MissingResourceException mre) {
+            LOG.error("CountryCodeAlpha3 not available for "+alpha2CountryCode+" "+mre.getMessage());
         }
         return null;
     }
@@ -127,7 +140,7 @@ public final class CountryCodes {
      */
     public static boolean hasCountryCodeAlpha3(@Nullable String alpha3CountryCode) {
         //noinspection SimplifiableIfStatement
-        if (StringUtils.isBlank(alpha3CountryCode) || alpha3CountryCode.length() != 3) {
+        if (alpha3CountryCode == null || StringUtils.isBlank(alpha3CountryCode) || alpha3CountryCode.length() != 3) {
             return false;
         }
         return ISO_ALPHA3_TO_COUNTRY_LOCALES.containsKey(alpha3CountryCode);
@@ -144,9 +157,4 @@ public final class CountryCodes {
         return null != getCountryLocale(isoCountryCode);
     }
 
-    /**
-     * Private Constructor.
-     */
-    private CountryCodes() {
-    }
 }

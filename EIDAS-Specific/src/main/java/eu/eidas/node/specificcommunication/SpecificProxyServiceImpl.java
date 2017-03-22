@@ -18,7 +18,6 @@ import eu.eidas.auth.commons.EidasErrors;
 import eu.eidas.auth.commons.EidasParameterKeys;
 import eu.eidas.auth.commons.EidasStringUtil;
 import eu.eidas.auth.commons.IncomingRequest;
-import eu.eidas.auth.commons.PersonalAttributeList;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.light.ILightRequest;
 import eu.eidas.auth.commons.light.ILightResponse;
@@ -158,10 +157,6 @@ public class SpecificProxyServiceImpl implements ISpecificProxyService {
 
         IAuthenticationResponse specificResponse = authenticationExchange.getConnectorResponse();
 
-        if (specificResponse == null) {
-            throw new SpecificException("Missing specific response");
-        }
-
         IAuthenticationRequest specificAuthnRequest = authenticationExchange.getStoredRequest().getRequest();
         StoredLightRequest proxyServiceRequest = getStoredLightRequest(specificService, specificAuthnRequest);
 
@@ -180,13 +175,8 @@ public class SpecificProxyServiceImpl implements ISpecificProxyService {
                     .build();
 
         } else {
-            validateAndStoreLogin(httpServletRequest);
             httpServletRequest.setAttribute(EidasParameterKeys.EIDAS_SERVICE_LOA.toString(),
                                             specificResponse.getLevelOfAssurance());
-            // validate attrList
-            if (specificResponse.getAttributes() == null) {
-                throw new SpecificException("Missing attributes in specific response");
-            }
 
             ImmutableAttributeMap requestedAttributes = specificAuthnRequest.getRequestedAttributes();
 
@@ -263,17 +253,10 @@ public class SpecificProxyServiceImpl implements ISpecificProxyService {
         return proxyServiceRequest;
     }
 
-    private void validateAndStoreLogin(@Nonnull HttpServletRequest httpServletRequest) {
-        String username = httpServletRequest.getParameter(EidasParameterKeys.USERNAME.toString());
-        NormalParameterValidator.paramName(EidasParameterKeys.USERNAME).paramValue(username).validate();
-        specificIdPResponse.getSession().put(EidasParameterKeys.USERNAME.toString(), username);
-    }
-
     private boolean isAttributeListValid(IAUService specificService,
                                          ImmutableAttributeMap requestedAttributes,
                                          ImmutableAttributeMap responseAttributes) {
 
-        return specificService.comparePersonalAttributeLists(PersonalAttributeList.copyOf(requestedAttributes),
-                                                             PersonalAttributeList.copyOf(responseAttributes));
+        return specificService.compareAttributeLists(requestedAttributes, responseAttributes);
     }
 }

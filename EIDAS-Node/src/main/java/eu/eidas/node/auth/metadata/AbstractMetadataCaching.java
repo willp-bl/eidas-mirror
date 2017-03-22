@@ -17,6 +17,8 @@ import java.util.Map;
 
 import javax.annotation.Nonnull;
 
+import eu.eidas.auth.engine.metadata.EntityDescriptorType;
+import eu.eidas.auth.engine.metadata.IMetadataCachingService;
 import org.opensaml.saml2.metadata.EntityDescriptor;
 import org.opensaml.xml.XMLObject;
 import org.opensaml.xml.signature.SignableXMLObject;

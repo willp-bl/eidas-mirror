@@ -40,8 +40,8 @@ public enum PropertiesFormat {
     @Nonnull
     private final transient String extension;
 
-    PropertiesFormat(@Nonnull String extension) {
-        this.extension = extension;
+    PropertiesFormat(@Nonnull String ext) {
+        extension = ext;
     }
 
     @Nonnull

@@ -22,8 +22,12 @@
 
 package eu.eidas.node.utils;
 
-import eu.eidas.auth.commons.EidasErrorKey;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import eu.eidas.auth.commons.EIDASValues;
+import eu.eidas.auth.commons.EidasErrorKey;
 import eu.eidas.auth.commons.EidasErrors;
 import eu.eidas.auth.commons.IncomingRequest;
 import eu.eidas.auth.commons.exceptions.EidasNodeException;
@@ -34,9 +38,6 @@ import eu.eidas.auth.commons.protocol.eidas.LevelOfAssurance;
 import eu.eidas.auth.commons.protocol.eidas.LevelOfAssuranceComparison;
 import eu.eidas.auth.commons.protocol.stork.IStorkAuthenticationRequest;
 import eu.eidas.node.auth.service.AUSERVICEUtil;
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author vanegdi on 14/08/2015. Remark : moved from eidasUtil
@@ -128,7 +129,7 @@ public class EidasNodeValidationUtil {
         if (authRequest.getBinding() != null && !authRequest.getBinding().equalsIgnoreCase(method.getValue())
                 || authRequest.getBinding() == null && authRequest instanceof IStorkAuthenticationRequest) {
             LOG.info("Expected auth request protocol binding {} but got {}", method, authRequest.getBinding());
-            throw new InternalErrorEIDASException(EidasErrors.get(reportedErr.errorCode()),
+            throw new EidasNodeException(EidasErrors.get(reportedErr.errorCode()),
                                                   EidasErrors.get(reportedErr.errorMessage()),
                                                   new InternalErrorEIDASException(EidasErrors.get(
                                                           EidasErrorKey.INVALID_PROTOCOL_BINDING.errorCode()),

@@ -22,20 +22,20 @@
 
 package eu.eidas.node;
 
-import eu.eidas.auth.commons.EidasParameterKeys;
-import eu.eidas.auth.commons.EIDASValues;
-import eu.eidas.auth.commons.exceptions.AbstractEIDASException;
-import eu.eidas.auth.commons.exceptions.EIDASServiceException;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.io.IOException;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import java.io.IOException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import eu.eidas.auth.commons.EIDASValues;
+import eu.eidas.auth.commons.EidasParameterKeys;
+import eu.eidas.auth.commons.exceptions.AbstractEIDASException;
+import eu.eidas.auth.commons.exceptions.EIDASServiceException;
 
 /**
  * Handles the all the {@link Exception} and the

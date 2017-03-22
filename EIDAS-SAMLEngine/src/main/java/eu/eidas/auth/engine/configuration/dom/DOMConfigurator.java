@@ -435,6 +435,7 @@ public final class DOMConfigurator {
     }
 
     @Nonnull
+    @SuppressWarnings("squid:S2637")
     private static <T> T createReloadableProxyIfNeeded(@Nonnull final String instanceName,
                                                        @Nonnull final ConfigurationEntry configurationEntry,
                                                        @Nonnull final ConfigurationKey configurationKey,
@@ -466,10 +467,9 @@ public final class DOMConfigurator {
                                                                      Maps.fromProperties(properties));
                             } catch (InvocationTargetException e) {
                                 //noinspection ThrowCaughtLocally
+                                LOG.error("", e);
                                 throw new IllegalStateException(e.getTargetException());
-                            } catch (InstantiationException e) {
-                                throw new IllegalStateException(e);
-                            } catch (IllegalAccessException e) {
+                            } catch (InstantiationException | IllegalAccessException e) {
                                 throw new IllegalStateException(e);
                             }
                         }
@@ -500,6 +500,7 @@ public final class DOMConfigurator {
                                     try {
                                         return constructor.newInstance(map);
                                     } catch (InvocationTargetException ite) {
+                                        LOG.error("", ite);
                                         throw new IllegalStateException(ite.getTargetException());
                                     } catch (Exception e) {
                                         throw new IllegalStateException(e);
@@ -531,28 +532,6 @@ public final class DOMConfigurator {
     /**
      * Returns the corresponding configuration.
      *
-     * @param instanceName the name instance
-     * @throws SamlEngineConfigurationException the EIDASSAML engine exception
-     */
-    public static SamlEngineConfiguration getConfiguration(@Nonnull String instanceName,
-                                                           @Nonnull InstanceMap instanceMap)
-            throws SamlEngineConfigurationException {
-        InstanceEntry instanceEntry;
-        if (null == instanceName || null == instanceMap) {
-            instanceEntry = null;
-        } else {
-            if (null == instanceMap.getInstances()) {
-                instanceEntry = null;
-            } else {
-                instanceEntry = instanceMap.getInstances().get(instanceName);
-            }
-        }
-        return getConfiguration(instanceName, instanceEntry);
-    }
-
-    /**
-     * Returns the corresponding configuration.
-     *
      * @param instanceName the instance name
      * @param instanceEntry the instance entry object
      * @param overrideFile the configuration properties file name containing overriding properties if any, otherwise
@@ -561,16 +540,17 @@ public final class DOMConfigurator {
      * @deprecated since 1.1, use {@link #getProtocolConfiguration(String, InstanceEntry, String)} instead.
      */
     @Deprecated
+    @SuppressWarnings("squid:S2259")
     public static SamlEngineConfiguration getConfiguration(@Nonnull String instanceName,
                                                            @Nonnull InstanceEntry instanceEntry,
                                                            @Nullable String overrideFile)
             throws SamlEngineConfigurationException {
         if (null == instanceEntry) {
             throwConfigurationException("Instance : \"" + instanceName + "\" does not exist.");
-        }
+        } else
         if (instanceEntry.getConfigurationEntries().isEmpty()) {
             throwConfigurationException("Instance: \"" + instanceName + "\" is empty.");
-        }
+        } else
         if (!instanceEntry.getName().equals(instanceName)) {
             throwConfigurationException(
                     "Instance: \"" + instanceEntry.getName() + "\" does not match supplied name \"" + instanceName
@@ -636,16 +616,17 @@ public final class DOMConfigurator {
      * @throws SamlEngineConfigurationException the SAML engine configuration exception
      * @since 1.1
      */
+    @SuppressWarnings("squid:S2259")
     public static ProtocolEngineConfiguration getProtocolConfiguration(@Nonnull String instanceName,
                                                                        @Nonnull InstanceEntry instanceEntry,
                                                                        @Nullable String overrideFile)
             throws SamlEngineConfigurationException {
         if (null == instanceEntry) {
             throwConfigurationException("Instance : \"" + instanceName + "\" does not exist.");
-        }
+        } else
         if (instanceEntry.getConfigurationEntries().isEmpty()) {
             throwConfigurationException("Instance: \"" + instanceName + "\" is empty.");
-        }
+        } else
         if (!instanceEntry.getName().equals(instanceName)) {
             throwConfigurationException(
                     "Instance: \"" + instanceEntry.getName() + "\" does not match supplied name \"" + instanceName

@@ -15,21 +15,19 @@
 
 package eu.eidas.auth.engine.core.impl;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import com.google.common.collect.ImmutableSet;
-
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import eu.eidas.auth.commons.EidasErrorKey;
 import eu.eidas.auth.engine.configuration.SamlEngineConfigurationException;
 import eu.eidas.auth.engine.configuration.dom.EncryptionConfiguration;
 import eu.eidas.auth.engine.core.ProtocolCipherI;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import eu.eidas.util.Preconditions;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * The base abstract class for implementations of {@link ProtocolCipherI}.
@@ -91,8 +89,7 @@ public abstract class AbstractProtocolCipher implements ProtocolCipherI {
             this.responseEncryptionMandatory = responseEncryptionMandatory;
 
             this.encryptionAlgorithmWhiteList =
-                    WhiteListConfigurator.getAllowedAlgorithms(DEFAULT_ALLOWED_ALGORITHMS, DEFAULT_ALLOWED_ALGORITHMS,
-                                                               encryptionAlgorithmWhiteList);
+                    WhiteListConfigurator.getAllowedAlgorithms(DEFAULT_ALLOWED_ALGORITHMS, encryptionAlgorithmWhiteList);
             LOG.trace("AbstractProtocolCipher loaded.");
         } catch (Exception e) {
             LOG.error("AbstractProtocolCipher init: " + e, e);
@@ -142,7 +139,7 @@ public abstract class AbstractProtocolCipher implements ProtocolCipherI {
                 encryptionAlgorithm.trim())) {
             LOG.error("Invalid encryption algorithm: \"" + encryptionAlgorithm
                               + "\" (allowed algorithms in white list are: " + encryptionAlgorithmWhiteList + ")");
-            throw new EIDASSAMLEngineException(EidasErrorKey.INVALID_ENCRYPTION_ALGORITHM.errorCode());
+            throw new EIDASSAMLEngineException(EidasErrorKey.INVALID_ENCRYPTION_ALGORITHM.errorCode(), EidasErrorKey.INVALID_ENCRYPTION_ALGORITHM.errorMessage());
         }
     }
 }

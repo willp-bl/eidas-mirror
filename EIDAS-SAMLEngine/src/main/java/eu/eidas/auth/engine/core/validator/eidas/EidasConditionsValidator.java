@@ -65,11 +65,6 @@ public class EidasConditionsValidator extends ConditionsSpecValidator {
             throw new ValidationException("AudienceRestriction is required.");
         }
 
-        if (conditions.getOneTimeUse() == null) {
-
-            throw new ValidationException("OneTimeUse is required.");
-        }
-
     }
 
 }

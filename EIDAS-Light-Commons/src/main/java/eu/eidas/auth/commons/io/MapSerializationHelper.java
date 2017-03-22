@@ -60,6 +60,9 @@ public final class MapSerializationHelper {
         }
     }
 
+    private MapSerializationHelper() {
+    }
+
     public static <K, V> ImmutableList<KeyValue<K, V>> asKeyValueList(Map<K, V> map) {
         Set<Map.Entry<K, V>> entrySet = map.entrySet();
         ImmutableList.Builder<KeyValue<K, V>> keyValueViewBuilder = new ImmutableList.Builder<KeyValue<K, V>>();
@@ -69,7 +72,7 @@ public final class MapSerializationHelper {
         return keyValueViewBuilder.build();
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "findsecbugs:OBJECT_DESERIALIZATION"})
     public static <K, V> void readMap(@Nonnull ObjectInputStream in, @Nonnull Map<K, V> map)
             throws IOException, ClassNotFoundException {
         int size = in.readInt();
@@ -99,6 +102,4 @@ public final class MapSerializationHelper {
         writeKeyValueList(oos, keyValueView);
     }
 
-    private MapSerializationHelper() {
-    }
 }

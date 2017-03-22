@@ -39,7 +39,7 @@
                        value="saml-engine-additional-attributes.xml" />
 
             <parameter name="metadataFetcherClass"
-                       value="eu.eidas.idp.IdpMetadataFetcher"/>
+                       value="eu.eidas.idp.metadata.IDPCachingMetadataFetcher"/>
 
         </configuration>
 

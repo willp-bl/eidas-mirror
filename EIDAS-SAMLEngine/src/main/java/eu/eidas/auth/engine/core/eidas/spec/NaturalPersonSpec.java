@@ -7,6 +7,7 @@ import eu.eidas.auth.commons.attribute.AttributeRegistries;
 import eu.eidas.auth.commons.attribute.AttributeRegistry;
 import eu.eidas.auth.commons.attribute.PersonType;
 import eu.eidas.auth.commons.attribute.impl.DateTimeAttributeValueMarshaller;
+import eu.eidas.auth.commons.attribute.impl.LiteralStringAttributeValueMarshaller;
 import eu.eidas.auth.commons.attribute.impl.StringAttributeValueMarshaller;
 import eu.eidas.auth.commons.protocol.eidas.impl.CurrentAddressAttributeValueMarshaller;
 import eu.eidas.auth.commons.protocol.eidas.impl.Gender;
@@ -31,7 +32,7 @@ public final class NaturalPersonSpec {
                 .required(true)
                 .uniqueIdentifier(true)
                 .xmlType(Namespace.URI, "PersonIdentifierType", Namespace.PREFIX)
-                .attributeValueMarshaller(new StringAttributeValueMarshaller())
+                .attributeValueMarshaller(new LiteralStringAttributeValueMarshaller())
                 .build();
 
         public static final AttributeDefinition<String> CURRENT_FAMILY_NAME = AttributeDefinition.<String>builder()
@@ -77,7 +78,7 @@ public final class NaturalPersonSpec {
                 .friendlyName("PlaceOfBirth")
                 .personType(PersonType.NATURAL_PERSON)
                 .xmlType(Namespace.URI, "PlaceOfBirthType", Namespace.PREFIX)
-                .attributeValueMarshaller(new StringAttributeValueMarshaller())
+                .attributeValueMarshaller(new LiteralStringAttributeValueMarshaller())
                 .build();
 
         public static final AttributeDefinition<PostalAddress> CURRENT_ADDRESS = AttributeDefinition.<PostalAddress>builder()

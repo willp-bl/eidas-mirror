@@ -54,11 +54,11 @@ public final class ReloadableFileAccessor<T> implements SingletonAccessor<T> {
 
         final boolean fileLockedForWriting;
 
-        AtomicState(@Nonnull File file, long lastModified, @Nullable T value, boolean fileLockedForWriting) {
-            this.file = file;
-            this.lastModified = lastModified;
-            this.value = value;
-            this.fileLockedForWriting = fileLockedForWriting;
+        AtomicState(@Nonnull File fileToAccess, long lastMod, @Nullable T val, boolean fileLockedForWr) {
+            file = fileToAccess;
+            lastModified = lastMod;
+            value = val;
+            fileLockedForWriting = fileLockedForWr;
         }
 
         boolean externallyModified() {
@@ -71,6 +71,39 @@ public final class ReloadableFileAccessor<T> implements SingletonAccessor<T> {
      */
     private static final Logger LOG = LoggerFactory.getLogger(ReloadableFileAccessor.class);
 
+    @Nonnull
+    private final FileMarshaller<T> fileMarshaller;
+
+    @Nonnull
+    private final String filename;
+
+    private final ReentrantLock lock = new ReentrantLock();
+
+    @Nonnull
+    private final AtomicReference<AtomicState<T>> referenceToState = new AtomicReference<AtomicState<T>>();
+
+    @SuppressWarnings("squid:S2637")
+    public ReloadableFileAccessor(@Nonnull FileMarshaller<T> fileMarshaller, @Nonnull String filename) {
+        this(fileMarshaller, filename, getResourceIgnoredException(filename));
+    }
+
+    @SuppressWarnings("squid:S2637")
+    public ReloadableFileAccessor(@Nonnull FileMarshaller<T> marshaller,
+                                  @Nonnull String fileName,
+                                  @Nonnull URL fileUrl) {
+        Preconditions.checkNotNull(marshaller, "fileMarshaller");
+        Preconditions.checkNotBlank(fileName, "fileName");
+        File file;
+        fileMarshaller = marshaller;
+        filename = fileName;
+        try {
+            file = newFile(filename, fileUrl);
+        } catch (IOException ioe) {
+            throw new IllegalStateException(ioe);
+        }
+        referenceToState.set(new AtomicState<T>(file, 0L, null, false));
+    }
+
     private static URL getResourceIgnoredException(@Nonnull String path) {
         try {
             return ResourceLocator.getResource(path);
@@ -81,7 +114,7 @@ public final class ReloadableFileAccessor<T> implements SingletonAccessor<T> {
 
     @Nonnull
     private static File newFile(@Nonnull String resourceName, @Nonnull URL fileUrl) throws IOException {
-        if (!fileUrl.getProtocol().equals("file")) {
+        if (!"file".equals(fileUrl.getProtocol())) {
             throw new IOException(
                     "Resource \"" + resourceName + "\" is not available at a file URL: \"" + fileUrl.toExternalForm()
                             + "\"");
@@ -110,38 +143,6 @@ public final class ReloadableFileAccessor<T> implements SingletonAccessor<T> {
             LOG.trace("Found file \"" + resourceName + "\" on the filesystem path: \"" + absolutePath + "\"");
         }
         return file;
-    }
-
-    @Nonnull
-    private final FileMarshaller<T> fileMarshaller;
-
-    @Nonnull
-    private final String filename;
-
-    @Nonnull
-    private final ReentrantLock lock = new ReentrantLock();
-
-    @Nonnull
-    private final AtomicReference<AtomicState<T>> referenceToState = new AtomicReference<AtomicState<T>>();
-
-    public ReloadableFileAccessor(@Nonnull FileMarshaller<T> fileMarshaller, @Nonnull String filename) {
-        this(fileMarshaller, filename, getResourceIgnoredException(filename));
-    }
-
-    public ReloadableFileAccessor(@Nonnull FileMarshaller<T> fileMarshaller,
-                                  @Nonnull String filename,
-                                  @Nonnull URL fileUrl) {
-        Preconditions.checkNotNull(fileMarshaller, "fileMarshaller");
-        Preconditions.checkNotBlank(filename, "filename");
-        File file;
-        try {
-            file = newFile(filename, fileUrl);
-        } catch (IOException ioe) {
-            throw new IllegalStateException(ioe);
-        }
-        this.fileMarshaller = fileMarshaller;
-        this.filename = filename;
-        referenceToState.set(new AtomicState<T>(file, 0L, null, false));
     }
 
     private boolean checkIfModified() throws IOException {

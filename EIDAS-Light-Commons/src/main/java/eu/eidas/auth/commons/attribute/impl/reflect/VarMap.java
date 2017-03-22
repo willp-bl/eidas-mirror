@@ -31,14 +31,15 @@ final class VarMap {
      */
     VarMap(ParameterizedType type) {
         // loop over the type and its generic owners
+        ParameterizedType actType = type;
         do {
-            Class<?> clazz = (Class<?>) type.getRawType();
-            Type[] arguments = type.getActualTypeArguments();
+            Class<?> clazz = (Class<?>) actType.getRawType();
+            Type[] arguments = actType.getActualTypeArguments();
             TypeVariable<?>[] typeParameters = clazz.getTypeParameters();
 
             // since we're looping over two arrays in parallel, just to be sure check they have the same size
             if (arguments.length != typeParameters.length) {
-                throw new IllegalStateException("The given type [" + type + "] is inconsistent: it has " +
+                throw new IllegalStateException("The given type [" + actType + "] is inconsistent: it has " +
                                                         arguments.length + " arguments instead of "
                                                         + typeParameters.length);
             }
@@ -47,9 +48,9 @@ final class VarMap {
                 add(typeParameters[i], arguments[i]);
             }
 
-            Type owner = type.getOwnerType();
-            type = (owner instanceof ParameterizedType) ? (ParameterizedType) owner : null;
-        } while (type != null);
+            Type owner = actType.getOwnerType();
+            actType = (owner instanceof ParameterizedType) ? (ParameterizedType) owner : null;
+        } while (actType != null);
     }
 
     void add(TypeVariable<?> variable, Type value) {
@@ -67,6 +68,7 @@ final class VarMap {
         addAll(variables, values);
     }
 
+    @SuppressWarnings("squid:S00112")
     Type map(Type type) {
         if (type instanceof Class) {
             return type;
@@ -87,6 +89,7 @@ final class VarMap {
         } else if (type instanceof GenericArrayType) {
             return GenericArrayTypeImpl.createArrayType(map(((GenericArrayType) type).getGenericComponentType()));
         } else {
+            //TODO not to throw generic exception
             throw new RuntimeException("not implemented: mapping " + type.getClass() + " (" + type + ")");
         }
     }

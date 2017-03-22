@@ -92,16 +92,6 @@ public class SyntaxTestUtil {
         return builder.build();
     }
 
-    // TODO refactor with new PersonalAttribute
-    private static PersonalAttribute newEidasNaturalAttribute(String canoniclaName, String friendlyName) {
-        return new PersonalAttribute(NaturalPersonSpec.Namespace.URI + "/" + canoniclaName, friendlyName);
-    }
-
-    // TODO refactor with new PersonalAttribute
-    private static PersonalAttribute newEidasLegalAttribute(String canonicalName, String friendlyName) {
-        return new PersonalAttribute(LegalPersonSpec.Namespace.URI + "/" + canonicalName, friendlyName);
-    }
-
     public static ProtocolEngineI getEngine(String conf) {
         ProtocolEngineI engine = null;
         try {

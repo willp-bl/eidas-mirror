@@ -2,6 +2,7 @@ package eu.eidas.auth.commons.light;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.Serializable;
 
 /**
  * Interface representing the status of a response.
@@ -12,7 +13,7 @@ import javax.annotation.Nullable;
  *
  * @since 1.1
  */
-public interface IResponseStatus {
+public interface IResponseStatus extends Serializable {
 
     /**
      * Returns the status code of the response.

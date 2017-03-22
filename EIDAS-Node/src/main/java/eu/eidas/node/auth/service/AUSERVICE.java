@@ -30,7 +30,6 @@ import eu.eidas.auth.commons.EidasErrorKey;
 import eu.eidas.auth.commons.EidasErrors;
 import eu.eidas.auth.commons.EidasParameterKeys;
 import eu.eidas.auth.commons.EidasStringUtil;
-import eu.eidas.auth.commons.IEIDASSession;
 import eu.eidas.auth.commons.WebRequest;
 import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.attribute.AttributeValue;
@@ -363,7 +362,6 @@ public final class AUSERVICE implements ISERVICEService {
      * Generates a exception with an embedded SAML token.
      *
      * @param webRequest A map of parameters to generate the error token.
-     * @see IEIDASSession
      * @see Map
      */
     private void sendErrorPage(WebRequest webRequest) {

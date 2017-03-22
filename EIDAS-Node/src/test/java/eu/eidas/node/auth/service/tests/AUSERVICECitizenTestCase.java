@@ -91,14 +91,14 @@ public final class AUSERVICECitizenTestCase {
 
     private static WebRequest newEmptyWebRequest() {
         return new IncomingRequest(IncomingRequest.Method.POST, ImmutableMap.<String, ImmutableList<String>>of(),
-                                   "127.0.0.1");
+                                   "127.0.0.1", null);
     }
 
     private static WebRequest newSingleParamWebRequest(String paramName, String paramValue) {
         return new IncomingRequest(IncomingRequest.Method.POST,
                                    ImmutableMap.<String, ImmutableList<String>>of(paramName,
                                                                                   ImmutableList.<String>of(paramValue)),
-                                   "127.0.0.1");
+                                   "127.0.0.1", null);
     }
 
     private static WebRequest newWebRequest(String paramName1,
@@ -109,7 +109,7 @@ public final class AUSERVICECitizenTestCase {
                                    ImmutableMap.<String, ImmutableList<String>>of(paramName1,
                                                                                   ImmutableList.<String>of(paramValue1),
                                                                                   paramName2, ImmutableList.<String>of(
-                                                   paramValue2)), "127.0.0.1");
+                                                   paramValue2)), "127.0.0.1", null);
     }
 
     /**

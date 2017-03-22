@@ -12,6 +12,7 @@
  */
 package eu.eidas.node.auth.specific;
 
+import java.net.URI;
 import java.util.Map;
 import java.util.Properties;
 
@@ -24,13 +25,13 @@ import eu.eidas.auth.commons.EidasErrorKey;
 import eu.eidas.auth.commons.EidasErrors;
 import eu.eidas.auth.commons.EidasParameterKeys;
 import eu.eidas.auth.commons.IEIDASConfigurationProxy;
-import eu.eidas.auth.commons.IPersonalAttributeList;
-import eu.eidas.auth.commons.PersonalAttribute;
+import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.exceptions.EIDASServiceException;
 import eu.eidas.auth.commons.exceptions.InternalErrorEIDASException;
 import eu.eidas.auth.commons.exceptions.InvalidSessionEIDASException;
 import eu.eidas.auth.commons.light.ILightRequest;
+import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.IAuthenticationResponse;
 import eu.eidas.auth.commons.protocol.IRequestMessage;
 import eu.eidas.auth.commons.protocol.IResponseMessage;
@@ -59,8 +60,6 @@ public final class SpecificEidasService implements IAUService {
      * Logger object.
      */
     private static final Logger LOG = LoggerFactory.getLogger(SpecificEidasService.class);
-
-    private static final String NOT_AVAILABLE_VALUE = "NOT AVAILABLE";
 
     private static final String NOT_AVAILABLE_COUNTRY = "NA";
 
@@ -194,14 +193,13 @@ public final class SpecificEidasService implements IAUService {
                                                Map<String, Object> attrHeaders) {
 
         String destination = (String) parameters.get(EidasParameterKeys.IDP_URL.toString());
-        String serviceUrl = (String) parameters.get(EidasParameterKeys.EIDAS_SERVICE_CALLBACK.toString());
         String citizenCountryCode = (String) parameters.get(EidasParameterKeys.CITIZEN_COUNTRY_CODE.toString());
         String citizenIpAddress = (String) parameters.get(EidasParameterKeys.CITIZEN_IP_ADDRESS.toString());
         String serviceProviderName = (String) parameters.get(EidasParameterKeys.SERVICE_PROVIDER_NAME.toString());
         String eidasLoa = (String) parameters.get(EidasParameterKeys.EIDAS_SERVICE_LOA.toString());
         String eidasNameidFormat = (String) parameters.get(EidasParameterKeys.EIDAS_NAMEID_FORMAT.toString());
 
-        return generateAuthenticationRequest(lightRequest, modifiedRequestedAttributes, destination, serviceUrl,
+        return generateAuthenticationRequest(lightRequest, modifiedRequestedAttributes, destination,
                 eidasLoa, eidasNameidFormat, citizenCountryCode, citizenIpAddress,
                 serviceProviderName);
     }
@@ -226,9 +224,9 @@ public final class SpecificEidasService implements IAUService {
                         EidasErrors.get(EidasErrorKey.INVALID_SESSION.errorMessage()));
             }
 
-            StoredAuthenticationRequest specificRequest = getSpecificIdpRequestCorrelationMap().get(specificRequestId);
+            StoredAuthenticationRequest specificRequest = specificIdpRequestCorrelationMap.get(specificRequestId);
             //clean up
-            getSpecificIdpRequestCorrelationMap().remove(specificRequestId);
+            specificIdpRequestCorrelationMap.remove(specificRequestId);
 
             if (null == specificRequest) {
                 LOG.info("BUSINESS EXCEPTION : Session is missing or invalid!");
@@ -255,9 +253,9 @@ public final class SpecificEidasService implements IAUService {
             LOG.info("ERROR : Error validating SAML Autentication Response from IdP", e.getMessage());
             LOG.debug("ERROR : Error validating SAML Autentication Response from IdP", e);
             if (err != null && !err.isShowToUser()) {
-                throw new EIDASServiceException(code, message, e,
+                throw new EIDASServiceException(
                         EidasErrors.get(EidasErrorKey.IDP_SAML_RESPONSE.errorCode()),
-                        EidasErrors.get(EidasErrorKey.IDP_SAML_RESPONSE.errorMessage()), "");
+                        EidasErrors.get(EidasErrorKey.IDP_SAML_RESPONSE.errorMessage()));
             } else {
                 throw new EIDASServiceException(code, message, e, "");
             }
@@ -267,6 +265,7 @@ public final class SpecificEidasService implements IAUService {
     /**
      * {@inheritDoc}
      */
+    @Override
     public byte[] generateErrorAuthenticationResponse(String inResponseTo,
                                                       String issuer,
                                                       String assertionConsumerServiceURL,
@@ -296,12 +295,12 @@ public final class SpecificEidasService implements IAUService {
         return responseBytes;
     }
 
-    private boolean haveExpectedName(IPersonalAttributeList original, String paName, int arraySize) {
+    private boolean haveExpectedName(ImmutableAttributeMap original, URI nameUri, int arraySize) {
         boolean attrNotFound = true;
         for (int i = 1; i <= arraySize; i++) {
             String derivedId = specificProps.getEidasParameterValue(EIDASValues.DERIVE_ATTRIBUTE.index(i));
-            String derivedName = specificProps.getEidasParameterValue(EIDASValues.DERIVE_ATTRIBUTE.name(i));
-            if (paName.equals(derivedName) && original.containsFriendlyName(derivedId)) {
+            String derivedUri = specificProps.getEidasParameterValue(EIDASValues.DERIVE_ATTRIBUTE.uri(i));
+            if (nameUri != null && nameUri.toASCIIString().equals(derivedUri) && original.getDefinitionsByFriendlyName(derivedId) != null) {
                 attrNotFound = false;
             }
         }
@@ -311,7 +310,8 @@ public final class SpecificEidasService implements IAUService {
     /**
      * {@inheritDoc}
      */
-    public boolean comparePersonalAttributeLists(IPersonalAttributeList original, IPersonalAttributeList modified) {
+    @Override
+    public boolean compareAttributeLists(ImmutableAttributeMap original, ImmutableAttributeMap modified) {
 
         if (original == null || modified == null) {
             LOG.info("ERROR : At least one list is null!");
@@ -321,10 +321,10 @@ public final class SpecificEidasService implements IAUService {
         int nNames = Integer.parseInt(
                 specificProps.getEidasParameterValue(EidasParameterKeys.DERIVE_ATTRIBUTE_NUMBER.toString()));
 
-        for (final PersonalAttribute pa : modified) {
-            if (!(original.contains(pa))) {
-                if (haveExpectedName(original, pa.getName(), nNames)) {
-                    LOG.info("ERROR : Element is not present on original list: " + pa.getName());
+        for (final AttributeDefinition<?> attributeDefinition : modified.getDefinitions()) {
+            if (!(original.getDefinitions().contains(attributeDefinition))) {
+                if (haveExpectedName(original, attributeDefinition.getNameUri(), nNames)) {
+                    LOG.info("ERROR : Element is not present on original list: " + attributeDefinition.getNameUri());
                     return false;
                 }
             }
@@ -338,13 +338,11 @@ public final class SpecificEidasService implements IAUService {
      *
      * @param destination                 The URL of destination.
      * @param modifiedRequestedAttributes request these from IdP
-     * @param serviceUrl                  The URL to return in case of error.
      * @return byte[] containing the SAML Request.
      */
     private byte[] generateAuthenticationRequest(ILightRequest lightRequest,
                                                  ImmutableAttributeMap modifiedRequestedAttributes,
                                                  String destination,
-                                                 String serviceUrl,
                                                  String eidasLoa,
                                                  String eidasNameidFormat,
                                                  String citizenCountryCode,
@@ -357,9 +355,8 @@ public final class SpecificEidasService implements IAUService {
             builder.levelOfAssuranceComparison(LevelOfAssuranceComparison.MINIMUM.stringValue());
             builder.assertionConsumerServiceURL(null);
             builder.binding(EidasSamlBinding.EMPTY.getName());
-            String serviceRequesterMetadataUrl = getServiceRequesterMetadataUrl();
-            if (getServiceMetadataActive() && StringUtils.isNotBlank(serviceRequesterMetadataUrl)) {
-                builder.issuer(serviceRequesterMetadataUrl);
+            if (getServiceMetadataActive() && StringUtils.isNotBlank(getServiceRequesterMetadataUrl())) {
+                builder.issuer(getServiceRequesterMetadataUrl());
             }
             builder.serviceProviderCountryCode(NOT_AVAILABLE_COUNTRY);
             builder.destination(destination);
@@ -374,7 +371,9 @@ public final class SpecificEidasService implements IAUService {
 
             IRequestMessage generatedSpecificRequest = getProtocolEngine().generateRequestMessage(builder.build(), getIdpMetadataUrl());
 
-            String specificRequestSamlId = generatedSpecificRequest.getRequest().getId();
+            IAuthenticationRequest generatedRequest = generatedSpecificRequest.getRequest();
+
+            String specificRequestSamlId = generatedRequest.getId();
 
             // store the correlation between the specific request ID and the original ILightRequest
             proxyServiceRequestCorrelationMap.put(specificRequestSamlId, StoredLightRequest.builder()
@@ -384,8 +383,7 @@ public final class SpecificEidasService implements IAUService {
 
             // store the correlation between the specific request ID and the corresponding specific request instance
             specificIdpRequestCorrelationMap.put(specificRequestSamlId,
-                    new StoredAuthenticationRequest.Builder().request(
-                            generatedSpecificRequest.getRequest())
+                    new StoredAuthenticationRequest.Builder().request(generatedRequest)
                             .remoteIpAddress(citizenIpAddress)
                             .build());
             return generatedSpecificRequest.getMessageBytes();
@@ -407,7 +405,7 @@ public final class SpecificEidasService implements IAUService {
         String issuer = specificRequest.getRequest().getIssuer();
         String audienceRestriction = specificResponse.getAudienceRestriction();
 
-        if (audienceRestriction != null && !audienceRestriction.equals(issuer)) {
+        if (!audienceRestriction.equals(issuer)) {
             LOG.error("Mismatch in response AudienceRestriction=\"" + audienceRestriction + "\" vs request issuer=\""
                     + issuer + "\"");
             throw new InvalidSessionEIDASException(EidasErrors.get(EidasErrorKey.SESSION.errorCode()),

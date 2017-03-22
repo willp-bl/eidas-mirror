@@ -37,6 +37,6 @@ public class JAXBConfigurationParameter {
     }
 
     public void setValue(String value) {
-        this.value=value.toString();
+        this.value=value;
     }
 }

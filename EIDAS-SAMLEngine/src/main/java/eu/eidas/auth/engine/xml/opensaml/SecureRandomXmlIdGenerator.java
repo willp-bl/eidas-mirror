@@ -69,12 +69,12 @@ public enum SecureRandomXmlIdGenerator implements IdentifierGenerator {
      */
     @Override
     public String generateIdentifier() {
-        return generateIdentifier(63);
+        return generateIdentifier(64);
     }
 
     @Override
     public String generateIdentifier(int size) {
-        char[] random = new char[size + 1];
+        char[] random = new char[size];
         random[0] = '_';
         for (int i = 1; i < size; i++) {
             random[i] = NCN_ALPHABET[SECURE_RANDOM.nextInt(NCN_ALPHABET.length)];

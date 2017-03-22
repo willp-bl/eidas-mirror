@@ -26,7 +26,9 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -37,23 +39,27 @@ import static org.junit.Assert.assertTrue;
  */
 public final class ImmutableAttributeMapTest {
 
-    private static final AttributeDefinition<String> CURRENT_FAMILY_NAME = new AttributeDefinition.Builder<String>().nameUri(
-            "http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName")
-            .friendlyName("FamilyName")
-            .personType(PersonType.NATURAL_PERSON)
-            .required(true)
-            .xmlType("http://eidas.europa.eu/attributes/naturalperson", "CurrentFamilyNameType", "eidas-natural")
-            .attributeValueMarshaller(new StringAttributeValueMarshaller())
-            .build();
+    private static final AttributeDefinition<String> CURRENT_FAMILY_NAME =
+            new AttributeDefinition.Builder<String>().nameUri(
+                    "http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName")
+                    .friendlyName("FamilyName")
+                    .personType(PersonType.NATURAL_PERSON)
+                    .required(true)
+                    .xmlType("http://eidas.europa.eu/attributes/naturalperson", "CurrentFamilyNameType",
+                             "eidas-natural")
+                    .attributeValueMarshaller(new StringAttributeValueMarshaller())
+                    .transliterationMandatory(true)
+                    .build();
 
-    private static final AttributeDefinition<String> CURRENT_GIVEN_NAME = new AttributeDefinition.Builder<String>().nameUri(
-            "http://eidas.europa.eu/attributes/naturalperson/CurrentGivenName")
-            .friendlyName("FirstName")
-            .personType(PersonType.NATURAL_PERSON)
-            .required(true)
-            .xmlType("http://eidas.europa.eu/attributes/naturalperson", "CurrentGivenNameType", "eidas-natural")
-            .attributeValueMarshaller(new StringAttributeValueMarshaller())
-            .build();
+    private static final AttributeDefinition<String> CURRENT_GIVEN_NAME =
+            new AttributeDefinition.Builder<String>().nameUri(
+                    "http://eidas.europa.eu/attributes/naturalperson/CurrentGivenName")
+                    .friendlyName("FirstName")
+                    .personType(PersonType.NATURAL_PERSON)
+                    .required(true)
+                    .xmlType("http://eidas.europa.eu/attributes/naturalperson", "CurrentGivenNameType", "eidas-natural")
+                    .attributeValueMarshaller(new StringAttributeValueMarshaller())
+                    .build();
 
     private static final AttributeDefinition<String> COLLIDING_GIVEN_NAME =
             new AttributeDefinition.Builder<String>().nameUri("https://sector-specific.eu/firstname")
@@ -64,14 +70,15 @@ public final class ImmutableAttributeMapTest {
                     .attributeValueMarshaller(new StringAttributeValueMarshaller())
                     .build();
 
-    private static final AttributeDefinition<String> DUPLICATE_GIVEN_NAME = new AttributeDefinition.Builder<String>().nameUri(
-            "http://eidas.europa.eu/attributes/naturalperson/CurrentGivenName")
-            .friendlyName("FirstName")
-            .personType(PersonType.NATURAL_PERSON)
-            .required(true)
-            .xmlType("https://sector-specific.eu", "FirstNameType", "sector-specific")
-            .attributeValueMarshaller(new StringAttributeValueMarshaller())
-            .build();
+    private static final AttributeDefinition<String> DUPLICATE_GIVEN_NAME =
+            new AttributeDefinition.Builder<String>().nameUri(
+                    "http://eidas.europa.eu/attributes/naturalperson/CurrentGivenName")
+                    .friendlyName("FirstName")
+                    .personType(PersonType.NATURAL_PERSON)
+                    .required(true)
+                    .xmlType("https://sector-specific.eu", "FirstNameType", "sector-specific")
+                    .attributeValueMarshaller(new StringAttributeValueMarshaller())
+                    .build();
 
     ImmutableAttributeMap newMap() {
         return new ImmutableAttributeMap.Builder().put(CURRENT_FAMILY_NAME, new StringAttributeValue("Juncker", false))
@@ -94,7 +101,8 @@ public final class ImmutableAttributeMapTest {
 
     ImmutableAttributeMap newMapWithTwoValues() {
         return new ImmutableAttributeMap.Builder().put(CURRENT_FAMILY_NAME, new StringAttributeValue("Juncker", false))
-                .put(CURRENT_GIVEN_NAME, new StringAttributeValue("Jean-Claude", false), new StringAttributeValue("Jean-Pierre", false))
+                .put(CURRENT_GIVEN_NAME, new StringAttributeValue("Jean-Claude", false),
+                     new StringAttributeValue("Jean-Pierre", false))
                 .build();
     }
 
@@ -124,69 +132,81 @@ public final class ImmutableAttributeMapTest {
     @Test
     public void testGetDefinitionByNameUriString() throws Exception {
         assertThat(newMap().getDefinitionByNameUri("http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName"),
-                   is((Object)CURRENT_FAMILY_NAME));
+                   is((Object) CURRENT_FAMILY_NAME));
         assertThat(newMap().getDefinitionByNameUri("http://eidas.europa.eu/attributes/naturalperson/CurrentGivenName"),
-                   is((Object)CURRENT_GIVEN_NAME));
+                   is((Object) CURRENT_GIVEN_NAME));
         assertThat(newMap().getDefinitionByNameUri("http://www.unknown.eu/Unknown"), is(nullValue()));
     }
 
     @Test
     public void testGetDefinitionByNameUri() throws Exception {
         assertThat(newMap().getDefinitionByNameUri(
-                new URI("http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName")), is((Object)CURRENT_FAMILY_NAME));
+                new URI("http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName")),
+                   is((Object) CURRENT_FAMILY_NAME));
         assertThat(newMap().getDefinitionByNameUri(
-                new URI("http://eidas.europa.eu/attributes/naturalperson/CurrentGivenName")), is((Object)CURRENT_GIVEN_NAME));
-        assertThat(newMap().getDefinitionByNameUri(new URI("http://www.unknown.eu/Unknown")),
-                   is((Object) null));
+                new URI("http://eidas.europa.eu/attributes/naturalperson/CurrentGivenName")),
+                   is((Object) CURRENT_GIVEN_NAME));
+        assertThat(newMap().getDefinitionByNameUri(new URI("http://www.unknown.eu/Unknown")), is((Object) null));
     }
 
     @Test
     public void testGetDefinitionsByFriendlyName() throws Exception {
-        assertThat(newMap().getDefinitionsByFriendlyName("FamilyName"), is((Object)ImmutableSet.of(CURRENT_FAMILY_NAME)));
-        assertThat(newMap().getDefinitionsByFriendlyName("FirstName"), is((Object)ImmutableSet.of(CURRENT_GIVEN_NAME)));
+        assertThat(newMap().getDefinitionsByFriendlyName("FamilyName"),
+                   is((Object) ImmutableSet.of(CURRENT_FAMILY_NAME)));
+        assertThat(newMap().getDefinitionsByFriendlyName("FirstName"),
+                   is((Object) ImmutableSet.of(CURRENT_GIVEN_NAME)));
         assertThat(newMap().getDefinitionsByFriendlyName("Unknown"), is(nullValue()));
         assertThat(newMapWithCollision().getDefinitionsByFriendlyName("FirstName"),
-                   is((Object)ImmutableSet.of(CURRENT_GIVEN_NAME, COLLIDING_GIVEN_NAME)));
+                   is((Object) ImmutableSet.of(CURRENT_GIVEN_NAME, COLLIDING_GIVEN_NAME)));
 
     }
 
     @Test
     public void testValues() throws Exception {
         assertThat(newMap().getAttributeValues(CURRENT_GIVEN_NAME), is(not(nullValue())));
-        assertThat(newMap().getAttributeValues(CURRENT_GIVEN_NAME), contains((Object) new StringAttributeValue("Jean-Claude", false)));
+        assertThat(newMap().getAttributeValues(CURRENT_GIVEN_NAME),
+                   contains((Object) new StringAttributeValue("Jean-Claude", false)));
 
         assertThat(newMapWithTwoValues().getAttributeValues(CURRENT_GIVEN_NAME), is(not(nullValue())));
         assertThat(newMapWithTwoValues().getAttributeValues(CURRENT_GIVEN_NAME),
-                   contains((Object) new StringAttributeValue("Jean-Claude", false), (Object) new StringAttributeValue("Jean-Pierre", false)));
+                   contains((Object) new StringAttributeValue("Jean-Claude", false),
+                            (Object) new StringAttributeValue("Jean-Pierre", false)));
 
-        assertThat(newMapWithoutValues().getAttributeValues(CURRENT_GIVEN_NAME), either(hasSize(0)).or(is(nullValue())));
+        assertThat(newMapWithoutValues().getAttributeValues(CURRENT_GIVEN_NAME),
+                   either(hasSize(0)).or(is(nullValue())));
     }
 
     @Test
     public void testFirstValue() throws Exception {
-        assertThat(newMap().getFirstAttributeValue(CURRENT_GIVEN_NAME), is((Object) new StringAttributeValue("Jean-Claude", false)));
-        assertThat(newMapWithTwoValues().getFirstAttributeValue(CURRENT_GIVEN_NAME), is((Object) new StringAttributeValue("Jean-Claude", false)));
+        assertThat(newMap().getFirstAttributeValue(CURRENT_GIVEN_NAME),
+                   is((Object) new StringAttributeValue("Jean-Claude", false)));
+        assertThat(newMapWithTwoValues().getFirstAttributeValue(CURRENT_GIVEN_NAME),
+                   is((Object) new StringAttributeValue("Jean-Claude", false)));
         assertThat(newMapWithoutValues().getFirstAttributeValue(CURRENT_GIVEN_NAME), is(nullValue()));
     }
 
     @Test
     public void testGetValuesByFriendlyName() throws Exception {
         assertThat(newMap().getAttributeValuesByFriendlyName("FamilyName"),
-                   is((Object) ImmutableAttributeMap.of(CURRENT_FAMILY_NAME, ImmutableSet.of(new StringAttributeValue("Juncker", false)))));
+                   is((Object) ImmutableAttributeMap.of(CURRENT_FAMILY_NAME,
+                                                        ImmutableSet.of(new StringAttributeValue("Juncker", false)))));
         assertThat(newMap().getAttributeValuesByFriendlyName("FirstName"),
-                   is((Object) ImmutableAttributeMap.of(CURRENT_GIVEN_NAME, ImmutableSet.of(new StringAttributeValue("Jean-Claude", false)))));
+                   is((Object) ImmutableAttributeMap.of(CURRENT_GIVEN_NAME, ImmutableSet.of(
+                           new StringAttributeValue("Jean-Claude", false)))));
         assertThat(newMap().getAttributeValuesByFriendlyName("Unknown"), is((ImmutableAttributeMap) null));
         assertThat(newMapWithCollision().getAttributeValuesByFriendlyName("FirstName"),
-                   is((Object) ImmutableAttributeMap.copyOf((Map) ImmutableMap.of(
-                           CURRENT_GIVEN_NAME, ImmutableSet.of(new StringAttributeValue("Jean-Claude", false)),
-                           COLLIDING_GIVEN_NAME, ImmutableSet.of(new StringAttributeValue("Jean-Pierre", false))))));
+                   is((Object) ImmutableAttributeMap.copyOf((Map) ImmutableMap.of(CURRENT_GIVEN_NAME, ImmutableSet.of(
+                           new StringAttributeValue("Jean-Claude", false)), COLLIDING_GIVEN_NAME, ImmutableSet.of(
+                           new StringAttributeValue("Jean-Pierre", false))))));
     }
 
     @Test
     public void testGetValuesByName() throws Exception {
-        assertThat(newMap().getAttributeValuesByNameUri("http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName"),
+        assertThat(newMap().getAttributeValuesByNameUri(
+                "http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName"),
                    is((Object) ImmutableSet.of(new StringAttributeValue("Juncker", false))));
-        assertThat(newMap().getAttributeValuesByNameUri("http://eidas.europa.eu/attributes/naturalperson/CurrentGivenName"),
+        assertThat(newMap().getAttributeValuesByNameUri(
+                "http://eidas.europa.eu/attributes/naturalperson/CurrentGivenName"),
                    is((Object) ImmutableSet.of(new StringAttributeValue("Jean-Claude", false))));
         assertThat(newMap().getAttributeValuesByNameUri("http://www.unknown.eu/Unknown"), is((ImmutableSet) null));
     }
@@ -195,11 +215,12 @@ public final class ImmutableAttributeMapTest {
     public void testGetValuesByNameUri() throws Exception {
         assertThat(newMap().getAttributeValuesByNameUri(
                 new URI("http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName")),
-                   is((Object)ImmutableSet.of(new StringAttributeValue("Juncker", false))));
+                   is((Object) ImmutableSet.of(new StringAttributeValue("Juncker", false))));
         assertThat(newMap().getAttributeValuesByNameUri(
                 new URI("http://eidas.europa.eu/attributes/naturalperson/CurrentGivenName")),
                    is((Object) ImmutableSet.of(new StringAttributeValue("Jean-Claude", false))));
-        assertThat(newMap().getAttributeValuesByNameUri(new URI("http://www.unknown.eu/Unknown")), is((ImmutableSet) null));
+        assertThat(newMap().getAttributeValuesByNameUri(new URI("http://www.unknown.eu/Unknown")),
+                   is((ImmutableSet) null));
     }
 
     @Test
@@ -215,7 +236,7 @@ public final class ImmutableAttributeMapTest {
     @Test
     public void testToString() throws Exception {
         assertEquals(
-                "{AttributeDefinition{nameUri='http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName', friendlyName='FamilyName', personType=NaturalPerson, required=true, transliterationMandatory=false, uniqueIdentifier=false, xmlType='{http://eidas.europa.eu/attributes/naturalperson}CurrentFamilyNameType', attributeValueMarshaller='eu.eidas.auth.commons.attribute.impl.StringAttributeValueMarshaller'}=[Juncker], AttributeDefinition{nameUri='http://eidas.europa.eu/attributes/naturalperson/CurrentGivenName', friendlyName='FirstName', personType=NaturalPerson, required=true, transliterationMandatory=false, uniqueIdentifier=false, xmlType='{http://eidas.europa.eu/attributes/naturalperson}CurrentGivenNameType', attributeValueMarshaller='eu.eidas.auth.commons.attribute.impl.StringAttributeValueMarshaller'}=[Jean-Claude]}",
+                "{AttributeDefinition{nameUri='http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName', friendlyName='FamilyName', personType=NaturalPerson, required=true, transliterationMandatory=true, uniqueIdentifier=false, xmlType='{http://eidas.europa.eu/attributes/naturalperson}CurrentFamilyNameType', attributeValueMarshaller='eu.eidas.auth.commons.attribute.impl.StringAttributeValueMarshaller'}=[Juncker], AttributeDefinition{nameUri='http://eidas.europa.eu/attributes/naturalperson/CurrentGivenName', friendlyName='FirstName', personType=NaturalPerson, required=true, transliterationMandatory=false, uniqueIdentifier=false, xmlType='{http://eidas.europa.eu/attributes/naturalperson}CurrentGivenNameType', attributeValueMarshaller='eu.eidas.auth.commons.attribute.impl.StringAttributeValueMarshaller'}=[Jean-Claude]}",
                 newMap().toString());
     }
 

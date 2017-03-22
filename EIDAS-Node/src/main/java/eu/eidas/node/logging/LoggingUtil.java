@@ -22,13 +22,12 @@
 
 package eu.eidas.node.logging;
 
-import eu.eidas.auth.commons.IEIDASSession;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.MDC;
-
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * Central class used to associate logging marker to the functionality.
@@ -38,18 +37,19 @@ public class LoggingUtil {
     private LoggingUtil(){
     }
     public static void logServletCall(HttpServletRequest request, final String className, final Logger logger){
+        String sessionId = "N/A";
+        HttpSession session = request.getSession(false);
+        if (null != session) {
+            sessionId = session.getId();
+            MDC.put(LoggingMarkerMDC.MDC_SESSIONID, sessionId);
+        }
         if (!StringUtils.isEmpty(request.getRemoteHost())) {
             MDC.put(LoggingMarkerMDC.MDC_REMOTE_HOST, request.getRemoteHost());
         }
-        MDC.put(LoggingMarkerMDC.MDC_SESSIONID, request.getSession().getId());
         logger.info(LoggingMarkerMDC.WEB_EVENT, "**** CALL to servlet " + className
                 + " FROM " + request.getRemoteAddr()
                 + " HTTP " + request.getMethod()
-                + " SESSIONID " + request.getSession().getId() + "****");
-
+                + " SESSIONID " + sessionId + "****");
     }
 
-    public static void logSessionContent (IEIDASSession session, final Logger logger){
-        logger.info(LoggingMarkerMDC.SESSION_CONTENT,session.toString());
-    }
 }

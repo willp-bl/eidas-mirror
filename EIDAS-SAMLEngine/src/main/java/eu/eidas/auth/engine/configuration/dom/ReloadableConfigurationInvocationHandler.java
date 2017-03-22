@@ -19,6 +19,8 @@ import eu.eidas.auth.engine.core.ExtensionProcessorI;
 import eu.eidas.auth.engine.core.ProtocolSignerI;
 import eu.eidas.auth.engine.core.SamlEngineCoreProperties;
 import eu.eidas.auth.engine.core.SamlEngineEncryptionI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * ReloadableConfiguration InvocationHandler.
@@ -31,10 +33,31 @@ import eu.eidas.auth.engine.core.SamlEngineEncryptionI;
 @VisibleForTesting
 public final class ReloadableConfigurationInvocationHandler<T> implements InvocationHandler {
 
+    private static final Logger LOG = LoggerFactory.getLogger(ReloadableConfigurationInvocationHandler.class);
+
+    @Nonnull
+    private final String name;
+
+    @Nonnull
+    private final SingletonAccessor<ImmutableMap<String, SamlEngineConfiguration>> fileAccessor;
+
+    @Nonnull
+    private final ConfigurationGetter<T> getter;
+
     interface ConfigurationGetter<T> {
 
         T get(@Nonnull SamlEngineConfiguration configuration);
     }
+
+    ReloadableConfigurationInvocationHandler(@Nonnull final String nameVal,
+                                             @Nonnull
+                                             final SingletonAccessor<ImmutableMap<String, SamlEngineConfiguration>> fileAccessorVal,
+                                             @Nonnull final ConfigurationGetter<T> getterVal) {
+        name = nameVal;
+        fileAccessor = fileAccessorVal;
+        getter = getterVal;
+    }
+
 
     @Nonnull
     private static SamlEngineConfiguration getNamedConfiguration(@Nonnull String name,
@@ -130,24 +153,6 @@ public final class ReloadableConfigurationInvocationHandler<T> implements Invoca
                                                (Class<? extends T>) proxiedObject.getClass(), invocationHandler);
     }
 
-    @Nonnull
-    private final String name;
-
-    @Nonnull
-    private final SingletonAccessor<ImmutableMap<String, SamlEngineConfiguration>> fileAccessor;
-
-    @Nonnull
-    private final ConfigurationGetter<T> getter;
-
-    ReloadableConfigurationInvocationHandler(@Nonnull final String name,
-                                             @Nonnull
-                                             final SingletonAccessor<ImmutableMap<String, SamlEngineConfiguration>> fileAccessor,
-                                             @Nonnull final ConfigurationGetter<T> getter) {
-        this.name = name;
-        this.fileAccessor = fileAccessor;
-        this.getter = getter;
-    }
-
     public T getProxiedObject() {
         SamlEngineConfiguration configuration = getNamedConfiguration(name, fileAccessor);
         return getter.get(configuration);
@@ -165,6 +170,7 @@ public final class ReloadableConfigurationInvocationHandler<T> implements Invoca
             }
             return method.invoke(instance, args);
         } catch (InvocationTargetException e) {
+            LOG.error("", e);
             throw e.getTargetException();
         }
     }

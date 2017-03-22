@@ -55,6 +55,12 @@ public enum EIDASSubStatusCode {
      */
     QAA_NOT_SUPPORTED("http://www.stork.gov.eu/saml20/statusCodes/QAANotSupported");
 
+    /**
+     * Represents the constant's value.
+     */
+    @Nonnull
+    private final transient String value;
+
     private static final EnumMapper<String, EIDASSubStatusCode> MAPPER =
             new EnumMapper<String, EIDASSubStatusCode>(new KeyAccessor<String, EIDASSubStatusCode>() {
 
@@ -65,6 +71,15 @@ public enum EIDASSubStatusCode {
                 }
             }, Canonicalizers.trimLowerCase(), values());
 
+    /**
+     * Solo Constructor.
+     *
+     * @param val The Constant value.
+     */
+    EIDASSubStatusCode(@Nonnull final String val) {
+        value = val;
+    }
+
     @Nullable
     public static EIDASSubStatusCode fromString(@Nonnull String val) {
         return MAPPER.fromKey(val);
@@ -74,20 +89,6 @@ public enum EIDASSubStatusCode {
         return MAPPER;
     }
 
-    /**
-     * Represents the constant's value.
-     */
-    @Nonnull
-    private final transient String value;
-
-    /**
-     * Solo Constructor.
-     *
-     * @param val The Constant value.
-     */
-    EIDASSubStatusCode(@Nonnull final String val) {
-        this.value = val;
-    }
 
     @Nonnull
     public String getValue() {

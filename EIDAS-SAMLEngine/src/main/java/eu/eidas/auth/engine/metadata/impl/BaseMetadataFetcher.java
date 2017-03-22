@@ -13,20 +13,15 @@
  */
 package eu.eidas.auth.engine.metadata.impl;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.Socket;
-import java.net.URL;
-import java.util.Locale;
-import java.util.regex.Pattern;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.SSLSocket;
-
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+import eu.eidas.auth.commons.EidasErrorKey;
+import eu.eidas.auth.engine.AbstractProtocolEngine;
+import eu.eidas.auth.engine.metadata.MetadataFetcherI;
+import eu.eidas.auth.engine.metadata.MetadataSignerI;
+import eu.eidas.auth.engine.metadata.MetadataUtil;
+import eu.eidas.engine.exceptions.EIDASMetadataProviderException;
+import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 import org.apache.commons.lang.StringUtils;
@@ -44,13 +39,18 @@ import org.opensaml.xml.signature.SignableXMLObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.eidas.auth.commons.EidasErrorKey;
-import eu.eidas.auth.engine.AbstractProtocolEngine;
-import eu.eidas.auth.engine.metadata.MetadataFetcherI;
-import eu.eidas.auth.engine.metadata.MetadataSignerI;
-import eu.eidas.auth.engine.metadata.MetadataUtil;
-import eu.eidas.engine.exceptions.EIDASMetadataProviderException;
-import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocket;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.Socket;
+import java.net.URL;
+import java.util.Locale;
+import java.util.regex.Pattern;
 
 /**
  * The base implementation of the {@link MetadataFetcherI} interface.
@@ -60,11 +60,15 @@ import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
  *
  * @since 1.1
  */
-public class BaseMetadataFetcher implements MetadataFetcherI {
+public abstract class BaseMetadataFetcher implements MetadataFetcherI {
 
     private static final Logger LOG = LoggerFactory.getLogger(BaseMetadataFetcher.class);
 
     private static final Pattern HTTP_OR_HTTPS_URL = Pattern.compile("^https?://.*$");
+
+    private static final String DEFAULT_TLS_ENABLED_PROTOCOLS = "TLSv1.1,TLSv1.2";
+
+    private static final Pattern TLS_PROTOCOLS_SPLITTER = Pattern.compile("[,;]");
 
     protected EntityDescriptor fetchEntityDescriptor(@Nonnull String url) throws EIDASMetadataProviderException {
         if (!isAllowedMetadataUrl(url)) {
@@ -84,13 +88,15 @@ public class BaseMetadataFetcher implements MetadataFetcherI {
         // specifying a null X509KeyManager and a null X509TrustManager is going to use the default ones from the JVM:
         httpClientBuilder.setHttpsProtocolSocketFactory(newSslSocketFactory());
 
+        HTTPMetadataProvider provider = null;
+        EntityDescriptor entityDescriptor;
+
         try {
-            HTTPMetadataProvider provider =
+            provider =
                     new DomCachingHttpMetadataProvider(null, httpClientBuilder.buildClient(), url);
             provider.setParserPool(AbstractProtocolEngine.getSecuredParserPool());
             provider.initialize();
             XMLObject metadata = provider.getMetadata();
-            EntityDescriptor entityDescriptor;
             if (metadata instanceof EntityDescriptor) {
                 entityDescriptor = (EntityDescriptor) metadata;
             } else {
@@ -107,12 +113,16 @@ public class BaseMetadataFetcher implements MetadataFetcherI {
                                                          EidasErrorKey.SAML_ENGINE_INVALID_METADATA.errorMessage(),
                                                          "Invalid entity descriptor for URL \"" + url + "\"");
             }
-            return entityDescriptor;
         } catch (MetadataProviderException mpe) {
             LOG.error("Error fetching metadata from URL \"" + url + "\": " + mpe, mpe);
             throw new EIDASMetadataProviderException(EidasErrorKey.SAML_ENGINE_INVALID_METADATA.errorCode(),
                                                      EidasErrorKey.SAML_ENGINE_INVALID_METADATA.errorMessage(), mpe);
+        } finally {
+            if (provider != null) {
+                provider.destroy();
+            }
         }
+        return entityDescriptor;
     }
 
     @Nonnull
@@ -160,6 +170,27 @@ public class BaseMetadataFetcher implements MetadataFetcherI {
         return true;
     }
 
+    protected abstract String[] getTlsEnabledProtocols();
+
+    protected String[] getTlsEnabledProtocols(String tlsEnabledProtocols) {
+        if (StringUtils.isBlank(tlsEnabledProtocols)) {
+            LOG.debug("tlsEnabledProtocols is null, the default protocols [TLSv1.1,TLSv1.2] will be used");
+            return TLS_PROTOCOLS_SPLITTER.split(DEFAULT_TLS_ENABLED_PROTOCOLS);
+        }
+        ImmutableList.Builder<String> enabledProtocols = ImmutableList.builder();
+        String[] protocols = TLS_PROTOCOLS_SPLITTER.split(tlsEnabledProtocols);
+        for (String protocol : protocols) {
+            String trimmed = StringUtils.trimToNull(protocol);
+            if (StringUtils.isNotBlank(trimmed)) {
+                enabledProtocols.add(trimmed);
+            }
+        }
+        ImmutableList<String> list = enabledProtocols.build();
+        if (list.isEmpty()) { return TLS_PROTOCOLS_SPLITTER.split(DEFAULT_TLS_ENABLED_PROTOCOLS); }
+        LOG.debug("TLS enabled protocols: {}", list);
+        return Iterables.toArray(list, String.class);
+    }
+
     protected boolean mustValidateSignature(@Nonnull String url) {
         return true;
     }
@@ -188,6 +219,7 @@ public class BaseMetadataFetcher implements MetadataFetcherI {
             protected void verifyHostname(Socket socket) throws SSLException {
                 if (socket instanceof SSLSocket) {
                     SSLSocket sslSocket = (SSLSocket) socket;
+                    sslSocket.setEnabledProtocols(getTlsEnabledProtocols());
                     try {
                         sslSocket.startHandshake();
                     } catch (IOException e) {

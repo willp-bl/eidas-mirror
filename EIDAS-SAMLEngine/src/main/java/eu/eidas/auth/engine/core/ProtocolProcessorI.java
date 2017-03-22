@@ -41,7 +41,7 @@ public interface ProtocolProcessorI {
      *
      * @param request the current request
      */
-    void checkRequestSanity(IAuthenticationRequest request) throws EIDASSAMLEngineException;
+    void checkRequestSanity(@Nonnull IAuthenticationRequest request) throws EIDASSAMLEngineException;
 
     /**
      * configuration for the generator and processor
@@ -179,6 +179,27 @@ public interface ProtocolProcessorI {
             throws EIDASSAMLEngineException;
 
     /**
+     * Validates and completes if necessary the given {@link IAuthenticationRequest} which is to be sent by this
+     * processor (e.g. acting as a Connector).
+     * <p>
+     * In particular, it is expected that this method generates a new instance of an {@link IAuthenticationRequest}
+     * customized for the protocol in use and that the returned instance possesses a newly generated ID, independent of
+     * the ID of the given {@code request}.
+     * <p>
+     * The returned instance is complete and ready to be marshalled by {@link #marshallRequest(IAuthenticationRequest,
+     * String, SamlEngineCoreProperties)}.
+     * <p>
+     * If the given {@link IAuthenticationRequest} is not valid, throws an EIDASSAMLEngineException.
+     *
+     * @since 1.1.1
+     */
+    @Nonnull
+    IAuthenticationRequest createProtocolRequestToBeSent(@Nonnull IAuthenticationRequest requestToBeSent,
+                                                         @Nonnull String serviceIssuer,
+                                                         @Nonnull SamlEngineCoreProperties samlCoreProperties)
+            throws EIDASSAMLEngineException;
+
+    /**
      * Converts the given kind of {@link IAuthenticationRequest} into the appropriate SAML request.
      * <p>
      * The returned SAML request is not encrypted and is not signed, encryption and signature are handled by the {@link
@@ -187,7 +208,7 @@ public interface ProtocolProcessorI {
      * @since 1.1
      */
     @Nonnull
-    AuthnRequest marshallRequest(@Nonnull IAuthenticationRequest request,
+    AuthnRequest marshallRequest(@Nonnull IAuthenticationRequest requestToBeSent,
                                  @Nonnull String serviceIssuer,
                                  @Nonnull SamlEngineCoreProperties samlCoreProperties) throws EIDASSAMLEngineException;
 

@@ -7,8 +7,22 @@ package eu.eidas.auth.engine.core;
  */
 public interface ProtocolCipherI {
 
+    /**
+     * Returns {@code true} when the validity period of an X.509 certificate must be verified when performing
+     * cryptographic operations, returns {@code false} otherwise.
+     *
+     * @return {@code true} when the validity period of an X.509 certificate must be verified when performing
+     * cryptographic operations, returns {@code false} otherwise.
+     */
     boolean isCheckedValidityPeriod();
 
+    /**
+     * Returns {@code true} when using self-signed X.509 certificate is not allowed, returns {@code false} when it is
+     * allowed.
+     *
+     * @return {@code true} when using self-signed X.509 certificate is not allowed, returns {@code false} when it is
+     * allowed.
+     */
     boolean isDisallowedSelfSignedCertificate();
 
     /**

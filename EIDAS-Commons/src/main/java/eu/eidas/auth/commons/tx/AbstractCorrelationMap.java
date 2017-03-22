@@ -24,7 +24,7 @@ public abstract class AbstractCorrelationMap<T> implements CorrelationMap<T> {
 
     protected AbstractCorrelationMap(@Nonnull ConcurrentMapService concurrentMapService) {
         Preconditions.checkNotNull(concurrentMapService, "concurrentMapService");
-        setMap(concurrentMapService.getNewMapCache());
+        setMap(concurrentMapService.getConfiguredMapCache());
     }
 
     @Nullable

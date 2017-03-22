@@ -14,9 +14,13 @@ import java.lang.reflect.WildcardType;
  */
 public final class GenericTypeReflector {
 
+    private GenericTypeReflector() {
+    }
+
     /**
      * Returns the erasure of the given type.
      */
+    @SuppressWarnings("squid:S00112")
     private static Class<?> erase(Type type) {
         if (type instanceof Class) {
             return (Class<?>) type;
@@ -118,6 +122,7 @@ public final class GenericTypeReflector {
     /**
      * Returns the direct supertypes of the given type. Resolves type parameters.
      */
+    @SuppressWarnings("squid:S00112")
     private static Type[] getExactDirectSuperTypes(Type type) {
         if (type instanceof ParameterizedType || type instanceof Class) {
             Class<?> clazz;
@@ -167,6 +172,7 @@ public final class GenericTypeReflector {
         } else if (type == null) {
             throw new NullPointerException();
         } else {
+            //TODO throw other exception
             throw new RuntimeException("not implemented type: " + type);
         }
     }
@@ -220,6 +226,4 @@ public final class GenericTypeReflector {
         }
     }
 
-    private GenericTypeReflector() {
-    }
 }

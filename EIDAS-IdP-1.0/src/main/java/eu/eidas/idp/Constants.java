@@ -28,6 +28,11 @@ public interface Constants {
     public static String IDP_PROPERTIES="idp.properties";
     public static String IDP_METADATA_URL="idp.metadata.url";
     public static String IDP_COUNTRY="idp.country";
+    public static final String IDP_METADATA_HTTPFETCH = "idp.metadata.httpfetch";
+    public static final String IDP_METADATA_REPOPATH = "idp.metadata.repository.path";
+
+    public static final String IDP_METADATA_VALIDATESIGN = "idp.metadata.validatesignature";
+    public static final String IDP_METADATA_TRUSTEDDS = "idp.metadata.trusteddescriptors";
 
     public static String SSOS_POST_LOCATION_URL = "idp.ssos.post.location";
     public static String SSOS_REDIRECT_LOCATION_URL = "idp.ssos.redirect.location";

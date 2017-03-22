@@ -1,4 +1,0 @@
-<classloading xmlns="urn:jboss:classloading:1.0" name="EidasNode.war"
-	domain="EIDAS_Domain" export-all="NON_EMPTY" import-all="true"
-	parent-first="false" top-level-classloader="true">
-</classloading>

@@ -44,23 +44,23 @@ public enum EidasErrorKey {
     /**
      * Represents the 'spCountrySelector.invalidProviderName' constant error identifier.
      */
-    SP_COUNTRY_SELECTOR_INVALID_PROVIDER_NAME("spCountrySelector.invalidProviderName"),
+    //SP_COUNTRY_SELECTOR_INVALID_PROVIDER_NAME("spCountrySelector.invalidProviderName"),
     /**
      * Represents the 'spCountrySelector.invalidQaaSPid' constant error identifier.
      */
-    SP_COUNTRY_SELECTOR_INVALID_QAASPID("spCountrySelector.invalidQaaSPid"),
+    //SP_COUNTRY_SELECTOR_INVALID_QAASPID("spCountrySelector.invalidQaaSPid"),
     /**
      * Represents the 'spCountrySelector.invalidSpId' constant error identifier.
      */
-    SP_COUNTRY_SELECTOR_INVALID_SPID("spCountrySelector.invalidSpId"),
+    //SP_COUNTRY_SELECTOR_INVALID_SPID("spCountrySelector.invalidSpId"),
     /**
      * Represents the 'spCountrySelector.invalidSPQAA' constant error identifier.
      */
-    SP_COUNTRY_SELECTOR_INVALID_SPQAA("spCountrySelector.invalidSPQAA"),
+    //SP_COUNTRY_SELECTOR_INVALID_SPQAA("spCountrySelector.invalidSPQAA"),
     /**
      * Represents the 'spCountrySelector.invalidSpURL' constant error identifier.
      */
-    SP_COUNTRY_SELECTOR_INVALID_SPURL("spCountrySelector.invalidSpURL"),
+    //SP_COUNTRY_SELECTOR_INVALID_SPURL("spCountrySelector.invalidSpURL"),
 
     /**
      * Represents the 'spCountrySelector.invalidCountry' constant error identifier.
@@ -105,10 +105,6 @@ public enum EidasErrorKey {
      */
     SPROVIDER_SELECTOR_INVALID_SPID("sProviderAction.invalidSPId"),
     /**
-     * Represents the 'sProviderAction.spQAA' constant error identifier.
-     */
-    SPROVIDER_SELECTOR_INVALID_SPQAA("sProviderAction.invalidSPQAA"),
-    /**
      * Represents the 'sProviderAction.spQAAId' constant error identifier.
      */
     SPROVIDER_SELECTOR_INVALID_SPQAAID("sProviderAction.invalidSPQAAId"),
@@ -123,7 +119,7 @@ public enum EidasErrorKey {
     /**
      * Represents the 'sProviderAction.spNotAllowed' constant error identifier.
      */
-    SPROVIDER_SELECTOR_SPNOTALLOWED("sProviderAction.spNotAllowed"),
+    SPROVIDER_SELECTOR_SPNOTALLOWED("sProviderAction.spNotAllowed"), // not used
 
     /**
      * Represents the 'internalError' constant error identifier.
@@ -146,10 +142,6 @@ public enum EidasErrorKey {
      * Represents the 'colleagueRequest.invalidDestUrl' constant error identifier.
      */
     COLLEAGUE_REQ_INVALID_DEST_URL("colleagueRequest.invalidDestUrl"),
-    /**
-     * Represents the 'colleagueRequest.invalidDestUrl' constant error identifier.
-     */
-    COLLEAGUE_REQ_INVALID_ASSERTION_CONSUMER_SERVICE_URL("colleagueRequest.invalidAssertionConsumerServiceUrl"),
     /**
      * Represents the 'colleagueRequest.invalidQaa' constant error identifier.
      */
@@ -259,7 +251,7 @@ public enum EidasErrorKey {
     /**
      * Represents the 'connectorSAMLResponse' constant error identifier.
      */
-    CONNECTOR_SAML_RESPONSE("connectorSAMLResponse"),
+    //CONNECTOR_SAML_RESPONSE("connectorSAMLResponse"),
     /**
      * Represents the 'session' constant error identifier.
      */
@@ -299,12 +291,13 @@ public enum EidasErrorKey {
     SAML_ENGINE_INVALID_KEYSTORE("samlengine.invalid.keystore", false),
     SAML_ENGINE_INVALID_CERTIFICATE("samlengine.invalid.certificate", false),
     SAML_ENGINE_UNTRUSTED_CERTIFICATE("samlengine.untrusted.certificate", false),
-    SAML_ENGINE_LOAD_PROVIDER("samlengine.load.provider", false),
+    //SAML_ENGINE_LOAD_PROVIDER("samlengine.load.provider", false),
     SAML_ENGINE_INVALID_METADATA("samlengine.invalid.metadata.error", false),
     CONSOLE_METADATA_ISSUER_ALREADY_EXISTS("err.metadata.already.exists"),
     CONSOLE_METADATA_FILE_ALREADY_EXISTS("err.metadata.file.already.exists"),
     CONSOLE_METADATA_FILE_PARSING("err.metadata.file.invalid.format"),
     SAML_ENGINE_UNENCRYPTED_RESPONSE("samlengine.unencrypted.response"),
+    SAML_ENGINE_DECRYPTING_RESPONSE("samlengine.decrypting.response"),
     EIDAS_MANDATORY_ATTRIBUTES("missing.mandatory.attribute"),
     SAML_ENGINE_INVALID_METADATA_SOURCE("samlengine.invalid.metadata.source.error", false),
     SAML_ENGINE_NO_METADATA("samlengine.metadata.retrieval.error", true),

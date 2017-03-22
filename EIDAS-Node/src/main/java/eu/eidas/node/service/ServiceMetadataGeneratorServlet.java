@@ -39,6 +39,7 @@ import java.io.IOException;
 /**
  * generates metadata used to communicate with the ProxyService.
  */
+@SuppressWarnings("squid:S1989") // due to the code uses correlation maps, not http sessions
 public class ServiceMetadataGeneratorServlet extends AbstractConnectorServlet{
     /**
      * Logger object.

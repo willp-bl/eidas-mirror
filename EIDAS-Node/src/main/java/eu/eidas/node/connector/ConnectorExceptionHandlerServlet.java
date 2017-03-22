@@ -40,6 +40,7 @@ import eu.eidas.node.utils.EidasNodeErrorUtil;
  * @version $Revision: 1 $, $Date: 2014-10-21 $
  */
 
+@SuppressWarnings("squid:S1989") // due to the code uses correlation maps, not http sessions
 public final class ConnectorExceptionHandlerServlet extends AbstractNodeServlet {
 
     /**
@@ -124,8 +125,7 @@ public final class ConnectorExceptionHandlerServlet extends AbstractNodeServlet 
                 final String errorMessage = msgResource.getMessage(exception.getErrorMessage(), new Object[] {
                         exception.getErrorCode()}, request.getLocale());
                 exception.setErrorMessage(errorMessage);
-                EidasNodeErrorUtil.prepareSamlResponseFail(request, exception,
-                                                           EidasNodeErrorUtil.ErrorSource.CONNECTOR);
+                EidasNodeErrorUtil.prepareSamlResponseFail(request, exception, EidasNodeErrorUtil.ErrorSource.CONNECTOR);
                 LOG.info("BUSINESS EXCEPTION : ", errorMessage);
             } else {
                 LOG.info("BUSINESS EXCEPTION : ", exception.getMessage());

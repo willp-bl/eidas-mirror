@@ -43,8 +43,8 @@ public enum SpecificParameterNames {
      *
      * @param name name of the bean
      */
-    SpecificParameterNames(@Nonnull String name) {
-        this.name = name;
+    SpecificParameterNames(@Nonnull String nameValue) {
+        name = nameValue;
     }
 
     @Nonnull

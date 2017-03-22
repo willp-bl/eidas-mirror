@@ -2,7 +2,7 @@ package eu.eidas.node;
 
 import eu.eidas.auth.specific.IAUService;
 
-public class CitizenAuthenticationBean extends SpecificCommonBean {
+public class CitizenAuthenticationBean {
   /**
    * Specific Node service.
    */

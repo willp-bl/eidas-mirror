@@ -220,11 +220,11 @@ public class AUSERVICETestCase {
                                    ImmutableMap.<String, ImmutableList<String>>of(paramName1,
                                                                                   ImmutableList.<String>of(paramValue1),
                                                                                   paramName2, ImmutableList.<String>of(
-                                                   paramValue2)), "127.0.0.1");
+                                                   paramValue2)), "127.0.0.1", null);
     }
 
     /**
-     * Test method for AUSERVICE.processAuthenticationRequest(Map, IEIDASSession)}. Testing an invalid saml token. Must
+     * Test method for AUSERVICE.processAuthenticationRequest(Map)}. Testing an invalid saml token. Must
      * throw {@link InvalidParameterEIDASException}.
      */
     @Test(expected = InvalidParameterEIDASException.class)
@@ -244,7 +244,7 @@ public class AUSERVICETestCase {
     }
 
     /**
-     * Test method for AUSERVICE#processAuthenticationRequest(Map, IEIDASSession)}. Testing an invalid saml token. Must
+     * Test method for AUSERVICE#processAuthenticationRequest(Map)}. Testing an invalid saml token. Must
      * throw {@link InvalidParameterEIDASException}.
      */
     @Test(expected = InvalidParameterEIDASException.class)
@@ -270,7 +270,7 @@ public class AUSERVICETestCase {
     }
 
     /**
-     * Test method for processAuthenticationRequest(Map, IEIDASSession)}. Testing an invalid qaa level. Must throw
+     * Test method for processAuthenticationRequest(Map)}. Testing an invalid qaa level. Must throw
      * {@link EIDASServiceException}.
      */
     @Test(expected = InvalidParameterEIDASException.class)
@@ -298,7 +298,7 @@ public class AUSERVICETestCase {
     }
 
     /**
-     * Test method for processAuthenticationRequest(Map, IEIDASSession)}. Must succeed.
+     * Test method for processAuthenticationRequest(Map)}. Must succeed.
      */
     @Test
     public void testProcessAuthenticationRequest() {
@@ -338,7 +338,7 @@ public class AUSERVICETestCase {
     }
 
     /**
-     * Test method for processCitizenConsent(Map, IEIDASSession, boolean)}. Must succeed.
+     * Test method for processCitizenConsent(Map, boolean)}. Must succeed.
      */
     @Test
     @Ignore
@@ -376,7 +376,7 @@ public class AUSERVICETestCase {
     }
 
     /**
-     * Test method for link AUSERVICE#processCitizenConsent(Map, IEIDASSession, boolean)}. Must succeed.
+     * Test method for link AUSERVICE#processCitizenConsent(Map, boolean)}. Must succeed.
      */
     @Test
     @Ignore
@@ -418,7 +418,7 @@ public class AUSERVICETestCase {
     }
 
     /**
-     * Test method for AUSERVICE#processCitizenConsent(Map, IEIDASSession, boolean)}. Must throw a {@link
+     * Test method for AUSERVICE#processCitizenConsent(Map, boolean)}. Must throw a {@link
      * EIDASServiceException}.
      */
     @Test(expected = EIDASServiceException.class)

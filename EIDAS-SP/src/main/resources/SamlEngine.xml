@@ -37,7 +37,7 @@
             <parameter name="additionalAttributeRegistryFile"
                        value="saml-engine-additional-attributes.xml" />
             <parameter name="metadataFetcherClass"
-                       value="eu.eidas.sp.metadata.SpMetadataFetcher"/>
+                       value="eu.eidas.sp.metadata.SPCachingMetadataFetcher"/>
         </configuration>
 
         <!-- Settings for the Clock module -->

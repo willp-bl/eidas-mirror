@@ -60,6 +60,9 @@ import eu.eidas.node.logging.LoggingMarkerMDC;
 import eu.eidas.node.utils.EidasNodeErrorUtil;
 import eu.eidas.node.utils.EidasNodeValidationUtil;
 
+import static org.apache.commons.lang.StringUtils.isEmpty;
+import static org.apache.commons.lang.StringUtils.isNotEmpty;
+
 /**
  * This class is used by {@link AUSERVICE} to get, process and generate SAML Tokens. Also, it checks attribute values
  * and mandatory attributes.
@@ -102,20 +105,6 @@ public class AUSERVICESAML implements ISERVICESAMLService {
 
     private ProtocolEngineFactory nodeProtocolEngineFactory;
 
-    @Override
-    public String getSamlEngineInstanceName() {
-        return samlInstance;
-    }
-
-    public void setSamlEngineInstanceName(String samlEngineInstanceName) {
-        samlInstance = samlEngineInstanceName;
-    }
-
-    @Override
-    public ProtocolEngineI getSamlEngine() {
-        return nodeProtocolEngineFactory.getProtocolEngine(getSamlEngineInstanceName());
-    }
-
     /**
      * Country Code of this ProxyService.
      */
@@ -141,13 +130,25 @@ public class AUSERVICESAML implements ISERVICESAMLService {
      */
     private MessageSource messageSource;
 
-/*    private long skewTime;*/
-
     private String serviceMetadataUrl;
 
     private String serviceRequesterMetadataUrl;
 
     private MetadataFetcherI metadataFetcher;
+
+    @Override
+    public String getSamlEngineInstanceName() {
+        return samlInstance;
+    }
+
+    public void setSamlEngineInstanceName(String samlEngineInstanceName) {
+        samlInstance = samlEngineInstanceName;
+    }
+
+    @Override
+    public ProtocolEngineI getSamlEngine() {
+        return nodeProtocolEngineFactory.getProtocolEngine(getSamlEngineInstanceName());
+    }
 
     /**
      * {@inheritDoc}
@@ -217,12 +218,15 @@ public class AUSERVICESAML implements ISERVICESAMLService {
     @Override
     public byte[] generateErrorAuthenticationResponse(IAuthenticationRequest authData,
                                                       String statusCode,
-                                                      String errorCode,
+                                                      String errorCodeVal,
                                                       String subCode,
-                                                      String errorMessage,
+                                                      String errorMessageVal,
                                                       String ipUserAddress,
                                                       boolean isAuditable) {
         try {
+            String errorCode;
+            String errorMessage;
+
             ProtocolEngineI engine = getSamlEngine();
             // create SAML token
 
@@ -230,9 +234,12 @@ public class AUSERVICESAML implements ISERVICESAMLService {
             eidasAuthnResponseError.statusCode(statusCode);
             eidasAuthnResponseError.subStatusCode(subCode);
 
-            if (EidasErrorKey.fromID(errorMessage) != null) {
-                errorCode = EidasErrors.get(EidasErrorKey.fromID(errorMessage).errorCode());
-                errorMessage = EidasErrors.get(EidasErrorKey.fromID(errorMessage).errorMessage());
+            if (EidasErrorKey.fromID(errorMessageVal) != null) {
+                errorCode = EidasErrors.get(EidasErrorKey.fromID(errorMessageVal).errorCode());
+                errorMessage = EidasErrors.get(EidasErrorKey.fromID(errorMessageVal).errorMessage());
+            } else {
+                errorCode = errorCodeVal;
+                errorMessage = errorMessageVal;
             }
 
             LOGGER.debug(LoggingMarkerMDC.SAML_EXCHANGE,
@@ -284,23 +291,32 @@ public class AUSERVICESAML implements ISERVICESAMLService {
             // validates SAML Token
             ProtocolEngineI engine = getSamlEngine();
             IAuthenticationRequest authnRequest = engine.unmarshallRequestAndValidate(samlObj, countryCode);
-            String assertionConsumerUrl = null;
+
+            // retrieve AssertionConsumerURL from the metadata
+            String assertionConsumerUrl = MetadataUtil.getAssertionConsumerUrlFromMetadata(metadataFetcher,
+                                                                                     (MetadataSignerI) engine.getSigner(),
+                                                                                     authnRequest);
+            // check AssertionConsumerURL if provided in the request
+            if (isNotEmpty(authnRequest.getAssertionConsumerServiceURL())) {
+                LOGGER.info("validate assertion consumer service url");
+                EidasNodeValidationUtil.validateAssertionConsumerURL(authnRequest, assertionConsumerUrl, EidasErrorKey.COLLEAGUE_REQ_INVALID_SAML);
+            } else {
+                if (authnRequest instanceof IEidasAuthenticationRequest) {
+                    EidasAuthenticationRequest.Builder builder =
+                            EidasAuthenticationRequest.builder((IEidasAuthenticationRequest) authnRequest);
+                    builder.assertionConsumerServiceURL(assertionConsumerUrl);
+                    authnRequest = builder.build();
+                }
+            }
 
             //the validation which follow should be able to generate fail responses if necessary
 
             LOGGER.info(LoggingMarkerMDC.SAML_EXCHANGE, "ProxyService - Processing SAML Request with ID {}",
                         authnRequest.getId());
 
-            String connectorUrl = authnRequest.getAssertionConsumerServiceURL();
-
             checkCountryCode(authnRequest, ipUserAddress, relayState);
             checkQaa(authnRequest, ipUserAddress, relayState);
-
-            // Validates Personal Attribute List
-            NormalParameterValidator.paramName(EidasParameterKeys.ATTRIBUTE_LIST)
-                    .paramValue(authnRequest.getRequestedAttributes().isEmpty() ? null : "dummy")
-                    .eidasError(EidasErrorKey.COLLEAGUE_REQ_ATTR_NULL)
-                    .validate();
+            checkAttributeList(authnRequest, ipUserAddress, relayState);
 
             Boolean validateBindingConfig =
                     Boolean.valueOf(serviceUtil.getProperty(EidasParameterKeys.VALIDATE_BINDING.toString()));
@@ -323,24 +339,8 @@ public class AUSERVICESAML implements ISERVICESAMLService {
 
                 EidasAuthenticationRequest.Builder eIDASAuthnRequestBuilder = null;
 
-                // check or populate assertion consumer service url
-                // retrieve from the metadata
-                assertionConsumerUrl = (MetadataUtil.getAssertionConsumerUrlFromMetadata(metadataFetcher,
-                                                                                         (MetadataSignerI) engine.getSigner(),
-                                                                                         authnRequest));
-                if (StringUtils.isEmpty(authnRequest.getAssertionConsumerServiceURL())) {
+                if (isEmpty(authnRequest.getCitizenCountryCode())) {
                     eIDASAuthnRequestBuilder = EidasAuthenticationRequest.builder(eidasAuthenticationRequest);
-                    eIDASAuthnRequestBuilder.assertionConsumerServiceURL(assertionConsumerUrl);
-                } else {
-                    LOGGER.info("validate assertion consumer service url");
-                    EidasNodeValidationUtil.validateAssertionConsumerURL(authnRequest, assertionConsumerUrl,
-                                                                         EidasErrorKey.COLLEAGUE_REQ_INVALID_ASSERTION_CONSUMER_SERVICE_URL);
-                }
-
-                if (StringUtils.isEmpty(authnRequest.getCitizenCountryCode())) {
-                    if (null == eIDASAuthnRequestBuilder) {
-                        eIDASAuthnRequestBuilder = EidasAuthenticationRequest.builder(eidasAuthenticationRequest);
-                    }
                     eIDASAuthnRequestBuilder.citizenCountryCode(countryCode);
                 }
 
@@ -435,6 +435,25 @@ public class AUSERVICESAML implements ISERVICESAMLService {
 
     }
 
+    private void checkAttributeList(IAuthenticationRequest authnRequest, String ipUserAddress, String relayState) {
+
+        if (authnRequest.getRequestedAttributes().isEmpty()) {
+
+            LOGGER.info("BUSINESS EXCEPTION : Invalid Attribute List");
+
+            String errorCode = EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_ATTR_NULL.errorCode());
+            String errorMessage = EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_ATTR_NULL.errorMessage());
+
+            byte[] samlTokenFail =
+                    generateErrorAuthenticationResponse(authnRequest, EIDASStatusCode.REQUESTER_URI.toString(),
+                                                        errorCode, null, errorMessage, ipUserAddress, true);
+
+            throw new ResponseCarryingServiceException(errorCode, errorMessage,
+                                                       EidasStringUtil.encodeToBase64(samlTokenFail),
+                                                       authnRequest.getAssertionConsumerServiceURL(), relayState);
+        }
+    }
+
     private void checkQaa(IAuthenticationRequest authnRequest, String ipUserAddress, String relayState) {
         if (authnRequest instanceof IStorkAuthenticationRequest) {
             LOGGER.trace("Validating QAA level");
@@ -462,7 +481,7 @@ public class AUSERVICESAML implements ISERVICESAMLService {
         String samlCountryCode = authnRequest.getCitizenCountryCode() == null ? null
                                                                               : authnRequest.getCitizenCountryCode()
                                          .replace(EIDASValues.EIDAS_SERVICE_SUFFIX.toString(), StringUtils.EMPTY);
-        if (StringUtils.isEmpty(countryCode) || !countryCode.equals(samlCountryCode)) {
+        if (isEmpty(countryCode) || !countryCode.equals(samlCountryCode)) {
 
             LOGGER.info("BUSINESS EXCEPTION : Invalid Country Code " + authnRequest.getCitizenCountryCode());
 
@@ -547,7 +566,7 @@ public class AUSERVICESAML implements ISERVICESAMLService {
      * Sets all the fields to the audit the response.
      *
      * @param message The Saml response message.
-     * @param authnResponse The Authentication Response object.
+     * @param message The message.
      * @see EidasAuthenticationRequest
      */
     protected void prepareRespLoggerBean(IResponseMessage responseMessage, String message) {
@@ -596,6 +615,7 @@ public class AUSERVICESAML implements ISERVICESAMLService {
      *
      * @return The countryCode value.
      */
+    @Override
     public String getCountryCode() {
         return countryCode;
     }

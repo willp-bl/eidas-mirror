@@ -23,11 +23,7 @@
 package eu.eidas.auth.engine.metadata;
 
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -42,27 +38,7 @@ import org.opensaml.common.xml.SAMLConstants;
 import org.opensaml.saml2.common.Extensions;
 import org.opensaml.saml2.core.Attribute;
 import org.opensaml.saml2.core.AttributeValue;
-import org.opensaml.saml2.metadata.AssertionConsumerService;
-import org.opensaml.saml2.metadata.Company;
-import org.opensaml.saml2.metadata.ContactPerson;
-import org.opensaml.saml2.metadata.ContactPersonTypeEnumeration;
-import org.opensaml.saml2.metadata.EmailAddress;
-import org.opensaml.saml2.metadata.EncryptionMethod;
-import org.opensaml.saml2.metadata.EntitiesDescriptor;
-import org.opensaml.saml2.metadata.EntityDescriptor;
-import org.opensaml.saml2.metadata.GivenName;
-import org.opensaml.saml2.metadata.IDPSSODescriptor;
-import org.opensaml.saml2.metadata.KeyDescriptor;
-import org.opensaml.saml2.metadata.LocalizedString;
-import org.opensaml.saml2.metadata.NameIDFormat;
-import org.opensaml.saml2.metadata.Organization;
-import org.opensaml.saml2.metadata.OrganizationDisplayName;
-import org.opensaml.saml2.metadata.OrganizationURL;
-import org.opensaml.saml2.metadata.SPSSODescriptor;
-import org.opensaml.saml2.metadata.SSODescriptor;
-import org.opensaml.saml2.metadata.SingleSignOnService;
-import org.opensaml.saml2.metadata.SurName;
-import org.opensaml.saml2.metadata.TelephoneNumber;
+import org.opensaml.saml2.metadata.*;
 import org.opensaml.samlext.saml2mdattr.EntityAttributes;
 import org.opensaml.xml.XMLObject;
 import org.opensaml.xml.XMLObjectBuilderFactory;
@@ -109,7 +85,15 @@ public class MetadataGenerator {
 
     IDPSSODescriptor idpSSODescriptor = null;
 
-    private String ssoLocation;
+    protected String ssoLocation;
+
+    protected static final String TECHNICAL_CONTACT_PROPS[]={"contact.technical.company", "contact.technical.email", "contact.technical.givenname", "contact.technical.surname", "contact.technical.phone"};
+    protected static final String SUPPORT_CONTACT_PROPS[]={"contact.support.company", "contact.support.email", "contact.support.givenname", "contact.support.surname", "contact.support.phone"};
+    protected static final String CONTACTS[][]={TECHNICAL_CONTACT_PROPS, SUPPORT_CONTACT_PROPS};
+
+    private static final Set<String> DEFAULT_BINDING = new HashSet<String>() {{
+        this.add(SAMLConstants.SAML2_POST_BINDING_URI);
+    }};
 
     /**
      * @return a String representation of the entityDescriptr built based on the attributes previously set
@@ -160,8 +144,6 @@ public class MetadataGenerator {
         //the node has SP role
         spSSODescriptor.setWantAssertionsSigned(params.wantAssertionsSigned);
         spSSODescriptor.setAuthnRequestsSigned(true);
-        spSSODescriptor.setID(idpSSODescriptor == null ? params.getEntityID()
-                                                       : (MetadataConfigParams.SP_ID_PREFIX + params.getEntityID()));
         if (params.spSignature != null) {
             spSSODescriptor.setSignature(params.spSignature);
         }
@@ -185,10 +167,6 @@ public class MetadataGenerator {
             addAssertionConsumerService();
         }
         fillNameIDFormat(spSSODescriptor);
-        if (params.getSpEngine() != null) {
-            ProtocolEngineI spEngine = params.getSpEngine();
-            ((MetadataSignerI) spEngine.getSigner()).signMetadata(spSSODescriptor);
-        }
         entityDescriptor.getRoleDescriptors().add(spSSODescriptor);
 
     }
@@ -208,14 +186,13 @@ public class MetadataGenerator {
         ssoDescriptor.getNameIDFormats().add(unspecifiedFormat);
     }
 
+    @SuppressWarnings("squid:S2583")
     private void generateIDPSSODescriptor(final EntityDescriptor entityDescriptor,
                                           final X509KeyInfoGeneratorFactory keyInfoGeneratorFactory)
             throws org.opensaml.xml.security.SecurityException, IllegalAccessException, NoSuchFieldException,
                    SAMLEngineException, EIDASSAMLEngineException {
         //the node has IDP role
         idpSSODescriptor.setWantAuthnRequestsSigned(true);
-        idpSSODescriptor.setID(spSSODescriptor == null ? params.getEntityID()
-                                                       : (MetadataConfigParams.IDP_ID_PREFIX + params.getEntityID()));
         if (params.idpSignature != null) {
             idpSSODescriptor.setSignature(params.idpSignature);
         }
@@ -236,18 +213,11 @@ public class MetadataGenerator {
         }
         idpSSODescriptor.addSupportedProtocol(params.idpSamlProtocol);
         fillNameIDFormat(idpSSODescriptor);
-        if (params.getIdpEngine() != null) {
-            if (params.getIdpEngine().getProtocolProcessor() != null
-                    && params.getIdpEngine().getProtocolProcessor().getFormat() == SAMLExtensionFormat.EIDAS10) {
-                generateSupportedAttributes(idpSSODescriptor,
-                                            params.getIdpEngine().getProtocolProcessor().getAllSupportedAttributes());
-            }
-            ProtocolEngineI idpEngine = params.getIdpEngine();
-            ((MetadataSignerI) idpEngine.getSigner()).signMetadata(idpSSODescriptor);
-        }
-
         idpSSODescriptor.getSingleSignOnServices().addAll(buildSingleSignOnServicesBindingLocations());
-
+        if (params.getIdpEngine() != null &&
+             (params.getIdpEngine().getProtocolProcessor() != null && params.getIdpEngine().getProtocolProcessor().getFormat() == SAMLExtensionFormat.EIDAS10)) {
+            generateSupportedAttributes(idpSSODescriptor, params.getIdpEngine().getProtocolProcessor().getAllSupportedAttributes());
+        }
         entityDescriptor.getRoleDescriptors().add(idpSSODescriptor);
 
     }
@@ -257,13 +227,14 @@ public class MetadataGenerator {
         ArrayList<SingleSignOnService> singleSignOnServices = new ArrayList<SingleSignOnService>();
 
         HashMap<String, String> bindingLocations = params.getProtocolBindingLocation();
-        for (String binding : bindingLocations.keySet()) {
+        Iterator<Map.Entry<String, String>> bindLocs = bindingLocations.entrySet().iterator();
+        while (bindLocs.hasNext()) {
+            Map.Entry<String, String> bindingLoc = bindLocs.next();
             SingleSignOnService ssos = BuilderFactoryUtil.buildXmlObject(SingleSignOnService.class);
-            ssos.setBinding(binding);
-            ssos.setLocation(bindingLocations.get(binding));
+            ssos.setBinding(bindingLoc.getKey());
+            ssos.setLocation(bindingLoc.getValue());
             singleSignOnServices.add(ssos);
         }
-
         return singleSignOnServices;
     }
 
@@ -329,6 +300,9 @@ public class MetadataGenerator {
             OrganizationURL url = BuilderFactoryUtil.buildXmlObject(OrganizationURL.class);
             url.setURL(new LocalizedString(params.nodeUrl, MetadataConfigParams.DEFAULT_LANG));
             organization.getURLs().add(url);
+            OrganizationName on = BuilderFactoryUtil.buildXmlObject(OrganizationName.class);
+            on.setName(new LocalizedString(params.getOrganizationName(), MetadataConfigParams.DEFAULT_LANG));
+            organization.getOrganizationNames().add(on);
         } catch (IllegalAccessException iae) {
             LOGGER.info("ERROR : error generating the Organization: {}", iae.getMessage());
             LOGGER.debug("ERROR : error generating the Organization: {}", iae);
@@ -494,7 +468,7 @@ public class MetadataGenerator {
     }
 
     private Extensions generateExtensions() throws EIDASSAMLEngineException {
-        Extensions eidasExtensions = BuilderFactoryUtil.generateExtension();
+        Extensions eidasExtensions = BuilderFactoryUtil.generateMetadataExtension();
         if (params.assuranceLevel != null) {
             generateLoA(eidasExtensions);
         }
@@ -540,10 +514,6 @@ public class MetadataGenerator {
         eidasExtensions.getUnknownXMLObjects().add(loa);
 
     }
-
-    private static final Set<String> DEFAULT_BINDING = new HashSet<String>() {{
-        this.add(SAMLConstants.SAML2_POST_BINDING_URI);
-    }};
 
     private void addAssertionConsumerService() throws EIDASSAMLEngineException {
         int index = 0;
@@ -596,5 +566,9 @@ public class MetadataGenerator {
 
     public void setConfigParams(MetadataConfigParams params) {
         this.params = params;
+    }
+
+    public String[][] getContactStrings() {
+        return CONTACTS;
     }
 }

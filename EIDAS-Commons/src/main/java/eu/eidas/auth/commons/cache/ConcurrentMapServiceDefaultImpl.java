@@ -15,7 +15,7 @@ public class ConcurrentMapServiceDefaultImpl implements ConcurrentMapService {
     private Long maximumSize = 1000000L;
 
     @Override
-    public ConcurrentMap getNewMapCache() {
+    public ConcurrentMap getConfiguredMapCache() {
         return CacheBuilder.newBuilder()
                 .expireAfterAccess(getExpireAfterAccess(), TimeUnit.SECONDS)
                 .maximumSize(getMaximumSize()).build().asMap();

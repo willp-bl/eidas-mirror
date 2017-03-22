@@ -29,7 +29,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import eu.eidas.auth.commons.EidasStringUtil;
-import eu.eidas.node.logging.logback_integrity.HashAndCounterGenerator;
+import eu.eidas.node.logging.integrity.HashAndCounterGenerator;
 
 /**
  * Single test cases for HASH256 output log.

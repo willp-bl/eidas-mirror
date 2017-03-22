@@ -4,14 +4,14 @@ package eu.eidas.node;
  * See "Effective Java edition 2 (Joshua Bloch - Addison Wesley 20012)" item 30
  */
 public enum NodeViewNames {
-    EIDAS_CONNECTOR_COLLEAGUE_REQUEST_REDIRECT("/colleagueRequestRedirect.jsp"),
-    EIDAS_CONNECTOR_COLLEAGUE_RESPONSE_REDIRECT("/colleagueResponseRedirect.jsp"),
+    EIDAS_CONNECTOR_COLLEAGUE_REQUEST_REDIRECT("/internal/colleagueRequestRedirect.jsp"),
+    EIDAS_CONNECTOR_COLLEAGUE_RESPONSE_REDIRECT("/internal/colleagueResponseRedirect.jsp"),
     EIDAS_CONNECTOR_COUNTRY_SELECTOR("/countrySelector.jsp"),
     EIDAS_CONNECTOR_PRESENT_CONSENT("/presentConsent.jsp"),
-    EIDAS_CONNECTOR_REDIRECT("/connectorRedirect.jsp"),
+    EIDAS_CONNECTOR_REDIRECT("/internal/connectorRedirect.jsp"),
     EIDAS_SERVICE_CITIZEN_CONSENT("/citizenConsent.jsp"),
-    EIDAS_SERVICE_IDP_REDIRECT("/idpRedirect.jsp"),
-    EIDAS_SERVICE_SIG_CREATOR_MODULE("/sigCreatorModuleRedirect.jsp"),
+    EIDAS_SERVICE_IDP_REDIRECT("/internal/idpRedirect.jsp"),
+    EIDAS_SERVICE_SIG_CREATOR_MODULE("/internal/sigCreatorModuleRedirect.jsp"),
     EIDAS_SERVICE_PRESENT_CONSENT("/presentConsent.jsp"),
     INTERNAL_ERROR("/internalError.jsp"),
     INTERCEPTOR_ERROR("/interceptorError.jsp"),

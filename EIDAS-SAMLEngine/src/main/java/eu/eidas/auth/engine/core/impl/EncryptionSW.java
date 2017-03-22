@@ -15,6 +15,7 @@
 
 package eu.eidas.auth.engine.core.impl;
 
+import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.util.Map;
 
@@ -40,9 +41,13 @@ public final class EncryptionSW extends KeyStoreSamlEngineEncryption {
      */
     private static final Logger LOG = LoggerFactory.getLogger(EncryptionSW.class);
 
-    private static ReloadableProperties initActivationConf(Map<String, String> properties) {
+    @Nullable
+    private static ReloadableProperties initActivationConf(@Nonnull Map<String, String> properties) {
         String activationConfigurationFile = EncryptionKey.ENCRYPTION_ACTIVATION.getAsString(properties);
         LOG.debug("File containing encryption configuration: \"" + activationConfigurationFile + "\"");
+        if (null == activationConfigurationFile) {
+            return null;
+        }
         return new ReloadableProperties(activationConfigurationFile);
     }
 
@@ -51,6 +56,7 @@ public final class EncryptionSW extends KeyStoreSamlEngineEncryption {
     /**
      * Encryption configurations for the engine. Specify to use encryption/decryption for the instances
      */
+    @Nullable
     private final ReloadableProperties encryptionActivationProperties;
 
     public EncryptionSW(Map<String, String> properties) throws EIDASSAMLEngineException {
@@ -101,16 +107,19 @@ public final class EncryptionSW extends KeyStoreSamlEngineEncryption {
     }
 
     private boolean isEnabled(String key) {
-        boolean value = false;
+        String property = null;
         if (null != encryptionActivationProperties) {
             try {
-                value = Boolean.parseBoolean(encryptionActivationProperties.getProperties().getProperty(key));
-            } catch (Exception e) {
-                LOG.info("ERROR : Error retrieving activation value. {}", e);
+                property = encryptionActivationProperties.getProperties().getProperty(key);
+            } catch (IOException e) {
+                LOG.error("ERROR : Error retrieving encryption activation value \"" + key + "\": " + e, e);
             }
+        } else {
+            property = properties.get(key);
         }
-        LOG.debug("Is active for: " + key + " : " + value);
-        return value;
+        boolean enabled = Boolean.parseBoolean(property);
+        LOG.debug("Is active for {} : {} ", key, enabled);
+        return enabled;
     }
 
     @Override

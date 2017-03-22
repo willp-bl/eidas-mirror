@@ -1,13 +1,5 @@
 package eu.eidas.config;
 
-import eu.eidas.config.impl.CategoryListImpl;
-import eu.eidas.config.impl.EIDASNodeMetaconfigHolderImpl;
-import eu.eidas.config.impl.EIDASNodeMetaconfigListImpl;
-import eu.eidas.config.impl.EIDASNodeMetaconfigProviderImpl;
-import eu.eidas.config.impl.marshaller.EIDASMetadataUnmarshallerImpl;
-import eu.eidas.config.node.EIDASNodeMetaconfigProvider;
-import eu.eidas.config.node.EIDASNodeParameterMeta;
-
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -16,10 +8,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import eu.eidas.config.impl.CategoryListImpl;
+import eu.eidas.config.impl.EIDASNodeMetaconfigHolderImpl;
+import eu.eidas.config.impl.EIDASNodeMetaconfigListImpl;
+import eu.eidas.config.impl.EIDASNodeMetaconfigProviderImpl;
+import eu.eidas.config.impl.marshaller.EIDASMetadataUnmarshallerImpl;
+import eu.eidas.config.node.EIDASNodeMetaconfigProvider;
+import eu.eidas.config.node.EIDASNodeParameterMeta;
 
-
-
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations="/testcontext.xml")
@@ -89,7 +88,7 @@ public class TestEidasNodeMetadata {
         assertNotNull(provider.getCategories());
         assertFalse(provider.getCategories().isEmpty());
         assertFalse(provider.getCategorizedParameters().isEmpty());
-        assertTrue(provider.getCategoryParameter(TEST_CATEGORY).size() == 10);
+        assertTrue(provider.getCategoryParameter(TEST_CATEGORY).size() == 9);
     }
 
     @Autowired

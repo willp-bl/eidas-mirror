@@ -1,3 +1,70 @@
+eIDAS-Node Build 1.2 Content
+
+This release is based on version 1.0 of the eIDAS technical specifications.
+This release includes stability improvements.
+
+**This release contains the following improvements:
+
++	Improvements in security
+-	Penetration tested;
++	Improvement in code quality: 
+-	Corrections based on code quality analysis.
++	Improvements in build process:
+-	Reorganising Maven POM in a standardised way;
++	Improvements in eIDAS-Node configuration:  
+-	Make eIDAS software compliant with eIDAS specification regarding TLS version by introducing new configuration property tls.enabled.protocols;
+-	Add configuration properties service.askconsent.all.attributes, service.askconsent.attribute.names.only to manage the business attribute/Value in the consent page.
++	Improvements in metadata:
+-	Metadata was double-signed. Both the Entity descriptor as well as the role descriptor were signed. Only the root element is now signed.
++	Improvements in Specific module configuration:
+-	Merge of the two files specific.properties and eidas_Specific.xml into eidas_Specific.xml;
+-	Rename SAML Engine configuration files, XXX_Specific.xml is renamed to XXX_Specific-IdP.xml, XXX_SP-Connector.xml is renamed to XXX_SP-Specific.xml.
++	Improvements in sample SP configuration:
+-	Add configuration properties (sp.metadata.validatesignature, sp.metadata.trusteddescriptors) to manage the validation of the metadata signature.
++	Improvements in sample IDP configuration:
+-	Add configuration properties (idp.metadata.validatesignature, idp.metadata.trusteddescriptors) to manage the validation of the metadata signature.
++	Improved utilisation of Hazelcast: 
+-	Now only one Hazelcast instance is used by default, but it can be reconfigured to have multiple instances in application context.
+
++
+**This release contains the following bugs fixed:
+
++ Correction of the white list for encryption algorithm was not working properly when configured differently than the standard   ()Eidas-Specific to IDP) (internal ref EIDINT-1177)
++ Correction of error in SP during validation of AudienceRestriction element of the SAML response ( internal ref : EIDINT-1160)
++ Correction when using a CA having a certificate with special characters, it failed to load the certificate for signing and encrypting (internal ref EIDINT-1146)
++ Correction of the eIDAS node rejects personIdentifier attributes containing the hyphen character (internal ref EIDINT-1120)
++ Correction of too many sessions still active (internal ref EIDINT-1113)
++ Correction of signature of static metadata was not validated ( internal ref : EIDINT-1094)
++ Correction of Proxy service did not complain when minimum data set was not correctly set (internal ref : EIDINT-1058)
++ Correction of data digest method is sha1, should be SHA 256 in metadata(internal ref : EIDINT-969)
++ Correction of Cleanup eIDASSession from the code and replace the logic when needed (internal ref : EIDINT-1051)
++ Correction of failed encryption doesn't throw exceptions ( internal EIDINT-1049)
++ Correction of Incorrect issuer URL (ConnectorMetadata instead of ConnectorResponderMetadata) in Connector response to SP (internal ref EIDINT-1048)
++ Correction of Loss of RelayState parameter in the workflow (internal ref EIDINT-1046)
++ Correction of transliteration by removing validation from NODE enabling any transliterated value(internal ref EIDINT-1041)
++ Correction of no more usable production mode setting parameter by remove it  (internal ref EIDINT-980,EIDINT-970,EIDINT-949) 
++ Correction of NodeMetadataFetcher, getFromCache returned null (internal ref EIDINT-971) 
++ Correction of WebSphere Default Url for /SP (SP/populateindexpage) was not recognised (internal ref EIDINT-964)
++ Correction of infinite redirect loop by accessing JSP pages (internal ref EIDINT-948)
++ Correction of PersonalAttrList by replacing it by Immutable Attr and delete session in specific (EIDINT-945)
++ Correction of Broken UTF-8 (internal ref EIDINT-923)
++ Correction of off encoding by adding the CharacterEncodingFilter in web.xml (otherwise the default charset is ISO-8859-1 for HTTP).
++ Correction of Proxy service validation binding : exception (internal ref EIDINT-860)
++ Correction of the Validation of the SPType, The validation is now in the Specific part of the connector (internal ref EIDINT-845)
++ Correction of the audit files location by using java system property "LOG_HOME" (internal ref EIDINT-672)
++ Correction of Allowing SHA256-rsa-MGF1 as signing algorithm (internal ref EDINT-1276)
++ Correction of Adding OrganizationName in metadata (internal ref EDINT-1269)
++ Correction of Removing ID in IDPSSODescriptor as well as SPSSPDescriptor in the metadata (internal ref EIDINT-1268)
++ Correction of Wrong type of extension : SAML Protocol XML Schema is changed xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" (internal ref EIDINT-1267)
++ Correction of HTTPMetadataProvider was not released (internal refEIDINT-1256)
++ Correction of <SubjectLocality> is changed to optional (internal ref EIDINT-1242)
++ Correction of <OneTimeUse> is changed to optional (internal refEIDINT-1259)
+
+
+
+
+####################### previous releases #######################
+
 eIDAS-Node Build 1.1 Content
 
 This eIDAS release includes architectural and stability improvements.
@@ -22,31 +89,11 @@ The release also includes the following changes :
 + dynamic configuration for properties used by the SAML Engine, these properties have been extracted from the eIDAS-Node general configuration and allow a more granular configuration (eidas.xml, eidas-specific.xml);
 + implementation of the minimum data set validation based on the attribute registry;
 +implementation of a stable light-weight abstraction layer, exposed as an API and shipped as a library, on top of the OpenSAML library, which would wrap up all the low-level SAML boilerplate code;
-+ implementation of two namespaces http://eidas.europa.eu/attributes/naturalperson and http://eidas.europa.eu/attributes/legalperson;
-+ remote code execution during object deserialization correction - upgrade the dependency version to commons-collection 3.2.2; and
-+ removal of copyrighted images.
++ implementation of two namespaces http://eidas.europa.eu/attributes/naturalperson and http://eidas.europa.eu/attributes/legalperson; and
++ remote code execution during object deserialization correction - upgrade the dependency version to commons-collection 3.2.2.
 
 N.B. For compatibility, some APIs  from 1.0.2 have been kept from previous unofficial releases but declared as deprecated. They could disappear in a future release, replaced by the new already provided implementation.
 
-Known bugs in this release
-=================================================
-Error: in logs: "Caused by: java.security.InvalidKeyException: Illegal key size at javax.crypto.Cipher.checkCryptoPerm(Cipher.java:1039"
-Problem: Connector to SP response issuer is set to "http://<url>/EidasNode/ConnectorMetadata" instead of "http://<url>/EidasNode/ConnectorResponderMetadata"
-Issue tracker: https://ec.europa.eu/cefdigital/tracker/browse/EID-25  and
-               https://webgate.ec.europa.eu/CITnet/jira/browse/EIDESIGDSI-45
-Suggested solution: recompile AUCONNECTORSAML.java class (method: processProxyServiceResponse) with the followin change. 
-	Instead of:
-                 AuthenticationResponse connectorResponse = new AuthenticationResponse.Builder(authnResponse).inResponseTo(serviceProviderRequestSamlId)
-                          .issuer(connectorAuthnRequest.getIssuer())
-                          .build();
-        use:
-                 AuthenticationResponse connectorResponse = new AuthenticationResponse.Builder(authnResponse).inResponseTo(serviceProviderRequestSamlId)
-                          .issuer(getConnectorResponderMetadataUrl())
-                          .build();
-
-For further information please contact CEF eID.
-
-####################### previous releases #######################
 
 eIDAS Node Build 1.0.2 Content
 
@@ -72,7 +119,7 @@ The architectural improvements of the Specific module will:
 - Extend the Specific module to cover communications between Service Provider and eIDAS-Node Connector as well as the communications between Identity Provider and the eIDAS-Node Proxy Service. 
 
 Version 1.0 includes the following:
-+ Improvement of the software look and feel (please note that this user interface visual design is provided for demo purposes and is not intended to be used for your production version);
++ Improvement of the software look and feel; 
 + Renaming of the STORK references to eIDAS terminology;
 + Modifications of the eIDAS-Node related to the technical specification:
                 Parametrisation of the signing certificate of the metadata;
@@ -111,6 +158,12 @@ Version 0.9
     Reflected Cross-site scripting mitigation: sanitisation of displayed values;
 + Removal of Middleware plugin;
 + Extension of the sample applications (SP, IDP, AP) to provide a sample of use of the eIDAS regulation features.
+
+
+*** NOTE *********************************************************************
+*** The following releases relate to pre-eIDAS-Node STORK PEPS implementations
+*** **************************************************************************
+
 
 Build 1.3.1 Content
 
@@ -153,11 +206,11 @@ STORK-Peps-1.3.0.zip	= Distribution version '1.3.0' of the reference PEPS
 Doc\PEPS Installation Quick Start Guide v1 3 0.pdf = Quick Install of preconfigured PEPS 
 Doc\PEPS 1 3 0 Installation Manual.pdf = Detailed install Guide
 STORK-Peps-Sources-1.3.0.zip	= Source files of the reference PEPS including an example of implementation of a SP (service provider), Idp (Identity provider) , AP (attributes provider) and an example of  signModule.  (maven projects)
-STORK-Peps-Binaries-Glassfish-1.3.0.zip	= Deployable war files of a preconfigured PEPS (Country CB) for a glassfish Server ( including AP.war, IdP.war, PEPS.war, SignModule.war, SP.war )
-STORK-Peps-Binaries-Jboss-1.3.0.zip	= Deployable war files of a preconfigured PEPS (Country CC) for a jboss Server ( including AP.war, IdP.war, PEPS.war, SignModule.war, SP.war )
-STORK-Peps-Binaries-Tomcat-1.3.0.zip = Deployable war files of a preconfigured PEPS (Country CA) for a tomcat Server ( including AP.war, IdP.war, PEPS.war, SignModule.war, SP.war )
-STORK-Peps-Binaries-Wls-1.3.0.zip	= Deployable war files of a preconfigured PEPS (Country CD) for a weblogic Server ( including AP.war, IdP.war, PEPS.war, SignModule.war, SP.war )
-STORK-Peps-Binaries-Was-1.3.0.zip	= Deployable war files of a preconfigured PEPS (Country CF) for a websphere application Server ( including AP.war, IdP.war, PEPS.war, SignModule.war, SP.war )
+STORK-Peps-Binaries-Glassfish-1.3.0.zip	= Deployable war files of a preconfigured PEPS (Country CB) for a GlassFish Server ( including AP.war, IdP.war, PEPS.war, SignModule.war, SP.war )
+STORK-Peps-Binaries-Jboss-1.3.0.zip	= Deployable war files of a preconfigured PEPS (Country CC) for a JBoss Server ( including AP.war, IdP.war, PEPS.war, SignModule.war, SP.war )
+STORK-Peps-Binaries-Tomcat-1.3.0.zip = Deployable war files of a preconfigured PEPS (Country CA) for a Tomcat Server ( including AP.war, IdP.war, PEPS.war, SignModule.war, SP.war )
+STORK-Peps-Binaries-Wls-1.3.0.zip	= Deployable war files of a preconfigured PEPS (Country CD) for a WebLogic Server ( including AP.war, IdP.war, PEPS.war, SignModule.war, SP.war )
+STORK-Peps-Binaries-Was-1.3.0.zip	= Deployable war files of a preconfigured PEPS (Country CF) for a WebSphere application Server ( including AP.war, IdP.war, PEPS.war, SignModule.war, SP.war )
 		
 =======
 
@@ -175,8 +228,8 @@ Version 1.2.0
 + Extend the demo server PEPS configuration by creating keystores and certificates (saml signature) by stakeholder (SP/SPEPS/CPEPS/IDP) reflecting better the reality. (instead of one for all).
 + Security Improvements
 	Web session management : 
-		Add secure flag for session cookies (only available in Servlet 3.0 : tomcat 7 - glassfish 3 - jBoss 7 - webLogic 12c)
-		HttpOnly flag for session cookies (only available in Servlet 3.0 : tomcat 7 - glassfish 3 - jBoss 7 - webLogic 12c)
+		Add secure flag for session cookies (only available in Servlet 3.0 : Tomcat 7 - GlassFish 3 - JBoss 7 - WebLogic 12c)
+		HttpOnly flag for session cookies (only available in Servlet 3.0 : Tomcat 7 - GlassFish 3 - JBoss 7 - WebLogic 12c)
 		Add HSTS (force keeping Strict-Transport-Security: max-age=60000; includeSubDomains) with a feature selector
     Framing protection : X-Frame-Options header for all the application
 	XSS countermeasures 
@@ -205,10 +258,10 @@ STORK-Peps-1.1.1.zip	= Distribution version '111' of the reference PEPS
 Doc\QuickStarted-STORK-Peps-Binaries.doc    = Quick Install of preconfigured PEPS 
 Doc\PEPS 1.1.1 Installation Manual.docx     = Detailed install Guide
 STORK-Peps-Sources-1.1.1.zip	= Source files of the reference PEPS including an example of implementation of a SP (service provider), Idp (Identity provider) , AP (attributes provider) and an example of  signModule.  (maven projects)
-STORK-Peps-Binaries-Glassfish-1.1.1.zip	= Deployable war files of a preconfigured PEPS (Country CA) for a glassfish Server ( including AP.war, IdP.war, PEPS.war, SignModule.war, SP.war )
-STORK-Peps-Binaries-Jboss-1.1.1.zip	= Deployable war files of a preconfigured PEPS (Country CB) for a jboss Server ( including AP.war, IdP.war, PEPS.war, SignModule.war, SP.war )
-STORK-Peps-Binaries-Tomcat-1.1.1.zip = Deployable war files of a preconfigured PEPS (Country CC) for a tomcat Server ( including AP.war, IdP.war, PEPS.war, SignModule.war, SP.war )
-STORK-Peps-Binaries-Wls-1.1.1.zip	= Deployable war files of a preconfigured PEPS (Country CD) for a weblogic Server ( including AP.war, IdP.war, PEPS.war, SignModule.war, SP.war )
+STORK-Peps-Binaries-Glassfish-1.1.1.zip	= Deployable war files of a preconfigured PEPS (Country CA) for a GlassFish Server ( including AP.war, IdP.war, PEPS.war, SignModule.war, SP.war )
+STORK-Peps-Binaries-Jboss-1.1.1.zip	= Deployable war files of a preconfigured PEPS (Country CB) for a JBoss Server ( including AP.war, IdP.war, PEPS.war, SignModule.war, SP.war )
+STORK-Peps-Binaries-Tomcat-1.1.1.zip = Deployable war files of a preconfigured PEPS (Country CC) for a Tomcat Server ( including AP.war, IdP.war, PEPS.war, SignModule.war, SP.war )
+STORK-Peps-Binaries-Wls-1.1.1.zip	= Deployable war files of a preconfigured PEPS (Country CD) for a WebLogic Server ( including AP.war, IdP.war, PEPS.war, SignModule.war, SP.war )
 
 Version 1.1.1
 
@@ -224,10 +277,10 @@ STORK-Peps-1.1.0.zip	= Distribution version '110' of the reference PEPS
 Doc\QuickStarted-STORK-Peps-Binaries.doc    = Quick Install of preconfigured PEPS 
 Doc\PEPS 1.1.0 Installation Manual.docx     = Detailed install Guide
 STORK-Peps-Sources-1.1.0.zip	= Source files of the reference PEPS including an example of implementation of a SP (service provider), Idp (Identity provider) , AP (attributes provider) and an example of  signModule.  (maven projects)
-STORK-Peps-Binaries-Glassfish-1.1.0.zip	= Deployable war files of a preconfigured PEPS (Country CA) for a glassfish Server ( including AP.war, IdP.war, PEPS.war, SignModule.war, SP.war )
-STORK-Peps-Binaries-Jboss-1.1.0.zip	= Deployable war files of a preconfigured PEPS (Country CB) for a jboss Server ( including AP.war, IdP.war, PEPS.war, SignModule.war, SP.war )
-STORK-Peps-Binaries-Tomcat-1.1.0.zip = Deployable war files of a preconfigured PEPS (Country CC) for a tomcat Server ( including AP.war, IdP.war, PEPS.war, SignModule.war, SP.war )
-STORK-Peps-Binaries-Wls-1.1.0.zip	= Deployable war files of a preconfigured PEPS (Country CD) for a weblogic Server ( including AP.war, IdP.war, PEPS.war, SignModule.war, SP.war )
+STORK-Peps-Binaries-Glassfish-1.1.0.zip	= Deployable war files of a preconfigured PEPS (Country CA) for a GlassFish Server ( including AP.war, IdP.war, PEPS.war, SignModule.war, SP.war )
+STORK-Peps-Binaries-Jboss-1.1.0.zip	= Deployable war files of a preconfigured PEPS (Country CB) for a JBoss Server ( including AP.war, IdP.war, PEPS.war, SignModule.war, SP.war )
+STORK-Peps-Binaries-Tomcat-1.1.0.zip = Deployable war files of a preconfigured PEPS (Country CC) for a Tomcat Server ( including AP.war, IdP.war, PEPS.war, SignModule.war, SP.war )
+STORK-Peps-Binaries-Wls-1.1.0.zip	= Deployable war files of a preconfigured PEPS (Country CD) for a WebLogic Server ( including AP.war, IdP.war, PEPS.war, SignModule.war, SP.war )
 
 Version 1.1.0
 
@@ -243,13 +296,13 @@ STORK-Peps-1.0.3.zip	= Distribution version '103' of the reference PEPS
 Doc\QuickStarted-STORK-Peps-Binaries.doc    = Quick Install of preconfigured PEPS 
 Doc\PEPS 1.0.3 Installation Manual.docx     = Detailed install Guide
 STORK-Peps-Sources-1.0.3.zip	= Source files of the reference PEPS including an example of implementation of a SP (service provider), Idp (Identity provider) , AP (attributes provider) and an example of  signModule.  (maven projects)
-STORK-Peps-Binaries-Glassfish-1.0.3.zip	= Deployable war files of a preconfigured PEPS (Country CA) for a glassfish Server ( including AP.war, IdP.war, PEPS.war, SignModule.war, SP.war )
-STORK-Peps-Binaries-Jboss-1.0.3.zip	= Deployable war files of a preconfigured PEPS (Country CB) for a jboss Server ( including AP.war, IdP.war, PEPS.war, SignModule.war, SP.war )
-STORK-Peps-Binaries-Tomcat-1.0.3.zip = Deployable war files of a preconfigured PEPS (Country CC) for a tomcat Server ( including AP.war, IdP.war, PEPS.war, SignModule.war, SP.war )
-STORK-Peps-Binaries-Wls-1.0.3.zip	= Deployable war files of a preconfigured PEPS (Country CD) for a weblogic Server ( including AP.war, IdP.war, PEPS.war, SignModule.war, SP.war )
+STORK-Peps-Binaries-Glassfish-1.0.3.zip	= Deployable war files of a preconfigured PEPS (Country CA) for a GlassFish Server ( including AP.war, IdP.war, PEPS.war, SignModule.war, SP.war )
+STORK-Peps-Binaries-Jboss-1.0.3.zip	= Deployable war files of a preconfigured PEPS (Country CB) for a JBoss Server ( including AP.war, IdP.war, PEPS.war, SignModule.war, SP.war )
+STORK-Peps-Binaries-Tomcat-1.0.3.zip = Deployable war files of a preconfigured PEPS (Country CC) for a Tomcat Server ( including AP.war, IdP.war, PEPS.war, SignModule.war, SP.war )
+STORK-Peps-Binaries-Wls-1.0.3.zip	= Deployable war files of a preconfigured PEPS (Country CD) for a WebLogic Server ( including AP.war, IdP.war, PEPS.war, SignModule.war, SP.war )
 
 Version 1.0.3 
-+ Modification of the build to support Tomcat 6, Glassfish 3, jBoss 6, Weblogic 10.3.6
++ Modification of the build to support Tomcat 6, Glassfish 3, JBoss 6, WebLogic 10.3.6
 + Review the code to remove potential errors and to improve code quality (based on findbugs - pmd reports : nullPointers reference, bad error management, cyclomatic complecity, ...)
 + Fix of a security issue related to the struts 2 library
 + Fix of an issue in the signedDoc where some characters were not properly escaped
@@ -272,3 +325,4 @@ Module support status: (1=built and verified; 2=built only; 3=untested)
 3: STORK-signmodule
 3: STORK-IdP
 3: STORK-IdP (alternative)
+

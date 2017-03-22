@@ -5,7 +5,7 @@ import eu.eidas.auth.specific.IAUService;
 /**
  * Class for handling spring bean definition and use it on the servlets
  */
-public class SpecificIdPBean extends SpecificCommonBean {
+public class SpecificIdPBean {
 
   /**
    * Specific Node service.

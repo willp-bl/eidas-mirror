@@ -12,7 +12,10 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  */
 public final class BouncyCastleBootstrap {
 
-    public static final BouncyCastleProvider BOUNCY_CASTLE_PROVIDER = new BouncyCastleProvider();
+    protected static final BouncyCastleProvider BOUNCY_CASTLE_PROVIDER = new BouncyCastleProvider();
+
+    private BouncyCastleBootstrap() {
+    }
 
     public static void bootstrap() {
         Security.addProvider(BOUNCY_CASTLE_PROVIDER);
@@ -29,8 +32,5 @@ public final class BouncyCastleBootstrap {
             Security.removeProvider(BOUNCY_CASTLE_PROVIDER.getName());
             Security.addProvider(BOUNCY_CASTLE_PROVIDER);
         }
-    }
-
-    private BouncyCastleBootstrap() {
     }
 }

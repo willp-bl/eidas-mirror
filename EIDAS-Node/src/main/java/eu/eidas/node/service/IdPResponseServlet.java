@@ -30,6 +30,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,6 +45,7 @@ import eu.eidas.auth.commons.EidasStringUtil;
 import eu.eidas.auth.commons.IncomingRequest;
 import eu.eidas.auth.commons.WebRequest;
 import eu.eidas.auth.commons.attribute.AttributeDefinition;
+import eu.eidas.auth.commons.attribute.AttributeValue;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.light.ILightResponse;
 import eu.eidas.auth.commons.light.IResponseStatus;
@@ -66,6 +70,7 @@ import eu.eidas.node.utils.SessionHolder;
  *
  * @see eu.eidas.node.service.AbstractServiceServlet
  */
+@SuppressWarnings("squid:S1989") // due to the code uses correlation maps, not http sessions
 public final class IdPResponseServlet extends AbstractServiceServlet {
 
     /**
@@ -228,22 +233,41 @@ public final class IdPResponseServlet extends AbstractServiceServlet {
 
             IAuthenticationResponse authnResponse = responseMessage.getResponse();
 
-            ImmutableAttributeMap responseAttributeMap = authnResponse.getAttributes();
+            ImmutableAttributeMap responseImmutableAttributeMap = authnResponse.getAttributes();
 
-            ImmutableAttributeMap.Builder attrMapBuilder = new ImmutableAttributeMap.Builder();
             ProtocolProcessorI extProx =
                     controllerService.getProxyService().getSamlService().getSamlEngine().getProtocolProcessor();
-            for (AttributeDefinition attrDef : responseAttributeMap.getAttributeMap().keySet()) {
-                // filter out non file-registry attributes = dynamic, additional ones, where value must not be displayed
-                if (extProx.getAttributeDefinitionNullable(attrDef.getNameUri().toString()) != null
-                        && extProx.getAdditionalAttributes().getByName(attrDef.getNameUri().toString()) == null) {
-                    attrMapBuilder.put(attrDef, responseAttributeMap.getAttributeValuesByNameUri(attrDef.getNameUri()));
+
+            ImmutableMap<AttributeDefinition<?>, ImmutableSet<? extends AttributeValue<?>>> responseImmutableMap =
+                    responseImmutableAttributeMap.getAttributeMap();
+
+            ImmutableAttributeMap.Builder filteredAttrMapBuilder = ImmutableAttributeMap.builder();
+            if (controllerService.isAskConsentAllAttributes()) {
+                for (AttributeDefinition attrDef : responseImmutableMap.keySet()) {
+                    if (controllerService.isAskConsentAttributeNamesOnly()) {
+                        filteredAttrMapBuilder.put(attrDef);
+                    } else {
+                        filteredAttrMapBuilder.put(attrDef, responseImmutableAttributeMap.getAttributeValuesByNameUri(attrDef.getNameUri()));
+                    }
+                }
+
+            } else {
+                for (AttributeDefinition attrDef : responseImmutableMap.keySet()) {
+                    // filter out non file-registry attributes = dynamic, additional ones, where value must not be displayed
+                    if (extProx.getAttributeDefinitionNullable(attrDef.getNameUri().toString()) != null
+                            && extProx.getAdditionalAttributes().getByName(attrDef.getNameUri().toString()) == null) {
+                        if (controllerService.isAskConsentAttributeNamesOnly()) {
+                            filteredAttrMapBuilder.put(attrDef);
+                        } else {
+                            filteredAttrMapBuilder.put(attrDef, responseImmutableAttributeMap.getAttributeValuesByNameUri(attrDef.getNameUri()));
+                        }
+                    }
                 }
             }
-            request.setAttribute(NodeParameterNames.PAL.toString(), attrMapBuilder.build().getAttributeMap());
+            request.setAttribute(NodeParameterNames.PAL.toString(), filteredAttrMapBuilder.build().getAttributeMap());
 
             boolean hasEidasAttributes = false;
-            for (final AttributeDefinition attributeDefinition : responseAttributeMap.getAttributeMap().keySet()) {
+            for (final AttributeDefinition attributeDefinition : responseImmutableMap.keySet()) {
                 if (EidasSpec.REGISTRY.contains(attributeDefinition)) {
                     hasEidasAttributes = true;
                     break;

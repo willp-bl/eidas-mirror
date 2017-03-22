@@ -44,8 +44,8 @@ public interface WebRequest {
         @Nonnull
         private final transient String value;
 
-        Method(@Nonnull String value) {
-            this.value = value;
+        Method(@Nonnull String val) {
+            value = val;
         }
 
         @Nonnull
@@ -100,4 +100,8 @@ public interface WebRequest {
 
     @Nonnull
     RequestState getRequestState();
+
+    @Nonnull
+    String getRelayState();
+
 }

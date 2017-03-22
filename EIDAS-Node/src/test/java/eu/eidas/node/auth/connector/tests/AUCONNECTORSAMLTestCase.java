@@ -252,14 +252,14 @@ public class AUCONNECTORSAMLTestCase {
 
     private static WebRequest newEmptyWebRequest() {
         return new IncomingRequest(IncomingRequest.Method.POST, ImmutableMap.<String, ImmutableList<String>>of(),
-                                   "127.0.0.1");
+                                   "127.0.0.1", null);
     }
 
     private static WebRequest newSingleParamWebRequest(String paramName, String paramValue) {
         return new IncomingRequest(IncomingRequest.Method.POST,
                                    ImmutableMap.<String, ImmutableList<String>>of(paramName,
                                                                                   ImmutableList.<String>of(paramValue)),
-                                   "127.0.0.1");
+                                   "127.0.0.1", null);
     }
 
     /**
@@ -458,7 +458,7 @@ public class AUCONNECTORSAMLTestCase {
         auconnectorsaml.setLoggerBean(mockLoggerBean);
 
         auconnectorutil.setConcurrentMapService(new ConcurrentMapServiceDefaultImpl());
-        auconnectorutil.setAntiReplayCache(auconnectorutil.getConcurrentMapService().getNewMapCache());
+        auconnectorutil.setAntiReplayCache(auconnectorutil.getConcurrentMapService().getConfiguredMapCache());
         auconnectorutil.flushReplayCache();
         //TODO use LightRequest and not saml token anymore
         auconnectorsaml.processSpRequest(null, mockParameters);
@@ -484,7 +484,7 @@ public class AUCONNECTORSAMLTestCase {
 
         AUCONNECTORUtil auconnectorutil = new AUCONNECTORUtil();
         auconnectorutil.setConcurrentMapService(new ConcurrentMapServiceDefaultImpl());
-        auconnectorutil.setAntiReplayCache(auconnectorutil.getConcurrentMapService().getNewMapCache());
+        auconnectorutil.setAntiReplayCache(auconnectorutil.getConcurrentMapService().getConfiguredMapCache());
         auconnectorutil.flushReplayCache();
 
         Properties configs = new Properties();
@@ -716,7 +716,7 @@ public class AUCONNECTORSAMLTestCase {
 
         AUCONNECTORUtil auconnectorutil = new AUCONNECTORUtil();
         auconnectorutil.setConcurrentMapService(new ConcurrentMapServiceDefaultImpl());
-        auconnectorutil.setAntiReplayCache(auconnectorutil.getConcurrentMapService().getNewMapCache());
+        auconnectorutil.setAntiReplayCache(auconnectorutil.getConcurrentMapService().getConfiguredMapCache());
         auconnectorutil.flushReplayCache();
 
         auconnectorsaml.setConnectorUtil(auconnectorutil);
@@ -784,7 +784,7 @@ public class AUCONNECTORSAMLTestCase {
 
         AUCONNECTORUtil auconnectorutil = new AUCONNECTORUtil();
         auconnectorutil.setConcurrentMapService(new ConcurrentMapServiceDefaultImpl());
-        auconnectorutil.setAntiReplayCache(auconnectorutil.getConcurrentMapService().getNewMapCache());
+        auconnectorutil.setAntiReplayCache(auconnectorutil.getConcurrentMapService().getConfiguredMapCache());
         auconnectorutil.flushReplayCache();
         Properties configs = new Properties();
         configs.setProperty(EIDASValues.NODE_SUPPORT_EIDAS_MESSAGE_FORMAT_ONLY.toString(), "false");
@@ -851,7 +851,7 @@ public class AUCONNECTORSAMLTestCase {
 
         AUCONNECTORUtil auconnectorutil = new AUCONNECTORUtil();
         auconnectorutil.setConcurrentMapService(new ConcurrentMapServiceDefaultImpl());
-        auconnectorutil.setAntiReplayCache(auconnectorutil.getConcurrentMapService().getNewMapCache());
+        auconnectorutil.setAntiReplayCache(auconnectorutil.getConcurrentMapService().getConfiguredMapCache());
         auconnectorutil.flushReplayCache();
         Properties configs = new Properties();
         configs.setProperty(EIDASValues.NODE_SUPPORT_EIDAS_MESSAGE_FORMAT_ONLY.toString(), "false");

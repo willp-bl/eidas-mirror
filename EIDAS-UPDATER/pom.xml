@@ -2,8 +2,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <artifactId>eidas-updater</artifactId>
-    <name>eidas-updater</name>
-    <version>1.1.0</version>
+    <name>eIDAS Updater</name>
     <description>
         The EIDASUpdater library provides tools to automatically update every change made on the EIDAS Node
         configuration files (eidas.xml, specific.properties, eidasUtils.properties).
@@ -11,7 +10,7 @@
     <parent>
         <groupId>eu.eidas</groupId>
         <artifactId>eidas-parent</artifactId>
-        <version>1.1.0</version>
+        <version>1.2.0</version>
         <relativePath>../EIDAS-Parent/pom.xml</relativePath>
     </parent>
     <dependencies>
@@ -34,12 +33,6 @@
             <artifactId>jersey-server</artifactId>
         </dependency>
 
-        <!-- log4j -->
-        <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-        </dependency>
-
         <!-- Application Context -->
         <dependency>
             <groupId>org.springframework</groupId>
@@ -49,6 +42,5 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-context-support</artifactId>
         </dependency>
-
     </dependencies>
 </project>

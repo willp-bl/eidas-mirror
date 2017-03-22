@@ -86,4 +86,11 @@ public interface ProtocolSignerI {
     <T extends SignableXMLObject> T validateSignature(@Nonnull T signedObject,
                                                       @Nullable Collection<X509Certificate> trustedCertificates)
             throws EIDASSAMLEngineException;
+
+    /**
+     * Returns whether to sign response assertions or not.
+     *
+     * @return {@code true} when response assertions must be signed, returns {@code false} otherwise..
+     */
+    boolean isResponseSignAssertions();
 }

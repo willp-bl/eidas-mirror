@@ -86,6 +86,14 @@ public abstract class AbstractSamlEngine {
      */
     private static final Logger LOG = LoggerFactory.getLogger(AbstractSamlEngine.class);
 
+    @Nonnull
+    private final ConfigurationAccessor configurationAccessor;
+
+    protected AbstractSamlEngine(@Nonnull ConfigurationAccessor configAccessor) {
+        Preconditions.checkNotNull(configAccessor, "configurationAccessor");
+        configurationAccessor = configAccessor;
+    }
+
     static {
         try {
             SAMLBootstrap.bootstrap();
@@ -100,14 +108,6 @@ public abstract class AbstractSamlEngine {
 
     public static ParserPool getSecuredParserPool() {
         return Configuration.getParserPool();
-    }
-
-    @Nonnull
-    private final ConfigurationAccessor configurationAccessor;
-
-    protected AbstractSamlEngine(@Nonnull ConfigurationAccessor configurationAccessor) {
-        Preconditions.checkNotNull(configurationAccessor, "configurationAccessor");
-        this.configurationAccessor = configurationAccessor;
     }
 
     /**
@@ -130,6 +130,7 @@ public abstract class AbstractSamlEngine {
     }
 
     @Nonnull
+    @SuppressWarnings("squid:S2583")
     protected SamlEngineConfiguration getConfiguration() {
         try {
             SamlEngineConfiguration samlEngineConfiguration = configurationAccessor.get();
@@ -268,7 +269,7 @@ public abstract class AbstractSamlEngine {
     @Nonnull
     protected Assertion signAssertion(@Nonnull Assertion assertion) throws EIDASSAMLEngineException {
         LOG.debug("Sign SAML Assertion.");
-        return (Assertion) getSigner().sign(assertion);
+        return getSigner().sign(assertion);
     }
 
     /**
@@ -280,7 +281,7 @@ public abstract class AbstractSamlEngine {
     @Nonnull
     protected AuthnRequest signRequest(@Nonnull AuthnRequest request) throws EIDASSAMLEngineException {
         LOG.debug("Signing SAML Request.");
-        return (AuthnRequest) getSigner().sign(request);
+        return getSigner().sign(request);
     }
 
     /**
@@ -312,7 +313,7 @@ public abstract class AbstractSamlEngine {
         }
         // SIGN
         LOG.debug("Signing SAML Response.");
-        return (Response) getSigner().sign(responseToSign);
+        return getSigner().sign(responseToSign);
     }
 
     @Nullable
@@ -330,18 +331,20 @@ public abstract class AbstractSamlEngine {
     protected Response signResponse(@Nullable X509Certificate destinationCertificate, @Nonnull Response response)
             throws EIDASSAMLEngineException {
         // ENCRYPT THE SAMLObject BEFORE SIGN
-        if (null != getCipher() && !SAMLEngineUtils.isErrorSamlResponse(response) && null != destinationCertificate) {
+        Response responseVar = response;
+        if (null != getCipher() && !SAMLEngineUtils.isErrorSamlResponse(responseVar) && null != destinationCertificate) {
             LOG.debug("Encryption Executing...");
 
-            response = getCipher().encryptSamlResponse(response, destinationCertificate);
+            responseVar = getCipher().encryptSamlResponse(responseVar, destinationCertificate);
 
-            LOG.debug("Encryption finished: " + response);
-        } else if (!SAMLEngineUtils.isErrorSamlResponse(response)) {
+            LOG.debug("Encryption finished: " + responseVar);
+        } else if (!SAMLEngineUtils.isErrorSamlResponse(responseVar)) {
             checkUnencryptedResponsesAllowed();
         }
         // SIGN
         LOG.debug("Signing SAML Response.");
-        return (Response) getSigner().sign(response);
+        Response signedResponse = getSigner().sign(responseVar);
+        return signedResponse;
     }
 
     /**
@@ -375,23 +378,24 @@ public abstract class AbstractSamlEngine {
      */
     protected final Response validateSignatureAndDecrypt(Response response) throws EIDASSAMLEngineException {
         LOG.debug("Validate response Signature");
+        Response validResponse = response;
         X509Certificate signatureCertificate =
-                getExtensionProcessor().getResponseSignatureCertificate(response.getIssuer().getValue());
-        getSigner().validateSignature(response,
+                getExtensionProcessor().getResponseSignatureCertificate(validResponse.getIssuer().getValue());
+        getSigner().validateSignature(validResponse,
                                       null == signatureCertificate ? null : ImmutableSet.of(signatureCertificate));
 
-        if (this.decryptResponse() && !(response).getEncryptedAssertions().isEmpty()) {
+        if (this.decryptResponse() && !(validResponse).getEncryptedAssertions().isEmpty()) {
             // DECRYPT THE SAMLObject AFTER VALIDATION
             LOG.debug("Decryption Executing...");
-            response = getCipher().decryptSamlResponse(response);
+            validResponse = getCipher().decryptSamlResponse(validResponse);
             if (LOG.isTraceEnabled()) {
-                LOG.trace("Decryption finished: " + EidasStringUtil.toString(marshall(response)));
+                LOG.trace("Decryption finished: " + EidasStringUtil.toString(marshall(validResponse)));
             } else {
                 LOG.debug("Decryption finished.");
             }
-        } else if (StatusCode.SUCCESS_URI.equals(response.getStatus().getStatusCode().getValue())) {
+        } else if (StatusCode.SUCCESS_URI.equals(validResponse.getStatus().getStatusCode().getValue())) {
             checkUnencryptedResponsesAllowed();
         }
-        return response;
+        return validResponse;
     }
 }

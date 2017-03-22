@@ -48,7 +48,7 @@ import static eu.eidas.sp.Constants.SP_CONF;
 /**
  * This Action resign the current saml request
  */
-
+@SuppressWarnings("squid:S1948") //TODO get rid of Struts
 public class ResignAction extends ActionSupport implements ServletRequestAware, ServletResponseAware {
 
     static final Logger logger = LoggerFactory.getLogger(ResignAction.class.getName());
@@ -136,6 +136,7 @@ public class ResignAction extends ActionSupport implements ServletRequestAware, 
     }
 
     @Override
+    @SuppressWarnings("squid:S1186")
     public void setServletResponse(HttpServletResponse response) {
     }
 

@@ -15,7 +15,6 @@ package eu.eidas.auth.specific;
 
 import java.util.Map;
 
-import eu.eidas.auth.commons.IPersonalAttributeList;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.light.ILightRequest;
 import eu.eidas.auth.commons.tx.AuthenticationExchange;
@@ -74,14 +73,14 @@ public interface IAUService {
                                                String ipUserAddress);
 
     /**
-     * Compares two given personal attribute lists.
+     * Compares two given attribute lists.
      *
-     * @param original The original Personal Attribute List.
-     * @param modified The modified Personal Attribute List.
+     * @param original The original Attribute List.
+     * @param modified The modified Attribute List.
      * @return true if the original list contains the modified one. False otherwise.
-     * @see IPersonalAttributeList
+     * @see ImmutableAttributeMap
      */
-    boolean comparePersonalAttributeLists(IPersonalAttributeList original, IPersonalAttributeList modified);
+    boolean compareAttributeLists(ImmutableAttributeMap original, ImmutableAttributeMap modified);
 
     /**
      * Correlation Map between the specific request Id and the eIDAS Proxy Service request Object received from the

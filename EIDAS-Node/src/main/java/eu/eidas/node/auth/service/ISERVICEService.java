@@ -19,7 +19,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import eu.eidas.auth.commons.EidasErrorKey;
-import eu.eidas.auth.commons.IEIDASSession;
 import eu.eidas.auth.commons.WebRequest;
 import eu.eidas.auth.commons.light.ILightResponse;
 import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
@@ -67,7 +66,6 @@ public interface ISERVICEService {
      * @param askConsentType Whether The consent-type form was present or not.
      * @return The Personal Attribute List updated with user consent.
      * @see Map
-     * @see IEIDASSession
      * @see EidasAuthenticationRequest
      */
     IAuthenticationRequest processCitizenConsent(WebRequest webRequest,

@@ -16,6 +16,7 @@ package eu.eidas.node.auth.metadata;
 import java.io.Serializable;
 
 import com.google.common.annotations.Beta;
+import eu.eidas.auth.engine.metadata.EntityDescriptorType;
 
 /**
  * a serialized image of a metadata EntityDescriptor

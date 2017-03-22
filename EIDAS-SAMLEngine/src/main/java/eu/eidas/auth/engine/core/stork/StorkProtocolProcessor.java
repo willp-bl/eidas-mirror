@@ -21,7 +21,6 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -144,8 +143,47 @@ public class StorkProtocolProcessor implements ProtocolProcessorI {
 
     private static final String STORK_RESPONSE_VALIDATOR_SUITE_ID = "storkResponseValidatorSuiteId";
 
+    @Nonnull
+    private final AttributeRegistry storkAttributeRegistry;
+
+    @Nonnull
+    private final AttributeRegistry additionalAttributeRegistry;
+
     static {
         INSTANCE.configure();
+    }
+
+    @SuppressWarnings("squid:S2637")
+    public StorkProtocolProcessor() {
+        this(STORK_ATTRIBUTE_REGISTRY, AttributeRegistries.empty());
+    }
+
+    @SuppressWarnings("squid:S2637")
+    public StorkProtocolProcessor(@Nonnull String additionalAttributesFileName) {
+        this(STORK_ATTRIBUTE_REGISTRY, AttributeRegistries.fromFile(additionalAttributesFileName));
+    }
+
+    public StorkProtocolProcessor(@Nonnull String storkAttributesFileNameVal,
+                                  @Nonnull String additionalAttributesFileNameVal) {
+        Preconditions.checkNotNull(storkAttributesFileNameVal, "storkAttributesFileName");
+        Preconditions.checkNotNull(additionalAttributesFileNameVal, "additionalAttributesFileName");
+        storkAttributeRegistry = AttributeRegistries.fromFile(storkAttributesFileNameVal);
+        additionalAttributeRegistry = AttributeRegistries.fromFile(additionalAttributesFileNameVal);
+    }
+
+    public StorkProtocolProcessor(@Nullable AttributeRegistry storkAttributeRegistryVal,
+                                  @Nullable AttributeRegistry additionalAttributeRegistryVal) {
+
+        if (null == storkAttributeRegistryVal) {
+            storkAttributeRegistry = STORK_ATTRIBUTE_REGISTRY;
+        } else {
+            storkAttributeRegistry = storkAttributeRegistryVal;
+        }
+        if (null == additionalAttributeRegistryVal) {
+            additionalAttributeRegistry = AttributeRegistries.empty();
+        } else {
+            additionalAttributeRegistry = additionalAttributeRegistryVal;
+        }
     }
 
     private static void addExtensionSPInstitution(IStorkAuthenticationRequest request, Extensions extensions)
@@ -342,42 +380,7 @@ public class StorkProtocolProcessor implements ProtocolProcessorI {
         attributeValues.add(attrValue);
     }
 
-    @Nonnull
-    private final AttributeRegistry storkAttributeRegistry;
-
-    @Nonnull
-    private final AttributeRegistry additionalAttributeRegistry;
-
-    public StorkProtocolProcessor() {
-        this(STORK_ATTRIBUTE_REGISTRY, AttributeRegistries.empty());
-    }
-
-    public StorkProtocolProcessor(@Nonnull String additionalAttributesFileName) {
-        this(STORK_ATTRIBUTE_REGISTRY, AttributeRegistries.fromFile(additionalAttributesFileName));
-    }
-
-    public StorkProtocolProcessor(@Nonnull String storkAttributesFileName,
-                                  @Nonnull String additionalAttributesFileName) {
-        Preconditions.checkNotNull(storkAttributesFileName, "storkAttributesFileName");
-        Preconditions.checkNotNull(additionalAttributesFileName, "additionalAttributesFileName");
-        this.storkAttributeRegistry = AttributeRegistries.fromFile(storkAttributesFileName);
-        this.additionalAttributeRegistry = AttributeRegistries.fromFile(additionalAttributesFileName);
-    }
-
-    public StorkProtocolProcessor(@Nullable AttributeRegistry storkAttributeRegistry,
-                                  @Nullable AttributeRegistry additionalAttributeRegistry) {
-
-        if (null == storkAttributeRegistry) {
-            storkAttributeRegistry = STORK_ATTRIBUTE_REGISTRY;
-        }
-        if (null == additionalAttributeRegistry) {
-            additionalAttributeRegistry = AttributeRegistries.empty();
-        }
-
-        this.storkAttributeRegistry = storkAttributeRegistry;
-        this.additionalAttributeRegistry = additionalAttributeRegistry;
-    }
-
+    @SuppressWarnings("all")
     private void addNameIDPolicy(AuthnRequest request, String selectedNameID) throws EIDASSAMLEngineException {
         // TODO: check this
 //        if (StringUtils.isNotEmpty(selectedNameID)) {
@@ -732,53 +735,6 @@ public class StorkProtocolProcessor implements ProtocolProcessorI {
         }
     }
 
-    private Attribute generateAttrComplex(AttributeDefinition<?> attributeDefinition,
-                                          String status,
-                                          Map<String, String> values,
-                                          boolean isHashing) throws EIDASSAMLEngineException {
-        LOG.debug("Generate attribute complex: " + attributeDefinition.toString());
-        final Attribute attribute = (Attribute) BuilderFactoryUtil.buildXmlObject(Attribute.DEFAULT_ELEMENT_NAME);
-
-        attribute.setName(attributeDefinition.getNameUri().toASCIIString());
-        attribute.setFriendlyName(attributeDefinition.getFriendlyName());
-        attribute.setNameFormat(Attribute.URI_REFERENCE);
-
-        attribute.getUnknownAttributes().put(STORK_ATTRIBUTE_STATUS, status);
-
-        if (!values.isEmpty()) {
-            LOG.debug("Add attribute values.");
-
-            // Create an attribute that contains all XSAny elements.
-            final XSAny attrValue =
-                    (XSAny) BuilderFactoryUtil.buildXmlObject(AttributeValue.DEFAULT_ELEMENT_NAME, XSAny.TYPE_NAME);
-
-            final Iterator<Map.Entry<String, String>> iterator = values.entrySet().iterator();
-            while (iterator.hasNext()) {
-                final Map.Entry<String, String> pairs = iterator.next();
-
-                final String value = pairs.getValue();
-
-                if (StringUtils.isNotBlank(value)) {
-                    // Create the attribute statement
-                    final XSAny attrValueSimple = (XSAny) BuilderFactoryUtil.buildXmlObject(
-                            new QName(SAMLCore.STORK10_NS.getValue(), pairs.getKey(),
-                                      SAMLCore.STORK10_PREFIX.getValue()), XSAny.TYPE_NAME);
-
-                    // if it's necessary encode the information.
-                    if (isHashing) {
-                        attrValueSimple.setTextContent(SAMLEngineUtils.encode(value, SAMLEngineUtils.SHA_512));
-                    } else {
-                        attrValueSimple.setTextContent(value);
-                    }
-
-                    attrValue.getUnknownXMLObjects().add(attrValueSimple);
-                    attribute.getAttributeValues().add(attrValue);
-                }
-            }
-        }
-        return attribute;
-    }
-
     @Nonnull
     private Attribute generateAttrSimple(@Nonnull AttributeDefinition<?> attributeDefinition,
                                          @Nonnull Collection<String> values) throws EIDASSAMLEngineException {
@@ -1039,6 +995,7 @@ public class StorkProtocolProcessor implements ProtocolProcessorI {
     }
 
     @Nullable
+    @SuppressWarnings("squid:S2447")
     private Boolean getNullableEIDCrossBorderShareFromExtension(final Extensions extensions) {
         List listCrossBorderShare = extensions.getUnknownXMLObjects(EIDCrossBorderShare.DEF_ELEMENT_NAME);
 
@@ -1050,6 +1007,7 @@ public class StorkProtocolProcessor implements ProtocolProcessorI {
     }
 
     @Nullable
+    @SuppressWarnings("squid:S2447")
     private Boolean getNullableEIDCrossSectorShareFromExtension(final Extensions extensions) {
         List listCrosSectorShare = extensions.getUnknownXMLObjects(EIDCrossSectorShare.DEF_ELEMENT_NAME);
 
@@ -1061,6 +1019,7 @@ public class StorkProtocolProcessor implements ProtocolProcessorI {
     }
 
     @Nullable
+    @SuppressWarnings("squid:S2447")
     private Boolean getNullableEIDSectorShareFromExtension(final Extensions extensions) {
         List listSectorShareExtension = extensions.getUnknownXMLObjects(EIDSectorShare.DEF_ELEMENT_NAME);
         if (!listSectorShareExtension.isEmpty()) {
@@ -1201,6 +1160,7 @@ public class StorkProtocolProcessor implements ProtocolProcessorI {
 
     @Nonnull
     @Override
+    @SuppressWarnings("squid:S2583")
     public Response marshallErrorResponse(@Nonnull IAuthenticationRequest request,
                                           @Nonnull IAuthenticationResponse response,
                                           @Nonnull String ipAddress,
@@ -1261,17 +1221,24 @@ public class StorkProtocolProcessor implements ProtocolProcessorI {
 
     @Nonnull
     @Override
+    public IAuthenticationRequest createProtocolRequestToBeSent(@Nonnull IAuthenticationRequest requestToBeSent,
+                                                                @Nonnull String serviceIssuer,
+                                                                @Nonnull SamlEngineCoreProperties samlCoreProperties)
+            throws EIDASSAMLEngineException {
+
+        // Validate mandatory parameters
+        return validateAuthenticationRequest(requestToBeSent, samlCoreProperties);
+    }
+
+    @Nonnull
+    @Override
     public AuthnRequest marshallRequest(@Nonnull IAuthenticationRequest request,
                                         @Nonnull String serviceIssuer,
                                         @Nonnull SamlEngineCoreProperties coreProperties)
             throws EIDASSAMLEngineException {
-        // Validate mandatory parameters
-        request = validateAuthenticationRequest(request, serviceIssuer);
 
-        String id = SAMLEngineUtils.generateNCName();
-
-        AuthnRequest samlRequest =
-                BuilderFactoryUtil.generateAuthnRequest(id, SAMLVersion.VERSION_20, SAMLEngineUtils.getCurrentTime());
+        AuthnRequest samlRequest = BuilderFactoryUtil.generateAuthnRequest(request.getId(), SAMLVersion.VERSION_20,
+                                                                           SAMLEngineUtils.getCurrentTime());
 
         // Set name spaces.
         registerRequestNamespace(samlRequest);
@@ -1300,12 +1267,7 @@ public class StorkProtocolProcessor implements ProtocolProcessorI {
         samlRequest.setConsent(coreProperties.getConsentAuthnRequest());
 
         Issuer issuer = BuilderFactoryUtil.generateIssuer();
-
-        if (request.getIssuer() != null) {
-            issuer.setValue(SAMLEngineUtils.getValidIssuerValue(request.getIssuer()));
-        } else {
-            issuer.setValue(coreProperties.getRequester());
-        }
+        issuer.setValue(request.getIssuer());
 
         // Optional
         String formatEntity = coreProperties.getFormatEntity();
@@ -1468,6 +1430,7 @@ public class StorkProtocolProcessor implements ProtocolProcessorI {
     }
 
     @Nonnull
+    @Override
     public IAuthenticationResponse unmarshallErrorResponse(@Nonnull IAuthenticationResponse errorResponse,
                                                            @Nonnull Response samlErrorResponse,
                                                            @Nonnull String ipAddress,
@@ -1486,7 +1449,7 @@ public class StorkProtocolProcessor implements ProtocolProcessorI {
     @Nonnull
     public IAuthenticationRequest unmarshallRequest(@Nonnull String citizenCountryCode,
                                                     @Nonnull AuthnRequest samlRequest,
-                                                    @Nonnull String originCountryCode) throws EIDASSAMLEngineException {
+                                                    String originCountryCode) throws EIDASSAMLEngineException {
         LOG.debug("Process the extensions for Stork 1.0");
         Extensions extensions = samlRequest.getExtensions();
         validateExtension(extensions);
@@ -1589,6 +1552,7 @@ public class StorkProtocolProcessor implements ProtocolProcessorI {
 
     @Nonnull
     @Override
+    @SuppressWarnings("squid:S2583")
     public IAuthenticationResponse unmarshallResponse(@Nonnull Response response,
                                                       boolean verifyBearerIpAddress,
                                                       @Nullable String userIpAddress,
@@ -1655,8 +1619,9 @@ public class StorkProtocolProcessor implements ProtocolProcessorI {
      * @throws EIDASSAMLEngineException the EIDASSAML engine exception
      */
     @Nonnull
+    @SuppressWarnings("squid:S2583")
     private IAuthenticationRequest validateAuthenticationRequest(@Nonnull IAuthenticationRequest request,
-                                                                 @Nonnull String serviceIssuer)
+                                                                 @Nonnull SamlEngineCoreProperties samlCoreProperties)
             throws EIDASSAMLEngineException {
         LOG.trace("Validate parameters from authentication request.");
 
@@ -1698,7 +1663,31 @@ public class StorkProtocolProcessor implements ProtocolProcessorI {
                                                "QAA level: " + qaa + ", is invalid.");
         }
 
-        return request;
+        String issuer = getValidIssuerValue(request, samlCoreProperties);
+
+        String bindingMethod = SAMLEngineUtils.getBindingMethod(getProtocolBinding(request, samlCoreProperties));
+
+        // Always generate a new ID whatever the incoming input
+        String id = SAMLEngineUtils.generateNCName();
+
+        return StorkAuthenticationRequest.builder(storkAuthenticationRequest)
+                .id(id)
+                .issuer(issuer)
+                .binding(bindingMethod)
+                .build();
+    }
+
+    @Nonnull
+    private String getValidIssuerValue(@Nonnull IAuthenticationRequest request,
+                                       @Nonnull SamlEngineCoreProperties coreProperties)
+            throws EIDASSAMLEngineException {
+        String issuer;
+        if (null != request.getIssuer()) {
+            issuer = SAMLEngineUtils.getValidIssuerValue(request.getIssuer());
+        } else {
+            issuer = coreProperties.getRequester();
+        }
+        return issuer;
     }
 
     private void validateExtension(final Extensions extensions) throws EIDASSAMLEngineException {

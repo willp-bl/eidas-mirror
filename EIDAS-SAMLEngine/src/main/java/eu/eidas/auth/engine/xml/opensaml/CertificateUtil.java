@@ -1,23 +1,12 @@
 package eu.eidas.auth.engine.xml.opensaml;
 
-import java.io.ByteArrayInputStream;
-import java.math.BigInteger;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.PrivateKey;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
-import java.util.Enumeration;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.security.auth.x500.X500Principal;
-
 import com.google.common.collect.ImmutableList;
-
+import eu.eidas.auth.commons.EidasErrorKey;
+import eu.eidas.auth.engine.AbstractProtocolEngine;
+import eu.eidas.auth.engine.CertificateAliasPair;
+import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
+import eu.eidas.engine.exceptions.EIDASSAMLEngineRuntimeException;
+import eu.eidas.util.Preconditions;
 import org.apache.commons.lang.StringUtils;
 import org.opensaml.xml.security.credential.Credential;
 import org.opensaml.xml.security.trust.ExplicitKeyTrustEvaluator;
@@ -29,12 +18,20 @@ import org.opensaml.xml.util.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.eidas.auth.commons.EidasErrorKey;
-import eu.eidas.auth.engine.AbstractProtocolEngine;
-import eu.eidas.auth.engine.CertificateAliasPair;
-import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
-import eu.eidas.engine.exceptions.EIDASSAMLEngineRuntimeException;
-import eu.eidas.util.Preconditions;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.security.auth.x500.X500Principal;
+import java.io.ByteArrayInputStream;
+import java.math.BigInteger;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.PrivateKey;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.util.Enumeration;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Utility class dealing with Certificates and keys.
@@ -178,12 +175,18 @@ public final class CertificateUtil {
         BigInteger certificateSerialNumber = certificate.getSerialNumber();
 
         X500Principal issuerPrincipal = new X500Principal(issuer);
+
         X500Principal certificateSubjectPrincipal = certificate.getSubjectX500Principal();
+        //create the X500Principal based on the string representation of the X.500 distinguished name using the format defined in RFC 2253
+        X500Principal unencodedCertificateSubjectPrincipal = new X500Principal(certificateSubjectPrincipal.getName());
+
         X500Principal certificateIssuerPrincipal = certificate.getIssuerX500Principal();
+        //create the X500Principal based on the string representation of the X.500 distinguished name using the format defined in RFC 2253
+        X500Principal unencodedCertificateIssuerPrincipal = new X500Principal(certificateIssuerPrincipal.getName());
 
         return serialNumberBigInteger.equals(certificateSerialNumber) && (
-                issuerPrincipal.equals(certificateSubjectPrincipal) || issuerPrincipal.equals(
-                        certificateIssuerPrincipal));
+                issuerPrincipal.equals(unencodedCertificateSubjectPrincipal) || issuerPrincipal.equals(
+                        unencodedCertificateIssuerPrincipal));
     }
 
     @Nonnull

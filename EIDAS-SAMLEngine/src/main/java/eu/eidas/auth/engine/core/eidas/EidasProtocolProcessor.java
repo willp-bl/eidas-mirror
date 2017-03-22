@@ -115,6 +115,37 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
      */
     public static final EidasProtocolProcessor INSTANCE = new EidasProtocolProcessor(null, null);
 
+    /**
+     * The LOG.
+     */
+    private static final Logger LOG = LoggerFactory.getLogger(EidasProtocolProcessor.class);
+
+    private static final String EIDAS_REQUEST_VALIDATOR_SUITE_ID = "eidasRequestValidatorSuiteId";
+
+    private static final String EIDAS_RESPONSE_VALIDATOR_SUITE_ID = "eidasResponseValidatorSuiteId";
+
+    static {
+        INSTANCE.configure();
+    }
+
+    @Nonnull
+    private final AttributeRegistry eidasAttributeRegistry;
+
+    @Nonnull
+    private final AttributeRegistry additionalAttributeRegistry;
+
+    @Nullable
+    private final MetadataEncryptionHelper metadataEncryptionHelper;
+
+    @Nullable
+    private final MetadataSignatureHelper metadataSignatureHelper;
+
+    @Nullable
+    private final MetadataFetcherI metadataFetcher;
+
+    @Nullable
+    private final MetadataSignerI metadataSigner;
+
     public static final AttributeRegistry.AttributeDefinitionFilter MANDATORY_LEGAL_FILTER =
             new AttributeRegistry.AttributeDefinitionFilter() {
 
@@ -135,19 +166,69 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
                 }
             };
 
-    /**
-     * The LOG.
-     */
-    private static final Logger LOG = LoggerFactory.getLogger(EidasProtocolProcessor.class);
+    @SuppressWarnings("squid:S2637")
+    public EidasProtocolProcessor(@Nullable MetadataFetcherI metadataFetcher,
+                                  @Nullable MetadataSignerI metadataSigner) {
+        this(EidasSpec.REGISTRY, AttributeRegistries.empty(), metadataFetcher, metadataSigner);
+    }
 
-    private static final String LOA_START = "http://eidas.europa.eu/loa/";
+    @SuppressWarnings("squid:S2637")
+    public EidasProtocolProcessor(@Nonnull AttributeRegistry additionalAttributeRegistry,
+                                  @Nullable MetadataFetcherI metadataFetcher,
+                                  @Nullable MetadataSignerI metadataSigner) {
+        this(EidasSpec.REGISTRY, additionalAttributeRegistry, metadataFetcher, metadataSigner);
+    }
 
-    private static final String EIDAS_REQUEST_VALIDATOR_SUITE_ID = "eidasRequestValidatorSuiteId";
+    @SuppressWarnings("squid:S2637")
+    public EidasProtocolProcessor(@Nonnull String additionalAttributesFileName,
+                                  @Nullable MetadataFetcherI metadataFetcher,
+                                  @Nullable MetadataSignerI metadataSigner) {
+        this(EidasSpec.REGISTRY, AttributeRegistries.fromFile(additionalAttributesFileName), metadataFetcher,
+                metadataSigner);
+    }
 
-    private static final String EIDAS_RESPONSE_VALIDATOR_SUITE_ID = "eidasResponseValidatorSuiteId";
+    public EidasProtocolProcessor(@Nonnull String eidasAttributesFileNameVal,
+                                  @Nonnull String additionalAttributesFileNameVal,
+                                  @Nullable MetadataFetcherI metadataFetcherVal,
+                                  @Nullable MetadataSignerI metadataSignerVal) {
+        Preconditions.checkNotNull(eidasAttributesFileNameVal, "eidasAttributesFileName");
+        Preconditions.checkNotNull(additionalAttributesFileNameVal, "additionalAttributesFileName");
+        eidasAttributeRegistry = AttributeRegistries.fromFile(eidasAttributesFileNameVal);
+        additionalAttributeRegistry = AttributeRegistries.fromFile(additionalAttributesFileNameVal);
+        metadataFetcher = metadataFetcherVal;
+        metadataSigner = metadataSignerVal;
+        if (null == metadataFetcher || null == metadataSigner) {
+            metadataEncryptionHelper = null;
+            metadataSignatureHelper = null;
+        } else {
+            metadataEncryptionHelper = new MetadataEncryptionHelper(metadataFetcher, metadataSigner);
+            metadataSignatureHelper = new MetadataSignatureHelper(metadataFetcher, metadataSigner);
+        }
+    }
 
-    static {
-        INSTANCE.configure();
+    public EidasProtocolProcessor(@Nullable AttributeRegistry eidasAttributeRegistryVal,
+                                  @Nullable AttributeRegistry additionalAttributeRegistryVal,
+                                  @Nullable MetadataFetcherI metadataFetcherVal,
+                                  @Nullable MetadataSignerI metadataSignerVal) {
+        if (null == eidasAttributeRegistryVal) {
+            eidasAttributeRegistry = EidasSpec.REGISTRY;
+        } else {
+            eidasAttributeRegistry = eidasAttributeRegistryVal;
+        }
+        if (null == additionalAttributeRegistryVal) {
+            additionalAttributeRegistry = AttributeRegistries.empty();
+        } else {
+            additionalAttributeRegistry = additionalAttributeRegistryVal;
+        }
+        this.metadataFetcher = metadataFetcherVal;
+        this.metadataSigner = metadataSignerVal;
+        if (null == metadataFetcher || null == metadataSigner) {
+            metadataEncryptionHelper = null;
+            metadataSignatureHelper = null;
+        } else {
+            metadataEncryptionHelper = new MetadataEncryptionHelper(metadataFetcher, metadataSigner);
+            metadataSignatureHelper = new MetadataSignatureHelper(metadataFetcher, metadataSigner);
+        }
     }
 
     private static void addExtensionSPType(IEidasAuthenticationRequest request, Extensions extensions)
@@ -176,84 +257,6 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
         return null;
     }
 
-    @Nonnull
-    private final AttributeRegistry eidasAttributeRegistry;
-
-    @Nonnull
-    private final AttributeRegistry additionalAttributeRegistry;
-
-    @Nullable
-    private final MetadataEncryptionHelper metadataEncryptionHelper;
-
-    @Nullable
-    private final MetadataSignatureHelper metadataSignatureHelper;
-
-    @Nullable
-    private final MetadataFetcherI metadataFetcher;
-
-    @Nullable
-    private final MetadataSignerI metadataSigner;
-
-    public EidasProtocolProcessor(@Nullable MetadataFetcherI metadataFetcher,
-                                  @Nullable MetadataSignerI metadataSigner) {
-        this(EidasSpec.REGISTRY, AttributeRegistries.empty(), metadataFetcher, metadataSigner);
-    }
-
-    public EidasProtocolProcessor(@Nonnull AttributeRegistry additionalAttributeRegistry,
-                                  @Nullable MetadataFetcherI metadataFetcher,
-                                  @Nullable MetadataSignerI metadataSigner) {
-        this(EidasSpec.REGISTRY, additionalAttributeRegistry, metadataFetcher, metadataSigner);
-    }
-
-    public EidasProtocolProcessor(@Nonnull String additionalAttributesFileName,
-                                  @Nullable MetadataFetcherI metadataFetcher,
-                                  @Nullable MetadataSignerI metadataSigner) {
-        this(EidasSpec.REGISTRY, AttributeRegistries.fromFile(additionalAttributesFileName), metadataFetcher,
-             metadataSigner);
-    }
-
-    public EidasProtocolProcessor(@Nonnull String eidasAttributesFileName,
-                                  @Nonnull String additionalAttributesFileName,
-                                  @Nullable MetadataFetcherI metadataFetcher,
-                                  @Nullable MetadataSignerI metadataSigner) {
-        Preconditions.checkNotNull(eidasAttributesFileName, "eidasAttributesFileName");
-        Preconditions.checkNotNull(additionalAttributesFileName, "additionalAttributesFileName");
-        this.eidasAttributeRegistry = AttributeRegistries.fromFile(eidasAttributesFileName);
-        this.additionalAttributeRegistry = AttributeRegistries.fromFile(additionalAttributesFileName);
-        this.metadataFetcher = metadataFetcher;
-        this.metadataSigner = metadataSigner;
-        if (null == metadataFetcher || null == metadataSigner) {
-            metadataEncryptionHelper = null;
-            metadataSignatureHelper = null;
-        } else {
-            metadataEncryptionHelper = new MetadataEncryptionHelper(metadataFetcher, metadataSigner);
-            metadataSignatureHelper = new MetadataSignatureHelper(metadataFetcher, metadataSigner);
-        }
-    }
-
-    public EidasProtocolProcessor(@Nullable AttributeRegistry eidasAttributeRegistry,
-                                  @Nullable AttributeRegistry additionalAttributeRegistry,
-                                  @Nullable MetadataFetcherI metadataFetcher,
-                                  @Nullable MetadataSignerI metadataSigner) {
-        if (null == eidasAttributeRegistry) {
-            eidasAttributeRegistry = EidasSpec.REGISTRY;
-        }
-        if (null == additionalAttributeRegistry) {
-            additionalAttributeRegistry = AttributeRegistries.empty();
-        }
-        this.eidasAttributeRegistry = eidasAttributeRegistry;
-        this.additionalAttributeRegistry = additionalAttributeRegistry;
-        this.metadataFetcher = metadataFetcher;
-        this.metadataSigner = metadataSigner;
-        if (null == metadataFetcher || null == metadataSigner) {
-            metadataEncryptionHelper = null;
-            metadataSignatureHelper = null;
-        } else {
-            metadataEncryptionHelper = new MetadataEncryptionHelper(metadataFetcher, metadataSigner);
-            metadataSignatureHelper = new MetadataSignatureHelper(metadataFetcher, metadataSigner);
-        }
-    }
-
     protected void addNameIDPolicy(AuthnRequest request, String selectedNameID) throws EIDASSAMLEngineException {
         if (StringUtils.isNotEmpty(selectedNameID)) {
             NameIDPolicy policy = (NameIDPolicy) BuilderFactoryUtil.buildXmlObject(NameIDPolicy.DEFAULT_ELEMENT_NAME);
@@ -265,13 +268,9 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
 
     protected void addRequestedAuthnContext(IAuthenticationRequest request, AuthnRequest authnRequestAux)
             throws EIDASSAMLEngineException {
-        if (request == null || StringUtils.isEmpty(request.getLevelOfAssurance())) {
-            return;
-        }
-        if (LevelOfAssurance.getLevel(request.getLevelOfAssurance()) == null) {
-            throw new EIDASSAMLEngineException(EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INVALID_LOA.errorCode()),
-                                               EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INVALID_LOA.errorMessage()));
-        }
+
+        validateLevelOfAssurance(request);
+
         RequestedAuthnContext authnContext =
                 (RequestedAuthnContext) BuilderFactoryUtil.buildXmlObject(RequestedAuthnContext.DEFAULT_ELEMENT_NAME);
         if (authnContext == null) {
@@ -283,6 +282,108 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
         authnContextClassRef.setAuthnContextClassRef(request.getLevelOfAssurance());
         authnContext.getAuthnContextClassRefs().add(authnContextClassRef);
         authnRequestAux.setRequestedAuthnContext(authnContext);
+    }
+
+    private void validateRequestType(@Nonnull IAuthenticationRequest request) throws EIDASSAMLEngineException {
+        if (!(request instanceof IEidasAuthenticationRequest)) {
+            String errorDetail = "ProtocolEngine: Request does not implement IEidasAuthenticationRequest: " + request;
+            throwValidationException(errorDetail);
+        }
+    }
+
+    private void validateProviderName(@Nonnull IAuthenticationRequest request) throws EIDASSAMLEngineException {
+        // the name of the original service provider requesting the authentication.
+        if (StringUtils.isBlank(request.getProviderName())) {
+            String errorDetail = "ProtocolEngine: Service Provider is mandatory.";
+            throwValidationException(errorDetail);
+        }
+    }
+
+    private void validateLevelOfAssurance(@Nonnull IAuthenticationRequest request) throws EIDASSAMLEngineException {
+        if (StringUtils.isEmpty(request.getLevelOfAssurance())) {
+            return;
+        }
+        if (LevelOfAssurance.getLevel(request.getLevelOfAssurance()) == null) {
+            String errorDetail =
+                    "Invalid level of assurance: \"" + request.getLevelOfAssurance() + "\" in request: " + request;
+            throwValidationException(EidasErrorKey.COLLEAGUE_REQ_INVALID_LOA, errorDetail);
+        }
+    }
+
+    @Nonnull
+    private String getValidIssuerValue(@Nonnull IAuthenticationRequest request,
+                                       @Nonnull SamlEngineCoreProperties coreProperties)
+            throws EIDASSAMLEngineException {
+        String issuer;
+        if (null != request.getIssuer()) {
+            issuer = SAMLEngineUtils.getValidIssuerValue(request.getIssuer());
+        } else {
+            issuer = coreProperties.getRequester();
+        }
+        return issuer;
+    }
+
+    @Nonnull
+    protected <T> AttributeDefinition<T> validateRequestedDefinition(
+            @Nonnull AttributeDefinition<T> requestedDefinition) {
+        // If a requested definition is from the minimum data set of the specification, it cannot be modified.
+        // On the contrary, if an attribute is an additional attribute, then its definition can be modified by the request
+        AttributeDefinition<?> dataSetDefinition =
+                getMinimumDataSetAttributes().getByName(requestedDefinition.getNameUri());
+        if (null != dataSetDefinition) {
+            // the attribute is part of the specification
+            return (AttributeDefinition<T>) dataSetDefinition;
+        }
+        // the attribute is an additional attribute, therefore it does not have to comply with a static definition:
+        return requestedDefinition;
+    }
+
+    @Nonnull
+    protected <T> AttributeDefinition<T> validateRequestedAttribute(@Nonnull RequestedAttribute requestedAttribute,
+                                                                    @Nonnull AttributeDefinition<T> staticDefinition) {
+        // If a requested definition is from the minimum data set of the specification, it cannot be modified.
+        // On the contrary, if an attribute is an additional attribute, then its definition can be modified by the request
+
+        AttributeDefinition<?> dataSetDefinition =
+                getMinimumDataSetAttributes().getByName(staticDefinition.getNameUri());
+        if (null != dataSetDefinition) {
+            // the attribute is part of the specification
+            return (AttributeDefinition<T>) dataSetDefinition;
+        }
+
+        Boolean requestedIsRequired = requestedAttribute.isRequired();
+
+        if (null == requestedIsRequired || requestedIsRequired.booleanValue() == staticDefinition.isRequired()) {
+            return staticDefinition;
+        }
+        // the attribute is an additional attribute, therefore it does not have to comply with a static definition
+        // Update the required flag according to the request instead of using the local registry:
+        return AttributeDefinition.builder(staticDefinition).required(requestedIsRequired.booleanValue()).build();
+    }
+
+    private void validateId(@Nonnull IAuthenticationRequest request) throws EIDASSAMLEngineException {
+        if (StringUtils.isBlank(request.getId())) {
+            String errorDetail = "Request ID must not be blank.";
+            throwValidationException(errorDetail);
+        }
+    }
+
+    private void validateIssuer(@Nonnull IAuthenticationRequest request) throws EIDASSAMLEngineException {
+        if (StringUtils.isBlank(request.getIssuer())) {
+            String errorDetail = "Request Issuer must not be blank.";
+            throwValidationException(errorDetail);
+        }
+    }
+
+    private void throwValidationException(@Nonnull String errorDetail) throws EIDASSAMLEngineException {
+        throwValidationException(EidasErrorKey.MESSAGE_VALIDATION_ERROR, errorDetail);
+    }
+
+    private void throwValidationException(@Nonnull EidasErrorKey errorKey, @Nonnull String errorDetail)
+            throws EIDASSAMLEngineException {
+        LOG.error(SAML_EXCHANGE, errorDetail);
+        throw new EIDASSAMLEngineException(EidasErrors.get(errorKey.errorCode()),
+                                           EidasErrors.get(errorKey.errorMessage()), errorDetail);
     }
 
     private void addResponseAuthnContextClassRef(@Nonnull IAuthenticationResponse response,
@@ -363,27 +464,16 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
             LOG.info("Mandatory naturalPerson attributes not requested : " + mandatoryNaturalAttributes.toString());
         }
         // either all the legal or all the natural mandatory attributes MUST be requested/returned:
-        return ((!requestedLegalSet || mandatoryLegalAttributes.isEmpty()) && (!requestedNaturalSet
-                || mandatoryNaturalAttributes.isEmpty()));
+        return (!requestedLegalSet || mandatoryLegalAttributes.isEmpty()) && (!requestedNaturalSet
+                || mandatoryNaturalAttributes.isEmpty());
     }
 
     @Override
-    public void checkRequestSanity(IAuthenticationRequest request) throws EIDASSAMLEngineException {
-        if (StringUtils.isBlank(request.getIssuer())) {
-            final String newErrorDetail = "Request Issuer must not be blank.";
-            LOG.error(SAML_EXCHANGE, newErrorDetail);
-            throw new EIDASSAMLEngineException(EidasErrors.get(EidasErrorKey.MESSAGE_VALIDATION_ERROR.errorCode()),
-                                               EidasErrors.get(EidasErrorKey.MESSAGE_VALIDATION_ERROR.errorMessage()),
-                                               newErrorDetail);
-        }
+    public void checkRequestSanity(@Nonnull IAuthenticationRequest request) throws EIDASSAMLEngineException {
 
-        if (StringUtils.isBlank(request.getId())) {
-            final String newErrorDetail = "Request ID must not be blank.";
-            LOG.error(SAML_EXCHANGE, newErrorDetail);
-            throw new EIDASSAMLEngineException(EidasErrors.get(EidasErrorKey.MESSAGE_VALIDATION_ERROR.errorCode()),
-                                               EidasErrors.get(EidasErrorKey.MESSAGE_VALIDATION_ERROR.errorMessage()),
-                                               newErrorDetail);
-        }
+        validateIssuer(request);
+
+        validateId(request);
     }
 
     /**
@@ -673,15 +763,16 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
      * Copies the attributes contained in an {@link  IAuthenticationRequest} that fullName are supported attribute
      * names
      *
-     * @param request the instance which contains the attributes
+     * @param requestedAttributes the requested attributes
      * @param supportedAttributeNames the supported attribute names
      * @return a builder for an {@link ImmutableAttributeMap}
      */
-    private IAuthenticationRequest filterSupportedAttributeNames(IAuthenticationRequest request,
-                                                                 Set<String> supportedAttributeNames,
-                                                                 String serviceMetadataURL)
+    @Nonnull
+    private ImmutableAttributeMap filterSupportedAttributeNames(@Nonnull ImmutableAttributeMap requestedAttributes,
+                                                                @Nonnull Set<String> supportedAttributeNames,
+                                                                @Nonnull String requestIssuer,
+                                                                @Nonnull String serviceMetadataURL)
             throws EIDASSAMLEngineException {
-        ImmutableAttributeMap requestedAttributes = request.getRequestedAttributes();
         ImmutableAttributeMap.Builder builder = ImmutableAttributeMap.builder();
         boolean modified = false;
         for (Map.Entry<AttributeDefinition<?>, ImmutableSet<? extends eu.eidas.auth.commons.attribute.AttributeValue<?>>> entry : requestedAttributes
@@ -690,13 +781,17 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
             AttributeDefinition<?> attributeDefinition = entry.getKey();
             String fullName = attributeDefinition.getNameUri().toASCIIString();
             if (supportedAttributeNames.contains(fullName)) {
-                builder.put((AttributeDefinition) attributeDefinition, (ImmutableSet) entry.getValue());
+                AttributeDefinition<?> validatedDefinition = validateRequestedDefinition(attributeDefinition);
+                if (!validatedDefinition.equals(attributeDefinition)) {
+                    modified = true;
+                }
+                builder.put((AttributeDefinition) validatedDefinition, (ImmutableSet) entry.getValue());
             } else if (attributeDefinition.isRequired()) {
                 // TODO use a new error code: the Metadata of the partner does not understand a requested mandatory attribute:
                 // Failfast, refuse this request as it cannot be met
                 String message =
                         "The Metadata of the Service does not contain the requested mandatory attribute \"" + fullName
-                                + "\" (request issuer: " + request.getIssuer() + " - Service metadata URL: "
+                                + "\" (request issuer: " + requestIssuer + " - Service metadata URL: "
                                 + serviceMetadataURL + ")";
                 LOG.error(message);
                 throw new EIDASSAMLEngineException(
@@ -705,7 +800,7 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
             } else {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("The Metadata of the Service does not contain the requested optional attribute \""
-                                      + fullName + "\" (request issuer: " + request.getIssuer()
+                                      + fullName + "\" (request issuer: " + requestIssuer
                                       + " - ProxyService metadata URL: " + serviceMetadataURL
                                       + "): it will be ignored");
                 }
@@ -713,11 +808,9 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
             }
         }
         if (!modified) {
-            return request;
+            return requestedAttributes;
         }
-        return EidasAuthenticationRequest.builder((IEidasAuthenticationRequest) request)
-                .requestedAttributes(builder.build())
-                .build();
+        return builder.build();
     }
 
     @Nonnull
@@ -858,6 +951,22 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
         return attributeDefinition;
     }
 
+    @Nonnull
+    /**
+     * Checks if the incoming attribute request has Required flag set to true, when it is Required by Definition
+      */
+    private void checkRequiredAttributeCompiles(@Nullable AttributeDefinition attributeDef, @Nonnull RequestedAttribute requestedAttribute) throws EIDASSAMLEngineException {
+        if (attributeDef != null && attributeDef.isRequired() // if attribute is required by Definition
+                && !requestedAttribute.isRequired() ) { // and the requested sent by not required
+            String name = requestedAttribute.getName();;
+            LOG.error("BUSINESS EXCEPTION : Attribute: {} not requested as required.", name);
+            throw new EIDASSAMLEngineException(EidasErrorKey.INTERNAL_ERROR.errorCode(),
+                    EidasErrorKey.INTERNAL_ERROR.errorCode(),
+                    "Attribute : " + name + " must be requested as required.");
+
+        }
+    }
+
     @Override
     @Nullable
     public AttributeDefinition<?> getAttributeDefinitionNullable(@Nonnull String name) {
@@ -963,6 +1072,7 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
 
     @Nullable
     @Override
+    @SuppressWarnings("squid:S2583")
     public String getServiceUrl(@Nonnull String issuer, @Nonnull SamlBindingUri bindingUri)
             throws EIDASSAMLEngineException {
         if (null == metadataFetcher || null == metadataSigner) {
@@ -990,7 +1100,8 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
      * @since 1.1
      */
     @Nonnull
-    private Set<String> getSupportedAttributes(@Nonnull String issuer) throws EIDASSAMLEngineException {
+    @SuppressWarnings("squid:S2583")
+    protected Set<String> getSupportedAttributes(@Nonnull String issuer) throws EIDASSAMLEngineException {
         if (null == metadataFetcher || null == metadataSigner || null == issuer) {
             return Collections.emptySet();
         }
@@ -1011,6 +1122,7 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
     }
 
     @Override
+    @SuppressWarnings("squid:S2583")
     public boolean isAcceptableHttpRequest(@Nonnull IAuthenticationRequest authnRequest, @Nullable String httpMethod) {
         try {
             if (metadataFetcher == null || null == metadataSigner) {
@@ -1026,14 +1138,14 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
             SPSSODescriptor spDesc = MetadataUtil.getSPSSODescriptor(entityDescriptor);
 
             String metadataAssertionUrl = MetadataUtil.getAssertionConsumerUrl(spDesc);
-            if ((StringUtils.isEmpty(metadataAssertionUrl) || (authnRequest.getAssertionConsumerServiceURL() != null
-                    && !authnRequest.getAssertionConsumerServiceURL().equals(metadataAssertionUrl)))) {
+            if (StringUtils.isEmpty(metadataAssertionUrl) || (authnRequest.getAssertionConsumerServiceURL() != null
+                    && !authnRequest.getAssertionConsumerServiceURL().equals(metadataAssertionUrl))) {
                 throw new InternalErrorEIDASException(
                         EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INVALID_SAML.errorCode()),
                         EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INVALID_SAML.errorMessage()));
             }
 
-            if (StringUtils.isNotBlank(httpMethod)) {
+            if (httpMethod!=null && StringUtils.isNotBlank(httpMethod)) {
                 boolean isBindingValid = false;
                 for (AssertionConsumerService asc : spDesc.getAssertionConsumerServices()) {
                     if (httpMethod.equalsIgnoreCase(SAMLEngineUtils.getBindingMethod(asc.getBinding()))) {
@@ -1077,6 +1189,7 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
 
     @Nonnull
     @Override
+    @SuppressWarnings("squid:S2583")
     public Response marshallErrorResponse(@Nonnull IAuthenticationRequest request,
                                           @Nonnull IAuthenticationResponse response,
                                           @Nonnull String ipAddress,
@@ -1137,17 +1250,25 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
 
     @Nonnull
     @Override
-    public AuthnRequest marshallRequest(@Nonnull IAuthenticationRequest request,
+    public IAuthenticationRequest createProtocolRequestToBeSent(@Nonnull IAuthenticationRequest requestToBeSent,
+                                                                @Nonnull String serviceIssuer,
+                                                                @Nonnull SamlEngineCoreProperties coreProperties)
+            throws EIDASSAMLEngineException {
+
+        // Validate mandatory parameters
+        return validateRequestAgainstMetadata(requestToBeSent, serviceIssuer, coreProperties);
+    }
+
+    @Nonnull
+    @Override
+    public AuthnRequest marshallRequest(@Nonnull IAuthenticationRequest requestToBeSent,
                                         @Nonnull String serviceIssuer,
                                         @Nonnull SamlEngineCoreProperties coreProperties)
             throws EIDASSAMLEngineException {
-        // Validate mandatory parameters
-        request = validateAuthenticationRequest(request, serviceIssuer);
-
-        String id = SAMLEngineUtils.generateNCName();
 
         AuthnRequest samlRequest =
-                BuilderFactoryUtil.generateAuthnRequest(id, SAMLVersion.VERSION_20, SAMLEngineUtils.getCurrentTime());
+                BuilderFactoryUtil.generateAuthnRequest(requestToBeSent.getId(), SAMLVersion.VERSION_20,
+                                                        SAMLEngineUtils.getCurrentTime());
 
         // Set name spaces.
         registerRequestNamespace(samlRequest);
@@ -1158,30 +1279,25 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
         // Add parameter Mandatory
         samlRequest.setIsPassive(Boolean.FALSE);
 
-        samlRequest.setAssertionConsumerServiceURL(request.getAssertionConsumerServiceURL());
+        samlRequest.setAssertionConsumerServiceURL(requestToBeSent.getAssertionConsumerServiceURL());
 
-        samlRequest.setProviderName(request.getProviderName());
+        samlRequest.setProviderName(requestToBeSent.getProviderName());
 
         // Add protocol binding
-        samlRequest.setProtocolBinding(getProtocolBinding(request, coreProperties));
+        samlRequest.setProtocolBinding(getProtocolBinding(requestToBeSent, coreProperties));
 
         // Add parameter optional
         // Destination is mandatory
         // The application must to know the destination
-        if (StringUtils.isNotBlank(request.getDestination())) {
-            samlRequest.setDestination(request.getDestination());
+        if (StringUtils.isNotBlank(requestToBeSent.getDestination())) {
+            samlRequest.setDestination(requestToBeSent.getDestination());
         }
 
         // Consent is optional. Set from SAMLEngine.xml - consent.
         samlRequest.setConsent(coreProperties.getConsentAuthnRequest());
 
         Issuer issuer = BuilderFactoryUtil.generateIssuer();
-
-        if (request.getIssuer() != null) {
-            issuer.setValue(SAMLEngineUtils.getValidIssuerValue(request.getIssuer()));
-        } else {
-            issuer.setValue(coreProperties.getRequester());
-        }
+        issuer.setValue(requestToBeSent.getIssuer());
 
         // Optional
         String formatEntity = coreProperties.getFormatEntity();
@@ -1190,13 +1306,13 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
         }
 
         samlRequest.setIssuer(issuer);
-        addRequestedAuthnContext(request, samlRequest);
+        addRequestedAuthnContext(requestToBeSent, samlRequest);
 
         // Generate format extensions.
-        Extensions formatExtensions = generateExtensions(request);
+        Extensions formatExtensions = generateExtensions(requestToBeSent);
         // add the extensions to the SAMLAuthnRequest
         samlRequest.setExtensions(formatExtensions);
-        addNameIDPolicy(samlRequest, request.getNameIdFormat());
+        addNameIDPolicy(samlRequest, requestToBeSent.getNameIdFormat());
 
         return samlRequest;
     }
@@ -1372,12 +1488,13 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
         List<RequestedAttribute> reqAttrs = requestedAttr.getAttributes();
 
         ImmutableAttributeMap.Builder attributeMapBuilder = new ImmutableAttributeMap.Builder();
-        for (RequestedAttribute attribute : reqAttrs) {
-            AttributeDefinition<?> attributeDefinition = getAttributeDefinitionNullable(attribute.getName());
+        for (RequestedAttribute requestedAttribute : reqAttrs) {
+            AttributeDefinition<?> attributeDefinition = getAttributeDefinitionNullable(requestedAttribute.getName());
+            checkRequiredAttributeCompiles(attributeDefinition, requestedAttribute);
             if (null != attributeDefinition) {
-                String friendlyName = attribute.getFriendlyName();
                 // Check if friendlyName matches when provided -- TODO temoprary disabled due to validator failure
-/*                if (StringUtils.isNotEmpty(friendlyName) &&
+/*              String friendlyName = requestedAttribute.getFriendlyName();
+                if (StringUtils.isNotEmpty(friendlyName) &&
                         attributeDefinition != null &&
                         !friendlyName.equals(attributeDefinition.getFriendlyName())) {
                     LOG.error("BUSINESS EXCEPTION : Illegal Attribute friendlyName for " + attributeDefinition.getNameUri().toString() +
@@ -1387,7 +1504,7 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
                             " expected " +  attributeDefinition.getFriendlyName() + " got " + friendlyName);
                 }*/
                 List<String> stringValues = new ArrayList<>();
-                for (XMLObject xmlObject : attribute.getOrderedChildren()) {
+                for (XMLObject xmlObject : requestedAttribute.getOrderedChildren()) {
                     // Process simple attributes.
                     // An AuthenticationRequest must contain simple values only.
                     String value;
@@ -1400,10 +1517,12 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
                     }
                     stringValues.add(value);
                 }
-                attributeDefinition = processIsRequired(attribute, attributeDefinition);
+                attributeDefinition = validateRequestedAttribute(requestedAttribute, attributeDefinition);
 
-                AttributeValueMarshaller<?> attributeValueMarshaller = attributeDefinition.getAttributeValueMarshaller();
-                ImmutableSet.Builder<eu.eidas.auth.commons.attribute.AttributeValue<?>> setBuilder = ImmutableSet.builder();
+                AttributeValueMarshaller<?> attributeValueMarshaller =
+                        attributeDefinition.getAttributeValueMarshaller();
+                ImmutableSet.Builder<eu.eidas.auth.commons.attribute.AttributeValue<?>> setBuilder =
+                        ImmutableSet.builder();
                 for (final String value : stringValues) {
                     eu.eidas.auth.commons.attribute.AttributeValue<?> attributeValue;
                     try {
@@ -1419,12 +1538,12 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
                 attributeMapBuilder.put((AttributeDefinition) attributeDefinition, (ImmutableSet) setBuilder.build());
             } else {
                 LOG.info(AbstractProtocolEngine.SAML_EXCHANGE,
-                        "BUSINESS EXCEPTION : Attribute name: {} was not found. It will be removed from the request object",
-                        attribute.getName());
+                         "BUSINESS EXCEPTION : Attribute name: {} was not found. It will be removed from the request object",
+                         requestedAttribute.getName());
             }
         }
 
-        EidasAuthenticationRequest.Builder builder = new EidasAuthenticationRequest.Builder();
+        EidasAuthenticationRequest.Builder builder = EidasAuthenticationRequest.builder();
         builder.originCountryCode(originCountryCode);
         builder.assertionConsumerServiceURL(samlRequest.getAssertionConsumerServiceURL());
         builder.binding(SAMLEngineUtils.getBindingMethod(samlRequest.getProtocolBinding()));
@@ -1440,27 +1559,23 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
         builder.levelOfAssuranceComparison(LevelOfAssuranceComparison.MINIMUM.stringValue());
         builder.spType(getNullableSPTypeFromExtension(extensions));
 
+        EidasAuthenticationRequest request;
         try {
-            return builder.build();
+            request = builder.build();
         } catch (IllegalArgumentException e) {
             throw new EIDASSAMLEngineException(
                     EidasErrors.get(EidasErrorKey.ILLEGAL_ARGUMENTS_IN_BUILDER.errorCode()) + " - " + e.getMessage(),
                     e);
         }
-    }
 
-    @Nonnull
-    protected AttributeDefinition<?> processIsRequired(@Nonnull RequestedAttribute attribute,
-                                                       @Nonnull AttributeDefinition<?> attributeDefinition) {
-        // TODO use a flag:
-        // If isRequired comes from the Request, not from the registry
-//        boolean isRequired = attribute.isRequired();
-//        attributeDefinition = new AttributeDefinition.Builder(attributeDefinition).required(isRequired).build();
-        return attributeDefinition;
+        validateReceivedRequest(request);
+
+        return request;
     }
 
     @Nonnull
     @Override
+    @SuppressWarnings("squid:S2583")
     public IAuthenticationResponse unmarshallResponse(@Nonnull Response response,
                                                       boolean verifyBearerIpAddress,
                                                       @Nullable String userIpAddress,
@@ -1521,56 +1636,88 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
     }
 
     /**
-     * Validate parameters from authentication request.
+     * Validates an input {@link IAuthenticationRequest} received by this processor (incoming).
+     *
+     * @param request the request.
+     * @throws EIDASSAMLEngineException the EIDASSAML engine exception
+     */
+    protected void validateReceivedRequest(@Nonnull IAuthenticationRequest request) throws EIDASSAMLEngineException {
+
+        validateRequestType(request);
+
+        checkRequestSanity(request);
+
+        validateProviderName(request);
+
+        validateLevelOfAssurance(request);
+    }
+
+    /**
+     * Validates an input {@link IAuthenticationRequest} when it is being sent by this processor (e.g. the
+     * Connector-side) (outgoing).
+     * <p>
+     * For instance, the given {@link IAuthenticationRequest} could come from the specific at the SP-side.
      *
      * @param request the request.
      * @throws EIDASSAMLEngineException the EIDASSAML engine exception
      */
     @Nonnull
-    private IAuthenticationRequest validateAuthenticationRequest(@Nonnull IAuthenticationRequest request,
-                                                                 @Nonnull String serviceIssuer)
+    private IAuthenticationRequest validateRequestAgainstMetadata(@Nonnull IAuthenticationRequest request,
+                                                                  @Nonnull String serviceIssuerMetadataUrl,
+                                                                  @Nonnull SamlEngineCoreProperties coreProperties)
             throws EIDASSAMLEngineException {
+
         LOG.trace("Validate parameters from authentication request.");
 
-        if (!(request instanceof IEidasAuthenticationRequest)) {
-            final String newErrorDetail =
-                    "ProtocolEngine: Request does not implement IEidasAuthenticationRequest: " + request;
-            LOG.error(SAML_EXCHANGE, newErrorDetail);
-            throw new EIDASSAMLEngineException(EidasErrors.get(EidasErrorKey.MESSAGE_VALIDATION_ERROR.errorCode()),
-                                               EidasErrors.get(EidasErrorKey.MESSAGE_VALIDATION_ERROR.errorMessage()),
-                                               newErrorDetail);
+        validateRequestType(request);
+
+        validateProviderName(request);
+
+        validateLevelOfAssurance(request);
+
+        String issuer = getValidIssuerValue(request, coreProperties);
+
+        String bindingMethod = SAMLEngineUtils.getBindingMethod(getProtocolBinding(request, coreProperties));
+
+        // Always generate a new ID whatever the incoming input
+        String id = SAMLEngineUtils.generateNCName();
+
+        EidasAuthenticationRequest.Builder updatedRequestBuilder =
+                EidasAuthenticationRequest.builder((IEidasAuthenticationRequest) request)
+                        .id(id)
+                        .issuer(issuer)
+                        .binding(bindingMethod)
+                        .levelOfAssuranceComparison(LevelOfAssuranceComparison.MINIMUM);
+
+        Set<String> supportedAttributes = getSupportedAttributes(serviceIssuerMetadataUrl);
+        if (CollectionUtils.isNotEmpty(supportedAttributes)) {
+            ImmutableAttributeMap filteredAttributes =
+                    filterSupportedAttributeNames(request.getRequestedAttributes(), supportedAttributes,
+                                                  request.getIssuer(), serviceIssuerMetadataUrl);
+
+            updatedRequestBuilder.requestedAttributes(filteredAttributes);
         }
 
-        // the name of the original service provider requesting the
-        // authentication.
-        if (StringUtils.isBlank(request.getProviderName())) {
-            final String newErrorDetail = "ProtocolEngine: Service Provider is mandatory.";
-            LOG.error(SAML_EXCHANGE, newErrorDetail);
-            throw new EIDASSAMLEngineException(EidasErrors.get(EidasErrorKey.MESSAGE_VALIDATION_ERROR.errorCode()),
-                                               EidasErrors.get(EidasErrorKey.MESSAGE_VALIDATION_ERROR.errorMessage()),
-                                               newErrorDetail);
+        IAuthenticationRequest updatedRequest;
+
+        try {
+            updatedRequest = updatedRequestBuilder.build();
+        } catch (IllegalArgumentException e) {
+            throw new EIDASSAMLEngineException(
+                    EidasErrors.get(EidasErrorKey.ILLEGAL_ARGUMENTS_IN_BUILDER.errorCode()) + " - "
+                            + e.getMessage(), e);
         }
 
-        Set<String> supportedAttributes = getSupportedAttributes(serviceIssuer);
-        IAuthenticationRequest filteredRequest;
-        if (CollectionUtils.isEmpty(supportedAttributes)) {
-            filteredRequest = request;
-        } else {
-            filteredRequest = filterSupportedAttributeNames(request, supportedAttributes, serviceIssuer);
-        }
-
-        // object that contain all attributes requesting.
-        if (filteredRequest.getRequestedAttributes().isEmpty()) {
-            String newErrorDetail =
-                    "No requested attribute (request issuer: " + request.getIssuer() + " - serviceIssuer: "
-                            + serviceIssuer + ")";
-            LOG.error(SAML_EXCHANGE, newErrorDetail);
+        if (updatedRequest.getRequestedAttributes().isEmpty()) {
+            String errorDetail = "No requested attribute (request issuer: " + request.getIssuer() + " - serviceIssuer: "
+                    + serviceIssuerMetadataUrl + ")";
+            LOG.error(SAML_EXCHANGE, errorDetail);
             throw new EIDASSAMLEngineException(EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_ATTR_NULL.errorCode()),
                                                EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_ATTR_NULL.errorMessage()),
-                                               newErrorDetail);
+                                               errorDetail);
         }
 
-        return filteredRequest;
+        return updatedRequest;
     }
 
     /**

@@ -1,12 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>  
-<!--jboss-deployment-structure xmlns="urn:jboss:deployment-structure:1.2">
-<deployment>  
-    <exclude-subsystems>  
-      <subsystem name="jaxrs" />  
-      <subsystem name="webservices" />  
-    </exclude-subsystems>  
-  </deployment>  
-</jboss-deployment-structure-->
 <jboss-deployment-structure xmlns="urn:jboss:deployment-structure:1.0">
   <deployment>
     <exclusions>
@@ -19,5 +11,9 @@
       <module name="org.jboss.resteasy.resteasy-multipart-provider" />
       <module name="org.jboss.resteasy.async-http-servlet-30" />
     </exclusions>
+    <dependencies>
+      <module name="org.bouncycastle" slot="main" export="true"/>
+      <module name="org.apache.xml-apis" slot="main" export="true"/>
+    </dependencies>
   </deployment>
 </jboss-deployment-structure>

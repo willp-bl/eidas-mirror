@@ -1,13 +1,11 @@
 package eu.eidas.auth.commons.xml;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import eu.eidas.auth.commons.EidasStringUtil;
+import eu.eidas.util.Preconditions;
+import org.apache.commons.lang.StringUtils;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.xml.sax.SAXException;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -21,13 +19,14 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.xml.sax.SAXException;
-
-import eu.eidas.auth.commons.EidasStringUtil;
-import eu.eidas.util.Preconditions;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Utility class used to create the document builder factory with a sufficient level of security. See
@@ -163,19 +162,68 @@ public final class DocumentBuilderFactoryUtil {
         return documentBuilderFactory;
     }
 
+    /**
+     * Returns a new {@link TransformerFactory} instance already set up with security features turned on.
+     *
+     * @return a new {@link TransformerFactory} instance already set up with security features turned on.
+     */
     @Nonnull
+    public static TransformerFactory newSecureTransformerFactory() {
+        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        configureSecureTransformerFactory(transformerFactory);
+        return transformerFactory;
+    }
+
+    /**
+     * Configures a given {@link TransformerFactory} with security features turned on.
+     *
+     * @param transformerFactory the instance to configure
+     * @since 1.1.1
+     */
+    public static void configureSecureTransformerFactory(@Nonnull TransformerFactory transformerFactory) {
+        Preconditions.checkNotNull(transformerFactory, "transformerFactory");
+
+        for (final Map.Entry<String, String> entry : getSecureTransformerFactoryFeatures().entrySet()) {
+            transformerFactory.setAttribute(entry.getKey(), entry.getValue());
+        }
+    }
+
+    /**
+     * Build the default set of parser features to use to protect a Java {@link TransformerFactory} from XXE.
+     * See https://www.owasp.org/index.php/XML_External_Entity_(XXE)_Prevention_Cheat_Sheet for more details.
+     * The default features set are: <ul> <li>{@link
+     * javax.xml.XMLConstants#ACCESS_EXTERNAL_DTD} = ""</li> <li>{@link javax.xml.XMLConstants#ACCESS_EXTERNAL_STYLESHEET} = ""
+     *</li></ul>
+     */
+    @Nonnull
+    public static Map<String, String> getSecureTransformerFactoryFeatures() {
+        Map<String, String> features = new HashMap<>();
+
+        features.put(XMLConstants.ACCESS_EXTERNAL_DTD, StringUtils.EMPTY);
+        features.put(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, StringUtils.EMPTY);
+
+        return features;
+    }
+
+    @Nonnull
+    @SuppressWarnings({"squid:S2095", "findsecbugs:XXE_DOCUMENT"})  // XXE done to factory nefore added to pool
     public static Document parse(@Nonnull InputStream xmlInputStream)
             throws IOException, SAXException, ParserConfigurationException {
-        Preconditions.checkNotNull(xmlInputStream, "xmlInputStream");
-
         // See http://stackoverflow.com/questions/9828254/is-documentbuilderfactory-thread-safe-in-java-5
-        DocumentBuilder documentBuilder = DOCUMENT_BUILDER_POOL.poll();
+        Preconditions.checkNotNull(xmlInputStream, "xmlInputStream");
+        DocumentBuilder documentBuilder;
+        Document doc;
         try {
+            documentBuilder = DOCUMENT_BUILDER_POOL.poll();
             documentBuilder = validateDocumentBuilder(documentBuilder);
-            return documentBuilder.parse(xmlInputStream);
-        } finally {
             DOCUMENT_BUILDER_POOL.offer(documentBuilder);
+            doc =  documentBuilder.parse(xmlInputStream);
+        } finally {
+            if (xmlInputStream != null) {
+                xmlInputStream.close();
+            }
         }
+        return doc;
     }
 
     @Nonnull
@@ -207,8 +255,9 @@ public final class DocumentBuilderFactoryUtil {
      * @throws ParserConfigurationException if an instance could not be created
      */
     @Nonnull
-    private static DocumentBuilder validateDocumentBuilder(@Nullable DocumentBuilder documentBuilder)
+    private static DocumentBuilder validateDocumentBuilder(@Nullable DocumentBuilder documentBuilderVar)
             throws ParserConfigurationException {
+        DocumentBuilder documentBuilder = documentBuilderVar;
         if (null == documentBuilder) {
             DocumentBuilderFactory documentBuilderFactory = DOCUMENT_BUILDER_FACTORY_POOL.poll();
             try {

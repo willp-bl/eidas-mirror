@@ -10,6 +10,6 @@ public interface ConcurrentMapService {
      * Obtains the map cache
      * @return a concurrentMap
      */
-    ConcurrentMap getNewMapCache();
+    ConcurrentMap getConfiguredMapCache();
 
 }

@@ -1,25 +1,30 @@
 package eu.eidas.auth.engine.xml.opensaml;
 
-import java.io.IOException;
-
-import javax.annotation.Nonnull;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.validation.Schema;
-import javax.xml.validation.Validator;
-
+import eu.eidas.auth.commons.EidasErrorKey;
+import eu.eidas.auth.commons.EidasErrors;
+import eu.eidas.auth.commons.xml.DocumentBuilderFactoryUtil;
+import eu.eidas.auth.engine.AbstractProtocolEngine;
+import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
+import eu.eidas.util.Preconditions;
+import org.apache.commons.lang.StringUtils;
 import org.opensaml.common.xml.SAMLSchemaBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXNotRecognizedException;
+import org.xml.sax.SAXNotSupportedException;
 
-import eu.eidas.auth.commons.EidasErrorKey;
-import eu.eidas.auth.commons.EidasErrors;
-import eu.eidas.auth.commons.xml.DocumentBuilderFactoryUtil;
-import eu.eidas.auth.engine.AbstractProtocolEngine;
-import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
+import javax.annotation.Nonnull;
+import javax.xml.XMLConstants;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.Validator;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * XML Schema Utility class.
@@ -90,6 +95,54 @@ public final class XmlSchemaUtil {
         }
         validateSchema(schema, document);
         return document;
+    }
+
+    /**
+     * Create a new {@link Validator} for this schema, already set up with security features turned on.
+     *
+     * @param schema
+     * @return a new {@link Validator} for this schema, already set up with security features turned on.
+     * @throws SAXNotRecognizedException
+     * @throws SAXNotSupportedException
+     */
+    @Nonnull
+    public static Validator newSecureValidator(@Nonnull Schema schema) throws SAXNotRecognizedException, SAXNotSupportedException {
+        Validator validator = schema.newValidator();
+        configureSecureValidator(validator);
+        return validator;
+    }
+
+    /**
+     * Configures a given {@link Validator} with security features turned on.
+     *
+     * @param validator the instance to configure
+     * @throws SAXNotRecognizedException
+     * @throws SAXNotSupportedException
+     * @since 1.1.1
+     */
+    public static void configureSecureValidator(@Nonnull Validator validator) throws SAXNotRecognizedException, SAXNotSupportedException {
+        Preconditions.checkNotNull(validator, "validator");
+
+        for (final Map.Entry<String, String> entry : getSecureSchemaFeatures().entrySet()) {
+            validator.setProperty(entry.getKey(), entry.getValue());
+        }
+    }
+
+    /**
+     * Build the default set of parser features to use to protect a {@link javax.xml.validation.SchemaFactory} or a {@link javax.xml.validation.Validator} from XXE.
+     * See https://www.owasp.org/index.php/XML_External_Entity_(XXE)_Prevention_Cheat_Sheet for more details.
+     * The default features set are: <ul> <li>{@link
+     * javax.xml.XMLConstants#ACCESS_EXTERNAL_DTD} = ""</li> <li>{@link javax.xml.XMLConstants#ACCESS_EXTERNAL_SCHEMA} = ""
+     *</li></ul>
+     */
+    @Nonnull
+    public static Map<String, String> getSecureSchemaFeatures() {
+        Map<String, String> features = new HashMap<>();
+
+        features.put(XMLConstants.ACCESS_EXTERNAL_DTD, StringUtils.EMPTY);
+        features.put(XMLConstants.ACCESS_EXTERNAL_SCHEMA, StringUtils.EMPTY);
+
+        return features;
     }
 
     private XmlSchemaUtil() {

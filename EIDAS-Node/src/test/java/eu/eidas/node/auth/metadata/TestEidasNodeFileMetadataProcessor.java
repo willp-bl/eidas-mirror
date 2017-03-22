@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import eu.eidas.auth.engine.metadata.impl.FileMetadataProcessor;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -112,14 +113,14 @@ public class TestEidasNodeFileMetadataProcessor {
 
     @Test
     public void testGetEntityDescriptorsEmpty(){
-        NODEFileMetadataProcessor processor=new NODEFileMetadataProcessor();
+        FileMetadataProcessor processor=new FileMetadataProcessor();
         processor.setRepositoryPath(FILEREPO_DIR_WRITE_EMPTY);
         List<EntityDescriptorContainer> list = processor.getEntityDescriptors();
         Assert.assertTrue(list.isEmpty());
     }
     @Test
     public void testGetEntityDescriptors(){
-        NODEFileMetadataProcessor processor=new NODEFileMetadataProcessor();
+        FileMetadataProcessor processor=new FileMetadataProcessor();
         processor.setRepositoryPath(FILEREPO_DIR_WRITE1);
         List<EntityDescriptorContainer> list = processor.getEntityDescriptors();
         Assert.assertTrue(list.size()==2);
@@ -139,7 +140,7 @@ public class TestEidasNodeFileMetadataProcessor {
 
     @Test
     public void testUpdateEntityDescriptors(){
-        NODEFileMetadataProcessor processor=new NODEFileMetadataProcessor();
+        FileMetadataProcessor processor=new FileMetadataProcessor();
         processor.setRepositoryPath(FILEREPO_DIR_WRITE2);
         List<EntityDescriptorContainer> list = processor.getEntityDescriptors();
         Assert.assertTrue(list.size()==2);
@@ -156,7 +157,7 @@ public class TestEidasNodeFileMetadataProcessor {
 
     @Test
     public void testCombo() throws Exception {
-        NODEFileMetadataProcessor processor=new NODEFileMetadataProcessor();
+        FileMetadataProcessor processor=new FileMetadataProcessor();
         processor.setRepositoryPath(FILEREPO_DIR_WRITE3);
         List<EntityDescriptorContainer> list = processor.getEntityDescriptors();
         Assert.assertTrue(list.size()==2);

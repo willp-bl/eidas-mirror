@@ -16,6 +16,7 @@ import eu.eidas.node.specificcommunication.exception.SpecificException;
 import eu.eidas.node.utils.CountrySpecificUtil;
 import eu.eidas.node.utils.PropertiesUtil;
 import eu.eidas.node.utils.SessionHolder;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,6 +27,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 
+@SuppressWarnings("squid:S1989") // due to the code uses correlation maps, not http sessions
 public class ServiceProviderServlet extends AbstractConnectorServlet {
 
     private static final Logger LOG = LoggerFactory.getLogger(ServiceProviderServlet.class.getName());
@@ -137,7 +139,7 @@ public class ServiceProviderServlet extends AbstractConnectorServlet {
 
     private String validateRelayState(WebRequest webRequest) {
         String relayState = webRequest.getEncodedLastParameterValue(NodeParameterNames.RELAY_STATE.toString());
-        if (relayState != null) { // RelayState's HTTP Parameter is optional!
+        if (StringUtils.isNotEmpty(relayState)) { // RelayState's HTTP Parameter is optional!
             NormalParameterValidator.paramName(NodeParameterNames.RELAY_STATE.toString())
                     .paramValue(relayState)
                     .eidasError(EidasErrorKey.SPROVIDER_SELECTOR_INVALID_RELAY_STATE)

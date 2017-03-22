@@ -40,7 +40,6 @@ public final class ResourceLocator {
      */
     private static final Logger LOG = LoggerFactory.getLogger(ResourceLocator.class);
 
-    @Nonnull
     public static URL getResource(@Nonnull final String name) throws IOException {
         Preconditions.checkNotNull(name, "name");
         boolean traceEnabled = LOG.isTraceEnabled();
@@ -116,6 +115,7 @@ public final class ResourceLocator {
                     }
                 });
             } catch (PrivilegedActionException pae) {
+                LOG.error("", pae);
                 throw (IOException) pae.getException();
             }
         }

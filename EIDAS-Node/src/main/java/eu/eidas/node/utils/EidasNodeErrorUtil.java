@@ -39,18 +39,16 @@ import eu.eidas.auth.commons.EidasErrorKey;
 import eu.eidas.auth.commons.EidasErrors;
 import eu.eidas.auth.commons.EidasParameterKeys;
 import eu.eidas.auth.commons.EidasStringUtil;
-import eu.eidas.auth.commons.IEIDASSession;
 import eu.eidas.auth.commons.exceptions.AbstractEIDASException;
 import eu.eidas.auth.commons.exceptions.EidasNodeException;
 import eu.eidas.auth.commons.exceptions.InternalErrorEIDASException;
 import eu.eidas.auth.commons.exceptions.InvalidParameterEIDASException;
 import eu.eidas.auth.commons.exceptions.InvalidParameterEIDASServiceException;
-import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import eu.eidas.engine.exceptions.SAMLEngineException;
 import eu.eidas.node.ApplicationContextProvider;
 import eu.eidas.node.NodeBeanNames;
-import eu.eidas.node.NodeParameterNames;
 import eu.eidas.node.auth.connector.ICONNECTORSAMLService;
 import eu.eidas.node.auth.service.ISERVICESAMLService;
 import eu.eidas.node.logging.LoggingMarkerMDC;
@@ -78,14 +76,12 @@ public class EidasNodeErrorUtil {
             EIDASSubStatusCode.REQUEST_DENIED_URI,
             EIDASSubStatusCode.INVALID_ATTR_NAME_VALUE_URI,
             EIDASSubStatusCode.AUTHN_FAILED_URI,
-    };
+            };
     /**
      * EidasErrorKey mapped to substatuscodes
      */
     private static final EidasErrorKey EIDAS_ERRORS_WITH_SAML_GENERATION[][] = {
-            {EidasErrorKey.SP_COUNTRY_SELECTOR_INVALID_SPID,
-                    EidasErrorKey.SP_COUNTRY_SELECTOR_INVALID_SPQAA, EidasErrorKey.SPROVIDER_SELECTOR_INVALID_SPQAA,
-                    EidasErrorKey.SPROVIDER_SELECTOR_INVALID_SPQAAID},
+            {EidasErrorKey.SPROVIDER_SELECTOR_INVALID_SPQAAID},
             {EidasErrorKey.SP_COUNTRY_SELECTOR_INVALID, EidasErrorKey.SPWARE_CONFIG_ERROR, EidasErrorKey.IDP_SAML_RESPONSE, EidasErrorKey.COLLEAGUE_RESP_INVALID_SAML,},
             {EidasErrorKey.SP_COUNTRY_SELECTOR_INVALID, EidasErrorKey.SPWARE_CONFIG_ERROR},
             {EidasErrorKey.AUTHENTICATION_FAILED_ERROR}
@@ -118,13 +114,11 @@ public class EidasNodeErrorUtil {
     public static void prepareSamlResponseFail(final HttpServletRequest request, AbstractEIDASException exc, ErrorSource source) {
 
         try {
-            IEIDASSession eidasSession = (IEIDASSession) request.getSession().getAttribute("scopedTarget.serviceSession");
-            if (eidasSession == null || eidasSession.isEmpty() || source == ErrorSource.CONNECTOR) {
-                eidasSession = (IEIDASSession) request.getSession().getAttribute("scopedTarget.connectorSession");
-                prepareSamlResponseFailConnector(request, exc, eidasSession);
+            if (source == ErrorSource.CONNECTOR) {
+                prepareSamlResponseFailConnector(request, exc);
                 return;
             }
-            prepareSamlResponseFailService(request, exc, eidasSession);
+            prepareSamlResponseFailService(request, exc);
 
         } catch (final Exception e) {
             LOG.info("ERROR : Error while trying to generate error SAMLToken", e.getMessage());
@@ -202,49 +196,43 @@ public class EidasNodeErrorUtil {
         return baseExc;
     }
 
-    private static String getErrorReportingUrl(final HttpServletRequest request, IEIDASSession eidasSession) {
+    private static String getErrorReportingUrl(final HttpServletRequest request) {
         Object spUrl = request.getSession().getAttribute(EidasParameterKeys.SP_URL.toString());
-        Object errorUrl = eidasSession == null ? null : eidasSession.get(EidasParameterKeys.ERROR_REDIRECT_URL.toString());
-        Object errorInterceptorUrl = eidasSession == null ? null : eidasSession.get(EidasParameterKeys.ERROR_INTERCEPTOR_URL.toString());
-        if (errorUrl != null) {
-            spUrl = errorUrl;
-        }
-        if (errorInterceptorUrl != null) {
-            request.setAttribute(NodeParameterNames.REDIRECT_URL.toString(), spUrl);
-            spUrl = errorInterceptorUrl;
-        }
         return spUrl == null ? null : spUrl.toString();
     }
 
-    private static void prepareSamlResponseFailConnector(final HttpServletRequest request, AbstractEIDASException exc, IEIDASSession eidasSession) {
+    private static void prepareSamlResponseFailConnector(final HttpServletRequest request, AbstractEIDASException exc) {
+        String spUrl = getErrorReportingUrl(request);
+        LOG.info("ERROR : " + exc.getErrorMessage());
+        if (spUrl == null) {
+            return;
+        }
+
         ICONNECTORSAMLService connectorSamlService = ApplicationContextProvider.getApplicationContext().getBean(ICONNECTORSAMLService.class);
         if (connectorSamlService == null) {
             return;
         }
-        String spUrl = getErrorReportingUrl(request, eidasSession);
-        if (spUrl == null || !isErrorCodeAllowedForSamlGeneration(exc)) {
+
+        if (!isErrorCodeAllowedForSamlGeneration(exc)) {
             LOG.info("ERROR : " + getEidasErrorMessage(exc, null));
             return;
         }
         byte[] samlToken = connectorSamlService.generateErrorAuthenticationResponse(request, spUrl.toString(),
-                getSamlStatusCode(request),
-                getSamlSubStatusCode(exc), exc.getErrorMessage());
+                                                                                    getSamlStatusCode(request),
+                                                                                    getSamlSubStatusCode(exc), exc.getErrorMessage());
         exc.setSamlTokenFail(EidasStringUtil.encodeToBase64(samlToken));
-        if (eidasSession != null) {
-            eidasSession.put(EidasParameterKeys.ERROR_REDIRECT_URL.toString(), spUrl);
-        }
     }
 
-    private static void prepareSamlResponseFailService(final HttpServletRequest request, AbstractEIDASException exc, IEIDASSession eidasSession) {
-        String spUrl = getErrorReportingUrl(request, eidasSession);
+    private static void prepareSamlResponseFailService(final HttpServletRequest request, AbstractEIDASException exc) {
+        String spUrl = getErrorReportingUrl(request);
         LOG.info("ERROR : " + exc.getErrorMessage());
         if (spUrl == null ) {
             return;
         }
-        generateSamlResponse(request, exc, eidasSession, spUrl);
+        generateSamlResponse(request, exc, spUrl);
     }
 
-    private static void generateSamlResponse(final HttpServletRequest request, AbstractEIDASException exc, IEIDASSession eidasSession, String spUrl){
+    private static void generateSamlResponse(final HttpServletRequest request, AbstractEIDASException exc, String spUrl){
         ISERVICESAMLService serviceSamlService = ApplicationContextProvider.getApplicationContext().getBean(ISERVICESAMLService.class);
         if (serviceSamlService == null) {
             return;
@@ -263,16 +251,17 @@ public class EidasNodeErrorUtil {
             }
         }
 
-        final IAuthenticationRequest authData = (IAuthenticationRequest) eidasSession.get(EidasParameterKeys.AUTH_REQUEST.toString());
-        if (authData == null) {
-            LOG.info("ERROR : no authData found during the generation of the error message");
-        }
-        byte[] samlToken = serviceSamlService.generateErrorAuthenticationResponse(authData,
-                getSamlStatusCode(request), null, samlSubStatusCode,
-                errorMessage, request.getRemoteAddr(), true);
-        exc.setSamlTokenFail(EidasStringUtil.encodeToBase64(samlToken));
-        eidasSession.put(EidasParameterKeys.ERROR_REDIRECT_URL.toString(), spUrl);
+        EidasAuthenticationRequest.Builder dummyAuthData = new EidasAuthenticationRequest.Builder();
+        dummyAuthData.id(getInResponseTo(request));
+        dummyAuthData.issuer(getIssuer(request));
+        dummyAuthData.destination(spUrl);
+        dummyAuthData.citizenCountryCode(getCitizenCountryCode(request));
+        dummyAuthData.assertionConsumerServiceURL(spUrl);
 
+        byte[] samlToken = serviceSamlService.generateErrorAuthenticationResponse(dummyAuthData.build(),
+                                                                                  getSamlStatusCode(request), null, samlSubStatusCode,
+                                                                                  errorMessage, request.getRemoteAddr(), true);
+        exc.setSamlTokenFail(EidasStringUtil.encodeToBase64(samlToken));
     }
 
     public static String getInResponseTo(final HttpServletRequest req) {

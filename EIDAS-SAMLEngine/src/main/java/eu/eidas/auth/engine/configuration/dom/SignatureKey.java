@@ -31,6 +31,8 @@ public enum SignatureKey {
 
     METADATA_PREFIX("metadata."),
 
+    RESPONSE_SIGN_ASSERTIONS("response.sign.assertions"),
+
     // put the ; on a separate line to make merges easier
     ;
 

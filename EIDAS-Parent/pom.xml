@@ -5,8 +5,8 @@
     <groupId>eu.eidas</groupId>
     <artifactId>eidas-parent</artifactId>
     <packaging>pom</packaging>
-    <name>Eidas Node Parent</name>
-    <version>1.1.0</version>
+    <name>eIDAS Node Parent</name>
+    <version>1.2.0</version>
     <description>
         The EIDAS-Parent provides artifacts versions for Eidas Node components.
     </description>
@@ -21,22 +21,8 @@
         <!-- java version targeted in the compile phase -->
         <java.version>1.7</java.version>
 
-        <saml.version>eidas.1.0</saml.version>
         <samlspec.version>0.5.2</samlspec.version>
         <samlspecacept.version>0.5.1</samlspecacept.version>
-
-        <!-- 2) Module dependency versions -->
-        <module.commons.version>1.1.0</module.commons.version>
-        <module.light-commons.version>1.1.0</module.light-commons.version>
-        <module.config.version>1.1.0</module.config.version>
-        <module.encryption.version>1.1.0</module.encryption.version>
-        <module.saml-engine.version>1.1.0</module.saml-engine.version>
-        <module.updater.version>1.1.0</module.updater.version>
-        <module.specific.version>1.1.0</module.specific.version>
-        <module.specific-communication-definition.version>1.1.0</module.specific-communication-definition.version>
-        <module.node.version>1.1.0</module.node.version>
-        <module.sp.version>1.1.0</module.sp.version>
-        <module.idp.version>1.1.0</module.idp.version>
 
         <!-- 2) Library dependency versions -->
         <spring.version>4.1.0.RELEASE</spring.version>
@@ -64,6 +50,7 @@
         <hazelcast.version>3.2</hazelcast.version>
         <bouncycastle.version>1.52</bouncycastle.version>
         <owasp.version>1.1.1</owasp.version>
+        <owasp.dependency-check.version>1.4.0</owasp.dependency-check.version>
         <owasp.esapi.version>2.1.0</owasp.esapi.version>
         <cglib.version>2.2.2</cglib.version>
         <xmlapis.version>1.4.01</xmlapis.version>
@@ -84,6 +71,7 @@
         <xmlsec.version>2.0.5</xmlsec.version>
         <guava.version>19.0</guava.version>
         <jsr305.version>3.0.1</jsr305.version>
+        <icu4j.version>57.1</icu4j.version>
 
         <!-- 3) maven plugin versions -->
         <javadoc.plugin.version>2.8.1</javadoc.plugin.version>
@@ -105,57 +93,57 @@
             <dependency>
                 <groupId>eu.eidas</groupId>
                 <artifactId>eidas-commons</artifactId>
-                <version>${module.commons.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>eu.eidas</groupId>
                 <artifactId>eidas-light-commons</artifactId>
-                <version>${module.light-commons.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>eu.eidas</groupId>
                 <artifactId>eidas-configmodule</artifactId>
-                <version>${module.config.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>eu.eidas</groupId>
                 <artifactId>eidas-encryption</artifactId>
-                <version>${module.encryption.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>eu.eidas</groupId>
                 <artifactId>eidas-saml-engine</artifactId>
-                <version>${module.saml-engine.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>eu.eidas</groupId>
                 <artifactId>eidas-updater</artifactId>
-                <version>${module.updater.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>eu.eidas</groupId>
                 <artifactId>eidas-specific</artifactId>
-                <version>${module.specific.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>eu.eidas</groupId>
                 <artifactId>eidas-specific-communication-definition</artifactId>
-                <version>${module.specific-communication-definition.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>eu.eidas</groupId>
                 <artifactId>eidas-node</artifactId>
-                <version>${module.node.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>eu.eidas</groupId>
                 <artifactId>eidas-sp</artifactId>
-                <version>${module.sp.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>eu.eidas</groupId>
                 <artifactId>eidas-idp</artifactId>
-                <version>${module.idp.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <!-- Joda -->
             <dependency>
@@ -241,7 +229,7 @@
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcprov-jdk15on</artifactId>
                 <version>${bouncycastle.version}</version>
-                <!-- JBoss issue: please keep provided as the default scope for all the components of the project and use the profile encryptionProvider if needed -->
+                <!-- JBoss issue: please keep provided as the default scope for all the components of the project and override it if needed -->
                 <scope>provided</scope>
             </dependency>
             <!-- Apache Commons -->
@@ -465,6 +453,12 @@
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-core</artifactId>
                 <version>${spring.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.springframework</groupId>
@@ -637,9 +631,15 @@
                 <version>${cglib.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.sun.jersey</groupId>
-                <artifactId>jersey-server</artifactId>
-                <version>${jersey.version}</version>
+                <groupId>cglib</groupId>
+                <artifactId>cglib</artifactId>
+                <version>${cglib.version}</version>
+            </dependency>
+            <!-- ICU -->
+            <dependency>
+                <groupId>com.ibm.icu</groupId>
+                <artifactId>icu4j</artifactId>
+                <version>${icu4j.version}</version>
             </dependency>
 
             <!-- UNIT TEST Dependencies -->
@@ -764,6 +764,37 @@
                         </execution>
                     </executions>
                 </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>cobertura-maven-plugin</artifactId>
+                    <version>${cobertura.plugin.version}</version>
+                    <configuration>
+                        <formats>
+                            <format>html</format>
+                            <format>xml</format>
+                        </formats>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <version>${resources.plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.owasp</groupId>
+                    <artifactId>dependency-check-maven</artifactId>
+                    <version>${owasp.dependency-check.version}</version>
+                    <configuration>
+                        <failBuildOnCVSS>8</failBuildOnCVSS>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
@@ -782,6 +813,14 @@
                 <version>${surefire.plugin.version}</version>
                 <configuration>
                     <skip>false</skip>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>${javadoc.plugin.version}</version>
+                <configuration>
+                    <detectLinks>true</detectLinks>
                 </configuration>
             </plugin>
         </plugins>
@@ -808,22 +847,4 @@
             <url>file://${project.basedir}/../EIDAS-Encryption/src/main/lib</url>
         </repository>
     </repositories>
-    <profiles>
-        <profile>
-            <id>all</id>
-            <modules>
-                <module>../EIDAS-Light-Commons</module>
-                <module>../EIDAS-Commons</module>
-                <module>../EIDAS-ConfigModule</module>
-                <module>../EIDAS-Encryption</module>
-                <module>../EIDAS-SAMLEngine</module>
-                <module>../EIDAS-UPDATER</module>
-                <module>../EIDAS-Specific</module>
-                <module>../EIDAS-SpecificCommunicationDefinition</module>
-                <module>../EIDAS-Node</module>
-                <module>../EIDAS-SP</module>
-                <module>../EIDAS-IdP-1.0</module>
-            </modules>
-        </profile>
-    </profiles>
 </project>

@@ -14,10 +14,7 @@
 package eu.eidas.node.service;
 
 import eu.eidas.auth.commons.EidasParameterKeys;
-import eu.eidas.auth.commons.exceptions.AbstractEIDASException;
-import eu.eidas.auth.commons.exceptions.EIDASServiceException;
-import eu.eidas.auth.commons.exceptions.EidasNodeException;
-import eu.eidas.auth.commons.exceptions.InternalErrorEIDASException;
+import eu.eidas.auth.commons.exceptions.*;
 import eu.eidas.node.NodeParameterNames;
 import eu.eidas.node.NodeViewNames;
 import eu.eidas.node.auth.service.ResponseCarryingServiceException;
@@ -38,6 +35,7 @@ import java.io.IOException;
  * @version $Revision: 1 $, $Date: 2014-10-21 $
  */
 
+@SuppressWarnings("squid:S1989") // due to the code uses correlation maps, not http sessions
 public final class ServiceExceptionHandlerServlet extends AbstractServiceServlet {
 
     /**
@@ -102,6 +100,8 @@ public final class ServiceExceptionHandlerServlet extends AbstractServiceServlet
             } else if (exception instanceof InternalErrorEIDASException) {
                 LOG.debug("BUSINESS EXCEPTION - null redirectUrl or SAML response");
                 retVal = NodeViewNames.INTERNAL_ERROR.toString();
+            } else if (exception instanceof SecurityEIDASException) {
+                retVal = NodeViewNames.PRESENT_ERROR.toString();
             } else {
                 LOG.warn("exception not recognized so internal error page shown", exception);
                 retVal = NodeViewNames.INTERNAL_ERROR.toString();

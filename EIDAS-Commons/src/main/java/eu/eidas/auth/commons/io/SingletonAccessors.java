@@ -42,15 +42,14 @@ public final class SingletonAccessors {
 
     static final class LazyAccessor<T> implements SingletonAccessor<T> {
 
-        @Nonnull
         private final AtomicReference<T> reference = new AtomicReference<>();
 
         @Nonnull
         private final SingletonAccessor<T> wrappedAccessor;
 
-        LazyAccessor(@Nonnull SingletonAccessor<T> wrappedAccessor) {
-            Preconditions.checkNotNull(wrappedAccessor, "wrappedAccessor");
-            this.wrappedAccessor = wrappedAccessor;
+        LazyAccessor(@Nonnull SingletonAccessor<T> wrappedaccessor) {
+            Preconditions.checkNotNull(wrappedaccessor, "wrappedAccessor");
+            wrappedAccessor = wrappedaccessor;
         }
 
         @Nullable
@@ -70,7 +69,7 @@ public final class SingletonAccessors {
         }
 
         @Override
-        public void set(@Nullable T newValue) throws IOException {
+        public void set(@Nonnull T newValue) throws IOException {
             wrappedAccessor.set(newValue);
             reference.set(newValue);
         }
@@ -165,7 +164,7 @@ public final class SingletonAccessors {
         private final transient String protocol;
 
         UrlProtocol(@Nonnull String key) {
-            this.protocol = key;
+            protocol = key;
         }
 
         @Nonnull

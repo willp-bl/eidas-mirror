@@ -77,6 +77,15 @@ public class EidasNodeMetadataGenerator {
     private String  singleSignOnServiceRedirectLocation;
     private String  singleSignOnServicePostLocation;
 
+    private static final String INVALID_METADATA="invalid metadata";
+
+    private static final String CONNECTOR_TECHNICAL_CONTACT_PROPS[]={"connector.contact.technical.company", "connector.contact.technical.email", "connector.contact.technical.givenname", "connector.contact.technical.surname", "connector.contact.technical.phone"};
+    private static final String CONNECTOR_SUPPORT_CONTACT_PROPS[]={"connector.contact.support.company", "connector.contact.support.email", "connector.contact.support.givenname", "connector.contact.support.surname", "connector.contact.support.phone"};
+    private static final String CONNECTOR_CONTACTS[][]={CONNECTOR_TECHNICAL_CONTACT_PROPS, CONNECTOR_SUPPORT_CONTACT_PROPS};
+    private static final String SERVICE_TECHNICAL_CONTACT_PROPS[]={"service.contact.technical.company", "service.contact.technical.email", "service.contact.technical.givenname", "service.contact.technical.surname", "service.contact.technical.phone"};
+    private static final String SERVICE_SUPPORT_CONTACT_PROPS[]={"service.contact.support.company", "service.contact.support.email", "service.contact.support.givenname", "service.contact.support.surname", "service.contact.support.phone"};
+    private static final String SERVICE_CONTACTS[][]={SERVICE_TECHNICAL_CONTACT_PROPS, SERVICE_SUPPORT_CONTACT_PROPS};
+
     private ProtocolEngineFactory nodeProtocolEngineFactory;
 
     public String getSamlConnectorIDP() {
@@ -135,10 +144,9 @@ public class EidasNodeMetadataGenerator {
         this.nodeProtocolEngineFactory = nodeProtocolEngineFactory;
     }
 
-    private static final String INVALID_METADATA="invalid metadata";
-
     public String generateConnectorMetadata(){
-        return helperGenerateMetadata(samlConnectorSP, samlConnectorIDP, connectorMetadataUrl,getConnectorCountry(),CONNECTOR_CONTACTS,getConnectorUrl(), null);
+        return helperGenerateMetadata(samlConnectorSP, samlConnectorIDP, connectorMetadataUrl,getConnectorCountry(),
+                CONNECTOR_CONTACTS, MetadataConfigParams.CONNECTOR_ORG_NAME, getConnectorUrl(), null);
     }
 
     public String generateServiceMetadata(){
@@ -146,10 +154,10 @@ public class EidasNodeMetadataGenerator {
         if(getNodeProps()!=null){
             loA=getNodeProps().getProperty(EIDASValues.EIDAS_SERVICE_LOA.toString());
         }
-        return helperGenerateMetadata(samlServiceSP, samlServiceIDP, serviceMetadataUrl,getServiceCountry(),SERVICE_CONTACTS,getServiceUrl(), loA);
+        return helperGenerateMetadata(samlServiceSP, samlServiceIDP, serviceMetadataUrl,getServiceCountry(),SERVICE_CONTACTS, MetadataConfigParams.SERVICE_ORG_NAME, getServiceUrl(), loA);
     }
 
-    private String helperGenerateMetadata(String spEngineName, String idpEngineName, String url, String country, String[][] contactsProperties, String siteUrl, String loA){
+    private String helperGenerateMetadata(String spEngineName, String idpEngineName, String url, String country, String[][] contactsProperties, String orgNameConst, String siteUrl, String loA){
         String metadata=INVALID_METADATA;
         ProtocolEngineI spEngine=null;
         ProtocolEngineI idpEngine=null;
@@ -177,6 +185,7 @@ public class EidasNodeMetadataGenerator {
                 mcp.setValidityDuration(validityDuration);
                 mcp.setTechnicalContact(getTechnicalContact(contactsProperties));
                 mcp.setSupportContact(getSupportContact(contactsProperties));
+                mcp.setOrganizationName(nodeProps == null ? null : nodeProps.getProperty(orgNameConst));
                 return generator.generateMetadata();
             } catch (EIDASSAMLEngineException eidasSamlexc) {
                 LOGGER.info("ERROR : Error creating Node metadata " + eidasSamlexc.getMessage());
@@ -218,7 +227,7 @@ public class EidasNodeMetadataGenerator {
             String msg = String.format("BUSINESS EXCEPTION : Location is null for binding %1$s at %2$s", binding, metadataUrl);
             LOGGER.error(msg);
             throwSAMLEngineNoMetadataException();
-        } else if (location != null && location.startsWith(EXPRESSION_LANGUAGE_PREFIX)) {
+        } else if (location.startsWith(EXPRESSION_LANGUAGE_PREFIX)) {
             String msg = String.format("BUSINESS EXCEPTION : Missing property %3$s for binding %1$s at %2$s", binding, metadataUrl, location);
             LOGGER.error(msg);
             throwSAMLEngineNoMetadataException();
@@ -319,13 +328,6 @@ public class EidasNodeMetadataGenerator {
     public void setSingleSignOnServicePostLocation(String singleSignOnServicePostLocation) {
         this.singleSignOnServicePostLocation = singleSignOnServicePostLocation;
     }
-
-    private static final String CONNECTOR_TECHNICAL_CONTACT_PROPS[]={"connector.contact.technical.company", "connector.contact.technical.email", "connector.contact.technical.givenname", "connector.contact.technical.surname", "connector.contact.technical.phone"};
-    private static final String CONNECTOR_SUPPORT_CONTACT_PROPS[]={"connector.contact.support.company", "connector.contact.support.email", "connector.contact.support.givenname", "connector.contact.support.surname", "connector.contact.support.phone"};
-    private static final String CONNECTOR_CONTACTS[][]={CONNECTOR_TECHNICAL_CONTACT_PROPS, CONNECTOR_SUPPORT_CONTACT_PROPS};
-    private static final String SERVICE_TECHNICAL_CONTACT_PROPS[]={"service.contact.technical.company", "service.contact.technical.email", "service.contact.technical.givenname", "service.contact.technical.surname", "service.contact.technical.phone"};
-    private static final String SERVICE_SUPPORT_CONTACT_PROPS[]={"service.contact.support.company", "service.contact.support.email", "service.contact.support.givenname", "service.contact.support.surname", "service.contact.support.phone"};
-    private static final String SERVICE_CONTACTS[][]={SERVICE_TECHNICAL_CONTACT_PROPS, SERVICE_SUPPORT_CONTACT_PROPS};
 
     private Contact getTechnicalContact(String[][] source){
         return createContact(source[0]);

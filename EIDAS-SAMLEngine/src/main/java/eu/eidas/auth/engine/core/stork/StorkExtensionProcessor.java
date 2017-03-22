@@ -14,73 +14,14 @@
  */
 package eu.eidas.auth.engine.core.stork;
 
-import java.io.IOException;
-import java.io.StringWriter;
-import java.net.URI;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.xml.namespace.QName;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Ordering;
-
-import org.apache.commons.lang.StringUtils;
-import org.joda.time.DateTime;
-import org.opensaml.common.SAMLVersion;
-import org.opensaml.common.xml.SAMLConstants;
-import org.opensaml.saml2.common.Extensions;
-import org.opensaml.saml2.core.Assertion;
-import org.opensaml.saml2.core.Attribute;
-import org.opensaml.saml2.core.AttributeStatement;
-import org.opensaml.saml2.core.AttributeValue;
-import org.opensaml.saml2.core.AuthnContextClassRef;
-import org.opensaml.saml2.core.AuthnRequest;
-import org.opensaml.saml2.core.Issuer;
-import org.opensaml.saml2.core.Response;
-import org.opensaml.saml2.core.Status;
-import org.opensaml.saml2.core.StatusCode;
-import org.opensaml.saml2.core.StatusMessage;
-import org.opensaml.xml.Namespace;
-import org.opensaml.xml.XMLObject;
-import org.opensaml.xml.schema.XSAny;
-import org.opensaml.xml.schema.impl.XSAnyImpl;
-import org.opensaml.xml.schema.impl.XSStringImpl;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.Marker;
-import org.slf4j.MarkerFactory;
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
-
 import eu.eidas.auth.commons.EidasErrorKey;
 import eu.eidas.auth.commons.IPersonalAttributeList;
 import eu.eidas.auth.commons.PersonalAttribute;
 import eu.eidas.auth.commons.PersonalAttributeList;
-import eu.eidas.auth.commons.attribute.AttributeDefinition;
-import eu.eidas.auth.commons.attribute.AttributeRegistries;
-import eu.eidas.auth.commons.attribute.AttributeRegistry;
-import eu.eidas.auth.commons.attribute.AttributeValueMarshaller;
-import eu.eidas.auth.commons.attribute.AttributeValueMarshallingException;
-import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
+import eu.eidas.auth.commons.attribute.*;
 import eu.eidas.auth.commons.light.IResponseStatus;
 import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.IAuthenticationResponse;
@@ -98,19 +39,47 @@ import eu.eidas.auth.engine.core.SAMLCore;
 import eu.eidas.auth.engine.core.SAMLExtensionFormat;
 import eu.eidas.auth.engine.core.SamlEngineCoreProperties;
 import eu.eidas.auth.engine.core.eidas.GenericEidasAttributeType;
-import eu.eidas.auth.engine.xml.opensaml.AssertionUtil;
-import eu.eidas.auth.engine.xml.opensaml.BuilderFactoryUtil;
-import eu.eidas.auth.engine.xml.opensaml.CertificateUtil;
-import eu.eidas.auth.engine.xml.opensaml.ResponseUtil;
-import eu.eidas.auth.engine.xml.opensaml.SAMLEngineUtils;
+import eu.eidas.auth.engine.xml.opensaml.*;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineRuntimeException;
 import eu.eidas.util.Preconditions;
+import org.apache.commons.lang.StringUtils;
+import org.joda.time.DateTime;
+import org.opensaml.common.SAMLVersion;
+import org.opensaml.common.xml.SAMLConstants;
+import org.opensaml.saml2.common.Extensions;
+import org.opensaml.saml2.core.*;
+import org.opensaml.saml2.core.AttributeValue;
+import org.opensaml.xml.Namespace;
+import org.opensaml.xml.XMLObject;
+import org.opensaml.xml.schema.XSAny;
+import org.opensaml.xml.schema.impl.XSAnyImpl;
+import org.opensaml.xml.schema.impl.XSStringImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.xml.namespace.QName;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.*;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.net.URI;
+import java.security.cert.X509Certificate;
+import java.util.*;
 
 /**
  * @deprecated since 1.1
  */
 @Deprecated
+@SuppressWarnings("all")
 public class StorkExtensionProcessor implements ExtensionProcessorI {
 
     /**
@@ -548,7 +517,8 @@ public class StorkExtensionProcessor implements ExtensionProcessorI {
     /**
      * Generate stork extensions.
      *
-     * @param request the request
+     * @param samlCoreProperties
+     * @param authRequest the request
      * @return the extensions
      * @throws EIDASSAMLEngineException the STORKSAML engine exception
      */

@@ -90,7 +90,7 @@ public class AUSERVICESAMLTestCertif {
         // Instantiate the util service for anti replay check
         AUSERVICEUtil auserviceutil = new AUSERVICEUtil();
         auserviceutil.setConcurrentMapService(new ConcurrentMapServiceDefaultImpl());
-        auserviceutil.setAntiReplayCache(auserviceutil.getConcurrentMapService().getNewMapCache());
+        auserviceutil.setAntiReplayCache(auserviceutil.getConcurrentMapService().getConfiguredMapCache());
         auserviceutil.flushReplayCache();
         AUSERVICESAML auservicesaml = new AUSERVICESAML();
         auservicesaml.setServiceUtil(auserviceutil);

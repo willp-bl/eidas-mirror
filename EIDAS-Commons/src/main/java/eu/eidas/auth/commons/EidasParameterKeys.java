@@ -12,13 +12,14 @@
  */
 package eu.eidas.auth.commons;
 
-import eu.eidas.auth.commons.lang.Canonicalizers;
-import eu.eidas.auth.commons.lang.EnumMapper;
-import eu.eidas.auth.commons.lang.KeyAccessor;
+import java.util.Set;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Set;
+
+import eu.eidas.auth.commons.lang.Canonicalizers;
+import eu.eidas.auth.commons.lang.EnumMapper;
+import eu.eidas.auth.commons.lang.KeyAccessor;
 
 /**
  * This enum class contains all the eIDAS Node, Commons and Specific Parameters.
@@ -128,13 +129,9 @@ public enum EidasParameterKeys {
      */
     EIDAS_SERVICE_CALLBACK("callback"),
     /**
-     * Represents the 'eidas.specificidpredirect.url' parameter constant.
+     * Represents the 'service.specificidpredirect.url' parameter constant.
      */
-    EIDAS_SERVICE_IDP_CALLBACK_VALUE("eidas.specificidpredirect.url"),
-    /**
-     * Represents the 'eidas.specificapredirect.url' parameter constant.
-     */
-    EIDAS_SERVICE_AP_CALLBACK_VALUE("eidas.specificapredirect.url"),
+    EIDAS_SERVICE_IDP_CALLBACK_VALUE("service.specificidpredirect.url"),
 
     /**
      * Represents the 'errorCode' parameter constant.
@@ -170,6 +167,11 @@ public enum EidasParameterKeys {
      * Represents the 'http-x-forwarded-for' parameter constant.
      */
     HTTP_X_FORWARDED_FOR("http-x-forwarded-for"),
+
+    /**
+     * Represents the 'RelayState' parameter constant.
+     */
+    RELAY_STATE("RelayState"),
 
     /**
      * Represents the 'idp.url' parameter constant.
@@ -239,10 +241,6 @@ public enum EidasParameterKeys {
      * Represents the 'service.number' parameter constant.
      */
     EIDAS_NUMBER("service.number"),
-    /**
-     * Represents the 'service.specificapredirect.url' parameter constant.
-     */
-    EIDAS_SPECIFIC_URL("service.specificapredirect.url"),
 
     /**
      * Represents the 'qaaLevel' parameter constant.
@@ -297,10 +295,6 @@ public enum EidasParameterKeys {
      */
     SIGNATURE_RESPONSE("SignatureResponse"),
 
-    /**
-     * Represents the 'sEidasSession' parameter constant.
-     */
-    SESSION_ID_URL("sEidasSession"),
     /**
      * Represents the 'spId' parameter constant.
      */
@@ -368,11 +362,6 @@ public enum EidasParameterKeys {
      * Represents the 'eidasAttributeValue.number' parameter constant.
      */
     EIDAS_ATTRIBUTE_VALUE_NUMBER("eidasAttributeValue.number"),
-
-    /**
-     * Represents the 'username' parameter constant.
-     */
-    USERNAME("username"),
 
     /**
      * Represents the 'tooManyParameters' parameter constant.
@@ -457,6 +446,12 @@ public enum EidasParameterKeys {
     // put the ; on a separate line to make merges easier
     ;
 
+    /**
+     * Represents the constant's value.
+     */
+    @Nonnull
+    private final transient String value;
+
     private static final EnumMapper<String, EidasParameterKeys> MAPPER =
             new EnumMapper<String, EidasParameterKeys>(new KeyAccessor<String, EidasParameterKeys>() {
 
@@ -468,6 +463,15 @@ public enum EidasParameterKeys {
             }, Canonicalizers.trim(), values());
 
     private static final Set<String> ALL_NAMES = MAPPER.unmodifiableKeySet(values());
+
+    /**
+     * Solo Constructor.
+     *
+     * @param nValue The Constant value.
+     */
+    EidasParameterKeys(@Nonnull String nValue) {
+        value = nValue;
+    }
 
     @Nullable
     public static EidasParameterKeys fromString(@Nonnull String val) {
@@ -483,21 +487,6 @@ public enum EidasParameterKeys {
 
     public static EnumMapper<String, EidasParameterKeys> mapper() {
         return MAPPER;
-    }
-
-    /**
-     * Represents the constant's value.
-     */
-    @Nonnull
-    private final transient String value;
-
-    /**
-     * Solo Constructor.
-     *
-     * @param nValue The Constant value.
-     */
-    EidasParameterKeys(@Nonnull String nValue) {
-        this.value = nValue;
     }
 
     @Nonnull

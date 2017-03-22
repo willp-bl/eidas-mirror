@@ -5,11 +5,19 @@
 
 <struts>
 	<constant name="struts.enable.DynamicMethodInvocation" value="true" />
-	<package name="eu.eidas.sp" extends="struts-default">
+	<package name="eu.eidas.sp" namespace="/" extends="struts-default">
+		<default-action-ref name="populateIndexPage" />
 		<global-exception-mappings>
             <exception-mapping result="error" exception="java.lang.RuntimeException"/>
         </global-exception-mappings>
-	
+		
+		<action name="populateIndexPage" method="populate" class="eu.eidas.sp.IndexAction">
+			<result name="redirect">/countrySelector.jsp</result>
+			<result name="populate">/selectAttributes.jsp</result>
+			<result name="input">/selectAttributes.jsp</result>
+			<result name="success">/samlRequest.jsp</result>
+			<result name="error">/errorPage.jsp</result>
+		</action>
 		<action name="*IndexPage" method="{1}" class="eu.eidas.sp.IndexAction">
 			<result name="redirect">/countrySelector.jsp</result>
 			<result name="populate">/selectAttributes.jsp</result>
@@ -37,7 +45,7 @@
         </action>
 		<action name="metadata" method="generateMetadata" class="eu.eidas.sp.metadata.GenerateMetadataAction">
 			<result type="stream">
-                                <param name="contentType">application/xml</param>
+				<param name="contentType">application/xml</param>
 				<param name="inputName">inputStream</param>
 			</result>
 		</action>

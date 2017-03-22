@@ -3,8 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>eidas-saml-engine</artifactId>
     <packaging>jar</packaging>
-    <name>EIDASSAMLEngine</name>
-    <version>1.1.0</version>
+    <name>eIDAS SAML Engine</name>
     <description>
         The EIDASSAMLEngine library provides tools to support developers working with the Security Assertion Markup
         Language (SAML).
@@ -12,7 +11,7 @@
     <parent>
         <groupId>eu.eidas</groupId>
         <artifactId>eidas-parent</artifactId>
-        <version>1.1.0</version>
+        <version>1.2.0</version>
         <relativePath>../EIDAS-Parent/pom.xml</relativePath>
     </parent>
     <repositories>
@@ -50,22 +49,6 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>jcl-over-slf4j</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>log4j-over-slf4j</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>jul-to-slf4j</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>commons-logging</groupId>
-            <artifactId>commons-logging</artifactId>
         </dependency>
         <dependency>
             <groupId>org.owasp.esapi</groupId>
@@ -133,7 +116,7 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <SAMLEngineVersion>${saml.version}</SAMLEngineVersion>
+                            <SAMLEngineVersion>${project.version}</SAMLEngineVersion>
                             <SAMLSpecVersion-accept>${samlspecacept.version}</SAMLSpecVersion-accept>
                             <SAMLSpecVersion-send>${samlspec.version}</SAMLSpecVersion-send>
                             <SAMLSpecKnownIssues>None</SAMLSpecKnownIssues>
@@ -152,18 +135,9 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>cobertura-maven-plugin</artifactId>
-                        <version>${cobertura.plugin.version}</version>
-                        <configuration>
-                            <formats>
-                                <format>html</format>
-                                <format>xml</format>
-                            </formats>
-                        </configuration>
                     </plugin>
                 </plugins>
             </build>
         </profile>
     </profiles>
-    <reporting>
-    </reporting>
 </project>

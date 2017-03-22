@@ -17,7 +17,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -68,6 +67,22 @@ public enum EIDASUtil {
      */
     private static final String CONFIG_LOCATION_PROPERTIES = "configlocation.properties";
 
+    /**
+     * Configurations object.
+     */
+    private final AtomicReference<ImmutableMap<String, String>> propertiesRef;
+
+    private static final String CLASSPATH_PREFIX = "classpath:/";
+
+    private static final String FILE_PREFIX = "file:";
+
+    /**
+     * Private constructor. Prevents the class from being instantiated.
+     */
+    EIDASUtil() {
+        propertiesRef = new AtomicReference<ImmutableMap<String, String>>(ImmutableMap.<String, String>of());
+    }
+
     @SuppressWarnings("CollectionDeclaredAsConcreteClass")
     @Nonnull
     static ImmutableMap<String, String> immutableMap(@Nullable Properties properties) {
@@ -83,18 +98,6 @@ public enum EIDASUtil {
         //noinspection UseOfPropertiesAsHashtable
         properties.putAll(immutableMap);
         return properties;
-    }
-
-    /**
-     * Configurations object.
-     */
-    private final AtomicReference<ImmutableMap<String, String>> propertiesRef;
-
-    /**
-     * Private constructor. Prevents the class from being instantiated.
-     */
-    EIDASUtil() {
-        propertiesRef = new AtomicReference<ImmutableMap<String, String>>(ImmutableMap.<String, String>of());
     }
 
     /**
@@ -135,21 +138,12 @@ public enum EIDASUtil {
     }
 
     /**
-     * Setter for the configuration.
-     *
-     * @param properties The new properties.
-     */
-    public static void setProperties(@Nonnull Map<String, String> properties) {
-        Preconditions.checkNotNull(properties, "properties");
-        setProperties(ImmutableMap.copyOf(properties));
-    }
-
-    /**
      * Setter for the Properties which loads the default file if the given argument is {@code null}.
      *
      * @param properties The new properties value. If this argument is {@code null}, then the default file is loaded
      * ({@link #EIDAS_UTIL_PROPERTIES}).
      */
+    @SuppressWarnings("squid:S3066")
     public static void setConfigs(@Nullable Properties properties) {
         Properties newProperties = properties;
         if (null == newProperties) {
@@ -221,9 +215,10 @@ public enum EIDASUtil {
         return errorMessage;
     }
 
-    private static final String CLASSPATH_PREFIX = "classpath:/";
-
-    private static final String FILE_PREFIX = "file:";
+    public static void loadUtilConfigs() {
+        Properties newProperties = loadConfigs(EIDAS_UTIL_PROPERTIES);
+        setProperties(immutableMap(newProperties));
+    }
 
     /**
      * Loads the configuration file pointed by the given path.

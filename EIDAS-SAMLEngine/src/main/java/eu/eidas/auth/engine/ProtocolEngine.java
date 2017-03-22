@@ -22,8 +22,6 @@
 
 package eu.eidas.auth.engine;
 
-import java.nio.charset.Charset;
-import java.nio.charset.CharsetEncoder;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +44,7 @@ import org.w3c.dom.Document;
 
 import eu.eidas.auth.commons.EidasErrorKey;
 import eu.eidas.auth.commons.EidasErrors;
+import eu.eidas.auth.commons.attribute.AttributeValueTransliterator;
 import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.IAuthenticationResponse;
 import eu.eidas.auth.commons.protocol.IRequestMessage;
@@ -61,7 +60,32 @@ import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 /**
  * The ProtocolEngine is responsible for creating Saml Request and Response from their binary representations and for
  * creating binary representations from Saml Request and Response objects.
+ * <p>
+ * In eIDAS 1.1, the ProtocolEngine replaces the deprecated SAMLEngine.
+ * <p>
+ * The protocol engine is responsible for implementing the protocol between the eIDAS Connector and the eIDAS
+ * ProxyService.
+ * <p>
+ * Of course, the default protocol engine strictly implements the eIDAS specification.
+ * <p>
+ * However the protocol engine can be customized to implement other protocols than eIDAS.
+ * <p>
+ * A ProtocolEngine instance is obtained from a {@link eu.eidas.auth.engine.ProtocolEngineFactory}.
+ * <p>
+ * There is a default ProtocolEngineFactory: {@link eu.eidas.auth.engine.DefaultProtocolEngineFactory} which uses the
+ * default configuration files.
+ * <p>
+ * You can obtain the protocol engine named " #MyEngineName# " by using the following statement:
+ * <p>
+ * {@code ProtocolEngineI protocolEngine = DefaultProtocolEngineFactory.getInstance().getProtocolEngine("#MyEngineName#");}
+ * <p>
+ * You can also achieve the same result using a convenient method in ProtocolEngineFactory via the
+ * getDefaultProtocolEngine method:
+ * <p>
+ * {@code ProtocolEngineI engine = ProtocolEngineFactory.getDefaultProtocolEngine("#MyEngineName#");}
  *
+ * @see ProtocolEngineFactory
+ * @see DefaultProtocolEngineFactory
  * @since 1.1
  */
 public class ProtocolEngine extends AbstractProtocolEngine implements ProtocolEngineI {
@@ -73,10 +97,17 @@ public class ProtocolEngine extends AbstractProtocolEngine implements ProtocolEn
      */
     private static final Logger LOG = LoggerFactory.getLogger(ProtocolEngine.class);
 
-    private static final CharsetEncoder LATIN_1_CHARSET_ENCODER = Charset.forName("ISO-8859-1").newEncoder();
+    /**
+     * Constructs a new Saml engine instance.
+     *
+     * @param configurationAccessor the accessor to the configuration of this instance.
+     */
+    public ProtocolEngine(@Nonnull ProtocolConfigurationAccessor configurationAccessor) {
+        super(configurationAccessor);
+    }
 
     public static boolean needsTransliteration(String v) {
-        return !LATIN_1_CHARSET_ENCODER.canEncode(v);
+        return AttributeValueTransliterator.needsTransliteration(v);
     }
 
     private static void validateSaml2CoreSchema(SignableSAMLObject samlObject) throws EIDASSAMLEngineException {
@@ -91,15 +122,6 @@ public class ProtocolEngine extends AbstractProtocolEngine implements ProtocolEn
                                                EidasErrors.get(EidasErrorKey.MESSAGE_VALIDATION_ERROR.errorMessage()),
                                                e);
         }
-    }
-
-    /**
-     * Constructs a new Saml engine instance.
-     *
-     * @param configurationAccessor the accessor to the configuration of this instance.
-     */
-    public ProtocolEngine(@Nonnull ProtocolConfigurationAccessor configurationAccessor) {
-        super(configurationAccessor);
     }
 
     /**
@@ -118,6 +140,7 @@ public class ProtocolEngine extends AbstractProtocolEngine implements ProtocolEn
      * @param response the response authentication request
      * @throws EIDASSAMLEngineException the EIDASSAML engine exception
      */
+    @SuppressWarnings("squid:S2583")
     private void checkResponseSanity(IAuthenticationResponse response) throws EIDASSAMLEngineException {
         if (response.getAttributes() == null || response.getAttributes().isEmpty()) {
             LOG.error(SAML_EXCHANGE, "No attribute values in response.");
@@ -128,7 +151,7 @@ public class ProtocolEngine extends AbstractProtocolEngine implements ProtocolEn
     }
 
     /**
-     * Generate the authentication request.
+     * Generates the authentication request bytes.
      *
      * @param request the request that contain all parameters for generate an authentication request.
      * @return the EIDAS authentication request that has been processed.
@@ -147,13 +170,14 @@ public class ProtocolEngine extends AbstractProtocolEngine implements ProtocolEn
         }
 
         // Validate mandatory parameters
-        AuthnRequest samlRequest = getProtocolProcessor().marshallRequest(request, serviceIssuer, getCoreProperties());
-        IAuthenticationRequest updatedRequest =
-                getProtocolProcessor().unmarshallRequest(request.getCitizenCountryCode(), samlRequest,
-                                                         request.getOriginCountryCode());
+        IAuthenticationRequest requestToBeSent =
+                getProtocolProcessor().createProtocolRequestToBeSent(request, serviceIssuer, getCoreProperties());
+        AuthnRequest samlRequest =
+                getProtocolProcessor().marshallRequest(requestToBeSent, serviceIssuer, getCoreProperties());
+
         try {
             byte[] bytes = signAndMarshallRequest(samlRequest);
-            return new BinaryRequestMessage(updatedRequest, bytes);
+            return new BinaryRequestMessage(requestToBeSent, bytes);
         } catch (EIDASSAMLEngineException e) {
             LOG.debug(SAML_EXCHANGE, "Sign and Marshall.", e);
             LOG.info(SAML_EXCHANGE, "BUSINESS EXCEPTION : Sign and Marshall.", e);
@@ -247,7 +271,7 @@ public class ProtocolEngine extends AbstractProtocolEngine implements ProtocolEn
     /**
      * Unmarshalls the given bytes into a SAML Request.
      *
-     * @param tokenSaml the SAML request bytes
+     * @param requestBytes the SAML request bytes
      * @return the SAML request instance
      * @throws EIDASSAMLEngineException the EIDASSAML engine exception
      */
@@ -431,7 +455,8 @@ public class ProtocolEngine extends AbstractProtocolEngine implements ProtocolEn
                 throw new EIDASSAMLEngineException(EidasErrorKey.MESSAGE_VALIDATION_ERROR.errorCode(), "No signature");
             }
             if (null == request.getIssuer()) {
-                throw new EIDASSAMLEngineException(EidasErrorKey.MESSAGE_VALIDATION_ERROR.errorCode(), "The issuer cannot be null");
+                throw new EIDASSAMLEngineException(EidasErrorKey.MESSAGE_VALIDATION_ERROR.errorCode(),
+                                                   "The issuer cannot be null");
             }
             try {
                 X509Certificate signatureCertificate =
@@ -449,26 +474,27 @@ public class ProtocolEngine extends AbstractProtocolEngine implements ProtocolEn
 
     private Response validateSignatureAndDecryptAndValidateAssertionSignatures(Response response)
             throws EIDASSAMLEngineException {
+        Response validResponse = response;
         boolean validateSign = getCoreProperties().isValidateSignature();
         if (validateSign) {
             LOG.trace("Validate response Signature.");
-            if (!response.isSigned() || null == response.getSignature()) {
+            if (!validResponse.isSigned() || null == validResponse.getSignature()) {
                 throw new EIDASSAMLEngineException(EidasErrorKey.MESSAGE_VALIDATION_ERROR.errorCode(), "No signature");
             }
 
-            String country = CertificateUtil.getCountry(response.getSignature().getKeyInfo());
+            String country = CertificateUtil.getCountry(validResponse.getSignature().getKeyInfo());
             LOG.debug(SAML_EXCHANGE, "Response received from country: " + country);
             try {
-                response = validateSignatureAndDecrypt(response);
+                validResponse = validateSignatureAndDecrypt(validResponse);
 
-                validateAssertionSignatures(response);
+                validateAssertionSignatures(validResponse);
             } catch (EIDASSAMLEngineException e) {
                 LOG.error(SAML_EXCHANGE, "BUSINESS EXCEPTION : SAMLEngineException validateSignature: " + e,
                           e.getMessage(), e);
                 throw e;
             }
         }
-        return response;
+        return validResponse;
     }
 
     /**

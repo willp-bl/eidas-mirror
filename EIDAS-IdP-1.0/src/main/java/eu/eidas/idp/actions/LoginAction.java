@@ -3,11 +3,11 @@ package eu.eidas.idp.actions;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.struts2.interceptor.ServletRequestAware;
-import org.apache.struts2.interceptor.ServletResponseAware;
-
 import com.opensymphony.xwork2.Action;
 import com.opensymphony.xwork2.ActionSupport;
+
+import org.apache.struts2.interceptor.ServletRequestAware;
+import org.apache.struts2.interceptor.ServletResponseAware;
 
 import eu.eidas.idp.ProcessLogin;
 
@@ -18,11 +18,10 @@ public class LoginAction extends ActionSupport implements ServletRequestAware, S
 	private transient HttpServletResponse response;
 
 	private String samlToken;
-	private String encryptAssertion;
 	private String username;
 	private String callback;
-	
-	
+
+
 	public String execute(){
 		ProcessLogin pl = new ProcessLogin();
 		pl.processAuthentication(request, response);
@@ -31,9 +30,9 @@ public class LoginAction extends ActionSupport implements ServletRequestAware, S
 		this.callback = pl.getCallback();
 		return Action.SUCCESS;
 	}
-	
+
 	public void setServletRequest(HttpServletRequest request) {
-		this.request = request;		
+		this.request = request;
 	}
 
 	public void setServletResponse(HttpServletResponse response) {
@@ -82,11 +81,4 @@ public class LoginAction extends ActionSupport implements ServletRequestAware, S
 		return callback;
 	}
 
-	public String getEncryptAssertion() {
-		return encryptAssertion;
-	}
-
-	public void setEncryptAssertion(String encryptAssertion) {
-		this.encryptAssertion = encryptAssertion;
-	}
 }

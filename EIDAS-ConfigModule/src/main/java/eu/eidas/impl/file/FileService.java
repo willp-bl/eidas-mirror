@@ -23,6 +23,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Formatter;
@@ -231,20 +234,16 @@ public class FileService {
     }
 
     public byte[] loadBinaryFile(String fileName){
-        FileInputStream is=null;
-        byte data[]=null;
+        byte[] data = null;
         try{
-            is=new FileInputStream(new File(getAbsoluteFileName(fileName)));
-            data=new byte[is.available()];
-            is.read(data);
+            Path path = Paths.get(getAbsoluteFileName(fileName));
+            data = Files.readAllBytes(path);
         }catch(FileNotFoundException fnfe){
             LOG.error("ERROR : FileNotFoundException: ", fnfe.getMessage());
             LOG.debug("ERROR : FileNotFoundException: ", fnfe);
         }catch(IOException ioe){
             LOG.error("ERROR : IOException: ", ioe.getMessage());
             LOG.debug("ERROR : IOException: ", ioe);
-        }finally{
-            safeClose(is);
         }
         return data;
     }
@@ -370,7 +369,9 @@ public class FileService {
         Calendar calendar=Calendar.getInstance();
         StringBuilder sb = new StringBuilder();
         Formatter formatter = new Formatter(sb, Locale.US);
-        return formatter.format("backup%1$4d%2$02d%3$02d%4$02d%5$02d%6$02d%7$03d.zip", calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH)+1, calendar.get(Calendar.DAY_OF_MONTH),
+        String ret = formatter.format("backup%1$4d%2$02d%3$02d%4$02d%5$02d%6$02d%7$03d.zip", calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH)+1, calendar.get(Calendar.DAY_OF_MONTH),
                 calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE),calendar.get(Calendar.SECOND), calendar.get(Calendar.MILLISECOND)).toString();
+        formatter.close();
+        return ret;
     }
 }

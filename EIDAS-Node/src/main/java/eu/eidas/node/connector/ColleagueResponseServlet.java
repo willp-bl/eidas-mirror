@@ -49,6 +49,7 @@ import eu.eidas.node.utils.SessionHolder;
 /**
  * Is invoked when ProxyService wants to pass control to the Connector.
  */
+@SuppressWarnings("squid:S1989") // due to the code uses correlation maps, not http sessions
 public final class ColleagueResponseServlet extends AbstractConnectorServlet {
 
     private static final long serialVersionUID = -2511363089207242981L;

@@ -246,11 +246,9 @@ public enum EIDASValues {
     EIDAS_SERVICE_REDIRECT_URIDEST("ssos.serviceMetadataGeneratorIDP.redirect.location"),
     EIDAS_SERVICE_POST_URIDEST("ssos.serviceMetadataGeneratorIDP.post.location"),
     EIDAS_SPTYPE("metadata.sector"),
-    EIDAS_PRODUCTION("productionmode"),
     METADATA_ACTIVE("metadata.activate"),
     RESPONSE_ENCRYPTION_MANDATORY("response.encryption.mandatory"),
     DISABLE_CHECK_MANDATORY_ATTRIBUTES("disable.check.mandatory.eidas.attributes"),
-    EIDAS_CONNECTOR_SUPPORT_FRAMING_REQUEST("eidas.supportFramingSamlRequest"),
     NODE_SUPPORT_EIDAS_MESSAGE_FORMAT_ONLY("eidasNodeOnly"),
 
     // put the ; on a separate line to make merges easier
@@ -268,8 +266,7 @@ public enum EIDASValues {
      * @param val The Constant value.
      */
     EIDASValues(@Nonnull String val) {
-
-        this.value = val;
+        value = val;
     }
 
     @Nonnull
@@ -285,7 +282,6 @@ public enum EIDASValues {
     @Nonnull
     @Override
     public String toString() {
-
         return value;
     }
 

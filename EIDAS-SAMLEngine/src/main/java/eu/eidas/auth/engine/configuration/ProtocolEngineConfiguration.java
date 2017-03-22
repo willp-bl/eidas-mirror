@@ -17,6 +17,16 @@ import eu.eidas.util.Preconditions;
 /**
  * This constitutes the configuration of the {@link eu.eidas.auth.engine.ProtocolEngineI}.
  *
+ * The ProtocolEngineConfiguration is composed of
+ * <ol>
+ * <li>A unique name (e.g. "MyEngineName" )</li>
+ * <li>Core properties</li>
+ * <li>A Signer</li>
+ * <li>An (optional) Cipher</li>
+ * <li>A ProtocolProcessor</li>
+ * <li>A Clock</li>
+ * </ol>
+ *
  * @since 1.1
  */
 @SuppressWarnings("ConstantConditions")

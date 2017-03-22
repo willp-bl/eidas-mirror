@@ -34,7 +34,7 @@ import eu.eidas.auth.commons.light.ILightRequest;
  */
 public interface IAuthenticationRequest extends ILightRequest {
 
-    @Nonnull
+    @Nullable
     String getAssertionConsumerServiceURL();
 
     @Nullable

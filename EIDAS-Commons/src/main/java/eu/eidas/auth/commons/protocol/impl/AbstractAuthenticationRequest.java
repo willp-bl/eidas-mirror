@@ -275,7 +275,7 @@ public abstract class AbstractAuthenticationRequest implements IAuthenticationRe
      *
      * @serial
      */
-    @Nonnull
+    @Nullable
     private final String assertionConsumerServiceURL;
 
     /**
@@ -337,7 +337,7 @@ public abstract class AbstractAuthenticationRequest implements IAuthenticationRe
     }
 
     @Override
-    @Nonnull
+    @Nullable
     public final String getAssertionConsumerServiceURL() {
         return assertionConsumerServiceURL;
     }
@@ -378,7 +378,6 @@ public abstract class AbstractAuthenticationRequest implements IAuthenticationRe
     }
 
     @Override
-    @Nonnull
     public final String getCitizenCountryCode() {
         return lightRequest.getCitizenCountryCode();
     }

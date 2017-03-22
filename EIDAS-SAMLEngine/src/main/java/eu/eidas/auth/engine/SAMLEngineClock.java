@@ -3,7 +3,7 @@ package eu.eidas.auth.engine;
 import org.joda.time.DateTime;
 
 /**
- * Represents the SAMLEngine its internal clock.
+ * Interface responsible for obtaining the system time.
  */
 public interface SamlEngineClock {
 

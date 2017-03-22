@@ -1,16 +1,15 @@
 package eu.eidas.auth.commons.xml.opensaml;
 
-import javax.annotation.Nonnull;
-
+import eu.eidas.auth.commons.EidasStringUtil;
+import eu.eidas.auth.commons.xml.DocumentBuilderFactoryUtil;
+import eu.eidas.encryption.exception.MarshallException;
+import eu.eidas.encryption.exception.UnmarshallException;
+import eu.eidas.util.Preconditions;
 import org.opensaml.Configuration;
 import org.opensaml.DefaultBootstrap;
 import org.opensaml.xml.ConfigurationException;
 import org.opensaml.xml.XMLObject;
-import org.opensaml.xml.io.Marshaller;
-import org.opensaml.xml.io.MarshallerFactory;
-import org.opensaml.xml.io.Unmarshaller;
-import org.opensaml.xml.io.UnmarshallerFactory;
-import org.opensaml.xml.io.UnmarshallingException;
+import org.opensaml.xml.io.*;
 import org.opensaml.xml.parse.BasicParserPool;
 import org.opensaml.xml.parse.ParserPool;
 import org.slf4j.Logger;
@@ -18,11 +17,7 @@ import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import eu.eidas.auth.commons.EidasStringUtil;
-import eu.eidas.auth.commons.xml.DocumentBuilderFactoryUtil;
-import eu.eidas.encryption.exception.MarshallException;
-import eu.eidas.encryption.exception.UnmarshallException;
-import eu.eidas.util.Preconditions;
+import javax.annotation.Nonnull;
 
 /**
  * OpenSAML Helper.
@@ -48,6 +43,9 @@ public final class OpenSamlHelper {
             LOG.error("Problem initializing the OpenSAML library: " + ce, ce);
             throw new IllegalStateException(ce);
         }
+    }
+
+    private OpenSamlHelper() {
     }
 
     @Nonnull
@@ -174,10 +172,11 @@ public final class OpenSamlHelper {
      * @throws UnmarshallException when the bytes cannot be unmarshalled
      */
     @Nonnull
+    @SuppressWarnings("squid:S2583")
     public static XMLObject unmarshall(@Nonnull byte[] xmlObjectBytes) throws UnmarshallException {
         Preconditions.checkNotNull(xmlObjectBytes, "xmlObjectBytes");
 
-        Document document;
+        Document document = null;
         try {
             document = DocumentBuilderFactoryUtil.parse(xmlObjectBytes);
         } catch (Exception ex) {
@@ -214,9 +213,9 @@ public final class OpenSamlHelper {
     }
 
     /**
-     * Method that unmarshalls a SAML Object from a byte array representation to an XML Object.
+     * Method that unmarshalls a SAML Object from a DOM Document representation to an XML Object.
      *
-     * @param xmlObjectBytes Byte array representation of a SAML Object
+     * @param document DOM Document representation of a SAML Object
      * @return XML Object (superclass of SAMLObject)
      * @throws UnmarshallException when the bytes cannot be unmarshalled
      */
@@ -251,6 +250,4 @@ public final class OpenSamlHelper {
         }
     }
 
-    private OpenSamlHelper() {
-    }
 }

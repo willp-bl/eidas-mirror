@@ -46,39 +46,57 @@ public final class DOMConfigurationParser {
 
     static final class InstanceTag {
 
+        static final String TAG_NAME = "instance";
+
+        private InstanceTag() {};
+
         static final class Attribute {
 
             static final String NAME = "name";
+            private Attribute() {};
         }
 
         static final class ConfigurationTag {
 
+            static final String TAG_NAME = "configuration";
+
+            private ConfigurationTag() {};
+
             static final class Attribute {
 
                 static final String NAME = "name";
+                private Attribute() {};
             }
 
             static final class ParameterTag {
+
+                static final String TAG_NAME = "parameter";
+
+                private ParameterTag() {};
 
                 static final class Attribute {
 
                     static final String NAME = "name";
 
                     static final String VALUE = "value";
+
+                    private Attribute() {};
                 }
 
-                static final String TAG_NAME = "parameter";
             }
 
-            static final String TAG_NAME = "configuration";
         }
-
-        static final String TAG_NAME = "instance";
     }
 
     public static final String DEFAULT_CONFIGURATION_FILE = "SamlEngine.xml";
 
     private static final Logger LOG = LoggerFactory.getLogger(DOMConfigurationParser.class);
+
+    /**
+     * Prevent instantiation.
+     */
+    private DOMConfigurationParser() {
+    }
 
     /**
      * Read configuration.
@@ -116,6 +134,7 @@ public final class DOMConfigurationParser {
      * @throws SAMLEngineException the EIDASSAML engine runtime exception
      */
     @Nonnull
+    @SuppressWarnings("squid:S2095")
     public static InstanceMap parseConfiguration(@Nonnull String configurationFileName,
                                                  @Nonnull InputStream inputStream)
             throws SamlEngineConfigurationException {
@@ -307,10 +326,4 @@ public final class DOMConfigurationParser {
         return ImmutableMap.copyOf(parameters);
     }
 
-    /**
-     * Prevent instantiation.
-     */
-    private DOMConfigurationParser() {
-
-    }
 }

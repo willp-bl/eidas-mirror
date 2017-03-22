@@ -71,9 +71,11 @@ public class FileEidasNodeConfiguration extends EIDASNodeConfiguration {
         }
     }
 
+    @Override
     public Properties getEidasProperties(){
         return eidasProperties;
     }
+
     private void loadParametersMap(Properties properties, EIDASNodeConfFile sourceFile){
         Iterator iterator=properties.keySet().iterator();
         while(iterator.hasNext()){
@@ -151,9 +153,11 @@ public class FileEidasNodeConfiguration extends EIDASNodeConfiguration {
     private void saveCountries(){
         //merge countries with eidasProperties
         setCountryParameter(EIDAS_SERVICE_NUMBER_NAME, Integer.toString(countries.size()));
-        for(int i=1;countries!=null && i<=countries.size();i++){
-            String countryID=COUNTRY_PREFIX+i;
-            EIDASNodeCountry currentCountry=countries.get(i-1);
+        Iterator<EIDASNodeCountry> i = countries.iterator();
+        int c = 1;
+        while (i.hasNext()) {
+            String countryID = COUNTRY_PREFIX + c++;
+            EIDASNodeCountry currentCountry = i.next();
             setCountryParameter(countryID + COUNTRY_ID_SUFFIX, currentCountry.getCode());
             setCountryParameter(countryID + COUNTRY_NAME_SUFFIX, currentCountry.getName());
             setCountryParameter(countryID + COUNTRY_URL_SUFFIX, currentCountry.getServiceUrl());

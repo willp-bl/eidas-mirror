@@ -1,8 +1,6 @@
 package eu.eidas.auth.commons;
 
-import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 
@@ -52,18 +50,6 @@ public abstract class CountrySpecificService {
         String country=req.getParameter("country");
         return country!=null && country.equalsIgnoreCase(getIsoCode());
     }
-
-    /**
-     *
-     * @param req
-     * @param session
-     * @return the list of attributes (with values) retrieved from the response
-     */
-    public abstract IPersonalAttributeList extractSAMLResponse(HttpServletRequest req,IEIDASSession session);
-
-    public abstract boolean isResponseReady(HttpServletRequest req,IEIDASSession session);
-
-    public abstract void performNextStep(ServletContext ctx, HttpServletRequest req,HttpServletResponse response, IEIDASSession session);
 
     public final boolean isActive(){
         return active;

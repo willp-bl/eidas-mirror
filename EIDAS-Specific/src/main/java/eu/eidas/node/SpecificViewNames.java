@@ -6,11 +6,11 @@ public enum SpecificViewNames {
 
     IDP_RESPONSE("/IdpResponse"),
 
-    EXTERNAL_SIG_MODULE_REDIRECT("/sigCreatorModuleRedirect.jsp"),
+    EXTERNAL_SIG_MODULE_REDIRECT("/internal/sigCreatorModuleRedirect.jsp"),
 
-    IDP_REDIRECT("/idpRedirect.jsp"),
+    IDP_REDIRECT("/internal/idpRedirect.jsp"),
 
-    COLLEAGUE_RESPONSE_REDIRECT("/colleagueResponseRedirect.jsp"),
+    COLLEAGUE_RESPONSE_REDIRECT("/internal/colleagueResponseRedirect.jsp"),
 
     //
     ;
@@ -26,8 +26,8 @@ public enum SpecificViewNames {
      *
      * @param name name of the bean
      */
-    SpecificViewNames(@Nonnull String name) {
-        this.name = name;
+    SpecificViewNames(@Nonnull String nameValue) {
+        name = nameValue;
     }
 
     @Nonnull

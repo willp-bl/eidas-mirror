@@ -45,6 +45,11 @@ public class MetadataConfigParams {
     static final String SP_ID_PREFIX="SP";
     static final String IDP_ID_PREFIX="IDP";
     static final String DEFAULT_LANG="en";
+
+    public static final String CONNECTOR_ORG_NAME = "connector.organization.name";
+    public static final String SERVICE_ORG_NAME = "service.organization.name";
+    public static final String ORG_NAME = "organization.name";
+
     /**
      * 24 hours in seconds
      */
@@ -81,6 +86,7 @@ public class MetadataConfigParams {
     long validityDuration=ONE_DAY_DURATION;
     Contact supportContact;
     Contact technicalContact;
+    String OrganizationName;
 
     public boolean isWantAssertionsSigned() {
         return wantAssertionsSigned;
@@ -314,5 +320,13 @@ public class MetadataConfigParams {
 
     public void setTechnicalContact(Contact technicalContact) {
         this.technicalContact = technicalContact;
+    }
+
+    public String getOrganizationName() {
+        return OrganizationName;
+    }
+
+    public void setOrganizationName(String organizationName) {
+        OrganizationName = organizationName;
     }
 }

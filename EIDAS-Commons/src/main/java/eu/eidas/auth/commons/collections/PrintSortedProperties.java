@@ -15,7 +15,6 @@ package eu.eidas.auth.commons.collections;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.Properties;
@@ -23,8 +22,6 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeMap;
-
-import javax.annotation.Nullable;
 
 /**
  * Sorted Properties for printing.
@@ -43,18 +40,6 @@ import javax.annotation.Nullable;
 public final class PrintSortedProperties extends Properties {
 
     private static final long serialVersionUID = 4651455163913124179L;
-
-    @Nullable
-    private final Comparator<Object> comparator;
-
-    public PrintSortedProperties() {
-        this(null);
-    }
-
-    public PrintSortedProperties(@Nullable Comparator<String> comparator) {
-        //noinspection unchecked,rawtypes
-        this.comparator = (Comparator) comparator;
-    }
 
     @Override
     public synchronized Enumeration<Object> elements() {
@@ -78,15 +63,10 @@ public final class PrintSortedProperties extends Properties {
 
     private synchronized SortedMap<Object, Object> unmodifiableSortedMap() {
         TreeMap<Object, Object> treeMap;
-        if (null == comparator) {
-            treeMap = new TreeMap<Object, Object>();
-        } else {
-            treeMap = new TreeMap<Object, Object>(comparator);
-        }
+        treeMap = new TreeMap<Object, Object>();
         for (Map.Entry<Object, Object> e : super.entrySet()) {
             treeMap.put(e.getKey(), e.getValue());
         }
-
         return Collections.unmodifiableSortedMap(treeMap);
     }
 

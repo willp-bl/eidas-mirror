@@ -118,12 +118,12 @@ public class EidasSAMLResponseSyntaxTest {
         assertTrue("Response Conditions present", samlResponseTokenString.matches(".*<saml2:Conditions NotBefore=\".*" +
                 "\" NotOnOrAfter=\".*\">.*" +
                 "<saml2:AudienceRestriction>.*<saml2:Audience>http://localhost:7001/SP/metadata</saml2:Audience>.*" +
-                "</saml2:AudienceRestriction>.*<saml2:OneTimeUse/>.*</saml2:Conditions>.*"));
+                "</saml2:AudienceRestriction>.*</saml2:Conditions>.*"));
     }
 
     @Test
     public void checkSubjectlocality() throws Exception {
-        assertTrue("Response subjectlocality present", samlResponseTokenString.matches(".*<saml2:AuthnStatement AuthnInstant=\".*\">.*<saml2:SubjectLocality Address=\"111.222.333.4444\"/>.*<saml2:AuthnContext>.*<saml2:AuthnContextDecl/>.*</saml2:AuthnContext>.*</saml2:AuthnStatement>.*"));
+        assertTrue("Response subjectlocality present", samlResponseTokenString.matches(".*<saml2:AuthnStatement AuthnInstant=\".*\">.*<saml2:AuthnContext>.*<saml2:AuthnContextDecl/>.*</saml2:AuthnContext>.*</saml2:AuthnStatement>.*"));
     }
 
     @Test

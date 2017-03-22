@@ -90,7 +90,7 @@ public abstract class AbstractParameterValidator<V extends AbstractParameterVali
         // Checking if the parameter size exists and if it's numeric
         if (StringUtils.isNumeric(paramSizeStr)) {
             final int maxParamSize = Integer.parseInt(paramSizeStr);
-            if (StringUtils.isEmpty(paramValue) || (paramValue.length() > maxParamSize)) {
+            if (paramValue == null || StringUtils.isEmpty(paramValue) || (paramValue.length() > maxParamSize)) {
                 LOG.info("ERROR : Invalid parameter [" + paramName + "] value " + paramValue);
                 return false;
             }

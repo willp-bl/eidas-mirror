@@ -67,7 +67,6 @@ public class EIDASAuthnRequestTest {
     private static final String LEVEL_OF_ASSURANCE = "http://eidas.europa.eu/LoA/low";
     private static final String MESSAGE_FORMAT_NAME = "eidas1";
 
-
     private static final AttributeDefinition<String> CURRENT_FAMILY_NAME =
             new AttributeDefinition.Builder<String>().nameUri("http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName")
                     .friendlyName("FamilyName")
@@ -225,7 +224,7 @@ public class EIDASAuthnRequestTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testValidationOnBuildForMissingIssuer() {
-        IAuthenticationRequest eidasAuthenticationRequest = new EidasAuthenticationRequest.Builder()
+        new EidasAuthenticationRequest.Builder()
                 .id(SAMLID)
                 .destination(DESTINATION)
                 .citizenCountryCode(CITIZEN_COUNTRY)
@@ -235,7 +234,7 @@ public class EIDASAuthnRequestTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testValidationOnBuildForMissingDestination() {
-        IAuthenticationRequest eidasAuthenticationRequest = new EidasAuthenticationRequest.Builder()
+        new EidasAuthenticationRequest.Builder()
                 .id(SAMLID)
                 .issuer(ISSUER)
                 .citizenCountryCode(CITIZEN_COUNTRY)
