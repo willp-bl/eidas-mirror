@@ -21,6 +21,7 @@ import eu.eidas.auth.engine.configuration.ProtocolEngineConfiguration;
 import eu.eidas.auth.engine.configuration.SamlEngineConfigurationException;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineRuntimeException;
 import eu.eidas.util.Preconditions;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Reloadable ConfigurationMap.
@@ -30,12 +31,13 @@ import eu.eidas.util.Preconditions;
 public final class ReloadableProtocolConfigurationMap {
 
     static ImmutableMap<String, ProtocolEngineConfiguration> unmarshalStream(@Nonnull String configurationFileName,
+                                                                             @Nullable String defaultPath,
                                                                              @Nonnull InputStream input,
                                                                              @Nullable String overrideFileName)
             throws IOException {
         try {
             InstanceMap instanceMap = DOMConfigurationParser.parseConfiguration(configurationFileName, input);
-            return DOMConfigurator.getProtocolConfigurationMap(instanceMap, overrideFileName);
+            return DOMConfigurator.getProtocolConfigurationMap(instanceMap, defaultPath, overrideFileName);
         } catch (SamlEngineConfigurationException e) {
             throw new IOException(e);
         }
@@ -44,19 +46,16 @@ public final class ReloadableProtocolConfigurationMap {
     @Nonnull
     private final SingletonAccessor<ImmutableMap<String, ProtocolEngineConfiguration>> accessor;
 
-    public ReloadableProtocolConfigurationMap(@Nonnull final String configurationFileName) {
-        this(configurationFileName, null);
-    }
-
     /**
      * @since 1.1
      */
     public ReloadableProtocolConfigurationMap(@Nonnull final String configurationFileName,
-                                              @Nullable final String overrideFileName) {
+                                              @Nullable final String overrideFileName,
+                                              @Nullable final String defaultPath) {
         Preconditions.checkNotNull(configurationFileName, "configurationFileName");
 
         SingletonAccessor<ImmutableMap<String, ProtocolEngineConfiguration>> fileAccessor =
-                SingletonAccessors.newFileAccessor(configurationFileName,
+                SingletonAccessors.newFileAccessor(configurationFileName, defaultPath,
                                                    new FileMarshaller<ImmutableMap<String, ProtocolEngineConfiguration>>() {
 
                                                        @Override
@@ -70,10 +69,10 @@ public final class ReloadableProtocolConfigurationMap {
                                                        @Override
                                                        public ImmutableMap<String, ProtocolEngineConfiguration> unmarshal(
                                                                @Nonnull File input) throws IOException {
-                                                           return unmarshalStream(configurationFileName,
+                                                           return unmarshalStream(configurationFileName, defaultPath,
                                                                                   new BufferedInputStream(
                                                                                           new FileInputStream(input)),
-                                                                                  overrideFileName);
+                                                                   overrideFileName);
                                                        }
                                                    },
                                                    new StreamMarshaller<ImmutableMap<String, ProtocolEngineConfiguration>>() {
@@ -89,8 +88,8 @@ public final class ReloadableProtocolConfigurationMap {
                                                        @Override
                                                        public ImmutableMap<String, ProtocolEngineConfiguration> unmarshal(
                                                                @Nonnull InputStream input) throws IOException {
-                                                           return unmarshalStream(configurationFileName, input,
-                                                                                  overrideFileName);
+                                                           return unmarshalStream(configurationFileName, defaultPath, input,
+                                                                   overrideFileName);
                                                        }
                                                    });
         // each interface component in the returned configuration can be cached as a reference in client code,

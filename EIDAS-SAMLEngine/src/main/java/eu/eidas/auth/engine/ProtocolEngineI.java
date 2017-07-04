@@ -92,14 +92,16 @@ public interface ProtocolEngineI {
     @Nonnull
     IAuthenticationResponse unmarshallResponseAndValidate(@Nonnull byte[] responseBytes,
                                                           @Nonnull String userIpAddress,
-                                                          long skewTimeInMillis,
+                                                          long beforeSkewTimeInMillis,
+                                                          long afterSkewTimeInMillis,
                                                           @Nullable String audienceRestriction)
             throws EIDASSAMLEngineException;
 
     @Nonnull
     IAuthenticationResponse validateUnmarshalledResponse(@Nonnull Correlated unmarshalledResponse,
                                                          @Nonnull String userIpAddress,
-                                                         long skewTimeInMillis,
+                                                         long beforeSkewTimeInMillis,
+                                                         long afterSkewTimeInMillis,
                                                          @Nullable String audienceRestriction)
             throws EIDASSAMLEngineException;
 }

@@ -97,7 +97,7 @@ public class SyntaxTestUtil {
         try {
             engine = ProtocolEngineFactory.createProtocolEngine(conf, new EidasProtocolProcessor(
                     "saml-engine-eidas-attributes-" + conf + ".xml",
-                    "saml-engine-additional-attributes-" + conf + ".xml", null, null));
+                    "saml-engine-additional-attributes-" + conf + ".xml", null, null, null));
 
             //engine.setSignerProperty(SAMLEngineSignI.SIGNATURE_ALGORITHM, "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256");
 
@@ -108,7 +108,7 @@ public class SyntaxTestUtil {
     }
 
     public static byte[] createSAMLRequestToken() throws EIDASSAMLEngineException {
-        IAuthenticationRequest request =
+        EidasAuthenticationRequest.Builder builder =
                 new EidasAuthenticationRequest.Builder().id("f5e7e0f5-b9b8-4256-a7d0-4090141b326d")
                         .issuer("http://localhost:7001/SP/metadata")
                         .destination("http://proxyservice.gov.xx/EidasNode/ColleagueRequest")
@@ -118,8 +118,8 @@ public class SyntaxTestUtil {
                         .citizenCountryCode("BE")
                         .spType("public")
                         .levelOfAssurance(LevelOfAssurance.LOW.stringValue())
-                        .nameIdFormat(SamlNameIdFormat.TRANSIENT.getNameIdFormat())
-                        .build();
+                        .nameIdFormat(SamlNameIdFormat.TRANSIENT.getNameIdFormat());
+        IAuthenticationRequest request = builder.build();
 
         return getEngine(SAMLENGINE_CONF).generateRequestMessage(request, null).getMessageBytes();
     }

@@ -5,7 +5,8 @@
 
     <bean id="SpecificSamlEngineConfigurationFactory" class="eu.eidas.auth.engine.configuration.dom.ProtocolEngineConfigurationFactory" scope="singleton">
    		<constructor-arg value="SpecificSamlEngine.xml"/>
-   		<constructor-arg value="#{specificConfigFilePath}"/>
+   		<constructor-arg value="#{specificConfigFile}"/>
+        <constructor-arg value="#{eidasSpecificConfigRepository}"/>
    	</bean>
 
    	<bean id="SpecificProtocolEngineFactory" class="eu.eidas.auth.engine.ProtocolEngineFactory" scope="singleton">
@@ -115,5 +116,26 @@
         <property name="signResponseAssertion" value="true"/>
         <property name="specificConnectorBean" ref="springManagedSpecificConnectorBean"/>
     </bean>
+
+    <!-- Metadata providers -->
+    <bean id="connectorMetadataGeneratorIDP" class="eu.eidas.node.utils.EidasNodeMetadataGenerator">
+        <property name="samlConnectorIDP" value="${saml.sp:SP-Specific}"/>
+        <property name="connectorMetadataUrl" value="${connector.responder.metadata.url}"/>
+        <property name="nodeProtocolEngineFactory" ref="SpecificProtocolEngineFactory" />
+        <property name="nodeProps" ref="nodeProps" />
+        <property name="validityDuration" value="${metadata.validity.duration:86400}" />
+        <property name="singleSignOnServiceRedirectLocation" value="${ssos.connectorMetadataGeneratorIDP.redirect.location}" />
+        <property name="singleSignOnServicePostLocation" value="${ssos.connectorMetadataGeneratorIDP.post.location}"  />
+    </bean>
+    <bean id="serviceMetadataGeneratorSP" class="eu.eidas.node.utils.EidasNodeMetadataGenerator">
+        <property name="samlServiceSP" value="${saml.idp:Specific-IdP}"/>
+        <property name="serviceMetadataUrl" value="${service.requester.metadata.url}"/>
+        <property name="nodeProtocolEngineFactory" ref="SpecificProtocolEngineFactory" />
+        <property name="nodeProps" ref="nodeProps" />
+        <property name="validityDuration" value="${metadata.validity.duration:86400}" />
+        <property name="assertionUrl" value="${service.specificidpredirect.url:missingConnectorAssertionUrl}" />
+    </bean>
+
+
 
 </beans>

@@ -102,9 +102,6 @@ public final class EidasExtensionConfiguration {
 //                    new GenericEidasAttributeTypeUnmarshaller());
 //
 //        }
-
-        EIDASUtil.loadUtilConfigs();
-
     }
 
     /**
@@ -155,9 +152,6 @@ public final class EidasExtensionConfiguration {
 //                    new GenericEidasAttributeTypeUnmarshaller());
 //
 //        }
-
-        EIDASUtil.loadUtilConfigs();
-
     }
 
     private EidasExtensionConfiguration() {

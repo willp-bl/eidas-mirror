@@ -206,6 +206,15 @@ function init(){
 		document.getElementById("check_all_NoRequestEidas").addEventListener("click",  function() {
 			checkAll("NoRequest");
 		});
+		document.getElementById("check_all_MandatoryRepvEidas").addEventListener("click", function() {
+			checkAll("MandatoryRepv");
+		});
+		document.getElementById("check_all_OptionalRepvEidas").addEventListener("click",  function() {
+			checkAll("OptionalRepv");
+		});
+		document.getElementById("check_all_NoRequestRepvEidas").addEventListener("click",  function() {
+			checkAll("NoRequestRepv");
+		});
 	}
 
 	if(document.getElementById("connector2")!=null){
@@ -245,6 +254,14 @@ function init(){
         $(this).toggleClass("expanded");
         $("#tab2_toggle2_content").slideToggle();
     });
+	$("#tab2_toggle3").on("click", function(e){
+		$(this).toggleClass("expanded");
+		$("#tab2_toggle3_content").slideToggle();
+	});
+	$("#tab2_toggle4").on("click", function(e){
+		$(this).toggleClass("expanded");
+		$("#tab2_toggle4_content").slideToggle();
+	});
     $("#tab3_toggle1").on("click", function(e){
         $(this).toggleClass("expanded");
         $("#tab3_toggle1_content").slideToggle();

@@ -81,7 +81,7 @@ public class AUSERVICESAMLTestCertif {
         CONFIGS.setProperty(EidasErrorKey.COLLEAGUE_REQ_INVALID_QAA.errorCode(), "202004");
         CONFIGS.setProperty(EidasErrorKey.COLLEAGUE_REQ_INVALID_QAA.errorMessage(), "invalid.requested.service.qaalevel");
 
-        EIDASUtil.createInstance(CONFIGS);
+        //EIDASUtil.createInstance(CONFIGS);
 
     }
 

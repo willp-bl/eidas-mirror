@@ -38,8 +38,9 @@ public final class SpProtocolEngineFactory extends ProtocolEngineFactory {
             Exception initializationException = null;
             SpProtocolEngineFactory defaultProtocolEngineFactory = null;
             try {
+                ProtocolEngineConfigurationFactory protocolEngineConfigurationFactory = new ProtocolEngineConfigurationFactory(Constants.SP_SAMLENGINE_FILE, null, SPUtil.getConfigFilePath());
                 defaultProtocolEngineFactory =
-                        new SpProtocolEngineFactory(DefaultProtocolEngineConfigurationFactory.getInstance());
+                        new SpProtocolEngineFactory(protocolEngineConfigurationFactory);
             } catch (Exception ex) {
                 initializationException = ex;
                 LOG.error("Unable to instantiate default SAML engines: " + ex, ex);

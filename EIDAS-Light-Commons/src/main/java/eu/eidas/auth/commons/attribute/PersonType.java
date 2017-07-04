@@ -36,8 +36,9 @@ import eu.eidas.auth.commons.lang.KeyAccessor;
 public enum PersonType {
 
     NATURAL_PERSON("NaturalPerson"),
-
-    LEGAL_PERSON("LegalPerson");
+    LEGAL_PERSON("LegalPerson"),
+    REPV_NATURAL_PERSON("RepresentativeNaturalPerson"),
+    REPV_LEGAL_PERSON("RepresentativeLegalPerson");
 
     private static final EnumMapper<String, PersonType> MAPPER =
             new EnumMapper<String, PersonType>(new KeyAccessor<String, PersonType>() {

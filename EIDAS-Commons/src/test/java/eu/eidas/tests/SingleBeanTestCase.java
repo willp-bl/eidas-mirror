@@ -52,6 +52,7 @@ public class SingleBeanTestCase {
         Assert.assertEquals(EIDASValues.ATTRIBUTE.value(1), EIDASValues.ATTRIBUTE.toString() + "1.value");
         Assert.assertEquals(EIDASValues.ATTRIBUTE.name(1), EIDASValues.ATTRIBUTE.toString() + "1.name");
         Assert.assertEquals(EIDASValues.ATTRIBUTE.url(1), EIDASValues.ATTRIBUTE.toString() + "1.url");
-        Assert.assertEquals(EIDASValues.ATTRIBUTE.skew(1), EIDASValues.ATTRIBUTE.toString() + "1.skew");
+        Assert.assertEquals(EIDASValues.ATTRIBUTE.beforeSkew(1), EIDASValues.ATTRIBUTE.toString() + "1.skew.notbefore");
+        Assert.assertEquals(EIDASValues.ATTRIBUTE.afterSkew(1), EIDASValues.ATTRIBUTE.toString() + "1.skew.notonorafter");
     }
 }

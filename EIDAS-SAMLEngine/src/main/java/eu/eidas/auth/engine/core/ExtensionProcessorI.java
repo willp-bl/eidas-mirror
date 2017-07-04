@@ -137,7 +137,8 @@ public interface ExtensionProcessorI {
     IAuthenticationResponse unmarshallResponse(@Nonnull Response response,
                                                boolean verifyBearerIpAddress,
                                                @Nullable String userIpAddress,
-                                               long skewTimeInMillis,
+                                               long beforeSkewTimeInMillis,
+                                               long afterSkewTimeInMillis,
                                                @Nonnull DateTime now,
                                                @Nullable String audienceRestriction) throws EIDASSAMLEngineException;
 

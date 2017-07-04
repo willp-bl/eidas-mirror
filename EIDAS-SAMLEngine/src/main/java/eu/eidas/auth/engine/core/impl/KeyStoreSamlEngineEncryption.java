@@ -35,8 +35,8 @@ public abstract class KeyStoreSamlEngineEncryption extends AbstractSamlEngineEnc
 
     private final X509Certificate decryptionCertificate;
 
-    protected KeyStoreSamlEngineEncryption(Map<String, String> properties) throws SamlEngineConfigurationException {
-        super(new KeyStoreEncryptionConfigurator().getEncryptionConfiguration(properties));
+    protected KeyStoreSamlEngineEncryption(Map<String, String> properties, String defaultPath) throws SamlEngineConfigurationException {
+        super(new KeyStoreEncryptionConfigurator().getEncryptionConfiguration(properties, defaultPath));
         String serialNumber = EncryptionKey.SERIAL_NUMBER.getAsString(properties);
         String issuer = EncryptionKey.RESPONSE_DECRYPTION_ISSUER.getAsString(properties);
         decryptionCertificate =

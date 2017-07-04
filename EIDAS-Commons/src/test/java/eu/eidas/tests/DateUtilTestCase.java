@@ -16,6 +16,7 @@ package eu.eidas.tests;
 import java.sql.Timestamp;
 import java.util.Properties;
 
+import eu.eidas.auth.commons.EidasParameters;
 import org.joda.time.DateTime;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -61,7 +62,7 @@ public final class DateUtilTestCase {
    */
   @BeforeClass
   public static void runsBeforeTheTestSuite() {
-    final Properties configs = new Properties();
+    /*final Properties configs = new Properties();
     configs.setProperty("invalidAgeDateValue.code", "35");
     configs.setProperty("invalidAttributeValue.code", "34");
     configs
@@ -69,7 +70,7 @@ public final class DateUtilTestCase {
         "invalidAttributeValue.message",
         "Unexpected or invalid content was encountered within a "
         + "<saml:Attribute> or <saml:AttributeValue> element.");
-    EIDASUtil.createInstance(configs);
+    EIDASUtil.createInstance(configs);*/
   }
 
   /**

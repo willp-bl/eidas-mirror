@@ -16,6 +16,7 @@ import java.net.URI;
 import java.util.Map;
 import java.util.Properties;
 
+import eu.eidas.auth.commons.attribute.PersonType;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -198,10 +199,11 @@ public final class SpecificEidasService implements IAUService {
         String serviceProviderName = (String) parameters.get(EidasParameterKeys.SERVICE_PROVIDER_NAME.toString());
         String eidasLoa = (String) parameters.get(EidasParameterKeys.EIDAS_SERVICE_LOA.toString());
         String eidasNameidFormat = (String) parameters.get(EidasParameterKeys.EIDAS_NAMEID_FORMAT.toString());
+        String serviceProviderType = (String) parameters.get(EidasParameterKeys.SERVICE_PROVIDER_TYPE.toString());
 
         return generateAuthenticationRequest(lightRequest, modifiedRequestedAttributes, destination,
                 eidasLoa, eidasNameidFormat, citizenCountryCode, citizenIpAddress,
-                serviceProviderName);
+                serviceProviderName, serviceProviderType);
     }
 
     /**
@@ -236,7 +238,7 @@ public final class SpecificEidasService implements IAUService {
 
             IAuthenticationResponse authenticationResponse =
                     protocolEngine.validateUnmarshalledResponse(idpSamlResponse, specificRequest.getRemoteIpAddress(),
-                            0, null);// Skew time from IDP is set to 0
+                            0, 0, null);// Skew time from IDP is set to 0
             validateSpecificResponse(authenticationResponse, specificRequest);
 
             return new AuthenticationExchange(specificRequest, authenticationResponse);
@@ -322,7 +324,9 @@ public final class SpecificEidasService implements IAUService {
                 specificProps.getEidasParameterValue(EidasParameterKeys.DERIVE_ATTRIBUTE_NUMBER.toString()));
 
         for (final AttributeDefinition<?> attributeDefinition : modified.getDefinitions()) {
-            if (!(original.getDefinitions().contains(attributeDefinition))) {
+            if (!(original.getDefinitions().contains(attributeDefinition))
+                    && !PersonType.REPV_LEGAL_PERSON.equals(attributeDefinition.getPersonType())
+                    && !PersonType.REPV_NATURAL_PERSON.equals(attributeDefinition.getPersonType())) {
                 if (haveExpectedName(original, attributeDefinition.getNameUri(), nNames)) {
                     LOG.info("ERROR : Element is not present on original list: " + attributeDefinition.getNameUri());
                     return false;
@@ -347,7 +351,8 @@ public final class SpecificEidasService implements IAUService {
                                                  String eidasNameidFormat,
                                                  String citizenCountryCode,
                                                  String citizenIpAddress,
-                                                 String serviceProviderName) {
+                                                 String serviceProviderName,
+                                                 String serviceProviderType) {
         try {
             EidasAuthenticationRequest.Builder builder = EidasAuthenticationRequest.builder();
 
@@ -359,6 +364,7 @@ public final class SpecificEidasService implements IAUService {
                 builder.issuer(getServiceRequesterMetadataUrl());
             }
             builder.serviceProviderCountryCode(NOT_AVAILABLE_COUNTRY);
+            builder.spType(serviceProviderType);
             builder.destination(destination);
             builder.providerName(serviceProviderName);
             builder.requestedAttributes(modifiedRequestedAttributes);

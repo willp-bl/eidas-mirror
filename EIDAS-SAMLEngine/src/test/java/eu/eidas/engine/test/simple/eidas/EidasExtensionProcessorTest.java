@@ -1,5 +1,7 @@
 package eu.eidas.engine.test.simple.eidas;
 
+import eu.eidas.auth.commons.attribute.AttributeRegistries;
+import eu.eidas.auth.engine.core.eidas.spec.EidasSpec;
 import org.junit.Test;
 
 import eu.eidas.auth.commons.attribute.AttributeDefinition;
@@ -18,7 +20,7 @@ public class EidasExtensionProcessorTest {
     @Test
     public void testGetDynamicAtributeType() throws Exception {
         EidasExtensionProcessor eidasExtensionProcessor =
-                new EidasExtensionProcessor("saml-engine-additional-attributes-TEMPLATE.xml", null, null);
+                new EidasExtensionProcessor(EidasSpec.REGISTRY, AttributeRegistries.fromFile("saml-engine-additional-attributes-TEMPLATE.xml", null), null, null);
         AttributeDefinition attributeDefinition =
                 eidasExtensionProcessor.getAdditionalAttributes().getByName(TEST_ATTRIBUTE_FULL_NAME);
         assertNotNull(attributeDefinition);

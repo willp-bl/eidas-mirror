@@ -86,6 +86,32 @@
 									</c:forEach>
 									<c:if test="${categoryIsDisplayed=='true'}"></ul></c:if>
 								</div>
+								<div class="col-sm-6"> <% /** Representative person */ %>
+									<c:set var="categoryIsDisplayed" value="false"/>
+									<c:forEach items="${pal}" var="palItemVar">
+									<c:set var="personType" value="${palItemVar.key.personType}" />
+									<c:set var="friendlyName" value="${palItemVar.key.friendlyName}" />
+									<c:set var="attrValue" value="${palItemVar.value}" />
+									<c:if test="${!fn:startsWith(fn:toLowerCase(displayAttr), 'false') && fn:startsWith(fn:toLowerCase(personType), 'repv')}">
+									<c:if test="${categoryIsDisplayed=='false'}">
+									<h3><fmt:message key="citizenConsent.representative" bundle="${i18n_eng}"/>
+										<span><fmt:message key="citizenConsent.person" bundle="${i18n_eng}"/></span>
+									</h3>
+									<c:set var="categoryIsDisplayed" value="true"/>
+									<ul class="resume list-unstyled">
+										</c:if>
+										<li>
+											<fmt:message key="${fn:replace(friendlyName,'Representative','')}" bundle="${i18n_eng}"/>
+											<strong>
+												<c:forEach items="${attrValue}" var="aVal">
+													${e:forHtml(aVal)}
+												</c:forEach>
+											</strong>
+										</li>
+										</c:if>
+										</c:forEach>
+										<c:if test="${categoryIsDisplayed=='true'}"></ul></c:if>
+								</div>
 							</c:if>
 						</div>
 						<input type="hidden" id="SAMLResponse" name="SAMLResponse" value="${e:forHtml(samlToken)}"/>

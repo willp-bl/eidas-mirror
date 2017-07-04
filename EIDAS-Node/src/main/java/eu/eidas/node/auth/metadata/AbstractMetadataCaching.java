@@ -17,27 +17,36 @@ import java.util.Map;
 
 import javax.annotation.Nonnull;
 
-import eu.eidas.auth.engine.metadata.EntityDescriptorType;
-import eu.eidas.auth.engine.metadata.IMetadataCachingService;
+import eu.eidas.auth.engine.metadata.*;
+import eu.eidas.encryption.exception.UnmarshallException;
+import eu.eidas.engine.exceptions.EIDASMetadataProviderException;
 import org.opensaml.saml2.metadata.EntityDescriptor;
 import org.opensaml.xml.XMLObject;
 import org.opensaml.xml.signature.SignableXMLObject;
 
 import eu.eidas.auth.commons.EidasStringUtil;
 import eu.eidas.auth.commons.xml.opensaml.OpenSamlHelper;
-import eu.eidas.auth.engine.metadata.EntityDescriptorContainer;
-import eu.eidas.auth.engine.metadata.MetadataGenerator;
 import eu.eidas.encryption.exception.MarshallException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class AbstractMetadataCaching implements IMetadataCachingService {
     private static final String SIGNATURE_HOLDER_ID_PREFIX="signatureholder";
 
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractMetadataCaching.class);
+
     @Override
-    public final EntityDescriptor getDescriptor(String url) {
+    public final EntityDescriptor getDescriptor(String url) throws EIDASMetadataProviderException {
         if(getMap()!=null){
             SerializedEntityDescriptor content=getMap().get(url);
             if(content!=null && !content.getSerializedEntityDescriptor().isEmpty()) {
-                return deserializeEntityDescriptor(content.getSerializedEntityDescriptor());
+                try {
+                    return deserializeEntityDescriptor(content.getSerializedEntityDescriptor());
+                } catch (UnmarshallException e) {
+                    LOG.error("Unable to deserialize metadata entity descriptor from cache for "+url);
+                    LOG.error(e.getStackTrace().toString());
+                    throw new EIDASMetadataProviderException(e.getMessage());
+                }
             }
         }
         return null;
@@ -75,25 +84,13 @@ public abstract class AbstractMetadataCaching implements IMetadataCachingService
         }
     }
 
-    private EntityDescriptor deserializeEntityDescriptor(String content){
-    	EntityDescriptorContainer container = MetadataGenerator.deserializeEntityDescriptor(content);
+    private EntityDescriptor deserializeEntityDescriptor(String content) throws UnmarshallException {
+    	EntityDescriptorContainer container = MetadataUtil.deserializeEntityDescriptor(content);
         return container.getEntityDescriptors().isEmpty()?null:container.getEntityDescriptors().get(0);
     }
 
     protected abstract Map<String, SerializedEntityDescriptor> getMap();
 
-    @Override
-    public SignableXMLObject getDescriptorSignatureHolder(@Nonnull String url){
-    	SerializedEntityDescriptor sed = getMap().get(SIGNATURE_HOLDER_ID_PREFIX+url);
-    	if(sed!=null){
-    		EntityDescriptorContainer edc;
-   			edc = MetadataGenerator.deserializeEntityDescriptor(sed.getSerializedEntityDescriptor());
-    		if(edc.getEntitiesDescriptor()!=null){
-    			return edc.getEntitiesDescriptor();
-    		}
-    	}
-    	return getDescriptor(url);
-    }
     @Override
 	public void putDescriptorSignatureHolder(String url, SignableXMLObject container){
     	getMap().put(SIGNATURE_HOLDER_ID_PREFIX+url, new SerializedEntityDescriptor(serializeEntityDescriptor(container), EntityDescriptorType.NONE));

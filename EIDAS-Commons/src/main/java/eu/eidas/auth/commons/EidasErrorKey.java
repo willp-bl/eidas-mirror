@@ -299,6 +299,7 @@ public enum EidasErrorKey {
     SAML_ENGINE_UNENCRYPTED_RESPONSE("samlengine.unencrypted.response"),
     SAML_ENGINE_DECRYPTING_RESPONSE("samlengine.decrypting.response"),
     EIDAS_MANDATORY_ATTRIBUTES("missing.mandatory.attribute"),
+    EIDAS_REPRESENTATIVE_ATTRIBUTES("request.representative.attribute"),
     SAML_ENGINE_INVALID_METADATA_SOURCE("samlengine.invalid.metadata.source.error", false),
     SAML_ENGINE_NO_METADATA("samlengine.metadata.retrieval.error", true),
     /**

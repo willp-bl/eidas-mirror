@@ -23,6 +23,7 @@
 package eu.eidas.idp.metadata;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
@@ -35,8 +36,9 @@ import com.opensymphony.xwork2.ActionSupport;
 import eu.eidas.auth.commons.EidasErrorKey;
 import eu.eidas.auth.engine.configuration.dom.EncryptionKey;
 import eu.eidas.auth.engine.configuration.dom.SignatureKey;
-import eu.eidas.auth.engine.metadata.Contact;
+import eu.eidas.auth.engine.metadata.MetadataUtil;
 import eu.eidas.idp.Constants;
+import eu.eidas.idp.IDPUtil;
 import org.apache.struts2.interceptor.ServletRequestAware;
 import org.apache.struts2.interceptor.ServletResponseAware;
 import org.opensaml.common.xml.SAMLConstants;
@@ -49,7 +51,7 @@ import eu.eidas.auth.commons.exceptions.EIDASServiceException;
 import eu.eidas.auth.engine.ProtocolEngineFactory;
 import eu.eidas.auth.engine.ProtocolEngineI;
 import eu.eidas.auth.engine.metadata.MetadataConfigParams;
-import eu.eidas.auth.engine.metadata.MetadataGenerator;
+import eu.eidas.auth.engine.metadata.EidasMetadata;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 
 /**
@@ -65,27 +67,31 @@ public class GenerateMetadataAction extends ActionSupport implements ServletRequ
 
         private static final String INVALID_METADATA = "invalid metadata";
         private static final String ERROR_GENERATING_METADATA = "error generating metadata {}";
-        Properties configs = EIDASUtil.loadConfigs(Constants.IDP_PROPERTIES);
+        Properties configs;
 
-        public String generateMetadata(){
+    public GenerateMetadataAction() throws IOException {
+        configs = IDPUtil.loadConfigs(Constants.IDP_PROPERTIES);
+    }
+
+    public String generateMetadata(){
 		String metadata=INVALID_METADATA;
 		try {
-			ProtocolEngineI engine = ProtocolEngineFactory.getDefaultProtocolEngine(Constants.SAMLENGINE_NAME);
-			MetadataGenerator generator = new MetadataGenerator();
-			MetadataConfigParams mcp=new MetadataConfigParams();
-			generator.setConfigParams(mcp);
-			generator.initialize(engine);
-			mcp.setEntityID(configs.getProperty(Constants.IDP_METADATA_URL));
-                        putSSOSBindingLocation(mcp, SAMLConstants.SAML2_REDIRECT_BINDING_URI, Constants.SSOS_REDIRECT_LOCATION_URL);
-                        putSSOSBindingLocation(mcp, SAMLConstants.SAML2_POST_BINDING_URI, Constants.SSOS_POST_LOCATION_URL);
-			generator.addIDPRole();
-            mcp.setTechnicalContact(getTechnicalContact(generator.getContactStrings()));
-            mcp.setSupportContact(getSupportContact(generator.getContactStrings()));
-            mcp.setSigningMethods(configs == null ? null : configs.getProperty(SignatureKey.SIGNATURE_ALGORITHM_WHITE_LIST.getKey()));
-            mcp.setDigestMethods(configs == null ? null : configs.getProperty(SignatureKey.SIGNATURE_ALGORITHM_WHITE_LIST.getKey()));
-            mcp.setEncryptionAlgorithms(configs == null ? null : configs.getProperty(EncryptionKey.ENCRYPTION_ALGORITHM_WHITE_LIST.getKey()));
-            mcp.setOrganizationName(configs == null ? null : configs.getProperty(MetadataConfigParams.ORG_NAME));
-			metadata = generator.generateMetadata();
+			ProtocolEngineI engine = IDPUtil.getProtocolEngine();
+			EidasMetadata.Generator generator = EidasMetadata.generator();
+			MetadataConfigParams.Builder mcp = MetadataConfigParams.builder();
+            mcp.idpEngine(engine);
+			mcp.entityID(configs.getProperty(Constants.IDP_METADATA_URL));
+            putSSOSBindingLocation(mcp, SAMLConstants.SAML2_REDIRECT_BINDING_URI, Constants.SSOS_REDIRECT_LOCATION_URL);
+            putSSOSBindingLocation(mcp, SAMLConstants.SAML2_POST_BINDING_URI, Constants.SSOS_POST_LOCATION_URL);
+            mcp.technicalContact(MetadataUtil.createTechnicalContact(configs));
+            mcp.supportContact(MetadataUtil.createSupportContact(configs));
+            mcp.organization(MetadataUtil.createOrganization(configs));
+            mcp.signingMethods(configs == null ? null : configs.getProperty(SignatureKey.SIGNATURE_ALGORITHM_WHITE_LIST.getKey()));
+            mcp.digestMethods(configs == null ? null : configs.getProperty(SignatureKey.SIGNATURE_ALGORITHM_WHITE_LIST.getKey()));
+            mcp.encryptionAlgorithms(configs == null ? null : configs.getProperty(EncryptionKey.ENCRYPTION_ALGORITHM_WHITE_LIST.getKey()));
+            generator.configParams(mcp.build());
+            EidasMetadata eidasMetadata = generator.build();
+			metadata = eidasMetadata.getMetadata();
 		} catch(EIDASSAMLEngineException see){
 			logger.error(ERROR_GENERATING_METADATA, see);
 		}
@@ -93,9 +99,9 @@ public class GenerateMetadataAction extends ActionSupport implements ServletRequ
 		return Action.SUCCESS;
 	}
 
-        private void putSSOSBindingLocation(MetadataConfigParams mcp,final String binding, final String locationKey){
+        private void putSSOSBindingLocation(MetadataConfigParams.Builder mcp, final String binding, final String locationKey){
             if (isValidSSOSBindingLocation(configs.getProperty(locationKey))) {
-                mcp.getProtocolBindingLocation().put(binding, configs.getProperty(locationKey));
+                mcp.addProtocolBindingLocation(binding, configs.getProperty(locationKey));
             } else {
                 String msg = String.format("BUSINESS EXCEPTION : Missing property %3$s for binding %1$s at %2$s", binding, configs.getProperty(Constants.IDP_METADATA_URL), locationKey);
                 logger.error(msg);
@@ -121,30 +127,12 @@ public class GenerateMetadataAction extends ActionSupport implements ServletRequ
 	public void setServletResponse(HttpServletResponse response) {
         }
 
-        public InputStream getInputStream(){
+    public InputStream getInputStream(){
             return dataStream;
         }
 
 	public void setInputStream(InputStream inputStream){
             dataStream=inputStream;
         }
-
-    private Contact getTechnicalContact(String[][] source){
-        return createContact(source[0]);
-    }
-    private Contact getSupportContact(String[][] source){
-        return createContact(source[1]);
-    }
-
-    private Contact createContact(String[] propsNames){
-        Contact contact=new Contact();
-        contact.setCompany(propsNames!=null && propsNames.length>0 &&configs!=null?configs.getProperty(propsNames[0]):null);
-        contact.setEmail(propsNames!=null && propsNames.length>1 &&configs!=null?configs.getProperty(propsNames[1]):null);
-        contact.setGivenName(propsNames!=null && propsNames.length>2 &&configs!=null?configs.getProperty(propsNames[2]):null);
-        contact.setSurName(propsNames!=null && propsNames.length>3 &&configs!=null?configs.getProperty(propsNames[3]):null);
-        contact.setPhone(propsNames!=null && propsNames.length>4 &&configs!=null?configs.getProperty(propsNames[4]):null);
-        return contact;
-    }
-
 
 }

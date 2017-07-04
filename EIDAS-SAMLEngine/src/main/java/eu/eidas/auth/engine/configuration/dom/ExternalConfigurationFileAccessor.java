@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
@@ -24,11 +25,12 @@ final class ExternalConfigurationFileAccessor {
     static <T> SingletonAccessor<T> newAccessor(@Nonnull final String instanceName,
                                                 @Nonnull final String configurationName,
                                                 @Nonnull String externalConfigurationFile,
+                                                @Nullable String defaultPath,
                                                 @Nonnull final ImmutableMap<String, String> staticParameters,
                                                 @Nonnull final ImmutableMap<String, String> overrideParameters,
                                                 @Nonnull final MapConverter<T> mapConverter) {
         SingletonAccessor<T> accessor =
-                SingletonAccessors.newPropertiesAccessor(externalConfigurationFile, new PropertiesConverter<T>() {
+                SingletonAccessors.newPropertiesAccessor(externalConfigurationFile, defaultPath, new PropertiesConverter<T>() {
 
                     @Nonnull
                     @Override

@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
 
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,24 +61,26 @@ public class FileService {
     }
 
     private void checkDirectory(){
-        if(validRepositoryLocation) {
+        if (validRepositoryLocation) {
             return;
         }
         checkForAlternateLocation();
-        File repository = new File(repositoryDir);
-        if(!repository.exists()){
-            LOG.info("ERROR : the directory " + repositoryDir + " does not exist");
-            return;
+        if (StringUtils.isNotBlank(repositoryDir)) {
+            File repository = new File(repositoryDir);
+            if (!repository.exists()) {
+                LOG.info("ERROR : the directory " + repositoryDir + " does not exist");
+                return;
+            }
+            if (!repository.isDirectory()) {
+                repositoryDir = repository.getPath();
+                repository = new File(repositoryDir);
+            }
+            if (!repository.isDirectory()) {
+                LOG.info("ERROR : the directory " + repositoryDir + " does not represent an existing directory");
+                return;
+            }
+            normalizeDirectory(repository);
         }
-        if(!repository.isDirectory()){
-            repositoryDir=repository.getPath();
-            repository = new File(repositoryDir);
-        }
-        if(!repository.isDirectory()){
-            LOG.info("ERROR : the directory " + repositoryDir + " does not represent an existing directory");
-            return;
-        }
-        normalizeDirectory(repository);
     }
 
     private void checkForAlternateLocation(){
@@ -293,7 +296,6 @@ public class FileService {
                 LOG.error("ERROR : IOException while closing inputstream: ", ioe.getMessage());
                 LOG.debug("ERROR : IOException while closing inputstream: ", ioe);
             }
-
         }
     }
 

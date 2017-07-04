@@ -122,7 +122,9 @@ public final class AssertionUtil {
         assertion.setConditions(conditions);
 
         LOG.trace("Generate Authentication Statement.");
-        AuthnStatement eidasAuthnStat = generateAuthStatement(ipAddress);
+        /**TODO SubjectoLocality will be added by decision made on optional elements later,
+        Address of entity is available in SubjectConfirmationData if provided */
+        AuthnStatement eidasAuthnStat = generateAuthStatement(null, null);
         assertion.getAuthnStatements().add(eidasAuthnStat);
 
         return assertion;
@@ -155,6 +157,7 @@ public final class AssertionUtil {
                 BuilderFactoryUtil.generateSubjectConfirmation(SubjectConfirmation.METHOD_BEARER, dataBearer);
 
         SubjectConfirmationData subjectConfirmationData = subjectConf.getSubjectConfirmationData();
+        /** STORK?
         if (SubjectConfirmation.METHOD_BEARER.equals(subjectConf.getMethod())) {
             // ipAddress Mandatory if method is Bearer.
 
@@ -164,6 +167,9 @@ public final class AssertionUtil {
                         EidasErrorKey.INTERNAL_ERROR.errorCode(),
                         "ipAddress is null or empty");
             }
+
+        } */
+        if (StringUtils.isNotBlank(ipAddress) && SubjectConfirmation.METHOD_BEARER.equals(subjectConf.getMethod())) {
             subjectConfirmationData.setAddress(ipAddress.trim());
         }
 
@@ -269,9 +275,13 @@ public final class AssertionUtil {
      * @param ipAddress the IP address
      * @return the authentication statement
      */
-    private static AuthnStatement generateAuthStatement(String ipAddress) throws EIDASSAMLEngineException {
+    public static AuthnStatement generateAuthStatement(String ipAddress, String dnsName) throws EIDASSAMLEngineException {
         LOG.trace("Generate authenticate statement.");
-        SubjectLocality subjectLocality = BuilderFactoryUtil.generateSubjectLocality(ipAddress);
+
+        SubjectLocality subjectLocality = null;
+        if (StringUtils.isNotBlank(ipAddress) || StringUtils.isNotBlank(dnsName)) {
+            subjectLocality = BuilderFactoryUtil.generateSubjectLocality(ipAddress, dnsName);
+        }
 
         AuthnContext authnContext = (AuthnContext) BuilderFactoryUtil.buildXmlObject(AuthnContext.DEFAULT_ELEMENT_NAME);
 
@@ -284,7 +294,9 @@ public final class AssertionUtil {
 
         // Optional
         authnStatement.setSessionIndex(null);
-        authnStatement.setSubjectLocality(subjectLocality);
+        if (subjectLocality != null) {
+            authnStatement.setSubjectLocality(subjectLocality);
+        }
 
         return authnStatement;
     }

@@ -7,6 +7,8 @@ import org.apache.commons.lang.StringUtils;
 import eu.eidas.auth.engine.configuration.SamlEngineConfigurationException;
 import eu.eidas.auth.engine.core.impl.CertificateValidator;
 
+import javax.annotation.Nullable;
+
 /**
  * KeyStore-based EncryptionConfigurator.
  *
@@ -14,7 +16,8 @@ import eu.eidas.auth.engine.core.impl.CertificateValidator;
  */
 public final class KeyStoreEncryptionConfigurator {
 
-    public EncryptionConfiguration getEncryptionConfiguration(Map<String, String> properties)
+    public EncryptionConfiguration getEncryptionConfiguration(Map<String, String> properties,
+                                                              @Nullable String defaultPath)
             throws SamlEngineConfigurationException {
         boolean checkedValidityPeriod = CertificateValidator.isCheckedValidityPeriod(properties);
         boolean disallowedSelfSignedCertificate = CertificateValidator.isDisallowedSelfSignedCertificate(properties);
@@ -32,7 +35,7 @@ public final class KeyStoreEncryptionConfigurator {
         String encryptionAlgorithmWhiteList =
                 StringUtils.trim(EncryptionKey.ENCRYPTION_ALGORITHM_WHITE_LIST.getAsString(properties));
 
-        KeyStoreContent keyStoreContent = new KeyStoreConfigurator(properties).loadKeyStoreContent();
+        KeyStoreContent keyStoreContent = new KeyStoreConfigurator(properties, defaultPath).loadKeyStoreContent();
 
         return new EncryptionConfiguration(checkedValidityPeriod, disallowedSelfSignedCertificate,
                                            responseEncryptionMandatory, keyStoreContent.getPrivateKeyEntries(),

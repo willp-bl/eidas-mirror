@@ -25,6 +25,12 @@ package eu.eidas.idp;
 public interface Constants {
 
     public static String SAMLENGINE_NAME="IdP";
+
+    public static final String IDP_SAMLENGINE_FILE = "IdPSamlEngine.xml";
+    public static final String IDP_CONFIG_REPOSITORY = "IDP_CONFIG_REPOSITORY";
+    public static final String IDP_REPO_BEAN_NAME = "idpConfigRepository";
+
+
     public static String IDP_PROPERTIES="idp.properties";
     public static String IDP_METADATA_URL="idp.metadata.url";
     public static String IDP_COUNTRY="idp.country";

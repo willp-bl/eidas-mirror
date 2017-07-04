@@ -120,7 +120,7 @@ public class AUCONNECTORTestCase {
 
         CONFIGS.setProperty(EidasErrorKey.INVALID_SESSION.errorCode(), TestingConstants.ERROR_CODE_CONS.toString());
         CONFIGS.setProperty(EidasErrorKey.INVALID_SESSION.errorMessage(), TestingConstants.ERROR_MESSAGE_CONS.toString());
-        EIDASUtil.setConfigs(CONFIGS);
+        //EIDASUtil.setConfigs(CONFIGS);
     }
 
     /**

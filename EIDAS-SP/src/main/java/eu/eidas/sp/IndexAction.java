@@ -31,6 +31,7 @@ import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.protocol.IRequestMessage;
 import eu.eidas.auth.commons.protocol.eidas.LevelOfAssurance;
 import eu.eidas.auth.commons.protocol.eidas.LevelOfAssuranceComparison;
+import eu.eidas.auth.commons.protocol.eidas.SpType;
 import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.impl.EidasSamlBinding;
 import eu.eidas.auth.commons.protocol.impl.SamlBindingUri;
@@ -68,7 +69,7 @@ public class IndexAction extends ActionSupport implements ServletRequestAware, S
     private static final Logger LOGGER = LoggerFactory.getLogger(IndexAction.class);
     public static final String ACTION_POPULATE = "populate";
 
-    private final ProtocolEngineI protocolEngine = ProtocolEngineFactory.getDefaultProtocolEngine(Constants.SP_CONF);
+    private final ProtocolEngineI protocolEngine = SpProtocolEngineFactory.getSpProtocolEngine(Constants.SP_CONF);
 
     private HttpServletRequest request;
     private String samlRequest;
@@ -100,7 +101,7 @@ public class IndexAction extends ActionSupport implements ServletRequestAware, S
 
     private static boolean eidasNodeOnly = true;
 
-    private final SPCachingMetadataFetcher metadataFetcher = new SPCachingMetadataFetcher();
+    private final static SPCachingMetadataFetcher metadataFetcher = new SPCachingMetadataFetcher();
 
     private static void loadGlobalConfig() {
         configs = SPUtil.loadSPConfigs();
@@ -176,7 +177,9 @@ public class IndexAction extends ActionSupport implements ServletRequestAware, S
         } else {
             reqBuilder.levelOfAssurance(eidasloa);
         }
-        reqBuilder.spType(eidasSPType);
+        if (eidasSPType.equalsIgnoreCase(SpType.PRIVATE.toString()) || eidasSPType.equalsIgnoreCase(SpType.PUBLIC.toString())) {
+            reqBuilder.spType(eidasSPType);
+        }
         reqBuilder.levelOfAssuranceComparison(LevelOfAssuranceComparison.fromString(eidasloaCompareType).stringValue());
         reqBuilder.nameIdFormat(eidasNameIdentifier);
         reqBuilder.binding(EidasSamlBinding.EMPTY.getName());

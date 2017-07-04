@@ -28,6 +28,7 @@
 <html>
 
 <head>
+    <base href="${pageContext.request.contextPath}/"/>
     <jsp:include page="internal/htmlHead.jsp"/>
     <title><fmt:message key="eidas.title" bundle="${i18n_eng}"/></title>
 </head>

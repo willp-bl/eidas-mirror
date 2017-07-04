@@ -1,6 +1,7 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ page import="eu.eidas.auth.commons.EIDASUtil" %>
-<%@ page import="java.util.*" %><%--
+<%@ page import="java.util.*" %>
+<%@ page import="eu.eidas.idp.IDPUtil" %>
+<%--
   ~ Copyright (c) 2015 by European Commission
   ~
   ~ Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
@@ -26,7 +27,7 @@
 
 <%
     Map<String, String> userMap = new HashMap<String, String>();
-    Properties configs = EIDASUtil.loadConfigs("user.properties");
+    Properties configs = IDPUtil.loadConfigs("user.properties");
     Set<String> keys = configs.stringPropertyNames();
     for (String key : keys) {
         if (!key.contains(".")) {

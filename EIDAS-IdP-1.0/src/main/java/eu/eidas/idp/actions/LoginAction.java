@@ -11,6 +11,8 @@ import org.apache.struts2.interceptor.ServletResponseAware;
 
 import eu.eidas.idp.ProcessLogin;
 
+import java.io.IOException;
+
 public class LoginAction extends ActionSupport implements ServletRequestAware, ServletResponseAware {
 
 	private static final long serialVersionUID = -7243683543548722148L;
@@ -21,8 +23,9 @@ public class LoginAction extends ActionSupport implements ServletRequestAware, S
 	private String username;
 	private String callback;
 
+	private String ipAddress;
 
-	public String execute(){
+	public String execute() throws IOException {
 		ProcessLogin pl = new ProcessLogin();
 		pl.processAuthentication(request, response);
 		this.samlToken = pl.getSamlToken();
@@ -80,5 +83,14 @@ public class LoginAction extends ActionSupport implements ServletRequestAware, S
 	public String getCallback() {
 		return callback;
 	}
+
+	public String getIpAddress() {
+		return ipAddress;
+	}
+
+	public void setIpAddress(String subjectLocality) {
+		this.ipAddress = ipAddress;
+	}
+
 
 }

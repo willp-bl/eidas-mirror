@@ -54,16 +54,16 @@ public class TestFileService {
     public void testFileList(){
         List<String> fileList= configUtil.getFileService().getFileList(true);
         assertFalse(fileList.isEmpty());
-        assertTrue(fileList.size()==3);
+        assertTrue(fileList.size()==1);
     }
 
     @Test
     public void testBackup(){
         List<String> fileList= configUtil.getFileService().getFileList(true);
-        assertTrue(fileList.size()==3);
+        assertTrue(fileList.size()==1);
         configUtil.getFileService().backup();
         fileList= configUtil.getFileService().getFileList(false);
-        assertTrue(fileList.size()>4);
+        assertTrue(fileList.size()>2);
     }
 
 }

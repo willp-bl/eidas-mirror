@@ -89,7 +89,7 @@ public class EidasAuthRequestTest {
         try {
             engine = ProtocolEngineFactory.createProtocolEngine(conf, new EidasProtocolProcessor(
                     "saml-engine-eidas-attributes-" + conf + ".xml",
-                    "saml-engine-additional-attributes-" + conf + ".xml", null, null));
+                    "saml-engine-additional-attributes-" + conf + ".xml", null, null, null));
         } catch (EIDASSAMLEngineException exc) {
             fail("Failed to initialize SAMLEngines");
         }
@@ -601,7 +601,7 @@ public class EidasAuthRequestTest {
         try {
             authRequest = getEngine().generateRequestMessage(request, null).getMessageBytes();
             IAuthenticationRequest authenticationRequest = getEngine().unmarshallRequestAndValidate(authRequest, "ES");
-            assertEquals("public", ((IEidasAuthenticationRequest) authenticationRequest).getSpType().getValue());
+            assertEquals("public", ((IEidasAuthenticationRequest) authenticationRequest).getSpType());
         } catch (EIDASSAMLEngineException e) {
             LOG.error("Error");
         }

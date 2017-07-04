@@ -122,15 +122,21 @@ public class EidasProtocolProcessorWithAutorization implements ProtocolProcessor
 
     private static void addExtensionSPType(IEidasAuthenticationRequest request, Extensions extensions)
             throws EIDASSAMLEngineException {
-        SpType spType = request.getSpType();
-        if (null != spType) {
-            LOG.trace("Generate SPType");
-            final SPType spTypeObj = (SPType) BuilderFactoryUtil.buildXmlObject(SPType.DEF_ELEMENT_NAME);
-            if (spTypeObj != null) {
-                spTypeObj.setSPType(spType.getValue());
-                extensions.getUnknownXMLObjects().add(spTypeObj);
+        // if SpType is provided for the request
+        if (StringUtils.isNotBlank(request.getSpType())) {
+            SpType spType = SpType.fromString(request.getSpType());
+            if (spType != null) {
+                LOG.trace("Generate SPType provided by light request");
+                final SPType spTypeObj = (SPType) BuilderFactoryUtil.buildXmlObject(SPType.DEF_ELEMENT_NAME);
+                if (spTypeObj != null) {
+                    spTypeObj.setSPType(spType.getValue());
+                    extensions.getUnknownXMLObjects().add(spTypeObj);
+                } else {
+                    LOG.error("Unable to create SPType Object by SAML engine");
+                }
             } else {
-                LOG.error("Unable to create SPType Object by SAML engine");
+                LOG.error("Unable to create SPType Object by SAML engine - wrong value supplied in light request : " + request.getSpType());
+                throw new EIDASSAMLEngineException("Unable to create SPType Object by SAML engine - wrong value supplied in light request : " + request.getSpType());
             }
         }
     }
@@ -175,21 +181,15 @@ public class EidasProtocolProcessorWithAutorization implements ProtocolProcessor
         this(EidasSpec.REGISTRY, additionalAttributeRegistry, metadataFetcher, metadataSigner);
     }
 
-    public EidasProtocolProcessorWithAutorization(@Nonnull String additionalAttributesFileName,
-                                                  @Nullable MetadataFetcherI metadataFetcher,
-                                                  @Nullable MetadataSignerI metadataSigner) {
-        this(EidasSpec.REGISTRY, AttributeRegistries.fromFile(additionalAttributesFileName), metadataFetcher,
-             metadataSigner);
-    }
-
     public EidasProtocolProcessorWithAutorization(@Nonnull String eidasAttributesFileName,
                                                   @Nonnull String additionalAttributesFileName,
+                                                  @Nullable String defaultPath,
                                                   @Nullable MetadataFetcherI metadataFetcher,
                                                   @Nullable MetadataSignerI metadataSigner) {
         Preconditions.checkNotNull(eidasAttributesFileName, "eidasAttributesFileName");
         Preconditions.checkNotNull(additionalAttributesFileName, "additionalAttributesFileName");
-        this.eidasAttributeRegistry = AttributeRegistries.fromFile(eidasAttributesFileName);
-        this.additionalAttributeRegistry = AttributeRegistries.fromFile(additionalAttributesFileName);
+        this.eidasAttributeRegistry = AttributeRegistries.fromFile(eidasAttributesFileName, defaultPath);
+        this.additionalAttributeRegistry = AttributeRegistries.fromFile(additionalAttributesFileName, defaultPath);
         this.metadataFetcher = metadataFetcher;
         this.metadataSigner = metadataSigner;
         if (null == metadataFetcher || null == metadataSigner) {
@@ -449,6 +449,27 @@ public class EidasProtocolProcessorWithAutorization implements ProtocolProcessor
         // either all the legal or all the natural mandatory attributes MUST be requested/returned:
         return ((!requestedLegalSet || mandatoryLegalAttributes.isEmpty()) && (!requestedNaturalSet
                 || mandatoryNaturalAttributes.isEmpty()));
+    }
+
+    /**
+     * Checks whether the attribute list fulfills the reuqiremnts of representative scenario
+     *
+     * According to Specs 1.1 representative attributes MUST no be requested
+     *
+     * @param immutableAttributeMap
+     */
+    @Override
+    public boolean checkRepresentativeAttributes(@Nullable ImmutableAttributeMap immutableAttributeMap) {
+        boolean checkResult = true;
+
+        for (AttributeDefinition<?> attributeDefinition : immutableAttributeMap.getDefinitions()) {
+            if (null != attributeDefinition &&
+                    (attributeDefinition.getPersonType() == PersonType.REPV_LEGAL_PERSON ||
+                            attributeDefinition.getPersonType() == PersonType.REPV_NATURAL_PERSON)) {
+                checkResult = false;
+            }
+        }
+        return checkResult;
     }
 
     @Override
@@ -1135,21 +1156,27 @@ public class EidasProtocolProcessorWithAutorization implements ProtocolProcessor
                 }
             }
 
-            // TODO check if this is correct:
-            SpType requestSpType = ((IEidasAuthenticationRequest) authnRequest).getSpType();
-            String metadataSpType = MetadataUtil.getSPTypeFromMetadata(entityDescriptor);
             //exactly one of requestSpType, metadataSpType should be non empty
-            if (null == requestSpType) {
-                if (StringUtils.isEmpty(metadataSpType)) {
+            String metadataSpType = MetadataUtil.getSPTypeFromMetadata(entityDescriptor);
+            if (authnRequest.getSpType() != null) {
+                SpType requestSpType = SpType.fromString(authnRequest.getSpType());
+                // both Metadata and Request supplies SP type - not allowed
+                if (requestSpType != null && StringUtils.isNotBlank(metadataSpType)) {
+                    LOG.error("SPType both in Connector Metadata and Request");
+                    throw new EIDASServiceException(
+                            EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INCONSISTENT_SPTYPE.errorCode()),
+                            EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INCONSISTENT_SPTYPE.errorMessage()), "");
+                }
+            } else {
+                // neither of them has SPType available
+                if (!StringUtils.isNotBlank(metadataSpType)) {
+                    LOG.error("SPType not provided");
                     throw new EIDASServiceException(
                             EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_MISSING_SPTYPE.errorCode()),
                             EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_MISSING_SPTYPE.errorMessage()), "");
                 }
-            } else if (!StringUtils.isEmpty(metadataSpType)) {
-                throw new EIDASServiceException(
-                        EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INCONSISTENT_SPTYPE.errorCode()),
-                        EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INCONSISTENT_SPTYPE.errorMessage()), "");
             }
+
         } catch (EIDASSAMLEngineException e) {
             throw new InternalErrorEIDASException(EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INVALID_SAML.errorCode()),
                                                   EidasErrors.get(
@@ -1549,7 +1576,8 @@ public class EidasProtocolProcessorWithAutorization implements ProtocolProcessor
     public IAuthenticationResponse unmarshallResponse(@Nonnull Response response,
                                                       boolean verifyBearerIpAddress,
                                                       @Nullable String userIpAddress,
-                                                      long skewTimeInMillis,
+                                                      long beforeSkewTimeInMillis,
+                                                      long afterSkewTimeInMillis,
                                                       @Nonnull DateTime now,
                                                       @Nullable String audienceRestriction)
             throws EIDASSAMLEngineException {
@@ -1561,8 +1589,8 @@ public class EidasProtocolProcessorWithAutorization implements ProtocolProcessor
 
         LOG.trace("validateEidasResponse");
         Assertion assertion =
-                ResponseUtil.extractVerifiedAssertion(response, verifyBearerIpAddress, userIpAddress, skewTimeInMillis,
-                                                      now, audienceRestriction);
+                ResponseUtil.extractVerifiedAssertion(response, verifyBearerIpAddress, userIpAddress, beforeSkewTimeInMillis,
+                        afterSkewTimeInMillis, now, audienceRestriction);
 
         if (null != assertion) {
             LOG.trace("Set notOnOrAfter.");

@@ -29,6 +29,18 @@ public final class ResponseUtil {
 
     private static final Logger LOG = LoggerFactory.getLogger(ResponseUtil.class);
 
+    public static String extractSubjectConfirmationIPAddress(@Nonnull Assertion assertion) {
+        String ipAddress = null;
+        if (assertion.getSubject() != null && assertion.getSubject().getSubjectConfirmations() != null) {
+            List<SubjectConfirmation> confirmations = assertion.getSubject().getSubjectConfirmations();
+            if (!confirmations.isEmpty()) {
+                SubjectConfirmation confirmation = confirmations.get(0);
+                ipAddress = confirmation.getSubjectConfirmationData().getAddress();
+            }
+        }
+        return ipAddress;
+    }
+
     @Nonnull
     public static IResponseStatus extractResponseStatus(@Nonnull Response samlResponse) {
         ResponseStatus.Builder builder = ResponseStatus.builder();
@@ -64,7 +76,8 @@ public final class ResponseUtil {
     public static Assertion extractVerifiedAssertion(@Nonnull Response samlResponse,
                                                      boolean verifyBearerIpAddress,
                                                      @Nullable String userIpAddress,
-                                                     long skewTimeInMillis,
+                                                     long beforeSkewTimeInMillis,
+                                                     long afterSkewTimeInMillis,
                                                      @Nonnull DateTime now,
                                                      @Nullable String audienceRestriction)
             throws EIDASSAMLEngineException {
@@ -80,7 +93,7 @@ public final class ResponseUtil {
 
         Assertion assertion = samlResponse.getAssertions().get(0);
 
-        verifyAssertion(assertion, verifyBearerIpAddress, userIpAddress, skewTimeInMillis, now, audienceRestriction);
+        verifyAssertion(assertion, verifyBearerIpAddress, userIpAddress, beforeSkewTimeInMillis, afterSkewTimeInMillis, now, audienceRestriction);
 
         return assertion;
     }
@@ -96,7 +109,8 @@ public final class ResponseUtil {
     public static void verifyAssertion(@Nonnull Assertion assertion,
                                        boolean verifyBearerIpAddress,
                                        @Nonnull String userIpAddress,
-                                       long skewTimeInMillis,
+                                       long beforeSkewTimeInMillis,
+                                       long afterSkewTimeInMillis,
                                        @Nonnull DateTime now,
                                        @Nullable String audienceRestriction) throws EIDASSAMLEngineException {
         if (verifyBearerIpAddress) {
@@ -106,11 +120,12 @@ public final class ResponseUtil {
 
         // Applying skew time conditions before testing it
         DateTime skewedNotBefore =
-                new DateTime(assertion.getConditions().getNotBefore().getMillis() - skewTimeInMillis, DateTimeZone.UTC);
+                new DateTime(assertion.getConditions().getNotBefore().getMillis() + beforeSkewTimeInMillis, DateTimeZone.UTC);
         DateTime skewedNotOnOrAfter =
-                new DateTime(assertion.getConditions().getNotOnOrAfter().getMillis() + skewTimeInMillis,
+                new DateTime(assertion.getConditions().getNotOnOrAfter().getMillis() + afterSkewTimeInMillis,
                         DateTimeZone.UTC);
-        LOG.debug(AbstractProtocolEngine.SAML_EXCHANGE, "skewTimeInMillis : {}", skewTimeInMillis);
+        LOG.debug(AbstractProtocolEngine.SAML_EXCHANGE, "skewTimeInMillis notBefore : {}", beforeSkewTimeInMillis);
+        LOG.debug(AbstractProtocolEngine.SAML_EXCHANGE, "skewTimeInMillis notOnOrAfter: {}", afterSkewTimeInMillis);
         LOG.debug(AbstractProtocolEngine.SAML_EXCHANGE, "skewedNotBefore       : {}", skewedNotBefore);
         LOG.debug(AbstractProtocolEngine.SAML_EXCHANGE, "skewedNotOnOrAfter    : {}", skewedNotOnOrAfter);
         assertion.getConditions().setNotBefore(skewedNotBefore);

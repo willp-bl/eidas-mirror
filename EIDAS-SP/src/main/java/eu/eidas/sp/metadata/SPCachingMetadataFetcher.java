@@ -13,21 +13,16 @@
  */
 package eu.eidas.sp.metadata;
 
-import com.ctc.wstx.util.StringUtil;
-import com.google.common.cache.CacheBuilder;
 import eu.eidas.auth.engine.metadata.MetadataFetcherI;
 import eu.eidas.auth.engine.metadata.impl.CachingMetadataFetcher;
 import eu.eidas.auth.engine.metadata.IStaticMetadataChangeListener;
-import eu.eidas.auth.engine.metadata.impl.FileMetadataProcessor;
+import eu.eidas.auth.engine.metadata.impl.FileMetadataLoader;
 import eu.eidas.sp.SPUtil;
 import org.apache.commons.lang.StringUtils;
-import org.opensaml.saml2.metadata.EntityDescriptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
 
 /**
  * The implementation of the {@link MetadataFetcherI} interface for SP.
@@ -42,9 +37,9 @@ public class SPCachingMetadataFetcher extends CachingMetadataFetcher implements 
         super();
         setCache(new SPMetadataCache());
         if (StringUtils.isNotEmpty(SPUtil.getMetadataRepositoryPath())) {
-            FileMetadataProcessor fp = new FileMetadataProcessor();
+            FileMetadataLoader fp = new FileMetadataLoader();
             fp.setRepositoryPath(SPUtil.getMetadataRepositoryPath());
-            setFileMetadataLoader(fp);
+            setMetadataLoaderPlugin(fp);
         }
         initProcessor();
     }

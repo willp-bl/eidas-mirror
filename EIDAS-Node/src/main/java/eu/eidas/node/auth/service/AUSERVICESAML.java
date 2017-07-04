@@ -175,10 +175,15 @@ public class AUSERVICESAML implements ISERVICESAMLService {
                         serviceUtil.getProperty(EIDASValues.EIDAS_SERVICE_LOA.toString()));
             }
 
+            //TODO EIDINT-1271 - ip address usage
+            String ipAddress = null;
+            if (StringUtils.isNotBlank(response.getIPAddress())) {
+                ipAddress = ipUserAddress;
+            }
             // Generate SAMLResponse.
             IResponseMessage signedResponse =
                     engine.generateResponseMessage(originalRequest, authnResponseBuilder.build(),
-                                                   generateSignedAssertion, ipUserAddress);
+                                                   generateSignedAssertion, ipAddress);
 
             // Audit
             String message = EIDASValues.SUCCESS.toString() + EIDASValues.EID_SEPARATOR.toString()
@@ -504,6 +509,13 @@ public class AUSERVICESAML implements ISERVICESAMLService {
         ProtocolEngineI engine = getSamlEngine();
 
         return engine.getProtocolProcessor().checkMandatoryAttributes(attributes);
+    }
+
+    @Override
+    public boolean checkRepresentativeAttributes(@Nullable ImmutableAttributeMap attributes) {
+        ProtocolEngineI engine = getSamlEngine();
+
+        return engine.getProtocolProcessor().checkRepresentativeAttributes(attributes);
     }
 
     @Override

@@ -19,6 +19,8 @@ public final class EidasSpec {
 
     public static final class Definitions {
 
+        // Natural
+
         public static final AttributeDefinition<String> PERSON_IDENTIFIER = NaturalPersonSpec.Definitions.PERSON_IDENTIFIER;
 
         public static final AttributeDefinition<String> CURRENT_FAMILY_NAME = NaturalPersonSpec.Definitions.CURRENT_FAMILY_NAME;
@@ -34,6 +36,8 @@ public final class EidasSpec {
         public static final AttributeDefinition<PostalAddress> CURRENT_ADDRESS = NaturalPersonSpec.Definitions.CURRENT_ADDRESS;
 
         public static final AttributeDefinition<Gender> GENDER = NaturalPersonSpec.Definitions.GENDER;
+
+        // Legal
 
         public static final AttributeDefinition<String> LEGAL_PERSON_IDENTIFIER =
                 LegalPersonSpec.Definitions.LEGAL_PERSON_IDENTIFIER;
@@ -57,12 +61,55 @@ public final class EidasSpec {
 
         public static final AttributeDefinition<String> SIC = LegalPersonSpec.Definitions.SIC;
 
+        // Representative Natural
+
+        public static final AttributeDefinition<String> REPV_PERSON_IDENTIFIER = RepresentativeNaturalPersonSpec.Definitions.PERSON_IDENTIFIER;
+
+        public static final AttributeDefinition<String> REPV_CURRENT_FAMILY_NAME = RepresentativeNaturalPersonSpec.Definitions.CURRENT_FAMILY_NAME;
+
+        public static final AttributeDefinition<String> REPV_CURRENT_GIVEN_NAME = RepresentativeNaturalPersonSpec.Definitions.CURRENT_GIVEN_NAME;
+
+        public static final AttributeDefinition<DateTime> REPV_DATE_OF_BIRTH = RepresentativeNaturalPersonSpec.Definitions.DATE_OF_BIRTH;
+
+        public static final AttributeDefinition<String> REPV_BIRTH_NAME = RepresentativeNaturalPersonSpec.Definitions.BIRTH_NAME;
+
+        public static final AttributeDefinition<String> REPV_PLACE_OF_BIRTH = RepresentativeNaturalPersonSpec.Definitions.PLACE_OF_BIRTH;
+
+        public static final AttributeDefinition<PostalAddress> REPV_CURRENT_ADDRESS = RepresentativeNaturalPersonSpec.Definitions.CURRENT_ADDRESS;
+
+        public static final AttributeDefinition<Gender> REPV_GENDER = RepresentativeNaturalPersonSpec.Definitions.GENDER;
+
+        // Representative Legal
+
+        public static final AttributeDefinition<String> REPV_LEGAL_PERSON_IDENTIFIER =
+                LegalPersonSpec.Definitions.LEGAL_PERSON_IDENTIFIER;
+
+        public static final AttributeDefinition<String> REPV_LEGAL_NAME = RepresentativeLegalPersonSpec.Definitions.LEGAL_NAME;
+
+        public static final AttributeDefinition<PostalAddress> REPV_LEGAL_ADDRESS = RepresentativeLegalPersonSpec.Definitions.LEGAL_ADDRESS;
+
+        public static final AttributeDefinition<String> REPV_VAT_REGISTRATION = RepresentativeLegalPersonSpec.Definitions.VAT_REGISTRATION;
+
+        public static final AttributeDefinition<String> REPV_TAX_REFERENCE = RepresentativeLegalPersonSpec.Definitions.TAX_REFERENCE;
+
+        public static final AttributeDefinition<String> REPV_D_2012_17_EU_IDENTIFIER =
+                RepresentativeLegalPersonSpec.Definitions.D_2012_17_EU_IDENTIFIER;
+
+        public static final AttributeDefinition<String> REPV_LEI = RepresentativeLegalPersonSpec.Definitions.LEI;
+
+        public static final AttributeDefinition<String> REPV_EORI = RepresentativeLegalPersonSpec.Definitions.EORI;
+
+        public static final AttributeDefinition<String> REPV_SEED = RepresentativeLegalPersonSpec.Definitions.SEED;
+
+        public static final AttributeDefinition<String> REPV_SIC = RepresentativeLegalPersonSpec.Definitions.SIC;
+
+
         private Definitions() {
         }
     }
 
     public static final AttributeRegistry REGISTRY =
-            AttributeRegistries.copyOf(NaturalPersonSpec.REGISTRY, LegalPersonSpec.REGISTRY);
+            AttributeRegistries.copyOf(NaturalPersonSpec.REGISTRY, LegalPersonSpec.REGISTRY, RepresentativeNaturalPersonSpec.REGISTRY, RepresentativeLegalPersonSpec.REGISTRY);
 
     private EidasSpec() {
     }

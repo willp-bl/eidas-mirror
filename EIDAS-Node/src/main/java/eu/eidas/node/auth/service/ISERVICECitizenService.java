@@ -36,75 +36,76 @@ import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
  */
 public interface ISERVICECitizenService {
 
-  /**
-   * Checks if the citizen consent has all the required mandatory attributes.
-   *
-   * @param consent The citizen supplied consent.
-   * @param authData The authentication request.
-   * @param ipUserAddress The citizen's IP address.
-   * @param serviceSAMLService The ProxyService Saml Service.
-   *
-   * @see CitizenConsent
-   * @see EidasAuthenticationRequest
-   * @see ISERVICESAMLService
-   */
-  void processCitizenConsent(CitizenConsent consent,
-                             @Nonnull StoredAuthenticationRequest storedRequest,
-                             String ipUserAddress);
+    /**
+     * Checks if the citizen consent has all the required mandatory attributes.
+     *
+     * @param consent            The citizen supplied consent.
+     * @param authData           The authentication request.
+     * @param ipUserAddress      The citizen's IP address.
+     * @param serviceSAMLService The ProxyService Saml Service.
+     * @see CitizenConsent
+     * @see EidasAuthenticationRequest
+     * @see ISERVICESAMLService
+     */
+    void processCitizenConsent(CitizenConsent consent,
+                               @Nonnull StoredAuthenticationRequest storedRequest,
+                               String ipUserAddress);
 
-  /**
-   * Constructs the Citizen Consent based on the checked boxes from consent-type
-   * form.
-   *
-   * @param parameters A map of the selected attributes.
-   * @param personalList The personal attribute list.
-   *
-   * @return CitizenConsent containing the mandatory and optional attributes
-   *         that the Node has permission to request.
-   *
-   * @see CitizenConsent
-   * @see Map
-   * @see IPersonalAttributeList
-   */
-  @Nonnull
-  CitizenConsent getCitizenConsent(@Nonnull WebRequest webRequest, @Nonnull ImmutableAttributeMap attributes);
+    /**
+     * Constructs the Citizen Consent based on the checked boxes from consent-type
+     * form.
+     *
+     * @param parameters   A map of the selected attributes.
+     * @param personalList The personal attribute list.
+     * @return CitizenConsent containing the mandatory and optional attributes
+     * that the Node has permission to request.
+     * @see CitizenConsent
+     * @see Map
+     * @see IPersonalAttributeList
+     */
+    @Nonnull
+    CitizenConsent getCitizenConsent(@Nonnull WebRequest webRequest, @Nonnull ImmutableAttributeMap attributes);
 
-  /**
-   * Eliminates attributes without consent, and updates the Attributes.
-   *
-   * @param citizenConsent The attributes the citizen gives permission to be
-   *          accessed.
-   * @param attributes The attributes to update.
-   *
-   * @return The updated attributes.
-   *
-   * @see CitizenConsent
-   * @see ImmutableAttributeMap
-   */
-  @Nonnull
-  ImmutableAttributeMap filterConsentedAttributes(@Nonnull CitizenConsent citizenConsent,
-                                                  @Nonnull ImmutableAttributeMap attributes);
+    /**
+     * Eliminates attributes without consent, and updates the Attributes.
+     *
+     * @param citizenConsent The attributes the citizen gives permission to be
+     *                       accessed.
+     * @param attributes     The attributes to update.
+     * @return The updated attributes.
+     * @see CitizenConsent
+     * @see ImmutableAttributeMap
+     */
+    @Nonnull
+    ImmutableAttributeMap filterConsentedAttributes(@Nonnull CitizenConsent citizenConsent,
+                                                    @Nonnull ImmutableAttributeMap attributes);
 
-  /**
-   * Replaces the attribute list in session with the one provided.
-   *
-   * @param requestCorrelationMap The requestCorrelationMap.
-   * @param attributeList The attribute list.
-   *
-   * @return The updated Personal Attribute List.
-   *
-   * @see RequestCorrelationMap
-   * @see IPersonalAttributeList
-   */
-  @Nonnull
-  IAuthenticationRequest updateConsentedAttributes(@Nonnull IAuthenticationRequest authnRequest,
-                                                   @Nonnull ImmutableAttributeMap consentedAttributes);
+    /**
+     * Replaces the attribute list in session with the one provided.
+     *
+     * @param requestCorrelationMap The requestCorrelationMap.
+     * @param attributeList         The attribute list.
+     * @return The updated Personal Attribute List.
+     * @see RequestCorrelationMap
+     * @see IPersonalAttributeList
+     */
+    @Nonnull
+    IAuthenticationRequest updateConsentedAttributes(@Nonnull IAuthenticationRequest authnRequest,
+                                                     @Nonnull ImmutableAttributeMap consentedAttributes);
 
-  /**
-   * Checks that all mandatory values are present in the given attributes otherwise throws an Exception.
-   *
-   * @param attributeMap The attributes to check.
-   * @throws EIDASServiceException if the attributes are not missing a mandatory attribute
-   */
-  void checkMandatoryAttributes(@Nonnull ImmutableAttributeMap attributes) throws EIDASServiceException;
+    /**
+     * Checks that all mandatory values are present in the given attributes otherwise throws an Exception.
+     *
+     * @param attributeMap The attributes to check.
+     * @throws EIDASServiceException if the attributes are not missing a mandatory attribute
+     */
+    void checkMandatoryAttributes(@Nonnull ImmutableAttributeMap attributes) throws EIDASServiceException;
+
+    /**
+     * Checks whether the attribute map satifisfies the rule of representation, otherwise thorows an Exception.
+     *
+     * @param attributeMap The attributes to check.
+     * @throws EIDASServiceException if the attributes are not missing a mandatory attribute
+     */
+    void checkRepresentativeAttributes(@Nonnull ImmutableAttributeMap attributes) throws EIDASServiceException;
 }

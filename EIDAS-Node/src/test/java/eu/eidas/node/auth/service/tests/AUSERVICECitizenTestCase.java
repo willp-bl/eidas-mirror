@@ -290,7 +290,7 @@ public final class AUSERVICECitizenTestCase {
         final Properties configs = new Properties();
         configs.put(EidasErrorKey.CITIZEN_RESPONSE_MANDATORY.errorCode(), "202007");
         configs.put(EidasErrorKey.CITIZEN_RESPONSE_MANDATORY.errorMessage(), "no.consent.mand.attr");
-        EIDASUtil.createInstance(configs);
+        //EIDASUtil.createInstance(configs);
 
         AUSERVICECITIZEN.processCitizenConsent(consent, AUTH_DATA, USER_IP);
     }

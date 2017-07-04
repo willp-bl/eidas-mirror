@@ -24,12 +24,17 @@ import com.google.common.cache.CacheBuilder;
  */
 public final class SimpleMetadataCaching extends AbstractMetadataCaching {
 
-    private final ConcurrentMap<String, SerializedEntityDescriptor> map = CacheBuilder.newBuilder()
-            .expireAfterAccess(1L, TimeUnit.DAYS)
-            .maximumSize(10000L).<String, SerializedEntityDescriptor>build().asMap();
+    private final ConcurrentMap<String, SerializedEntityDescriptor> map;
+
+    SimpleMetadataCaching(long retentionPeriod) {
+        map = CacheBuilder.newBuilder()
+                .expireAfterAccess(retentionPeriod, TimeUnit.SECONDS)
+                .maximumSize(10000L).<String, SerializedEntityDescriptor>build().asMap();
+    }
 
     @Override
     protected Map<String, SerializedEntityDescriptor> getMap() {
         return map;
     }
+
 }

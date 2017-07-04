@@ -73,17 +73,12 @@ public final class SpEidasProtocolProcessor extends EidasProtocolProcessor imple
         super(additionalAttributeRegistry, metadataFetcher, metadataSigner);
     }
 
-    public SpEidasProtocolProcessor(@Nonnull String additionalAttributesFileName,
-                                    @Nullable MetadataFetcherI metadataFetcher,
-                                    @Nullable MetadataSignerI metadataSigner) {
-        super(additionalAttributesFileName, metadataFetcher, metadataSigner);
-    }
-
     public SpEidasProtocolProcessor(@Nonnull String eidasAttributesFileName,
                                     @Nonnull String additionalAttributesFileName,
+                                    @Nullable String defaultPath,
                                     @Nullable MetadataFetcherI metadataFetcher,
                                     @Nullable MetadataSignerI metadataSigner) {
-        super(eidasAttributesFileName, additionalAttributesFileName, metadataFetcher, metadataSigner);
+        super(eidasAttributesFileName, additionalAttributesFileName, defaultPath, metadataFetcher, metadataSigner);
     }
 
     public SpEidasProtocolProcessor(@Nonnull AttributeRegistry eidasAttributeRegistry,

@@ -10,18 +10,18 @@
     <import resource="classpath*:META-INF/ExtensionContext.xml" />
     <import resource="classpath:webserviceApplicationContext.xml" />
 
-    <bean id="eidasConfigFilePath" class="java.lang.String">
-        <constructor-arg value="#{eidasConfigRepository}eidas.xml" />
+    <bean id="eidasConfigFile" class="java.lang.String">
+        <constructor-arg value="eidas.xml" />
     </bean>
-	<bean id="specificConfigFilePath" class="java.lang.String">
-		<constructor-arg value="#{eidasConfigRepository}eidas_Specific.xml"/>
+	<bean id="specificConfigFile" class="java.lang.String">
+		<constructor-arg value="eidas_Specific.xml"/>
 	</bean>
 
-	<bean id="eidasConfigLocation" class="java.lang.String">
-		<constructor-arg value="file:#{eidasConfigFilePath}"/>
+	<bean id="eidasConfigFileWithPath" class="java.lang.String">
+		<constructor-arg value="file:#{eidasConfigRepository}#{eidasConfigFile}"/>
 	</bean>
-	<bean id="specificConfigLocation" class="java.lang.String">
-		<constructor-arg value="file:#{specificConfigFilePath}"/>
+	<bean id="specificConfigWithPath" class="java.lang.String">
+		<constructor-arg value="file:#{eidasSpecificConfigRepository}#{specificConfigFile}"/>
 	</bean>
 
 	<bean id="eidasUtilLocation" class="java.lang.String">
@@ -29,7 +29,7 @@
 	</bean>
 
 	<bean id="nodeProps" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
-		<property name="location" ref="eidasConfigLocation"/>
+		<property name="location" ref="eidasConfigFileWithPath"/>
 	</bean>
 	<bean id="placeholderConfig"
 		  class="eu.eidas.node.utils.PropertiesUtil">
@@ -37,8 +37,8 @@
 		<property name="order" value="0"/>
 		<property name="locations">
 			<list>
-				<ref bean="eidasConfigLocation"/>
-				<ref bean="specificConfigLocation"/>
+				<ref bean="eidasConfigFileWithPath"/>
+				<ref bean="specificConfigWithPath"/>
 			</list>
 		</property>
 		<property name="fileEncoding" value="UTF-8" />
@@ -64,7 +64,8 @@
 
 	<bean id="NodeProtocolEngineConfigurationFactory" class="eu.eidas.auth.engine.configuration.dom.ProtocolEngineConfigurationFactory" scope="singleton">
 		<constructor-arg value="SamlEngine.xml"/>
-		<constructor-arg value="#{eidasConfigFilePath}"/>
+		<constructor-arg value="#{eidasConfigFile}"/>
+		<constructor-arg value="#{eidasConfigRepository}"/>
 	</bean>
 
 	<bean id="NodeProtocolEngineFactory" class="eu.eidas.auth.engine.ProtocolEngineFactory" scope="singleton">
@@ -84,18 +85,8 @@
 	</bean>
 
 	<!-- LOGGING -->
-	<bean id="ServiceLogger" class="${specific.logger}" />
-	<bean id="connectorLogger" class="${specific.logger}" />
-
-	<!-- Commons Bean -->
-	<bean class="org.springframework.beans.factory.config.MethodInvokingBean">
-		<property name="staticMethod" value="eu.eidas.auth.commons.EIDASUtil.setConfigs"/>
-		<property name="arguments">
-			<list>
-				<null/>
-			</list>
-		</property>
-	</bean>
+	<bean id="ServiceLogger" class="eu.eidas.node.logging.EidasLoggerBean" />
+	<bean id="ConnectorLogger" class="eu.eidas.node.logging.EidasLoggerBean" />
 
 	<!-- SPECIFIC Classes -->
 
@@ -274,7 +265,7 @@
 		<property name="loggerBean" ref="ServiceLogger" />
 		<property name="messageSource" ref="errorMessageSource"/>
 		<property name="serviceUtil" ref="springManagedAUSERVICEUtil" />
-		<property name="samlEngineInstanceName" value="${service.saml.connector:Service}" />
+		<property name="samlEngineInstanceName" value="${saml.service:Service}" />
 		<property name="serviceMetadataUrl" value="${service.metadata.url}"/>
 		<property name="serviceRequesterMetadataUrl" value="${service.requester.metadata.url}"/>
 		<property name="metadataFetcher" ref="nodeMetadataFetcher"/>
@@ -283,7 +274,6 @@
 	<!-- Connector Classes -->
 	<bean id="springManagedAUCONNECTOR" class="eu.eidas.node.auth.connector.AUCONNECTOR"
 		scope="prototype">
-		<property name="countryService" ref="springManagedAUCONNECTORCountrySelector" />
 		<property name="samlService" ref="springManagedAUCONNECTORSAML" />
 		<property name="spApplication" value="${connector.spApplication}" />
 		<property name="spCountry" value="${connector.spCountry}" />
@@ -295,21 +285,16 @@
 	</bean>
 
 	<bean id="springManagedAUCONNECTORSAML" class="eu.eidas.node.auth.connector.AUCONNECTORSAML">
-		<property name="samlSpInstance" value="${saml.sp}" />
-		<property name="samlServiceInstance" value="${saml.service}" />
+		<!-- property name="samlSpInstance" value="${saml.sp}" /-->
+		<property name="samlServiceInstance" value="${saml.connector:Connector}" />
 		<property name="connectorUtil" ref="springManagedAUCONNECTORUtil" />
-		<property name="loggerBean" ref="connectorLogger" />
+		<property name="loggerBean" ref="ConnectorLogger" />
 		<property name="messageSource" ref="transMessageSource"/>
         <property name="checkCitizenCertificateServiceCertificate" value="${check.citizenCertificate.serviceCertificate}" />
 		<property name="connectorMetadataUrl" value="${connector.metadata.url}"/>
 		<property name="connectorResponderMetadataUrl" value="${connector.responder.metadata.url}"/>
 		<property name="metadataFetcher" ref="nodeMetadataFetcher"/>
         <property name="nodeProtocolEngineFactory" ref="NodeProtocolEngineFactory"/>
-	</bean>
-
-	<bean id="springManagedAUCONNECTORCountrySelector" class="eu.eidas.node.auth.connector.AUCONNECTORCountrySelector">
-		<property name="destination" value="${connector.destination.url}" />
-		<property name="connectorUtil" ref="springManagedAUCONNECTORUtil" />
 	</bean>
 
 	<bean id="runenvironment" class="java.lang.String">
@@ -330,7 +315,7 @@
 	</bean>
 	<!-- production environment hazelcast initializer bean - injected into map providers -->
 	<bean id="eidasHazelcastInstanceInitializer" class=" eu.eidas.auth.commons.cache.HazelcastInstanceInitializer" init-method="initializeInstance" lazy-init="true">
-		<property name="hazelcastConfigfileName" value="hazelcast.xml"/>
+		<property name="hazelcastConfigfileName" value="#{eidasConfigRepository}hazelcast.xml"/>
 		<property name="hazelcastInstanceName" ref="defaultHazelcastInstance"/>
 	</bean>
 
@@ -397,14 +382,14 @@
 	</bean>
     <bean id="pluginLoader" class="eu.eidas.node.utils.CountrySpecificUtil" scope="singleton">
     </bean>
-	<bean id="nodeFileMetadataProcessor" class="eu.eidas.auth.engine.metadata.impl.FileMetadataProcessor">
+	<bean id="nodeFileMetadataProcessor" class="eu.eidas.auth.engine.metadata.impl.FileMetadataLoader">
 		<property name="repositoryPath" value="${metadata.file.repository}"/>
 	</bean>
 
     <bean id="nodeMetadataFetcher" class="eu.eidas.auth.engine.metadata.impl.CachingMetadataFetcher" init-method="initProcessor">
         <property name="cache" ref="metadataCache#{distributedEnvSuffix.toString()}"/>
         <!-- node.run.environment:Prod -->
-        <property name="fileMetadataLoader" ref="nodeFileMetadataProcessor"/>
+        <property name="metadataLoaderPlugin" ref="nodeFileMetadataProcessor"/>
         <property name="httpRetrievalEnabled" value="${metadata.http.retrieval:true}"/>
         <property name="restrictHttp" value="${metadata.restrict.http:false}"/>
         <property name="tlsEnabledProtocols" value="${tls.enabled.protocols:TLSv1.1,TLSv1.2}"/>
@@ -413,46 +398,21 @@
     </bean>
 
 	<bean id="serviceMetadataGeneratorIDP" class="eu.eidas.node.utils.EidasNodeMetadataGenerator">
-		<property name="samlServiceIDP" value="${service.saml.conncetor:Service}"/>
+		<property name="samlServiceIDP" value="${saml.service:Service}"/>
 		<property name="serviceMetadataUrl" value="${service.metadata.url}"/>
 		<property name="nodeProtocolEngineFactory" ref="NodeProtocolEngineFactory" />
-		<property name="serviceCountry" value="${service.countrycode}" />
-		<property name="serviceUrl" value="${service.node.url}" />
 		<property name="nodeProps" ref="nodeProps" />
 		<property name="validityDuration" value="${metadata.validity.duration:86400}" />
                 <property name="singleSignOnServiceRedirectLocation" value="${ssos.serviceMetadataGeneratorIDP.redirect.location}" />
                 <property name="singleSignOnServicePostLocation" value="${ssos.serviceMetadataGeneratorIDP.post.location}" />
 	</bean>
-	<bean id="serviceMetadataGeneratorSP" class="eu.eidas.node.utils.EidasNodeMetadataGenerator">
-		<property name="samlServiceSP" value="${service.saml.idp:Specific-IdP}"/>
-		<property name="serviceMetadataUrl" value="${service.requester.metadata.url}"/>
-		<property name="nodeProtocolEngineFactory" ref="NodeProtocolEngineFactory" />
-		<property name="serviceCountry" value="${service.countrycode}" />
-		<property name="serviceUrl" value="${service.node.url}" />
-		<property name="nodeProps" ref="nodeProps" />
-		<property name="validityDuration" value="${metadata.validity.duration:86400}" />
-		<property name="assertionUrl" value="${service.specificidpredirect.url:missingConnectorAssertionUrl}" />
-	</bean>
 	<bean id="connectorMetadataGeneratorSP" class="eu.eidas.node.utils.EidasNodeMetadataGenerator">
-		<property name="samlConnectorSP" value="${saml.service:Connector-Service}"/>
+		<property name="samlConnectorSP" value="${saml.conenctor:Connector}"/>
 		<property name="connectorMetadataUrl" value="${connector.metadata.url}"/>
 		<property name="nodeProtocolEngineFactory" ref="NodeProtocolEngineFactory" />
-		<property name="connectorCountry" value="${connector.spCountry}" />
-		<property name="connectorUrl" value="${connector.node.url:}" />
 		<property name="assertionUrl" value="${connector.assertion.url:missingConnectorAssertionUrl}" />
 		<property name="nodeProps" ref="nodeProps" />
 		<property name="validityDuration" value="${metadata.validity.duration:86400}" />
-	</bean>
-	<bean id="connectorMetadataGeneratorIDP" class="eu.eidas.node.utils.EidasNodeMetadataGenerator">
-		<property name="samlConnectorIDP" value="${saml.sp:SP-Specific}"/>
-		<property name="connectorMetadataUrl" value="${connector.responder.metadata.url}"/>
-		<property name="nodeProtocolEngineFactory" ref="NodeProtocolEngineFactory" />
-		<property name="connectorCountry" value="${connector.spCountry}" />
-		<property name="connectorUrl" value="${connector.node.url:}" />
-		<property name="nodeProps" ref="nodeProps" />
-		<property name="validityDuration" value="${metadata.validity.duration:86400}" />
-                <property name="singleSignOnServiceRedirectLocation" value="${ssos.connectorMetadataGeneratorIDP.redirect.location}" />
-                <property name="singleSignOnServicePostLocation" value="${ssos.connectorMetadataGeneratorIDP.post.location}"  />
 	</bean>
 	<bean id="eidasNodeConfigDirectory" class="java.lang.String">
 		<constructor-arg value="#{placeholderConfig.getEidasXmlLocation()}"/>
@@ -466,16 +426,8 @@
 	</bean>
 
 	<!-- for development environment -->
-	<bean id="metadataCacheDev" class="eu.eidas.node.auth.metadata.SimpleMetadataCaching">
+	<bean id="metadataCacheDev" class="eu.eidas.node.auth.metadata.SimpleMetadataCaching"  lazy-init="true">
+		<constructor-arg value="${nonDistributedMetadata.retention}" />
 	</bean>
 
-	<!--production -->
-	<bean id="metadataProcessorCacheProd" class="eu.eidas.node.auth.metadata.DistributedMetadataCaching" lazy-init="true">
-		<property name="hazelcastInstanceInitializer" ref="eidasHazelcastInstanceInitializer"/>
-		<property name="cacheName" value="eidasmetadata"/>
-	</bean>
-
-	<!-- for development environment -->
-	<bean id="metadataProcessorCacheDev" class="eu.eidas.node.auth.metadata.SimpleMetadataCaching">
-	</bean>
 </beans>

@@ -53,7 +53,7 @@ public final class AttributeRegistryTest {
 
     @BeforeClass
     public static void startup() {
-        attributeRegistry = AttributeRegistries.fromFile(TEST_FILE);
+        attributeRegistry = AttributeRegistries.fromFile(TEST_FILE, null);
     }
 
     @SuppressWarnings({"PublicField"})
@@ -124,7 +124,7 @@ public final class AttributeRegistryTest {
         thrown.expectMessage(startsWith("java.io.FileNotFoundException: File \"WrongFile.xml\" cannot be found from path: \""));
         thrown.expectMessage(endsWith("WrongFile.xml\""));
 
-        AttributeRegistry attributeRegistry = AttributeRegistries.fromFile("WrongFile.xml");
+        AttributeRegistry attributeRegistry = AttributeRegistries.fromFile("WrongFile.xml", null);
         ImmutableSortedSet<AttributeDefinition<?>> attributes = attributeRegistry.getAttributes();
 
         assertThat(attributes.size(), is(Integer.valueOf(20)));
@@ -133,7 +133,7 @@ public final class AttributeRegistryTest {
     @Test
     public void testGetAttributesFromFileWithSpacesInPath() throws Exception {
 
-        AttributeRegistry attributeRegistry = AttributeRegistries.fromFile(TEST_FILE_WITH_SPACES);
+        AttributeRegistry attributeRegistry = AttributeRegistries.fromFile(TEST_FILE_WITH_SPACES, null);
 
         ImmutableSortedSet<AttributeDefinition<?>> attributes = attributeRegistry.getAttributes();
 

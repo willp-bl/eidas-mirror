@@ -49,6 +49,8 @@ public final class LightRequestTest {
                     .put(CURRENT_GIVEN_NAME, new StringAttributeValue("Jean-Claude", false))
                     .build();
 
+    private static final String PUBLIC = "public";
+
     @SuppressWarnings({"PublicField"})
     @Rule
     public ExpectedException thrown = ExpectedException.none();
@@ -154,8 +156,9 @@ public final class LightRequestTest {
                         .levelOfAssurance(LEVEL_OF_ASSURANCE)
                         .requestedAttributes(REQUESTED_ATTRIBUTES)
                         .nameIdFormat(UNSPECIFIED)
+                        .spType(PUBLIC)
                         .build();
-        String expected = "LightRequest{id='f5e7e0f5-b9b8-4256-a7d0-4090141b326d', citizenCountryCode='ES', issuer='http://localhost:7001/SP/metadata', levelOfAssurance='http://eidas.europa.eu/LoA/low', providerName='null', nameIdFormat='unspecified', requestedAttributes='{AttributeDefinition{nameUri='http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName', friendlyName='FamilyName', personType=NaturalPerson, required=true, transliterationMandatory=false, uniqueIdentifier=false, xmlType='{http://eidas.europa.eu/attributes/naturalperson}CurrentFamilyNameType', attributeValueMarshaller='eu.eidas.auth.commons.attribute.impl.StringAttributeValueMarshaller'}=[Juncker], AttributeDefinition{nameUri='http://eidas.europa.eu/attributes/naturalperson/CurrentGivenName', friendlyName='FirstName', personType=NaturalPerson, required=true, transliterationMandatory=false, uniqueIdentifier=false, xmlType='{http://eidas.europa.eu/attributes/naturalperson}CurrentGivenNameType', attributeValueMarshaller='eu.eidas.auth.commons.attribute.impl.StringAttributeValueMarshaller'}=[Jean-Claude]}'}";
+        String expected = "LightRequest{id='f5e7e0f5-b9b8-4256-a7d0-4090141b326d', citizenCountryCode='ES', issuer='http://localhost:7001/SP/metadata', levelOfAssurance='http://eidas.europa.eu/LoA/low', providerName='null', nameIdFormat='unspecified', spType='public', requestedAttributes='{AttributeDefinition{nameUri='http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName', friendlyName='FamilyName', personType=NaturalPerson, required=true, transliterationMandatory=false, uniqueIdentifier=false, xmlType='{http://eidas.europa.eu/attributes/naturalperson}CurrentFamilyNameType', attributeValueMarshaller='eu.eidas.auth.commons.attribute.impl.StringAttributeValueMarshaller'}=[Juncker], AttributeDefinition{nameUri='http://eidas.europa.eu/attributes/naturalperson/CurrentGivenName', friendlyName='FirstName', personType=NaturalPerson, required=true, transliterationMandatory=false, uniqueIdentifier=false, xmlType='{http://eidas.europa.eu/attributes/naturalperson}CurrentGivenNameType', attributeValueMarshaller='eu.eidas.auth.commons.attribute.impl.StringAttributeValueMarshaller'}=[Jean-Claude]}'}";
         assertEquals(expected, lightRequest.toString());
     }
 }

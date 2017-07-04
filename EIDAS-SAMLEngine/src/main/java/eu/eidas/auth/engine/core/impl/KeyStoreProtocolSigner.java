@@ -21,6 +21,8 @@ import eu.eidas.auth.engine.configuration.SamlEngineConfigurationException;
 import eu.eidas.auth.engine.configuration.dom.KeyStoreSignatureConfigurator;
 import eu.eidas.auth.engine.core.ProtocolSignerI;
 
+import javax.annotation.Nullable;
+
 /**
  * The base abstract class for implementations of {@link ProtocolSignerI} relying on a {@link java.security.KeyStore}.
  *
@@ -28,7 +30,7 @@ import eu.eidas.auth.engine.core.ProtocolSignerI;
  */
 public abstract class KeyStoreProtocolSigner extends AbstractProtocolSigner {
 
-    protected KeyStoreProtocolSigner(Map<String, String> properties) throws SamlEngineConfigurationException {
-        super(new KeyStoreSignatureConfigurator().getSignatureConfiguration(properties));
+    protected KeyStoreProtocolSigner(Map<String, String> properties, @Nullable String defaultPath) throws SamlEngineConfigurationException {
+        super(new KeyStoreSignatureConfigurator().getSignatureConfiguration(properties, defaultPath));
     }
 }

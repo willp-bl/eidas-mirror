@@ -1,5 +1,6 @@
 package eu.eidas.idp;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -9,21 +10,12 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.google.common.collect.ImmutableSet;
 
+import eu.eidas.auth.commons.*;
+import eu.eidas.auth.commons.attribute.*;
+import eu.eidas.auth.engine.core.eidas.spec.RepresentativeLegalPersonSpec;
+import eu.eidas.auth.engine.core.eidas.spec.RepresentativeNaturalPersonSpec;
 import org.apache.log4j.Logger;
 
-import eu.eidas.auth.commons.EIDASStatusCode;
-import eu.eidas.auth.commons.EIDASSubStatusCode;
-import eu.eidas.auth.commons.EIDASUtil;
-import eu.eidas.auth.commons.EidasErrorKey;
-import eu.eidas.auth.commons.EidasErrors;
-import eu.eidas.auth.commons.EidasParameterKeys;
-import eu.eidas.auth.commons.EidasStringUtil;
-import eu.eidas.auth.commons.attribute.AttributeDefinition;
-import eu.eidas.auth.commons.attribute.AttributeValue;
-import eu.eidas.auth.commons.attribute.AttributeValueMarshaller;
-import eu.eidas.auth.commons.attribute.AttributeValueMarshallingException;
-import eu.eidas.auth.commons.attribute.AttributeValueTransliterator;
-import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.exceptions.InternalErrorEIDASException;
 import eu.eidas.auth.commons.exceptions.InvalidParameterEIDASException;
 import eu.eidas.auth.commons.exceptions.SecurityEIDASException;
@@ -52,12 +44,23 @@ public class ProcessLogin {
 
     private String eidasLoa;
 
-    private Properties idpProperties = EIDASUtil.loadConfigs(Constants.IDP_PROPERTIES);
+    private boolean ipAddress;
 
-    private final IDPCachingMetadataFetcher idpMetadataFetcher = new IDPCachingMetadataFetcher();
+    private Properties idpProperties;
+
+    private static final IDPCachingMetadataFetcher idpMetadataFetcher = new IDPCachingMetadataFetcher();
+
+    public ProcessLogin() throws IOException {
+        idpProperties = IDPUtil.loadConfigs(Constants.IDP_PROPERTIES);
+    }
 
     private Properties loadConfigs(String path) {
-        return EIDASUtil.loadConfigs(path);
+        try {
+            return IDPUtil.loadConfigs(path);
+        } catch (IOException e) {
+            logger.error(e.getMessage());
+            throw new ApplicationSpecificIDPException("Could not load configuration file '"+path+"'", e);
+        }
     }
 
     public static List<String> getValuesOfAttribute(String attrName, String value) {
@@ -72,13 +75,51 @@ public class ProcessLogin {
         return tmp;
     }
 
+    protected ImmutableAttributeMap.Builder addAttributeValues(AttributeDefinition attr, Properties users, ImmutableAttributeMap.Builder mapBuilder) {
+        String attrName = attr.getNameUri().toASCIIString();
+        //lookup in properties file
+        String key = username + "." + attrName.replaceFirst("[Hh][Tt][Tt][Pp]://", "");
+        String value = users.getProperty(key);
+        ArrayList<String> values = new ArrayList<String>();
+        if (value != null && !value.isEmpty()) {
+            values.addAll(getValuesOfAttribute(attrName, value));
+        } else {
+            String multivalues = users.getProperty(key + ".multivalue");
+            if (null != multivalues && "true".equalsIgnoreCase(multivalues)) {
+                for (int i = 1; null != users.getProperty(key + "." + i); i++) {
+                    values.addAll(getValuesOfAttribute(attrName, users.getProperty(key + "." + i)));
+                }
+            }
+        }
+        if (!values.isEmpty()) {
+            AttributeValueMarshaller<?> attributeValueMarshaller = attr.getAttributeValueMarshaller();
+            ImmutableSet.Builder<AttributeValue<?>> builder = ImmutableSet.builder();
+            for (final String val : values) {
+                AttributeValue<?> attributeValue = null;
+                try {
+                    if (AttributeValueTransliterator.needsTransliteration(val)) {
+                        attributeValue = attributeValueMarshaller.unmarshal(val, true);
+                    } else {
+                        attributeValue = attributeValueMarshaller.unmarshal(val, false);
+                    }
+                } catch (AttributeValueMarshallingException e) {
+                    throw new IllegalStateException(e);
+                }
+                builder.add(attributeValue);
+            }
+            mapBuilder.put((AttributeDefinition) attr, (ImmutableSet) builder.build());
+        }
+        return mapBuilder;
+    }
+
     public boolean processAuthentication(HttpServletRequest request, HttpServletResponse response) {
 
-        EIDASUtil.createInstance(loadConfigs("eidasUtil.properties"));
+        //TODO vargata : check if parameters or error to be loaded here
 
         String username = request.getParameter("username");
         String password = request.getParameter("password");
         String samlToken = request.getParameter("samlToken");
+        ipAddress = "on".equalsIgnoreCase(request.getParameter("ipAddress"));
         eidasLoa = request.getParameter("eidasloa");
 
         IAuthenticationRequest authnRequest = validateRequest(samlToken);
@@ -114,40 +155,16 @@ public class ProcessLogin {
         ImmutableAttributeMap.Builder mapBuilder = ImmutableAttributeMap.builder();
 
         for (AttributeDefinition<?> attr : recvAttrMap.getDefinitions()) {
-            String attrName = attr.getNameUri().toASCIIString();
-            //lookup in properties file
-            String key = username + "." + attrName.replaceFirst("[Hh][Tt][Tt][Pp]://", "");
-            String value = users.getProperty(key);
-            ArrayList<String> values = new ArrayList<String>();
-            if (value != null && !value.isEmpty()) {
-                values.addAll(getValuesOfAttribute(attrName, value));
-            } else {
-                String multivalues = users.getProperty(key + ".multivalue");
-                if (null != multivalues && "true".equalsIgnoreCase(multivalues)) {
-                    for (int i = 1; null != users.getProperty(key + "." + i); i++) {
-                        values.addAll(getValuesOfAttribute(attrName, users.getProperty(key + "." + i)));
-                    }
-                }
-            }
-            if (!values.isEmpty()) {
-                AttributeValueMarshaller<?> attributeValueMarshaller = attr.getAttributeValueMarshaller();
-                ImmutableSet.Builder<AttributeValue<?>> builder = ImmutableSet.builder();
-                for (final String val : values) {
-                    AttributeValue<?> attributeValue = null;
-                    try {
-                        if (AttributeValueTransliterator.needsTransliteration(val)) {
-                            attributeValue = attributeValueMarshaller.unmarshal(val, true);
-                        } else {
-                            attributeValue = attributeValueMarshaller.unmarshal(val, false);
-                        }
-                    } catch (AttributeValueMarshallingException e) {
-                        throw new IllegalStateException(e);
-                    }
-                    builder.add(attributeValue);
-                }
-                mapBuilder.put((AttributeDefinition) attr, (ImmutableSet) builder.build());
-            }
+            addAttributeValues(attr, users, mapBuilder);
         }
+        // in case of representative attributes, explicit check on user file as if they have been asked in the request
+        for (AttributeDefinition<?> attr : RepresentativeLegalPersonSpec.REGISTRY.getAttributes()) {
+            addAttributeValues(attr, users, mapBuilder);
+        }
+        for (AttributeDefinition<?> attr : RepresentativeNaturalPersonSpec.REGISTRY.getAttributes()) {
+            addAttributeValues(attr, users, mapBuilder);
+        }
+
         sendAttrMap = mapBuilder.build();
         sendRedirect(authnRequest, sendAttrMap, request);
         return true;
@@ -205,7 +222,7 @@ public class ProcessLogin {
             IResponseMessage responseMessage;
             boolean signAssertion = engine.getSigner().isResponseSignAssertions();
             try {
-                responseMessage = engine.generateResponseMessage(processedAuthnRequest, response, signAssertion, remoteAddress);
+                responseMessage = engine.generateResponseMessage(processedAuthnRequest, response, signAssertion, ipAddress ? remoteAddress : null);
                 samlToken = EidasStringUtil.encodeToBase64(responseMessage.getMessageBytes());
 
             } catch (EIDASSAMLEngineException se) {
@@ -224,7 +241,7 @@ public class ProcessLogin {
     }
 
     private ProtocolEngineI getSamlEngineInstance() throws EIDASSAMLEngineException {
-        return ProtocolEngineFactory.getDefaultProtocolEngine(Constants.SAMLENGINE_NAME);
+        return IDPUtil.getProtocolEngine();
     }
 
     private void sendErrorRedirect(IAuthenticationRequest authnRequest,
