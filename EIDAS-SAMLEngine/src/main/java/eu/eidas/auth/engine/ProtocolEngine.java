@@ -374,12 +374,13 @@ public class ProtocolEngine extends AbstractProtocolEngine implements ProtocolEn
     @Nonnull
     public IAuthenticationResponse unmarshallResponseAndValidate(@Nonnull byte[] responseBytes,
                                                                  @Nonnull String userIpAddress,
-                                                                 long skewTimeInMillis,
+                                                                 long beforeSkewTimeInMillis,
+                                                                 long afterSkewTimeInMillis,
                                                                  @Nullable String audienceRestriction)
             throws EIDASSAMLEngineException {
         Correlated samlResponse = unmarshallResponse(responseBytes);
 
-        return validateUnmarshalledResponse(samlResponse, userIpAddress, skewTimeInMillis, audienceRestriction);
+        return validateUnmarshalledResponse(samlResponse, userIpAddress, beforeSkewTimeInMillis, afterSkewTimeInMillis, audienceRestriction);
     }
 
     private void validateAssertionSignatures(Response response) throws EIDASSAMLEngineException {
@@ -500,9 +501,10 @@ public class ProtocolEngine extends AbstractProtocolEngine implements ProtocolEn
     /**
      * Validate authentication response.
      *
-     * @param samlResponse the token SAML
+     * @param unmarshalledResponse the token SAML
      * @param userIpAddress the user IP
-     * @param skewTimeInMillis the skew time
+     * @param beforeSkewTimeInMillis the skew time for notBefore (value to be added)
+     * @param afterSkewTimeInMillis the skew time for notOnOrAfter (value to be added)
      * @return the authentication response
      * @throws EIDASSAMLEngineException the EIDASSAML engine exception
      */
@@ -510,14 +512,15 @@ public class ProtocolEngine extends AbstractProtocolEngine implements ProtocolEn
     @Override
     public IAuthenticationResponse validateUnmarshalledResponse(@Nonnull Correlated unmarshalledResponse,
                                                                 @Nonnull String userIpAddress,
-                                                                long skewTimeInMillis,
+                                                                long beforeSkewTimeInMillis,
+                                                                long afterSkewTimeInMillis,
                                                                 @Nullable String audienceRestriction)
             throws EIDASSAMLEngineException {
 
         Response response = ((CorrelatedResponse) unmarshalledResponse).getResponse();
 
         return getProtocolProcessor().unmarshallResponse(response, getCoreProperties().isIpValidation(), userIpAddress,
-                                                         skewTimeInMillis, getClock().getCurrentTime(),
+                beforeSkewTimeInMillis, afterSkewTimeInMillis, getClock().getCurrentTime(),
                                                          audienceRestriction);
     }
 }

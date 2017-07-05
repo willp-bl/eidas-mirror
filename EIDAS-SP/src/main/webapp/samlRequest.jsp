@@ -40,7 +40,7 @@
                         </div>
                         <div class="form-group">
                             <label for="country"><s:property value="%{getText('relayState')}"/></label>
-                            <input type="text" id=relayState" name="RelayState" value="MyRelayState" class="form-control"/>
+                            <input type="text" id="relayState" name="RelayState" value="MyRelayState" class="form-control"/>
                         </div>
                         <div class="form-group">
                             <label for="SAMLRequest"><s:property value="%{getText('SAMLRequestId')}"/></label>

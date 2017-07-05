@@ -67,7 +67,7 @@ public class SAMLEngineTimeSkewTest {
         LOG.info("testValidateResponseWithNoTimeSkew");
         clock.setDelta(0);
         byte[] samlResponse = generateTestSamlResponse();
-        engine.unmarshallResponseAndValidate(samlResponse, "", 0, null);
+        engine.unmarshallResponseAndValidate(samlResponse, "", 0, 0, null);
     }
 
     /**
@@ -80,7 +80,7 @@ public class SAMLEngineTimeSkewTest {
         LOG.info("testValidateResponseWithTestClockOneHourLaterAndNoTimeSkew");
         clock.setDelta(600000);              // clock is now one hour later
         byte[] samlResponse = generateTestSamlResponse();
-        engine.unmarshallResponseAndValidate(samlResponse, "", 0, null);
+        engine.unmarshallResponseAndValidate(samlResponse, "", 0, 0, null);
     }
 
     /**
@@ -93,7 +93,7 @@ public class SAMLEngineTimeSkewTest {
         LOG.info("testValidateResponseWithTestClockOneHourBeforeAndNoTimeSkew");
         clock.setDelta(-600000);              // clock is now one hour before
         byte[] samlResponse = generateTestSamlResponse();
-        engine.unmarshallResponseAndValidate(samlResponse, "", 0, null);
+        engine.unmarshallResponseAndValidate(samlResponse, "", 0, 0, null);
     }
 
     /**
@@ -106,7 +106,7 @@ public class SAMLEngineTimeSkewTest {
         LOG.info("testValidateResponseWithTestClockOneHourLaterAndTimeSkew");
         clock.setDelta(600000);              // clock is now one hour later
         byte[] samlResponse = generateTestSamlResponse();
-        engine.unmarshallResponseAndValidate(samlResponse, "", 600000, null);
+        engine.unmarshallResponseAndValidate(samlResponse, "", -600000, 600000, null);
     }
 
     private static PersonalAttribute newStorkPersonalAttribute(String friendlyName) {

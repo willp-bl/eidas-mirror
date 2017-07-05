@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.util.Properties;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
 import javax.annotation.concurrent.ThreadSafe;
 
@@ -40,9 +41,9 @@ public final class ReloadableProperties {
      *
      * @param fileName the name of the properties file.
      */
-    public ReloadableProperties(@Nonnull String fileName) {
+    public ReloadableProperties(@Nonnull String fileName, @Nullable String defaultPath) {
         Preconditions.checkNotNull(fileName, "fileName");
-        accessor = SingletonAccessors.newPropertiesAccessor(fileName, PropertiesConverter.IdemConverter.INSTANCE);
+        accessor = SingletonAccessors.newPropertiesAccessor(fileName, defaultPath, PropertiesConverter.IdemConverter.INSTANCE);
     }
 
     /**

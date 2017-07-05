@@ -22,6 +22,7 @@
 
 package eu.eidas.node.auth.connector.tests;
 
+import java.io.FileNotFoundException;
 import java.util.Map;
 import java.util.Properties;
 
@@ -305,7 +306,11 @@ public class AUCONNECTORUtilTestCase {
         ConcurrentMapServiceDistributedImpl hazelCache = new ConcurrentMapServiceDistributedImpl();
         HazelcastInstanceInitializer initializer = new HazelcastInstanceInitializer();
         initializer.setHazelcastInstanceName("TEST");
-        initializer.initializeInstance();
+        try {
+            initializer.initializeInstance();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
         hazelCache.setCacheName("myTestCache");
         hazelCache.setHazelcastInstanceInitializer(initializer);
         auconnectorutil.setConcurrentMapService(hazelCache);
@@ -316,6 +321,7 @@ public class AUCONNECTORUtilTestCase {
         // Second submission of same value, replay attack must be detected
         Assert.assertFalse("Second pass of replay attack", auconnectorutil.checkNotPresentInCache(ANTIREPLAY_SAML_ID_A, "EU"));
     }
+
     @Test(expected=InvalidParameterEIDASException.class)
     public void testHazelCastAntiReplayMechanismFailByNullCache(){
         ConcurrentMapServiceDistributedImpl hazelCache = new ConcurrentMapServiceDistributedImpl();

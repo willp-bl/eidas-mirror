@@ -11,6 +11,7 @@ import eu.eidas.auth.commons.lang.Canonicalizers;
 import eu.eidas.auth.commons.lang.EnumMapper;
 import eu.eidas.auth.commons.lang.KeyAccessor;
 import eu.eidas.util.Preconditions;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Static factory methods pertaining to {@link SingletonAccessor}.
@@ -190,25 +191,32 @@ public final class SingletonAccessors {
 
     @Nonnull
     public static <T> SingletonAccessor<T> newFileAccessor(@Nonnull String fileName,
+                                                           @Nullable String defaultPath,
                                                            @Nonnull FileMarshaller<T> fileMarshaller,
                                                            @Nonnull StreamMarshaller<T> streamMarshaller) {
         Preconditions.checkNotNull(fileName, "fileName");
         Preconditions.checkNotNull(fileMarshaller, "fileMarshaller");
         Preconditions.checkNotNull(streamMarshaller, "streamMarshaller");
+        String fileWithPath;
+        if (StringUtils.isNotBlank(defaultPath)) {
+            fileWithPath = defaultPath + fileName;
+        } else {
+            fileWithPath = fileName;
+        }
         try {
-            URL resource = ResourceLocator.getResource(fileName);
+            URL resource = ResourceLocator.getResource(fileWithPath);
             String protocol = resource.getProtocol();
             UrlProtocol urlProtocol = UrlProtocol.fromString(protocol);
             if (null != urlProtocol) {
                 switch (urlProtocol) {
                     case FILE:
-                        return new ReloadableFileAccessor<T>(fileMarshaller, fileName, resource);
+                        return new ReloadableFileAccessor<T>(fileMarshaller, fileWithPath, resource);
                     default:
                         return new LazyAccessor<T>(new UrlAccessor<T>(streamMarshaller, resource));
                 }
             }
             throw new IllegalArgumentException(
-                    "\"" + fileName + "\" found at invalid URL: \"" + resource.toExternalForm() + "\"");
+                    "\"" + fileWithPath + "\" found at invalid URL: \"" + resource.toExternalForm() + "\"");
         } catch (IOException ioe) {
             throw new IllegalArgumentException(ioe);
         }
@@ -216,10 +224,11 @@ public final class SingletonAccessors {
 
     @Nonnull
     public static <T> SingletonAccessor<T> newPropertiesAccessor(@Nonnull String fileName,
+                                                                 @Nullable String defaultPath,
                                                                  @Nonnull PropertiesConverter<T> propertiesConverter) {
         Preconditions.checkNotNull(fileName, "fileName");
         Preconditions.checkNotNull(propertiesConverter, "propertiesConverter");
-        return newFileAccessor(fileName, new PropertiesBasedFileMarshaller<T>(propertiesConverter),
+        return newFileAccessor(fileName, defaultPath, new PropertiesBasedFileMarshaller<T>(propertiesConverter),
                                new PropertiesBasedStreamMarshaller<T>(PropertiesFormat.getFormat(fileName),
                                                                       propertiesConverter));
     }

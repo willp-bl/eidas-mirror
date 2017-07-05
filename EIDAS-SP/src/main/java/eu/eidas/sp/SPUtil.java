@@ -22,6 +22,7 @@
 
 package eu.eidas.sp;
 
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.Properties;
 
@@ -54,9 +55,16 @@ public class SPUtil {
 
     private static final String ASSERTION_XPATH = "//*[local-name()='Assertion']";
 
-    private static Properties loadConfigs(String path) throws IOException {
+    public static String getConfigFilePath() {
+        /*String envLocation = System.getenv().get(Constants.SP_CONFIG_REPOSITORY);
+        String configLocation = System.getProperty(Constants.SP_CONFIG_REPOSITORY, envLocation);
+        return configLocation;*/
+        return (String)ApplicationContextProvider.getApplicationContext().getBean(Constants.SP_REPO_BEAN_NAME);
+    }
+
+    private static Properties loadConfigs(String fileName) throws IOException {
         Properties properties = new Properties();
-        properties.load(SPUtil.class.getClassLoader().getResourceAsStream(path));
+        properties.load(new FileReader(SPUtil.getConfigFilePath()+fileName));
         return properties;
     }
 

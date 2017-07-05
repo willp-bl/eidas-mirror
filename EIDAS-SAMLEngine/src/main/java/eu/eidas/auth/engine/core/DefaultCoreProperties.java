@@ -97,7 +97,7 @@ public final class DefaultCoreProperties implements SamlEngineCoreProperties {
         /**
          * The one time use.
          */
-        private boolean oneTimeUse = true;
+        private boolean oneTimeUse = false;
 
         /**
          * The protocol binding.

@@ -118,11 +118,6 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
     private IEIDASLogger loggerBean;
 
     /**
-     * SAML instance to communicate with SP.
-     */
-    private String samlSpInstance;
-
-    /**
      * SAML instance to communicate with ServiceProxy.
      */
     private String samlServiceInstance;
@@ -207,6 +202,9 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
                                                       String ipUserAddress,
                                                       IAuthenticationResponse response,
                                                       String message) {
+        //TODO vargata - removed temporary - error response genereation (if needed) to be relocated to specific
+        return new byte[0];
+        /*
         try {
             ProtocolEngineI engine = getSamlEngine(samlSpInstance);
             // Generate SAMLResponse Fail.
@@ -237,7 +235,7 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
             throw new InternalErrorEIDASException(
                     EidasErrors.get(EidasErrorKey.SPROVIDER_SELECTOR_ERROR_CREATE_SAML.errorCode()),
                     EidasErrors.get(EidasErrorKey.SPROVIDER_SELECTOR_ERROR_CREATE_SAML.errorMessage()), e);
-        }
+        }*/
     }
 
     private EidasErrorKey getConnectorRedirectError(EIDASSAMLEngineException exc, EidasErrorKey defaultError) {
@@ -281,15 +279,7 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
 
             String serviceMetadataURL = getConnectorUtil().loadConfigServiceMetadataURL(serviceCode);
 
-            ProtocolEngineI engine = getSamlEngine(samlSpInstance);
-
-            String serviceUrl =
-                    engine.getProtocolProcessor().getServiceUrl(serviceMetadataURL, SamlBindingUri.SAML2_POST);
-
-            if (StringUtils.isBlank(serviceUrl)) {
-                // fallback to the locale configuration
-                serviceUrl = connectorUtil.loadConfigServiceURL(serviceCode);
-            }
+            String serviceUrl = connectorUtil.loadConfigServiceURL(serviceCode);
 
             LOG.debug("Citizen Country URL " + serviceCode + " URL " + serviceUrl);
             NormalParameterValidator.paramName(EidasErrorKey.SERVICE_REDIRECT_URL.toString())
@@ -484,10 +474,12 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
             String citizenIpAddress = storedConnectorRequest.getRemoteIpAddress();
             IAuthenticationRequest connectorAuthnRequest = storedConnectorRequest.getRequest();
 
-            Long serviceSkew =
-                    connectorUtil.loadConfigServiceTimeSkewInMillis(connectorAuthnRequest.getCitizenCountryCode());
+            Long beforeServiceSkew =
+                    connectorUtil.loadConfigServiceTimeSkewInMillis(connectorAuthnRequest.getCitizenCountryCode(), AUCONNECTORUtil.CONSUMER_SKEW_TIME.BEFORE);
+            Long afterServiceSkew =
+                    connectorUtil.loadConfigServiceTimeSkewInMillis(connectorAuthnRequest.getCitizenCountryCode(), AUCONNECTORUtil.CONSUMER_SKEW_TIME.AFTER);
             IAuthenticationResponse authnResponse =
-                    engine.validateUnmarshalledResponse(proxyServiceSamlResponse, citizenIpAddress, serviceSkew, null);
+                    engine.validateUnmarshalledResponse(proxyServiceSamlResponse, citizenIpAddress, beforeServiceSkew, afterServiceSkew, null);
 
             LOG.info(LoggingMarkerMDC.SAML_EXCHANGE, "Connector - Processing SAML Response to request with ID {}",
                      connectorRequestId);
@@ -511,7 +503,7 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
             if (!EIDASStatusCode.SUCCESS_URI.toString().equals(authnResponse.getStatusCode())) {
                 LOG.info("ERROR : Auth not succeed!");
 
-                String errorCode = EIDASUtil.getEidasErrorCode(authnResponse.getStatusMessage());
+                String errorCode =  EidasErrors.get(authnResponse.getStatusMessage());
                 // We only change the error message if we get any error code on the Message!
                 // Backwards compatibility
                 String errorMessage = authnResponse.getStatusMessage();
@@ -655,15 +647,6 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
                                              EidasErrors.get(
                                                      EidasErrorKey.SPROVIDER_SELECTOR_INVALID_SAML.errorMessage()));
         }
-    }
-
-    public String getIssuer() {
-        String connectorMetadataUrl = getConnectorMetadataUrl();
-        if (StringUtils.isNotBlank(connectorMetadataUrl) && PropertiesUtil.isMetadataEnabled()) {
-            return connectorMetadataUrl;
-        }
-        ProtocolEngineI engine = getSamlEngine(samlSpInstance);
-        return engine.getCoreProperties().getRequester();
     }
 
     /**
@@ -849,31 +832,18 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
 
     @Override
     public boolean checkMandatoryAttributes(@Nonnull ImmutableAttributeMap attributes) {
-        ProtocolEngineI engine = getSamlEngine(samlSpInstance);
+        ProtocolEngineI engine = getSamlEngine(samlServiceInstance);
         return engine.getProtocolProcessor().checkMandatoryAttributes(attributes);
     }
 
-    // TODO why are there 2 SAML engines in the connector?
+    @Override
+    public boolean checkRepresentativeAttributes(@Nonnull ImmutableAttributeMap attributes) {
+        ProtocolEngineI engine = getSamlEngine(samlServiceInstance);
+        return engine.getProtocolProcessor().checkRepresentativeAttributes(attributes);
+    }
+
     public ProtocolEngineI getSamlEngine(@Nonnull String instanceName) {
         return nodeProtocolEngineFactory.getProtocolEngine(instanceName);
-    }
-
-    /**
-     * Setter for samlSpInstance.
-     *
-     * @param nSamlSpInstance The new SamlSpInstance value.
-     */
-    public void setSamlSpInstance(String nSamlSpInstance) {
-        this.samlSpInstance = nSamlSpInstance;
-    }
-
-    /**
-     * Getter for samlSpInstance.
-     *
-     * @return The samlSpInstance value.
-     */
-    public String getSamlSpInstance() {
-        return samlSpInstance;
     }
 
     /**

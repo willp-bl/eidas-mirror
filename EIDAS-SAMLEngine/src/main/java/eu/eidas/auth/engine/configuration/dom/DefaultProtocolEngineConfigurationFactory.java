@@ -35,7 +35,7 @@ public final class DefaultProtocolEngineConfigurationFactory {
             Exception initializationException = null;
             ProtocolEngineConfigurationFactory factory = null;
             try {
-                factory = new ProtocolEngineConfigurationFactory(DOMConfigurationParser.DEFAULT_CONFIGURATION_FILE);
+                factory = new ProtocolEngineConfigurationFactory(DOMConfigurationParser.DEFAULT_CONFIGURATION_FILE, null, null);
             } catch (Exception ex) {
                 LOG.error("Problem initializing the static configurations: " + ex, ex);
                 initializationException = ex;

@@ -66,6 +66,7 @@ public final class DOMConfigurator {
     @Nullable
     private static ProtocolCipherI configureCipher(@Nonnull String instanceName,
                                                    @Nonnull InstanceEntry instanceEntry,
+                                                   @Nullable String defaultPath,
                                                    @Nullable String overrideFile) {
         // LOADING ENCRYPTION CONFIGURATION
         ConfigurationEntry encryptionConfigurationEntry = instanceEntry.get(ConfigurationKey.ENCRYPTION_CONFIGURATION);
@@ -83,10 +84,10 @@ public final class DOMConfigurator {
                 @SuppressWarnings("unchecked") Class<ProtocolCipherI> encryptionClass =
                         (Class<ProtocolCipherI>) Class.forName(encryptionClassName, true, contextClassLoader);
 
-                Constructor<ProtocolCipherI> constructor = encryptionClass.getConstructor(Map.class);
+                Constructor<ProtocolCipherI> constructor = encryptionClass.getConstructor(Map.class, String.class);
 
                 ProtocolCipherI cipher = createReloadableProxyIfNeeded(instanceName, encryptionConfigurationEntry,
-                                                                       ConfigurationKey.ENCRYPTION_CONFIGURATION,
+                                                                       ConfigurationKey.ENCRYPTION_CONFIGURATION,  defaultPath,
                                                                        ProtocolCipherI.class, constructor,
                                                                        contextClassLoader, overrideFile);
                 return cipher;
@@ -141,6 +142,7 @@ public final class DOMConfigurator {
     @Nullable
     private static SamlEngineEncryptionI configureEncryption(@Nonnull String instanceName,
                                                              @Nonnull InstanceEntry instanceEntry,
+                                                             @Nullable String defaultPath,
                                                              @Nullable String overrideFile) {
         // LOADING ENCRYPTION CONFIGURATION
         ConfigurationEntry encryptionConfigurationEntry = instanceEntry.get(ConfigurationKey.ENCRYPTION_CONFIGURATION);
@@ -161,7 +163,7 @@ public final class DOMConfigurator {
                 Constructor<SamlEngineEncryptionI> constructor = encryptionClass.getConstructor(Map.class);
 
                 SamlEngineEncryptionI cipher = createReloadableProxyIfNeeded(instanceName, encryptionConfigurationEntry,
-                                                                             ConfigurationKey.ENCRYPTION_CONFIGURATION,
+                                                                             ConfigurationKey.ENCRYPTION_CONFIGURATION, defaultPath,
                                                                              SamlEngineEncryptionI.class, constructor,
                                                                              contextClassLoader, overrideFile);
                 return cipher;
@@ -279,6 +281,7 @@ public final class DOMConfigurator {
      */
     @Nonnull
     private static ProtocolProcessorI configureProtocolProcessor(@Nonnull String instanceName,
+                                                                 @Nullable String defaultPath,
                                                                  @Nonnull InstanceEntry instanceEntry,
                                                                  @Nullable MetadataSignerI metadataSigner)
             throws SamlEngineConfigurationException {
@@ -314,13 +317,13 @@ public final class DOMConfigurator {
             AttributeRegistry coreAttributeRegistry = null;
 
             if (StringUtils.isNotBlank(coreAttributeRegistryFile)) {
-                coreAttributeRegistry = AttributeRegistries.fromFile(coreAttributeRegistryFile);
+                coreAttributeRegistry = AttributeRegistries.fromFile(coreAttributeRegistryFile, defaultPath);
             }
 
             AttributeRegistry additionalAttributeRegistry = null;
 
             if (StringUtils.isNotBlank(additionalAttributeRegistryFile)) {
-                additionalAttributeRegistry = AttributeRegistries.fromFile(additionalAttributeRegistryFile);
+                additionalAttributeRegistry = AttributeRegistries.fromFile(additionalAttributeRegistryFile, defaultPath);
             }
 
             ProtocolProcessorI protocolProcessor = null;
@@ -365,6 +368,7 @@ public final class DOMConfigurator {
     @Nonnull
     private static SamlEngineCoreProperties configureSamlEngineCore(@Nonnull String instanceName,
                                                                     @Nonnull InstanceEntry instanceEntry,
+                                                                    @Nullable String defaultPath,
                                                                     @Nullable String overrideFile)
             throws SamlEngineConfigurationException {
         ConfigurationEntry samlEngineConfigurationEntry = instanceEntry.get(ConfigurationKey.SAML_ENGINE_CONFIGURATION);
@@ -383,7 +387,7 @@ public final class DOMConfigurator {
             Constructor<DefaultCoreProperties> constructor = DefaultCoreProperties.class.getConstructor(Map.class);
 
             return createReloadableProxyIfNeeded(instanceName, samlEngineConfigurationEntry,
-                                                 ConfigurationKey.SAML_ENGINE_CONFIGURATION,
+                                                 ConfigurationKey.SAML_ENGINE_CONFIGURATION, defaultPath,
                                                  SamlEngineCoreProperties.class, constructor,
                                                  Thread.currentThread().getContextClassLoader(), overrideFile);
         } catch (Exception e) {
@@ -398,6 +402,7 @@ public final class DOMConfigurator {
     @Nonnull
     private static ProtocolSignerI configureSignature(@Nonnull String instanceName,
                                                       @Nonnull InstanceEntry instanceEntry,
+                                                      @Nullable String defaultPath,
                                                       @Nullable String overrideFile)
             throws SamlEngineConfigurationException {
         ConfigurationEntry signatureConfigurationEntry = instanceEntry.get(ConfigurationKey.SIGNATURE_CONFIGURATION);
@@ -415,10 +420,17 @@ public final class DOMConfigurator {
             ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
             @SuppressWarnings("unchecked") Class<ProtocolSignerI> signerClass =
                     (Class<ProtocolSignerI>) Class.forName(signerClassName, true, contextClassLoader);
-            Constructor<ProtocolSignerI> constructor = signerClass.getConstructor(Map.class);
+
+            Constructor<ProtocolSignerI> constructor;
+            try {
+                //try to get constructor supporting defaultPath first
+                constructor = signerClass.getConstructor(Map.class, String.class);
+            } catch (NoSuchMethodException e) {
+                constructor = signerClass.getConstructor(Map.class);
+            }
 
             ProtocolSignerI signer = createReloadableProxyIfNeeded(instanceName, signatureConfigurationEntry,
-                                                                   ConfigurationKey.SIGNATURE_CONFIGURATION,
+                                                                   ConfigurationKey.SIGNATURE_CONFIGURATION, defaultPath,
                                                                    ProtocolSignerI.class, constructor,
                                                                    contextClassLoader, overrideFile);
 
@@ -439,17 +451,18 @@ public final class DOMConfigurator {
     private static <T> T createReloadableProxyIfNeeded(@Nonnull final String instanceName,
                                                        @Nonnull final ConfigurationEntry configurationEntry,
                                                        @Nonnull final ConfigurationKey configurationKey,
+                                                       @Nullable final String defaultPath,
                                                        @Nonnull final Class<T> type,
                                                        @Nonnull final Constructor<? extends T> constructor,
                                                        @Nonnull final ClassLoader contextClassLoader,
                                                        @Nullable String overrideFile)
             throws IllegalAccessException, InvocationTargetException, InstantiationException {
         if (StringUtils.isBlank(overrideFile)) {
-            return createReloadableProxyIfNeeded(instanceName, configurationEntry, configurationKey, type, constructor,
+            return createReloadableProxyIfNeeded(instanceName, configurationEntry, configurationKey, defaultPath, type, constructor,
                                                  contextClassLoader, ImmutableMap.<String, String>of());
         } else {
             final SingletonAccessor<T> accessor =
-                    SingletonAccessors.newPropertiesAccessor(overrideFile, new PropertiesConverter<T>() {
+                    SingletonAccessors.newPropertiesAccessor(overrideFile, defaultPath, new PropertiesConverter<T>() {
 
                         @Nonnull
                         @Override
@@ -462,7 +475,7 @@ public final class DOMConfigurator {
                         public T unmarshal(@Nonnull Properties properties) {
                             try {
                                 return createReloadableProxyIfNeeded(instanceName, configurationEntry,
-                                                                     configurationKey, type, constructor,
+                                                                     configurationKey, defaultPath, type, constructor,
                                                                      contextClassLoader,
                                                                      Maps.fromProperties(properties));
                             } catch (InvocationTargetException e) {
@@ -482,6 +495,7 @@ public final class DOMConfigurator {
     private static <T> T createReloadableProxyIfNeeded(@Nonnull String instanceName,
                                                        @Nonnull ConfigurationEntry configurationEntry,
                                                        @Nonnull ConfigurationKey configurationKey,
+                                                       @Nullable final String defaultPath,
                                                        @Nonnull Class<T> type,
                                                        @Nonnull final Constructor<? extends T> constructor,
                                                        @Nonnull ClassLoader contextClassLoader,
@@ -492,13 +506,17 @@ public final class DOMConfigurator {
         if (StringUtils.isNotBlank(fileConfiguration)) {
             final SingletonAccessor<T> accessor =
                     ExternalConfigurationFileAccessor.newAccessor(instanceName, configurationKey.getKey(),
-                                                                  fileConfiguration.trim(), staticParameters,
+                                                                  fileConfiguration.trim(), defaultPath, staticParameters,
                                                                   overrideParameters, new MapConverter<T>() {
 
                                 @Override
                                 public T convert(Map<String, String> map) {
                                     try {
-                                        return constructor.newInstance(map);
+                                        if (constructor.getParameterTypes().length == 1) {
+                                            return constructor.newInstance(map);
+                                        } else {
+                                            return constructor.newInstance(map, defaultPath);
+                                        }
                                     } catch (InvocationTargetException ite) {
                                         LOG.error("", ite);
                                         throw new IllegalStateException(ite.getTargetException());
@@ -512,7 +530,11 @@ public final class DOMConfigurator {
             Map<String, String> allParameters = new LinkedHashMap<>();
             allParameters.putAll(staticParameters);
             allParameters.putAll(overrideParameters);
-            return constructor.newInstance(ImmutableMap.copyOf(allParameters));
+            if (constructor.getParameterTypes().length == 1) {
+                return constructor.newInstance(ImmutableMap.copyOf(allParameters));
+            } else {
+                return constructor.newInstance(ImmutableMap.copyOf(allParameters),defaultPath);
+            }
         }
     }
 
@@ -526,7 +548,7 @@ public final class DOMConfigurator {
     public static SamlEngineConfiguration getConfiguration(@Nonnull String instanceName,
                                                            @Nonnull InstanceEntry instanceEntry)
             throws SamlEngineConfigurationException {
-        return getConfiguration(instanceName, instanceEntry, null);
+        return getConfiguration(instanceName, instanceEntry, null, null);
     }
 
     /**
@@ -543,6 +565,7 @@ public final class DOMConfigurator {
     @SuppressWarnings("squid:S2259")
     public static SamlEngineConfiguration getConfiguration(@Nonnull String instanceName,
                                                            @Nonnull InstanceEntry instanceEntry,
+                                                           @Nullable String defaultPath,
                                                            @Nullable String overrideFile)
             throws SamlEngineConfigurationException {
         if (null == instanceEntry) {
@@ -558,9 +581,9 @@ public final class DOMConfigurator {
         }
 
         Preconditions.checkNotBlank(instanceEntry.getName(), "instanceName");
-        SamlEngineCoreProperties samlCore = configureSamlEngineCore(instanceName, instanceEntry, overrideFile);
-        ProtocolSignerI signer = configureSignature(instanceName, instanceEntry, overrideFile);
-        SamlEngineEncryptionI cipher = configureEncryption(instanceName, instanceEntry, overrideFile);
+        SamlEngineCoreProperties samlCore = configureSamlEngineCore(instanceName, instanceEntry, defaultPath, overrideFile);
+        ProtocolSignerI signer = configureSignature(instanceName, instanceEntry, defaultPath, overrideFile);
+        SamlEngineEncryptionI cipher = configureEncryption(instanceName, instanceEntry, defaultPath, overrideFile);
         MetadataSignerI metadataSigner = null;
         if (signer instanceof MetadataSignerI) {
             metadataSigner = (MetadataSignerI) signer;
@@ -585,7 +608,7 @@ public final class DOMConfigurator {
     @Nonnull
     public static ImmutableMap<String, SamlEngineConfiguration> getConfigurationMap(@Nonnull InstanceMap instanceMap)
             throws SamlEngineConfigurationException {
-        return getConfigurationMap(instanceMap, null);
+        return getConfigurationMap(instanceMap, null, null);
     }
 
     /**
@@ -594,13 +617,14 @@ public final class DOMConfigurator {
     @Deprecated
     @Nonnull
     public static ImmutableMap<String, SamlEngineConfiguration> getConfigurationMap(@Nonnull InstanceMap instanceMap,
+                                                                                    @Nullable String defaultPath,
                                                                                     @Nullable String overrideFile)
             throws SamlEngineConfigurationException {
         Preconditions.checkNotNull(instanceMap, "instanceMap");
         ImmutableMap.Builder<String, SamlEngineConfiguration> configurationBuilder = ImmutableMap.builder();
         for (final Map.Entry<String, InstanceEntry> entry : instanceMap.getInstances().entrySet()) {
             String instanceName = entry.getKey();
-            SamlEngineConfiguration configuration = getConfiguration(instanceName, entry.getValue(), overrideFile);
+            SamlEngineConfiguration configuration = getConfiguration(instanceName, entry.getValue(), defaultPath, overrideFile);
             configurationBuilder.put(instanceName, configuration);
         }
         return configurationBuilder.build();
@@ -619,6 +643,7 @@ public final class DOMConfigurator {
     @SuppressWarnings("squid:S2259")
     public static ProtocolEngineConfiguration getProtocolConfiguration(@Nonnull String instanceName,
                                                                        @Nonnull InstanceEntry instanceEntry,
+                                                                       @Nullable String defaultPath,
                                                                        @Nullable String overrideFile)
             throws SamlEngineConfigurationException {
         if (null == instanceEntry) {
@@ -634,14 +659,14 @@ public final class DOMConfigurator {
         }
 
         Preconditions.checkNotBlank(instanceEntry.getName(), "instanceName");
-        SamlEngineCoreProperties samlCore = configureSamlEngineCore(instanceName, instanceEntry, overrideFile);
-        ProtocolSignerI signer = configureSignature(instanceName, instanceEntry, overrideFile);
-        ProtocolCipherI cipher = configureCipher(instanceName, instanceEntry, overrideFile);
+        SamlEngineCoreProperties samlCore = configureSamlEngineCore(instanceName, instanceEntry, defaultPath, overrideFile);
+        ProtocolSignerI signer = configureSignature(instanceName, instanceEntry, defaultPath, overrideFile);
+        ProtocolCipherI cipher = configureCipher(instanceName, instanceEntry, defaultPath, overrideFile);
         MetadataSignerI metadataSigner = null;
         if (signer instanceof MetadataSignerI) {
             metadataSigner = (MetadataSignerI) signer;
         }
-        ProtocolProcessorI protocolProcessor = configureProtocolProcessor(instanceName, instanceEntry, metadataSigner);
+        ProtocolProcessorI protocolProcessor = configureProtocolProcessor(instanceName, defaultPath, instanceEntry, metadataSigner);
         SamlEngineClock clock = configureClock(instanceName, instanceEntry);
         return ProtocolEngineConfiguration.builder()
                 .instanceName(instanceEntry.getName())
@@ -659,7 +684,7 @@ public final class DOMConfigurator {
     @Nonnull
     public static ImmutableMap<String, ProtocolEngineConfiguration> getProtocolConfigurationMap(
             @Nonnull InstanceMap instanceMap) throws SamlEngineConfigurationException {
-        return getProtocolConfigurationMap(instanceMap, null);
+        return getProtocolConfigurationMap(instanceMap, null, null);
     }
 
     /**
@@ -667,13 +692,13 @@ public final class DOMConfigurator {
      */
     @Nonnull
     public static ImmutableMap<String, ProtocolEngineConfiguration> getProtocolConfigurationMap(
-            @Nonnull InstanceMap instanceMap, @Nullable String overrideFile) throws SamlEngineConfigurationException {
+            @Nonnull InstanceMap instanceMap, @Nullable String defaultPath, @Nullable String overrideFile) throws SamlEngineConfigurationException {
         Preconditions.checkNotNull(instanceMap, "instanceMap");
         ImmutableMap.Builder<String, ProtocolEngineConfiguration> configurationBuilder = ImmutableMap.builder();
         for (final Map.Entry<String, InstanceEntry> entry : instanceMap.getInstances().entrySet()) {
             String instanceName = entry.getKey();
             ProtocolEngineConfiguration configuration =
-                    getProtocolConfiguration(instanceName, entry.getValue(), overrideFile);
+                    getProtocolConfiguration(instanceName, entry.getValue(), defaultPath, overrideFile);
             configurationBuilder.put(instanceName, configuration);
         }
         return configurationBuilder.build();

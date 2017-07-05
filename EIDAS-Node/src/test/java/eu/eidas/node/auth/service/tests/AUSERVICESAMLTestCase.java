@@ -179,7 +179,7 @@ public final class AUSERVICESAMLTestCase {
         CONFIGS.setProperty(EIDASValues.EIDAS_SERVICE_LOA.toString(), "http://eidas.europa.eu/LoA/high");
         CONFIGS.setProperty(EIDASValues.NODE_SUPPORT_EIDAS_MESSAGE_FORMAT_ONLY.toString(), "false");
 
-        EIDASUtil.createInstance(CONFIGS);
+        ///EIDASUtil.createInstance(CONFIGS);
 
         EidasAuthenticationRequest.Builder eidasAuthenticationRequestBuilder =
                 EidasAuthenticationRequest.builder();
@@ -203,7 +203,7 @@ public final class AUSERVICESAMLTestCase {
 //        ExtensionProcessorI extensionProcessor = samlEngine.getExtensionProcessor();
 //        if (extensionProcessor instanceof EidasExtensionProcessor) {
 //            EidasExtensionProcessor eidasExtensionProcessor = (EidasExtensionProcessor) extensionProcessor;
-//            MetadataProcessorI metadataProcessor =
+//            MetadataLoaderPlugin metadataProcessor =
 //                    eidasExtensionProcessor.getMetadataEncryptionHelper().getMetadataProcessor();
 //            if (metadataProcessor instanceof WrappedMetadataProcessor) {
 //                WrappedMetadataProcessor wrappedMetadataProcessor = (WrappedMetadataProcessor) metadataProcessor;

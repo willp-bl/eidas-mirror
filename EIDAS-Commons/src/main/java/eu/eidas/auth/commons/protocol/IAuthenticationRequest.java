@@ -52,4 +52,5 @@ public interface IAuthenticationRequest extends ILightRequest {
 
     @Nullable
     String getOriginCountryCode();
+
 }

@@ -45,6 +45,9 @@ public class ReturnAction extends ActionSupport implements ServletRequestAware, 
 
     private String samlUnencryptedResponseXML;
 
+    @SuppressWarnings("squid:S00116") //parameter as-is
+    private String RelayState;
+
     private ImmutableMap<AttributeDefinition<?>, ImmutableSet<? extends AttributeValue<?>>> attrMap;
 
     private HttpServletRequest request;
@@ -71,7 +74,7 @@ public class ReturnAction extends ActionSupport implements ServletRequestAware, 
         try {
             SpProtocolEngineI engine = SpProtocolEngineFactory.getSpProtocolEngine(SP_CONF);
             //validate SAML Token
-            engine.unmarshallResponseAndValidate(decSamlToken, request.getRemoteHost(), 0, metadataUrl);
+            engine.unmarshallResponseAndValidate(decSamlToken, request.getRemoteHost(), 0, 0, metadataUrl);
 
             boolean encryptedResponse = SPUtil.isEncryptedSamlResponse(decSamlToken);
             if (encryptedResponse) {
@@ -111,9 +114,9 @@ public class ReturnAction extends ActionSupport implements ServletRequestAware, 
 
         //Get SAMLEngine instance
         try {
-            ProtocolEngineI engine = ProtocolEngineFactory.getDefaultProtocolEngine(SP_CONF);
+            ProtocolEngineI engine = SpProtocolEngineFactory.getSpProtocolEngine(SP_CONF);
             //validate SAML Token
-            authnResponse = engine.unmarshallResponseAndValidate(decSamlToken, request.getRemoteHost(), 0, metadataUrl);
+            authnResponse = engine.unmarshallResponseAndValidate(decSamlToken, request.getRemoteHost(), 0, 0, metadataUrl);
 
         } catch (EIDASSAMLEngineException e) {
             logger.error(e.getMessage());
@@ -182,4 +185,13 @@ public class ReturnAction extends ActionSupport implements ServletRequestAware, 
     public void setSamlUnencryptedResponseXML(String samlUnencryptedResponseXML) {
         this.samlUnencryptedResponseXML = samlUnencryptedResponseXML;
     }
+
+    public String getRelayState() {
+        return RelayState;
+    }
+
+    public void setRelayState(String relayState) {
+        RelayState = relayState;
+    }
+
 }

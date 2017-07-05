@@ -2,6 +2,7 @@ package eu.eidas.auth.engine.xml.opensaml;
 
 import javax.xml.namespace.QName;
 
+import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
 import org.opensaml.Configuration;
 import org.opensaml.common.SAMLVersion;
@@ -320,9 +321,14 @@ public final class BuilderFactoryUtil {
      * @param address the address
      * @return the subject locality
      */
-    public static SubjectLocality generateSubjectLocality(String address) throws EIDASSAMLEngineException {
+    public static SubjectLocality generateSubjectLocality(String address, String dnsName) throws EIDASSAMLEngineException {
         final SubjectLocality subjectLocality = (SubjectLocality) buildXmlObject(SubjectLocality.DEFAULT_ELEMENT_NAME);
-        subjectLocality.setAddress(address);
+        if (StringUtils.isNotBlank(address)) {
+            subjectLocality.setAddress(address);
+        }
+        if (StringUtils.isNotBlank(dnsName)) {
+            subjectLocality.setDNSName(dnsName);
+        }
         return subjectLocality;
     }
 

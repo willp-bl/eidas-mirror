@@ -61,6 +61,12 @@
 								</select>
 							</div>
 						</c:if>
+						<div class="form-group">
+							<span>
+								<input class="form-horizontal" id="addIPAddress" type="checkbox" name="ipAddress" checked/>&nbsp;
+								<label for="addIPAddress">IP Address for SubjectConfirmationData</label>
+							</span>
+						</div>
 						<input type="hidden" name="samlToken" value="<%=samlToken%>"/>
 						<input type="hidden" name="signAssertion" value="<%=signAssertion%>"/>
 						<input type="hidden" name="encryptAssertion" value="<%=encryptAssertion%>"/>

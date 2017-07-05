@@ -57,7 +57,7 @@ public class EidasSAMLResponseSyntaxTest {
     @Test
     public void testNormalValidationOnSAMLrequest() throws Exception {
         assertNotNull(samlResponseToken);
-        IAuthenticationResponse response = SyntaxTestUtil.getEngine(SyntaxTestUtil.SAMLENGINE_CONF).unmarshallResponseAndValidate(samlResponseToken, null, 0, null);
+        IAuthenticationResponse response = SyntaxTestUtil.getEngine(SyntaxTestUtil.SAMLENGINE_CONF).unmarshallResponseAndValidate(samlResponseToken, null, 0, 0, null);
         assertNotNull(response);
     }
 
@@ -119,11 +119,6 @@ public class EidasSAMLResponseSyntaxTest {
                 "\" NotOnOrAfter=\".*\">.*" +
                 "<saml2:AudienceRestriction>.*<saml2:Audience>http://localhost:7001/SP/metadata</saml2:Audience>.*" +
                 "</saml2:AudienceRestriction>.*</saml2:Conditions>.*"));
-    }
-
-    @Test
-    public void checkSubjectlocality() throws Exception {
-        assertTrue("Response subjectlocality present", samlResponseTokenString.matches(".*<saml2:AuthnStatement AuthnInstant=\".*\">.*<saml2:AuthnContext>.*<saml2:AuthnContextDecl/>.*</saml2:AuthnContext>.*</saml2:AuthnStatement>.*"));
     }
 
     @Test

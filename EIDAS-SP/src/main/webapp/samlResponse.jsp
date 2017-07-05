@@ -45,7 +45,12 @@
 							<button type="button" class="btn btn-default btn-lg btn-block" OnClick="encodeSAMLResponse();">Encode</button>
 							<button type="button" class="btn btn-default btn-lg btn-block" OnClick="decodeSAMLResponse();">Decode</button>
 						</div>--%>
-						<s:if test="%{samlUnencryptedResponseXML != null}">
+							<div class="form-group">
+								<label for="RelayState"><s:property value="%{getText('RelayState')}"/></label>
+								<textarea id="RelayState" class="form-control" name="RelayState" rows="1"><s:property value="RelayState"/></textarea>
+						    </div>
+
+							<s:if test="%{samlUnencryptedResponseXML != null}">
 							<div class="form-group">
 								<label for="samlEncryptedResponseXML"><s:property value="%{getText('SAMLEncryptedResponseXMLId')}"/></label>
 								<textarea id="samlEncryptedResponseXML" class="form-control" name="samlEncryptedResponseXML" rows="10"><s:property value="samlResponseXML"/></textarea>

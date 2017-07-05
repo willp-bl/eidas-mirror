@@ -38,7 +38,6 @@ public class EidasConditionsValidator extends ConditionsSpecValidator {
     public void validate(Conditions conditions) throws ValidationException {
         LOG.debug("conditions.getNotBefore() "+ conditions.getNotBefore());
         LOG.debug("conditions.getNotOnOrAfter() "+ conditions.getNotOnOrAfter());
-        LOG.debug("dateTime.now() "+ DateTime.now());
 
         super.validate(conditions);
 
@@ -47,17 +46,9 @@ public class EidasConditionsValidator extends ConditionsSpecValidator {
             throw new ValidationException("NotBefore is required.");
         }
 
-        if (conditions.getNotBefore().isAfterNow()) {
-            throw new ValidationException("Current time is before NotBefore condition");
-        }
-
         if (conditions.getNotOnOrAfter() == null) {
 
             throw new ValidationException("NotOnOrAfter is required.");
-        }
-        if (conditions.getNotOnOrAfter().isBeforeNow()) {
-
-            throw new ValidationException("Current time is after NotOnOrAfter condition");
         }
 
         if (conditions.getAudienceRestrictions() == null || conditions.getAudienceRestrictions().isEmpty()) {

@@ -51,6 +51,8 @@ public abstract class AbstractLightRequest implements ILightRequest, Serializabl
 
         private String providerName;
 
+        private String spType;
+
         private ImmutableAttributeMap requestedAttributes;
 
         protected AbstractBuilder() {
@@ -65,6 +67,7 @@ public abstract class AbstractLightRequest implements ILightRequest, Serializabl
             nameIdFormat = copy.nameIdFormat;
             providerName = copy.providerName;
             requestedAttributes = copy.requestedAttributes;
+            spType = copy.spType;
         }
 
         protected AbstractBuilder(@Nonnull ILightRequest copy) {
@@ -76,6 +79,7 @@ public abstract class AbstractLightRequest implements ILightRequest, Serializabl
             nameIdFormat = copy.getNameIdFormat();
             providerName = copy.getProviderName();
             requestedAttributes = copy.getRequestedAttributes();
+            spType = copy.getSpType();
         }
 
         @Nonnull
@@ -111,6 +115,12 @@ public abstract class AbstractLightRequest implements ILightRequest, Serializabl
         @Nonnull
         public final B citizenCountryCode(String citizenCountryCode) {
             this.citizenCountryCode = citizenCountryCode;
+            return (B) this;
+        }
+
+        @Nonnull
+        public final B spType(String spType) {
+            this.spType = spType;
             return (B) this;
         }
 
@@ -209,6 +219,12 @@ public abstract class AbstractLightRequest implements ILightRequest, Serializabl
     /**
      * @serial
      */
+    @Nullable
+    private final String spType;
+
+    /**
+     * @serial
+     */
     @Nonnull
     private final ImmutableAttributeMap requestedAttributes;
 
@@ -220,6 +236,7 @@ public abstract class AbstractLightRequest implements ILightRequest, Serializabl
         nameIdFormat = builder.nameIdFormat;
         providerName = builder.providerName;
         requestedAttributes = builder.requestedAttributes;
+        spType = builder.spType;
     }
 
     @Override
@@ -255,6 +272,12 @@ public abstract class AbstractLightRequest implements ILightRequest, Serializabl
     @Override
     public final String getProviderName() {
         return providerName;
+    }
+
+    @Nullable
+    @Override
+    public final String getSpType() {
+        return spType;
     }
 
     @Nonnull
@@ -296,6 +319,10 @@ public abstract class AbstractLightRequest implements ILightRequest, Serializabl
                                  : lightRequestObj.nameIdFormat != null) {
             return false;
         }
+        if (spType != null ? !spType.equals(lightRequestObj.spType)
+                : lightRequestObj.spType != null) {
+            return false;
+        }
         return !(!requestedAttributes.equals(lightRequestObj.requestedAttributes));
     }
 
@@ -307,6 +334,7 @@ public abstract class AbstractLightRequest implements ILightRequest, Serializabl
         result = 31 * result + (null != levelOfAssurance ? levelOfAssurance.hashCode() : 0);
         result = 31 * result + (null != providerName ? providerName.hashCode() : 0);
         result = 31 * result + (null != nameIdFormat ? nameIdFormat.hashCode() : 0);
+        result = 31 * result + (null != spType ? spType.hashCode() : 0);
         result = 31 * result + (requestedAttributes.hashCode());
         return result;
     }
@@ -340,6 +368,9 @@ public abstract class AbstractLightRequest implements ILightRequest, Serializabl
                 .append('\'')
                 .append(", nameIdFormat='")
                 .append(request.getNameIdFormat())
+                .append('\'')
+                .append(", spType='")
+                .append(request.getSpType())
                 .append('\'')
                 .append(", requestedAttributes='")
                 .append(request.getRequestedAttributes())

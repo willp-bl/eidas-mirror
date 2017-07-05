@@ -61,10 +61,11 @@
         <filter-name>removeHeadersFilter</filter-name>
         <filter-class>eu.eidas.node.security.RemoveHttpHeadersFilter</filter-class>
     </filter>
-    <filter-mapping>
+    <!-- ENABLE THE UPDATER ONLY IN TEST ENVIRONMENT! -->
+    <!--filter-mapping>
         <filter-name>jersey</filter-name>
         <url-pattern>/updater/*</url-pattern>
-    </filter-mapping>
+    </filter-mapping-->
 
     <filter-mapping>
         <filter-name>securityFilter</filter-name>

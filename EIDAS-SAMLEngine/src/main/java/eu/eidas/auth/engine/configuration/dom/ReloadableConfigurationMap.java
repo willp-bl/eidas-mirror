@@ -33,12 +33,13 @@ import eu.eidas.util.Preconditions;
 public final class ReloadableConfigurationMap {
 
     static ImmutableMap<String, SamlEngineConfiguration> unmarshalStream(@Nonnull String configurationFileName,
+                                                                         @Nullable final String defaultPath,
                                                                          @Nonnull InputStream input,
                                                                          @Nullable String overrideFileName)
             throws IOException {
         try {
             InstanceMap instanceMap = DOMConfigurationParser.parseConfiguration(configurationFileName, input);
-            return DOMConfigurator.getConfigurationMap(instanceMap, overrideFileName);
+            return DOMConfigurator.getConfigurationMap(instanceMap, defaultPath, overrideFileName);
         } catch (SamlEngineConfigurationException e) {
             throw new IOException(e);
         }
@@ -47,19 +48,20 @@ public final class ReloadableConfigurationMap {
     @Nonnull
     private final SingletonAccessor<ImmutableMap<String, SamlEngineConfiguration>> accessor;
 
-    public ReloadableConfigurationMap(@Nonnull final String configurationFileName) {
-        this(configurationFileName, null);
+    public ReloadableConfigurationMap(@Nonnull final String configurationFileName, @Nullable String defaultPath) {
+        this(configurationFileName, defaultPath, null);
     }
 
     /**
      * @since 1.1
      */
     public ReloadableConfigurationMap(@Nonnull final String configurationFileName,
+                                      @Nullable final String defaultPath,
                                       @Nullable final String overrideFileName) {
         Preconditions.checkNotNull(configurationFileName, "configurationFileName");
 
         SingletonAccessor<ImmutableMap<String, SamlEngineConfiguration>> fileAccessor =
-                SingletonAccessors.newFileAccessor(configurationFileName,
+                SingletonAccessors.newFileAccessor(configurationFileName, defaultPath,
                                                    new FileMarshaller<ImmutableMap<String, SamlEngineConfiguration>>() {
 
                                                        @Override
@@ -74,7 +76,8 @@ public final class ReloadableConfigurationMap {
                                                        public ImmutableMap<String, SamlEngineConfiguration> unmarshal(
                                                                @Nonnull File input) throws IOException {
                                                            return unmarshalStream(configurationFileName,
-                                                                                  new BufferedInputStream(
+                                                                   defaultPath,
+                                                                   new BufferedInputStream(
                                                                                           new FileInputStream(input)),
                                                                                   overrideFileName);
                                                        }
@@ -92,7 +95,7 @@ public final class ReloadableConfigurationMap {
                                                        @Override
                                                        public ImmutableMap<String, SamlEngineConfiguration> unmarshal(
                                                                @Nonnull InputStream input) throws IOException {
-                                                           return unmarshalStream(configurationFileName, input,
+                                                           return unmarshalStream(configurationFileName, defaultPath, input,
                                                                                   overrideFileName);
                                                        }
                                                    });

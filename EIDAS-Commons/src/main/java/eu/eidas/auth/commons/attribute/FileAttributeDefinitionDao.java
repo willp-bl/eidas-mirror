@@ -17,6 +17,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
 import javax.annotation.concurrent.ThreadSafe;
 
@@ -46,20 +47,20 @@ import eu.eidas.util.Preconditions;
 final class FileAttributeDefinitionDao implements AttributeDefinitionDao {
 
     private static SingletonAccessor<ImmutableSortedSet<AttributeDefinition<?>>> newSingletonAccessor(
-            @Nonnull String fileName) {
-        return SingletonAccessors.newPropertiesAccessor(fileName, AttributeSetPropertiesConverter.INSTANCE);
+            @Nonnull String fileName, @Nullable String defaultPath) {
+        return SingletonAccessors.newPropertiesAccessor(fileName, defaultPath, AttributeSetPropertiesConverter.INSTANCE);
     }
 
     private static ImmutableList<SingletonAccessor<ImmutableSortedSet<AttributeDefinition<?>>>> newSingletonAccessors(
-            @Nonnull String fileName, @Nonnull String[] fileNames) {
+            @Nonnull String fileName, @Nullable String defaultPath, @Nonnull String[] fileNames) {
         ImmutableList.Builder<SingletonAccessor<ImmutableSortedSet<AttributeDefinition<?>>>> builder =
                 new ImmutableList.Builder<>();
         Set<String> duplicates = new HashSet<>();
         duplicates.add(fileName);
-        builder.add(newSingletonAccessor(fileName));
+        builder.add(newSingletonAccessor(fileName, defaultPath));
         for (final String name : fileNames) {
             if (duplicates.add(name)) {
-                builder.add(newSingletonAccessor(name));
+                builder.add(newSingletonAccessor(name, defaultPath));
             }
         }
         return builder.build();
@@ -75,9 +76,9 @@ final class FileAttributeDefinitionDao implements AttributeDefinitionDao {
      *
      * @param fileName the name of the configuration file.
      */
-    FileAttributeDefinitionDao(@Nonnull String fileName) {
+    FileAttributeDefinitionDao(@Nonnull String fileName, @Nullable String defaultPath) {
         Preconditions.checkNotNull(fileName, "fileName");
-        accessors = ImmutableList.of(newSingletonAccessor(fileName));
+        accessors = ImmutableList.of(newSingletonAccessor(fileName, defaultPath));
     }
 
     /**
@@ -88,10 +89,10 @@ final class FileAttributeDefinitionDao implements AttributeDefinitionDao {
      * @param fileName the name of the first configuration file.
      * @param fileNames the names of the other configuration files.
      */
-    FileAttributeDefinitionDao(@Nonnull String fileName, @Nonnull String... fileNames) {
+    FileAttributeDefinitionDao(@Nonnull String fileName, @Nullable String defaultPath, @Nonnull String... fileNames) {
         Preconditions.checkNotNull(fileName, "fileName");
         Preconditions.checkNotNull(fileNames, "fileNames");
-        accessors = newSingletonAccessors(fileName, fileNames);
+        accessors = newSingletonAccessors(fileName, defaultPath, fileNames);
     }
 
     @Nonnull

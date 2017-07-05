@@ -16,7 +16,7 @@ package eu.eidas.idp.metadata;
 import eu.eidas.auth.engine.metadata.IStaticMetadataChangeListener;
 import eu.eidas.auth.engine.metadata.MetadataFetcherI;
 import eu.eidas.auth.engine.metadata.impl.CachingMetadataFetcher;
-import eu.eidas.auth.engine.metadata.impl.FileMetadataProcessor;
+import eu.eidas.auth.engine.metadata.impl.FileMetadataLoader;
 import eu.eidas.idp.IDPUtil;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -37,9 +37,9 @@ public class IDPCachingMetadataFetcher extends CachingMetadataFetcher implements
         super();
         setCache(new IDPMetadataCache());
         if (StringUtils.isNotEmpty(IDPUtil.getMetadataRepositoryPath())) {
-            FileMetadataProcessor fp = new FileMetadataProcessor();
+            FileMetadataLoader fp = new FileMetadataLoader();
             fp.setRepositoryPath(IDPUtil.getMetadataRepositoryPath());
-            setFileMetadataLoader(fp);
+            setMetadataLoaderPlugin(fp);
         }
         initProcessor();
     }

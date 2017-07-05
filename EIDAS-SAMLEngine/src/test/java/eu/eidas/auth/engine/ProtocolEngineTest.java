@@ -63,7 +63,7 @@ public final class ProtocolEngineTest {
         Correlated correlated = protocolEngine.unmarshallResponse(responseMessage.getMessageBytes());
 
         IAuthenticationResponse authenticationResponse =
-                protocolEngine.validateUnmarshalledResponse(correlated, "127.0.0.1", 0L, null);
+                protocolEngine.validateUnmarshalledResponse(correlated, "127.0.0.1", 0L, 0L, null);
 
         assertFalse(authenticationResponse.getStatus().isFailure());
     }

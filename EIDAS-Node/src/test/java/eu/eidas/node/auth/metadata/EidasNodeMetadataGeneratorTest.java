@@ -29,6 +29,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
+import eu.eidas.auth.engine.ProtocolEngineFactory;
+import eu.eidas.auth.engine.ProtocolEngineI;
+import eu.eidas.auth.engine.metadata.MetadataSignerI;
+import eu.eidas.auth.engine.metadata.impl.CachingMetadataFetcher;
+import eu.eidas.auth.engine.metadata.impl.FileMetadataLoader;
 import org.junit.*;
 import org.opensaml.common.xml.SAMLConstants;
 import org.opensaml.saml2.metadata.EntityDescriptor;
@@ -86,10 +91,7 @@ public class EidasNodeMetadataGeneratorTest {
         }
     }
 
-    //TODO vargata metadata
-
-    /*@Test
-    @Ignore
+    @Test
     public void testGenerateMetadataConnectorasIdP() throws Exception {
         EidasNodeMetadataGenerator generator = buildEidasNodeMetadataGenerator();
         generator.setSingleSignOnServicePostLocation(BINDING_LOCATION_URL);
@@ -99,26 +101,29 @@ public class EidasNodeMetadataGeneratorTest {
         Assert.assertTrue(metadata.contains("<?xml"));
 
         putMetadataInFile(FILEREPO_DIR_WRITE+"/test.xml", metadata);
-        NODEMetadataProcessor processor=new NODEMetadataProcessor();
-        processor.setFileMetadataLoader(new FileMetadataProcessor());
-        processor.getFileMetadataLoader().setRepositoryPath(FILEREPO_DIR_WRITE);
-        processor.setCache(new SimpleMetadataCaching());
-        processor.initProcessor();
+        CachingMetadataFetcher fetcher = new CachingMetadataFetcher();
+        FileMetadataLoader loader = new FileMetadataLoader();
+        loader.setRepositoryPath(FILEREPO_DIR_WRITE);
+        fetcher.setMetadataLoaderPlugin(loader);
+        fetcher.setCache(new SimpleMetadataCaching(86400));
+        fetcher.initProcessor();
 
-        EntityDescriptor ed = processor.getEntityDescriptor(ENTITY_ID);
+        ProtocolEngineI engine = ProtocolEngineFactory.getDefaultProtocolEngine("METADATA");
+        EntityDescriptor ed = fetcher.getEntityDescriptor(ENTITY_ID, (MetadataSignerI) engine.getSigner());
         Assert.assertTrue(ed.isValid());
     }
 
     @Test
     @Ignore
     public void testParseMetadataSSOSBindingLocation() throws SAMLEngineException, EIDASSAMLEngineException {
-        final NODEMetadataProcessor processor = new NODEMetadataProcessor();
-        processor.setFileMetadataLoader(new FileMetadataProcessor());
-        processor.getFileMetadataLoader().setRepositoryPath(SERVICE_METADATA_REPO);
-        processor.setCache(new SimpleMetadataCaching());
-        processor.initProcessor();
-
-        final IDPSSODescriptor idPSSODescriptor = processor.getIDPSSODescriptor(SERVICE_METADATA_URL);
+        final CachingMetadataFetcher fetcher = new CachingMetadataFetcher();
+        FileMetadataLoader loader = new FileMetadataLoader();
+        loader.setRepositoryPath(SERVICE_METADATA_REPO);
+        fetcher.setMetadataLoaderPlugin(loader);
+        fetcher.setCache(new SimpleMetadataCaching(86400));
+        fetcher.initProcessor();
+        ProtocolEngineI engine = ProtocolEngineFactory.getDefaultProtocolEngine("METADATA");
+        final IDPSSODescriptor idPSSODescriptor = fetcher.getIDPSSODescriptor(SERVICE_METADATA_URL, (MetadataSignerI) engine.getSigner());
         for (SingleSignOnService singleSignOnService : idPSSODescriptor.getSingleSignOnServices()) {
             final boolean isPostBinding = SAMLConstants.SAML2_POST_BINDING_URI.equalsIgnoreCase(singleSignOnService.getBinding());
             final boolean isRedirectBinding = SAMLConstants.SAML2_REDIRECT_BINDING_URI.equalsIgnoreCase(singleSignOnService.getBinding());
@@ -127,7 +132,7 @@ public class EidasNodeMetadataGeneratorTest {
             final String location = singleSignOnService.getLocation();
             Assert.assertFalse(location == null);
         }
-    }*/
+    }
 
     private final static String CONTACT_SOURCE="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
             "<!DOCTYPE properties SYSTEM \"http://java.sun.com/dtd/properties.dtd\">\n" +
@@ -243,8 +248,6 @@ public class EidasNodeMetadataGeneratorTest {
         generator.setSamlConnectorIDP(SAML_CONNECTOR_IDP);
         generator.setConnectorMetadataUrl(ENTITY_ID);
         generator.setNodeProtocolEngineFactory(DefaultProtocolEngineFactory.getInstance());
-        generator.setConnectorCountry(CONNECTOR_COUNTRY_B);
-        generator.setConnectorUrl(ENTITY_ID);
         return generator;
     }
 }

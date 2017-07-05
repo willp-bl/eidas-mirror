@@ -73,8 +73,21 @@ public final class AttributeRegistries {
      */
     @Nonnull
     public static AttributeRegistry fromFile(@Nonnull String fileName) {
+        return fromFile(fileName, null);
+    }
+
+    /**
+     * Creates an attribute registry based on the given configuration file.
+     * <p>
+     * The given file must comply with the attribute registry format (see {@link AttributeSetPropertiesConverter}.
+     *
+     * @param fileName the name of the configuration file.
+     * @param defaultPath optional path to registry file.
+     */
+    @Nonnull
+    public static AttributeRegistry fromFile(@Nonnull String fileName, @Nullable String defaultPath) {
         Preconditions.checkNotNull(fileName, "fileName");
-        return new AttributeRegistry(new FileAttributeDefinitionDao(fileName));
+        return new AttributeRegistry(new FileAttributeDefinitionDao(fileName, defaultPath));
     }
 
     /**
@@ -86,10 +99,10 @@ public final class AttributeRegistries {
      * @param fileNames the names of the other configuration files.
      */
     @Nonnull
-    public static AttributeRegistry fromFiles(@Nonnull String fileName, @Nonnull String... fileNames) {
+    public static AttributeRegistry fromFiles(@Nonnull String fileName, @Nullable String defaultPath, @Nonnull String... fileNames) {
         Preconditions.checkNotNull(fileName, "fileName");
         Preconditions.checkNotNull(fileNames, "fileNames");
-        return new AttributeRegistry(new FileAttributeDefinitionDao(fileName, fileNames));
+        return new AttributeRegistry(new FileAttributeDefinitionDao(fileName, defaultPath, fileNames));
     }
 
     /**

@@ -11,6 +11,8 @@ import org.apache.commons.lang.StringUtils;
 import eu.eidas.auth.engine.configuration.SamlEngineConfigurationException;
 import eu.eidas.auth.engine.core.impl.CertificateValidator;
 
+import javax.annotation.Nullable;
+
 /**
  * KeyStore-based SignatureConfigurator.
  *
@@ -23,7 +25,8 @@ public final class KeyStoreSignatureConfigurator {
     private KeyStore.PrivateKeyEntry getPrivateSigningKeyAndCertificate(Map<String, String> properties,
                                                                         String propertyPrefix,
                                                                         String defaultSerialNumber,
-                                                                        String defaultIssuer)
+                                                                        String defaultIssuer,
+                                                                        @Nullable String defaultPath)
             throws SamlEngineConfigurationException {
         String propPrefix = PROPERTY_PREFIX_DEFAULT;
         if (StringUtils.isNotEmpty(propertyPrefix)) {
@@ -76,11 +79,11 @@ public final class KeyStoreSignatureConfigurator {
                                                                    keyAliasConfigurationKey,
                                                                    keyPasswordConfigurationKey);
 
-        return new KeyStoreConfigurator(properties, keyStoreConfigurationKeys).loadPrivateKeyEntry(serialNumber,
+        return new KeyStoreConfigurator(properties, keyStoreConfigurationKeys, defaultPath).loadPrivateKeyEntry(serialNumber,
                                                                                                    issuer);
     }
 
-    public SignatureConfiguration getSignatureConfiguration(Map<String, String> properties)
+    public SignatureConfiguration getSignatureConfiguration(Map<String, String> properties, @Nullable String defaultPath)
             throws SamlEngineConfigurationException {
         boolean checkedValidityPeriod = CertificateValidator.isCheckedValidityPeriod(properties);
         boolean disallowedSelfSignedCertificate = CertificateValidator.isDisallowedSelfSignedCertificate(properties);
@@ -89,7 +92,7 @@ public final class KeyStoreSignatureConfigurator {
 
         String serialNumber = SignatureKey.SERIAL_NUMBER.getAsString(properties);
         String issuer = SignatureKey.ISSUER.getAsString(properties);
-        KeyStoreContent keyStoreContent = new KeyStoreConfigurator(properties).loadKeyStoreContent();
+        KeyStoreContent keyStoreContent = new KeyStoreConfigurator(properties, defaultPath).loadKeyStoreContent();
         KeyStore.PrivateKeyEntry signatureKeyAndCertificate =
                 keyStoreContent.getMatchingPrivateKeyEntry(serialNumber, issuer);
         ImmutableSet<X509Certificate> trustedCertificates = keyStoreContent.getCertificates();
@@ -97,7 +100,7 @@ public final class KeyStoreSignatureConfigurator {
         String signatureAlgorithm = SignatureKey.SIGNATURE_ALGORITHM.getAsString(properties);
         KeyStore.PrivateKeyEntry metadataSigningKeyAndCertificate =
                 getPrivateSigningKeyAndCertificate(properties, SignatureKey.METADATA_PREFIX.getKey(), serialNumber,
-                                                   issuer);
+                                                   issuer, defaultPath);
 
         return new SignatureConfiguration(checkedValidityPeriod, disallowedSelfSignedCertificate, responseSignAssertions,
                                           signatureKeyAndCertificate, trustedCertificates, signatureAlgorithm,

@@ -2,6 +2,7 @@ package eu.eidas.node.auth.specific;
 
 import java.util.Properties;
 
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -161,8 +162,8 @@ public class SpecificEidasConnector implements IAUConnector {
             IAuthenticationRequest serviceProviderRequest =
                     protocolEngine.unmarshallRequestAndValidate(requestFromSP, citizenCountryCode);
 
-            //validate the SPType
-            validateSPType((EidasAuthenticationRequest) serviceProviderRequest);
+            /* uncomment this code if specific action is required for SP type validation, otherwise it will be checked in the Connector Node */
+            //validateSPType((EidasAuthenticationRequest) serviceProviderRequest);
 
             // Get the assertionConsumerUrl from metadata and validate
             String assertionConsumerUrl = MetadataUtil.getAssertionConsumerUrlFromMetadata(metadataFetcher,
@@ -214,7 +215,11 @@ public class SpecificEidasConnector implements IAUConnector {
         StoredAuthenticationRequest storedAuthenticationRequest = getStoredAuthenticationRequest(lightResponse);
         IAuthenticationRequest spAuthenticationRequest = storedAuthenticationRequest.getRequest();
 
-        String ipAddress = storedAuthenticationRequest.getRemoteIpAddress();
+        String ipAddress = null;
+        //TODO EIDINT-1271 - ip address usage
+        if (StringUtils.isNotBlank(lightResponse.getIPAddress())) {
+            ipAddress = storedAuthenticationRequest.getRemoteIpAddress();
+        }
         IAuthenticationResponse authenticationResponse =
                 AuthenticationResponse.builder().lightResponse(lightResponse).build();
 
@@ -299,7 +304,7 @@ public class SpecificEidasConnector implements IAUConnector {
     }
 
     private void validateSPType(EidasAuthenticationRequest eidasAuthenticationRequest) {
-        SpType spType = eidasAuthenticationRequest.getSpType();
+        SpType spType = SpType.fromString(eidasAuthenticationRequest.getSpType());
         String metadataSpType = configs.getProperty(EIDASValues.EIDAS_SPTYPE.toString());
 
         if ((isNotBlank(metadataSpType) && spType != null && !metadataSpType.equalsIgnoreCase(spType.toString()))

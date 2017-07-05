@@ -34,7 +34,9 @@ import com.opensymphony.xwork2.ActionSupport;
 
 import eu.eidas.auth.engine.configuration.dom.EncryptionKey;
 import eu.eidas.auth.engine.configuration.dom.SignatureKey;
-import eu.eidas.auth.engine.metadata.Contact;
+import eu.eidas.auth.engine.metadata.MetadataUtil;
+import eu.eidas.sp.SpProtocolEngineFactory;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.struts2.interceptor.ServletRequestAware;
 import org.apache.struts2.interceptor.ServletResponseAware;
 import org.slf4j.Logger;
@@ -43,7 +45,7 @@ import org.slf4j.LoggerFactory;
 import eu.eidas.auth.commons.EidasStringUtil;
 import eu.eidas.auth.engine.ProtocolEngineFactory;
 import eu.eidas.auth.engine.metadata.MetadataConfigParams;
-import eu.eidas.auth.engine.metadata.MetadataGenerator;
+import eu.eidas.auth.engine.metadata.EidasMetadata;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import eu.eidas.sp.Constants;
 import eu.eidas.sp.SPUtil;
@@ -65,21 +67,22 @@ public class GenerateMetadataAction extends ActionSupport implements ServletRequ
 		String metadata="invalid metadata";
 		if(SPUtil.isMetadataEnabled()) {
 			try {
-				MetadataGenerator generator = new MetadataGenerator();
-				MetadataConfigParams mcp=new MetadataConfigParams();
-				generator.setConfigParams(mcp);
-				generator.initialize(ProtocolEngineFactory.getDefaultProtocolEngine(SP_CONF));
-				mcp.setEntityID(configs.getProperty(Constants.SP_METADATA_URL));
-				generator.addSPRole();
+				EidasMetadata.Generator generator = EidasMetadata.generator();
+				MetadataConfigParams.Builder mcp = MetadataConfigParams.builder();
+				mcp.spEngine(SpProtocolEngineFactory.getSpProtocolEngine(SP_CONF));
+				mcp.entityID(configs.getProperty(Constants.SP_METADATA_URL));
 				String returnUrl = configs.getProperty(Constants.SP_RETURN);
-				mcp.setAssertionConsumerUrl(returnUrl);
-				mcp.setTechnicalContact(getTechnicalContact(generator.getContactStrings()));
-				mcp.setSupportContact(getSupportContact(generator.getContactStrings()));
-				mcp.setSigningMethods(configs == null ? null : configs.getProperty(SignatureKey.SIGNATURE_ALGORITHM_WHITE_LIST.getKey()));
-				mcp.setDigestMethods(configs == null ? null : configs.getProperty(SignatureKey.SIGNATURE_ALGORITHM_WHITE_LIST.getKey()));
-				mcp.setEncryptionAlgorithms(configs == null ? null : configs.getProperty(EncryptionKey.ENCRYPTION_ALGORITHM_WHITE_LIST.getKey()));
-				mcp.setOrganizationName(configs == null ? null : configs.getProperty(MetadataConfigParams.ORG_NAME));
-				metadata = generator.generateMetadata();
+				mcp.assertionConsumerUrl(returnUrl);
+				mcp.technicalContact(MetadataUtil.createTechnicalContact(configs));
+				mcp.supportContact(MetadataUtil.createSupportContact(configs));
+				mcp.organization(MetadataUtil.createOrganization(configs));
+				mcp.signingMethods(configs == null ? null : configs.getProperty(SignatureKey.SIGNATURE_ALGORITHM_WHITE_LIST.getKey()));
+				mcp.digestMethods(configs == null ? null : configs.getProperty(SignatureKey.SIGNATURE_ALGORITHM_WHITE_LIST.getKey()));
+				mcp.encryptionAlgorithms(configs == null ? null : configs.getProperty(EncryptionKey.ENCRYPTION_ALGORITHM_WHITE_LIST.getKey()));
+				String spType =  configs.getProperty(Constants.SP_TYPE, null);
+				mcp.spType(StringUtils.isBlank(spType) ? null : spType);
+				generator.configParams(mcp.build());
+				metadata = generator.build().getMetadata();
 			}catch(EIDASSAMLEngineException see){
 				logger.error("error generating metadata {}", see);
 			}
@@ -98,23 +101,5 @@ public class GenerateMetadataAction extends ActionSupport implements ServletRequ
 
 	public InputStream getInputStream(){return dataStream;}
 	public void setInputStream(InputStream inputStream){dataStream=inputStream;}
-
-	private Contact getTechnicalContact(String[][] source){
-		return createContact(source[0]);
-	}
-	private Contact getSupportContact(String[][] source){
-		return createContact(source[1]);
-	}
-
-	private Contact createContact(String[] propsNames){
-		Contact contact=new Contact();
-		contact.setCompany(propsNames!=null && propsNames.length>0 &&configs!=null?configs.getProperty(propsNames[0]):null);
-		contact.setEmail(propsNames!=null && propsNames.length>1 &&configs!=null?configs.getProperty(propsNames[1]):null);
-		contact.setGivenName(propsNames!=null && propsNames.length>2 &&configs!=null?configs.getProperty(propsNames[2]):null);
-		contact.setSurName(propsNames!=null && propsNames.length>3 &&configs!=null?configs.getProperty(propsNames[3]):null);
-		contact.setPhone(propsNames!=null && propsNames.length>4 &&configs!=null?configs.getProperty(propsNames[4]):null);
-		return contact;
-	}
-
 
 }

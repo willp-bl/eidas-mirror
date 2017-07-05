@@ -66,13 +66,10 @@ public final class ProtocolEngineConfigurationFactory {
     private final SingletonAccessor<ImmutableMap<String, ProtocolEngineConfiguration>> accessor;
 
     public ProtocolEngineConfigurationFactory(@Nonnull String configurationFileName,
-                                              @Nullable String overrideFileName) {
+                                              @Nullable String overrideFileName,
+                                              @Nullable String defaultPath) {
         Preconditions.checkNotBlank(configurationFileName, "configurationFileName");
-        accessor = new ReloadableProtocolConfigurationMap(configurationFileName, overrideFileName).getAccessor();
-    }
-
-    public ProtocolEngineConfigurationFactory(@Nonnull String configurationFileName) {
-        this(configurationFileName, null);
+        accessor = new ReloadableProtocolConfigurationMap(configurationFileName, overrideFileName, defaultPath).getAccessor();
     }
 
     public ProtocolEngineConfigurationFactory(@Nonnull CertificateConfigurationManager configManager)

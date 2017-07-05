@@ -125,8 +125,9 @@ public class StorkProtocolProcessor implements ProtocolProcessorI {
 
     private static final String STORK_ATTRIBUTES_FILE = "saml-engine-stork-attributes.xml";
 
+    //TODO vargata - apply the default path when relocating this engine
     private static final AttributeRegistry STORK_ATTRIBUTE_REGISTRY =
-            AttributeRegistries.fromFile(STORK_ATTRIBUTES_FILE);
+            AttributeRegistries.fromFile(STORK_ATTRIBUTES_FILE, null);
 
     /**
      * The default instance only implements the STORK specification without any additional attribute.
@@ -158,17 +159,13 @@ public class StorkProtocolProcessor implements ProtocolProcessorI {
         this(STORK_ATTRIBUTE_REGISTRY, AttributeRegistries.empty());
     }
 
-    @SuppressWarnings("squid:S2637")
-    public StorkProtocolProcessor(@Nonnull String additionalAttributesFileName) {
-        this(STORK_ATTRIBUTE_REGISTRY, AttributeRegistries.fromFile(additionalAttributesFileName));
-    }
-
     public StorkProtocolProcessor(@Nonnull String storkAttributesFileNameVal,
-                                  @Nonnull String additionalAttributesFileNameVal) {
+                                  @Nonnull String additionalAttributesFileNameVal,
+                                  @Nullable String defaultPath) {
         Preconditions.checkNotNull(storkAttributesFileNameVal, "storkAttributesFileName");
         Preconditions.checkNotNull(additionalAttributesFileNameVal, "additionalAttributesFileName");
-        storkAttributeRegistry = AttributeRegistries.fromFile(storkAttributesFileNameVal);
-        additionalAttributeRegistry = AttributeRegistries.fromFile(additionalAttributesFileNameVal);
+        storkAttributeRegistry = AttributeRegistries.fromFile(storkAttributesFileNameVal, defaultPath);
+        additionalAttributeRegistry = AttributeRegistries.fromFile(additionalAttributesFileNameVal, defaultPath);
     }
 
     public StorkProtocolProcessor(@Nullable AttributeRegistry storkAttributeRegistryVal,
@@ -431,6 +428,14 @@ public class StorkProtocolProcessor implements ProtocolProcessorI {
 
     @Override
     public boolean checkMandatoryAttributes(@Nullable ImmutableAttributeMap immutableAttributeMap) {
+        if (null == immutableAttributeMap || immutableAttributeMap.isEmpty()) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public boolean checkRepresentativeAttributes(@Nullable ImmutableAttributeMap immutableAttributeMap) {
         if (null == immutableAttributeMap || immutableAttributeMap.isEmpty()) {
             return false;
         }
@@ -1556,7 +1561,8 @@ public class StorkProtocolProcessor implements ProtocolProcessorI {
     public IAuthenticationResponse unmarshallResponse(@Nonnull Response response,
                                                       boolean verifyBearerIpAddress,
                                                       @Nullable String userIpAddress,
-                                                      long skewTimeInMillis,
+                                                      long beforeSkewTimeInMillis,
+                                                      long afterSkewTimeInMillis,
                                                       @Nonnull DateTime now,
                                                       @Nullable String audienceRestriction)
             throws EIDASSAMLEngineException {
@@ -1568,8 +1574,8 @@ public class StorkProtocolProcessor implements ProtocolProcessorI {
 
         LOG.trace("validateEidasResponse");
         Assertion assertion =
-                ResponseUtil.extractVerifiedAssertion(response, verifyBearerIpAddress, userIpAddress, skewTimeInMillis,
-                                                      now, audienceRestriction);
+                ResponseUtil.extractVerifiedAssertion(response, verifyBearerIpAddress, userIpAddress, beforeSkewTimeInMillis,
+                        afterSkewTimeInMillis, now, audienceRestriction);
 
         if (null != assertion) {
             LOG.trace("Set notOnOrAfter.");

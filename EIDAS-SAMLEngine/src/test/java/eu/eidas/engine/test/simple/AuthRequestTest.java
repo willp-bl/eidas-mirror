@@ -60,11 +60,11 @@ public class AuthRequestTest {
     static {
         try {
             engine1 = ProtocolEngineFactory.createProtocolEngine("CONF1", new StorkProtocolProcessor(
-                    "saml-engine-stork-attributes-CONF1.xml", "saml-engine-additional-attributes-CONF1.xml"));
+                    "saml-engine-stork-attributes-CONF1.xml", "saml-engine-additional-attributes-CONF1.xml", null));
             engine2 = ProtocolEngineFactory.createProtocolEngine("CONF2", new StorkProtocolProcessor(
-                    "saml-engine-stork-attributes-CONF2.xml", "saml-engine-additional-attributes-CONF2.xml"));
+                    "saml-engine-stork-attributes-CONF2.xml", "saml-engine-additional-attributes-CONF2.xml", null));
             engine3 = ProtocolEngineFactory.createProtocolEngine("CONF3", new StorkProtocolProcessor(
-                    "saml-engine-stork-attributes-CONF3.xml", "saml-engine-additional-attributes-CONF3.xml"));
+                    "saml-engine-stork-attributes-CONF3.xml", "saml-engine-additional-attributes-CONF3.xml", null));
         } catch (EIDASSAMLEngineException e) {
             fail("Failed to initialize SAMLEngines: " + e);
             e.printStackTrace();
@@ -89,7 +89,7 @@ public class AuthRequestTest {
         try {
             engine = ProtocolEngineFactory.createProtocolEngine(name, new StorkProtocolProcessor(
                     "saml-engine-stork-attributes-" + name + ".xml",
-                    "saml-engine-additional-attributes-" + name + ".xml"));
+                    "saml-engine-additional-attributes-" + name + ".xml", null));
         } catch (EIDASSAMLEngineException exc) {
             fail("Failed to initialize SAMLEngines");
         }

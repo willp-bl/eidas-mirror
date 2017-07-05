@@ -57,7 +57,7 @@ public class CachingMetadataFetcher extends AbstractCachingMetadataFetcher imple
      */
     private String trustedEntityDescriptors = "";
 
-    private MetadataProcessorI fileMetadataLoader;
+    private MetadataLoaderPlugin metadataLoaderPlugin;
 
     private Set<String> trustedEntityDescriptorsSet = new HashSet<String>();
 
@@ -78,8 +78,8 @@ public class CachingMetadataFetcher extends AbstractCachingMetadataFetcher imple
         return cache;
     }
 
-    public MetadataProcessorI getFileMetadataLoader() {
-        return fileMetadataLoader;
+    protected MetadataLoaderPlugin getMetadataLoaderPlugin() {
+        return metadataLoaderPlugin;
     }
 
     @Override
@@ -95,17 +95,17 @@ public class CachingMetadataFetcher extends AbstractCachingMetadataFetcher imple
             }
         }
         if (null == entityDescriptor) {
-            if (getFileMetadataLoader() != null) {
-                entityDescriptor = loadFromFiles(url, metadataSigner);
+            if (getMetadataLoaderPlugin() != null) {
+                entityDescriptor = loadWithPlugin(url, metadataSigner);
             }
         }
         return entityDescriptor;
     }
 
-    protected EntityDescriptor loadFromFiles(String url, MetadataSignerI metadataSigner) throws EIDASSAMLEngineException {
+    protected EntityDescriptor loadWithPlugin(String url, MetadataSignerI metadataSigner) throws EIDASSAMLEngineException {
         EntityDescriptor entityDescriptor = null;
-        if (getFileMetadataLoader() != null) {
-            List<EntityDescriptorContainer> fileStoredDescriptors = getFileMetadataLoader().getEntityDescriptors();
+        if (getMetadataLoaderPlugin() != null) {
+            List<EntityDescriptorContainer> fileStoredDescriptors = getMetadataLoaderPlugin().getEntityDescriptors();
             if (getCache() != null) {
                 for (EntityDescriptorContainer edc : fileStoredDescriptors) {
                     for (EntityDescriptor ed : edc.getEntityDescriptors()) {
@@ -135,19 +135,8 @@ public class CachingMetadataFetcher extends AbstractCachingMetadataFetcher imple
      * perform post construct task, eg populating the cache with file based metadata
      */
     public void initProcessor() {
-        if (getFileMetadataLoader() != null) {
-/*            List<EntityDescriptorContainer> fileStoredDescriptors = getFileMetadataLoader().getEntityDescriptors();
-            if (getCache() != null) {
-                for (EntityDescriptorContainer edc : fileStoredDescriptors) {
-                    for (EntityDescriptor ed : edc.getEntityDescriptors()) {
-                        getCache().putDescriptor(ed.getEntityID(), ed, EntityDescriptorType.STATIC);
-                        if (edc.getEntitiesDescriptor() != null && ed.getSignature() == null) {
-                            getCache().putDescriptorSignatureHolder(ed.getEntityID(), edc);
-                        }
-                    }
-                }
-            }*/
-            getFileMetadataLoader().addListenerContentChanged(this);
+        if (getMetadataLoaderPlugin() != null) {
+            getMetadataLoaderPlugin().addListenerContentChanged(this);
         }
     }
 
@@ -202,8 +191,8 @@ public class CachingMetadataFetcher extends AbstractCachingMetadataFetcher imple
         this.cache = cache;
     }
 
-    public void setFileMetadataLoader(MetadataProcessorI fileMetadataLoader) {
-        this.fileMetadataLoader = fileMetadataLoader;
+    public void setMetadataLoaderPlugin(MetadataLoaderPlugin metadataLoaderPlugin) {
+        this.metadataLoaderPlugin = metadataLoaderPlugin;
     }
 
     public void setHttpRetrievalEnabled(boolean httpRetrievalEnabled) {

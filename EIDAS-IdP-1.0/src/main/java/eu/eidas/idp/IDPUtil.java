@@ -1,9 +1,14 @@
 package eu.eidas.idp;
 
 import eu.eidas.auth.commons.EIDASUtil;
+import eu.eidas.auth.engine.ProtocolEngineFactory;
+import eu.eidas.auth.engine.ProtocolEngineI;
+import eu.eidas.auth.engine.configuration.SamlEngineConfigurationException;
+import eu.eidas.auth.engine.configuration.dom.ProtocolEngineConfigurationFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.Properties;
 
@@ -13,9 +18,12 @@ public final class IDPUtil {
 
     private static final Properties idpProperties = loadIDPConfigs();
 
-    private static Properties loadConfigs(String path) throws IOException {
+    static ProtocolEngineConfigurationFactory protocolEngineConfigurationFactory = null;
+    static ProtocolEngineFactory defaultProtocolEngineFactory = null;
+
+    public static Properties loadConfigs(String fileName) throws IOException {
         Properties properties = new Properties();
-        properties.load(IDPUtil.class.getClassLoader().getResourceAsStream(path));
+        properties.load(new FileReader(getConfigFilePath() + fileName));
         return properties;
     }
 
@@ -58,6 +66,24 @@ public final class IDPUtil {
         return properties.getProperty(Constants.IDP_METADATA_TRUSTEDDS, "");
     }
 
+    public static String getConfigFilePath() {
+        /*String envLocation = System.getenv().get(Constants.IDP_CONFIG_REPOSITORY);
+        String configLocation = System.getProperty(Constants.IDP_CONFIG_REPOSITORY, envLocation);
+        return configLocation;*/
+        return (String)ApplicationContextProvider.getApplicationContext().getBean(Constants.IDP_REPO_BEAN_NAME);
+    }
+
+    public static synchronized ProtocolEngineI getProtocolEngine() {
+        if (defaultProtocolEngineFactory == null) {
+            protocolEngineConfigurationFactory = new ProtocolEngineConfigurationFactory(Constants.IDP_SAMLENGINE_FILE, null, IDPUtil.getConfigFilePath());
+            try {
+                defaultProtocolEngineFactory = new ProtocolEngineFactory(protocolEngineConfigurationFactory);
+            } catch (SamlEngineConfigurationException e) {
+                LOG.error("Error creating protocol engine factory : ", e);
+            }
+        }
+        return defaultProtocolEngineFactory.getProtocolEngine(Constants.SAMLENGINE_NAME);
+    }
 
     private IDPUtil() {
     }

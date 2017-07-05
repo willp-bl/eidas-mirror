@@ -22,6 +22,7 @@
 
 package eu.eidas.auth.commons;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import eu.eidas.util.Preconditions;
 import org.slf4j.Logger;

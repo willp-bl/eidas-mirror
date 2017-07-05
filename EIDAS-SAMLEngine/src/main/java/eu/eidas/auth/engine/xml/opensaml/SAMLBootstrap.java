@@ -44,9 +44,11 @@ public final class SAMLBootstrap {
             SAMLSchemaBuilder.addExtensionSchema("/stork-schema-protocol-1.0.xsd");
 
             SAMLSchemaBuilder.addExtensionSchema("/eidas/saml_eidas_extension.xsd");
-            /*SAMLSchemaBuilder.addExtensionSchema("/eidas/eidas_schema.xsd");*/
+
             SAMLSchemaBuilder.addExtensionSchema("/eidas/saml_eidas_legal_person.xsd");
             SAMLSchemaBuilder.addExtensionSchema("/eidas/saml_eidas_natural_person.xsd");
+            SAMLSchemaBuilder.addExtensionSchema("/eidas/saml_eidas_representative_legal_person.xsd");
+            SAMLSchemaBuilder.addExtensionSchema("/eidas/saml_eidas_representative_natural_person.xsd");
 
             initConfig("saml-eidasnode-config.xml");
 

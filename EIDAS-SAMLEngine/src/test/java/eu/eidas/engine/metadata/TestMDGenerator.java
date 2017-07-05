@@ -13,6 +13,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Enumeration;
 
+import eu.eidas.auth.engine.metadata.*;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.junit.After;
 import org.junit.Before;
@@ -41,9 +42,6 @@ import eu.eidas.auth.commons.xml.opensaml.OpenSamlHelper;
 import eu.eidas.auth.engine.ProtocolEngineFactory;
 import eu.eidas.auth.engine.ProtocolEngineI;
 import eu.eidas.auth.engine.X500PrincipalUtil;
-import eu.eidas.auth.engine.metadata.MetadataConfigParams;
-import eu.eidas.auth.engine.metadata.MetadataGenerator;
-import eu.eidas.auth.engine.metadata.MetadataSignerI;
 import eu.eidas.auth.engine.xml.opensaml.CertificateUtil;
 import eu.eidas.auth.engine.xml.opensaml.SAMLBootstrap;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
@@ -87,22 +85,21 @@ public class TestMDGenerator {
     @Test
     public void testCreateMetadata() {
         try {
-            MetadataGenerator generator = new MetadataGenerator();
-            MetadataConfigParams mcp = new MetadataConfigParams();
-            generator.setConfigParams(mcp);
-            mcp.setEntityID("entityID");
-            generator.addSPRole();
-            generator.addIDPRole();
-            mcp.setAssertionConsumerUrl("http://localhost");
-            mcp.setAuthnRequestsSigned(true);
-            mcp.setWantAssertionsSigned(true);
+            EidasMetadata.Generator generator = EidasMetadata.generator();
+            MetadataConfigParams.Builder mcp = MetadataConfigParams.builder();
+            mcp.entityID("entityID");
+            mcp.assertionConsumerUrl("http://localhost");
+            mcp.authnRequestsSigned(true);
+            mcp.wantAssertionsSigned(true);
             Signature spSignature = createSampleSignature();
-            mcp.setSPSignature(spSignature);
-            mcp.setIDPSignature(createSampleSignature());
-            mcp.setEncryptionCredential(createTestCredential());
-            mcp.setSigningCredential(createTestCredential());
-            mcp.setCountryName(TEST_COUNTRY_NAME);
-            String metadata = generator.generateMetadata();
+            mcp.spSignature(spSignature);
+            mcp.spEncryptionCredential(createTestCredential());
+            mcp.spSigningCredential(createTestCredential());
+            mcp.technicalContact(ContactData.builder().build());
+            mcp.supportContact(ContactData.builder().build());
+            mcp.organization(OrganizationData.builder().name(TEST_COUNTRY_NAME).build());
+            generator.configParams(mcp.build());
+            String metadata = generator.build().getMetadata();
             assertTrue(metadata != null && !metadata.isEmpty());
         } catch (Exception exc) {
             assertTrue("exception caught :" + exc, false);
@@ -118,21 +115,22 @@ public class TestMDGenerator {
     @Test
     public void testCreateMetadataWithSamlEngine() {
         try {
-            MetadataGenerator generator = new MetadataGenerator();
-            MetadataConfigParams mcp = new MetadataConfigParams();
-            generator.setConfigParams(mcp);
-            generator.initialize(engine);
-            mcp.setEntityID("entityID");
-            generator.addSPRole();
-            generator.addIDPRole();
-            mcp.setAssertionConsumerUrl("http://localhost");
-            mcp.setAuthnRequestsSigned(true);
-            mcp.setWantAssertionsSigned(true);
-            mcp.setAssuranceLevel("http://eidas.europa.eu/LoA");
-            mcp.setSpType("public");
-            mcp.setDigestMethods("http://www.w3.org/2001/04/xmlenc#sha256");
-            mcp.setSigningMethods("http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256");
-            String metadata = generator.generateMetadata();
+            EidasMetadata.Generator generator = EidasMetadata.generator();
+            MetadataConfigParams.Builder mcp = MetadataConfigParams.builder();
+            mcp.spEngine(engine);
+            mcp.entityID("entityID");
+            mcp.assertionConsumerUrl("http://localhost");
+            mcp.authnRequestsSigned(true);
+            mcp.wantAssertionsSigned(true);
+            mcp.assuranceLevel("http://eidas.europa.eu/LoA");
+            mcp.spType("public");
+            mcp.digestMethods("http://www.w3.org/2001/04/xmlenc#sha256");
+            mcp.signingMethods("http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256");
+            mcp.technicalContact(ContactData.builder().build());
+            mcp.supportContact(ContactData.builder().build());
+            mcp.organization(OrganizationData.builder().build());
+            generator.configParams(mcp.build());
+            String metadata = generator.build().getMetadata();
             assertTrue(metadata != null && !metadata.isEmpty());
 
             //unmmarshal
@@ -156,7 +154,7 @@ public class TestMDGenerator {
     }
 
     private void checkSPSSO(EntityDescriptor ed) throws ValidationException, EIDASSAMLEngineException {
-        assertTrue(ed.getRoleDescriptors().size() == 2);
+        assertTrue(ed.getRoleDescriptors().size() == 1);
         SPSSODescriptor spSSO = (SPSSODescriptor) ed.getRoleDescriptors().get(0);
         assertNotNull(spSSO);
         org.opensaml.xml.signature.X509Certificate xmlCert =
