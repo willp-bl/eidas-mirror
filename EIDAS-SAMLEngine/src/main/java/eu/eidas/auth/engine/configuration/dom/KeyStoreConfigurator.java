@@ -216,12 +216,19 @@ public final class KeyStoreConfigurator {
 
     @Nonnull
     public static KeyStoreConfiguration getKeyStoreConfiguration(@Nonnull Map<String, String> properties,
-                                                                 @Nonnull KeyStoreConfigurationKeys configurationKeys)
+                                                                 @Nonnull KeyStoreConfigurationKeys configurationKeys,
+                                                                 @Nullable String defaultPath)
             throws SamlEngineConfigurationException {
         Preconditions.checkNotNull(properties, "properties");
         Preconditions.checkNotNull(configurationKeys, "configurationKeys");
 
-        String keyStorePath = properties.get(configurationKeys.getKeyStorePathConfigurationKey());
+        String keyStorePath;
+        if (StringUtils.isNotBlank(defaultPath)) {
+            keyStorePath = defaultPath + properties.get(configurationKeys.getKeyStorePathConfigurationKey());
+        } else {
+            keyStorePath = properties.get(configurationKeys.getKeyStorePathConfigurationKey());
+        }
+
         if (StringUtils.isBlank(keyStorePath)) {
             String msg = "Missing KeyStore configuration key \"" + configurationKeys.getKeyStorePathConfigurationKey()
                     + "\"";
@@ -383,14 +390,16 @@ public final class KeyStoreConfigurator {
         this.keyStoreConfiguration = keyStoreConfiguration;
     }
 
-    public KeyStoreConfigurator(@Nonnull Map<String, String> properties) throws SamlEngineConfigurationException {
-        this(getKeyStoreConfiguration(properties, DEFAULT_KEYSTORE_CONFIGURATION_KEYS));
+    public KeyStoreConfigurator(@Nonnull Map<String, String> properties,
+                                @Nullable String defaultPath) throws SamlEngineConfigurationException {
+        this(getKeyStoreConfiguration(properties, DEFAULT_KEYSTORE_CONFIGURATION_KEYS, defaultPath));
     }
 
     public KeyStoreConfigurator(@Nonnull Map<String, String> properties,
-                                @Nonnull KeyStoreConfigurationKeys configurationKeys)
+                                @Nonnull KeyStoreConfigurationKeys configurationKeys,
+                                @Nullable String defaultPath)
             throws SamlEngineConfigurationException {
-        this(getKeyStoreConfiguration(properties, configurationKeys));
+        this(getKeyStoreConfiguration(properties, configurationKeys, defaultPath));
     }
 
     /**

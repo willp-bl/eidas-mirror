@@ -35,7 +35,6 @@ public class EidasAuthnStatementValidator extends
         super.validate(stmnt);
 
         if (stmnt.getAuthnInstant() == null) {
-
             throw new ValidationException("AuthnInstant is required.");
         }
 

@@ -44,6 +44,8 @@ public enum EncryptionKey {
 
     ENCRYPTION_ACTIVATION("encryptionActivation"),
 
+    ENCRYPTION_ACTIVATION_PATH("defaultPath"),
+
     ENCRYPT_TO_PREFIX("EncryptTo."),
 
     // put the ; on a separate line to make merges easier

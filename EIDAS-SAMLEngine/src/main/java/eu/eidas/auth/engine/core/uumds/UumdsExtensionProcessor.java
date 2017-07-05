@@ -49,8 +49,8 @@ public final class UumdsExtensionProcessor extends StorkExtensionProcessor imple
 		super(storkAttributeRegistry, additionalAttributeRegistry);
 	}
 
-	public UumdsExtensionProcessor(String storkAttributesFileName, String additionalAttributesFileName) {
-		super(storkAttributesFileName, additionalAttributesFileName);
+	public UumdsExtensionProcessor(String storkAttributesFileName, String additionalAttributesFileName, String defaultPath) {
+		super(storkAttributesFileName, additionalAttributesFileName, defaultPath);
 	}
 
 	@Override

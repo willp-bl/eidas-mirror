@@ -207,6 +207,7 @@
 						<div class="form-group" id="eidasSPTypeDiv">
 							<label for="eidasSPType"><s:property value="%{getText('eidasSPType')}"/></label>
 							<select name="eidasSPType" id="eidasSPType" class="form-control">
+								<option value="not provided">not provided</option>
 								<option value="public" selected>public</option>
 								<option value="private">private</option>
 							</select>
@@ -292,6 +293,86 @@
                                 </s:if>
                             </s:iterator>
                         </div>
+						<h3><s:property value="%{getText('eidasRepvAttributesId')}"/></h3>
+						<div class="radio-inline-group">
+							<div class="radio radio-info radio-inline">
+								<input type="radio" name="allTypeEidas" id="check_all_MandatoryRepvEidas" value="true" />
+								<label for="check_all_MandatoryRepvEidas"><s:property value="%{getText('mandatoryId')}"/></label>
+							</div>
+							<div class="radio radio-info radio-inline">
+								<input type="radio" name="allTypeEidas" id="check_all_OptionalRepvEidas" value="false" />
+								<label for="check_all_OptionalRepvEidas"><s:property value="%{getText('optionalId')}"/></label>
+							</div>
+							<div class="radio radio-info radio-inline">
+								<input type="radio" name="allTypeEidas" id="check_all_NoRequestRepvEidas" value="none" checked="checked"/>
+								<label for="check_all_NoRequesRepvtEidas"><s:property value="%{getText('doNotRequestId')}"/></label>
+							</div>
+						</div>
+						<h4><s:property value="%{getText('eidasRepNaturalPersonAttributes')}"/> <a class="toggle" id="tab2_toggle3"></a></h4>
+						<div class="content" id="tab2_toggle3_content">
+							<s:set var="RepresentativeNaturalPerson">RepresentativeNaturalPerson</s:set>
+							<s:iterator value="eidasAttributeList" >
+								<s:if test="%{#RepresentativeNaturalPerson.equalsIgnoreCase(PersonType)}">
+									<div class="form-group">
+										<s:if test="%{value[0]!=''}">
+											<input type="text" name="<s:property value="nameUri"/>" value="<s:property value="nameUri"/>" id="input" class="form-control"/>
+											<input type="text" name="<s:property value="nameUri"/>Value" value="<s:property value="value[0]"/>" id="input" class="form-control"/>
+										</s:if>
+										<s:else>
+											<input type="text" name="<s:property value="nameUri"/>" value="<s:property value="nameUri"/>" id="input" class="form-control"/>
+										</s:else>
+										<div class="radio-inline-group">
+											<div class="radio radio-info radio-inline">
+												<input type="radio" name="<s:property value="nameUri" />Type" id="MandatoryRepv_<s:property value="friendlyName" />Eidas" value="true" />
+												<label for="MandatoryRepv_<s:property value="nameUri" />Eidas"><s:property value="%{getText('mandatoryId')}"/></label>
+											</div>
+											<div class="radio radio-info radio-inline">
+												<input type="radio" name="<s:property value="nameUri" />Type" id="OptionalRepv_<s:property value="friendlyName" />Eidas" value="false" />
+												<label for="OptionalRepv_<s:property value="nameUri" />Eidas"><s:property value="%{getText('optionalId')}"/></label>
+											</div>
+											<div class="radio radio-info radio-inline">
+												<input type="radio" name="<s:property value="nameUri" />Type" id="NoRequestRepv_<s:property value="friendlyName" />Eidas" checked="checked" value="none" />
+												<label for="NoRequestRepv_<s:property value="nameUri" />Eidas"><s:property value="%{getText('doNotRequestId')}"/></label>
+											</div>
+											<s:if test="%{isRequired()}"><span class="text-error">(*)</span></s:if>
+										</div>
+									</div>
+								</s:if>
+							</s:iterator>
+						</div>
+						<h4><s:property value="%{getText('eidasRepLegalPersonAttributes')}"/> <a class="toggle" id="tab2_toggle4"></a></h4>
+						<div class="content" id="tab2_toggle4_content">
+							<s:set var="RepresentativeLegalPerson">RepresentativeLegalPerson</s:set>
+							<s:iterator value="eidasAttributeList">
+								<s:if test="%{#RepresentativeLegalPerson.equalsIgnoreCase(PersonType)}">
+									<div class="form-group">
+										<s:if test="%{value[0]!=''}">
+											<input type="text" name="<s:property value="nameUri"/>" value="<s:property value="nameUri"/>" id="input" class="form-control"/>
+											<input type="text" name="<s:property value="nameUri"/>Value" value="<s:property value="value[0]"/>" id="input" class="form-control"/>
+											<s:if test="%{required}"><span class="text-error">(*)</span></s:if>
+										</s:if>
+										<s:else>
+											<input type="text" name="<s:property value="nameUri"/>" value="<s:property value="nameUri"/>" id="input" class="form-control"/>
+										</s:else>
+										<div class="radio-inline-group">
+											<div class="radio radio-info radio-inline">
+												<input type="radio" name="<s:property value="nameUri" />Type" id="MandatoryRepv_<s:property value="friendlyName" />Eidas" value="true" />
+												<label for="MandatoryRepv_<s:property value="nameUri" />Eidas"><s:property value="%{getText('mandatoryId')}"/></label>
+											</div>
+											<div class="radio radio-info radio-inline">
+												<input type="radio" name="<s:property value="nameUri" />Type" id="OptionalRepv_<s:property value="friendlyName" />Eidas" value="false" />
+												<label for="OptionalRepv_<s:property value="nameUri" />Eidas"><s:property value="%{getText('optionalId')}"/></label>
+											</div>
+											<div class="radio radio-info radio-inline">
+												<input type="radio" name="<s:property value="nameUri" />Type" id="NoRequestRepv_<s:property value="friendlyName" />Eidas" value="none" checked="checked"/>
+												<label for="NoRequestRepv_<s:property value="nameUri" />Eidas"><s:property value="%{getText('doNotRequestId')}"/></label>
+											</div>
+											<s:if test="%{isRequired()}"><span class="text-error">(*)</span></s:if>
+										</div>
+									</div>
+								</s:if>
+							</s:iterator>
+						</div>
                         <input type="hidden" id="spType" name="spType" value="public">
 						<button id="submit_tab2" type="button" class="btn btn-default btn-lg btn-block">Submit</button>
 						<s:fielderror />

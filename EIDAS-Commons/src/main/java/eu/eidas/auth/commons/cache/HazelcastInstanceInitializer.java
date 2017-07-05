@@ -24,11 +24,14 @@ package eu.eidas.auth.commons.cache;
 
 import com.hazelcast.config.ClasspathXmlConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.FileSystemXmlConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import eu.eidas.auth.commons.exceptions.InvalidParameterEIDASException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.FileNotFoundException;
 
 /**
  * Initialize Hazelcast by configuration
@@ -47,11 +50,11 @@ public class HazelcastInstanceInitializer {
         return instance;
     }
 
-    public void initializeInstance() {
+    public void initializeInstance() throws FileNotFoundException {
         Config cfg;
         if (hazelcastConfigfileName != null) {
             LOG.trace("loading hazelcast config from " + hazelcastConfigfileName);
-            cfg = new ClasspathXmlConfig(hazelcastConfigfileName);
+            cfg = new FileSystemXmlConfig(hazelcastConfigfileName);
         } else {
             LOG.trace("loading hazelcast instance '"+hazelcastInstanceName+"' config "+hazelcastConfigfileName);
             cfg = new Config();

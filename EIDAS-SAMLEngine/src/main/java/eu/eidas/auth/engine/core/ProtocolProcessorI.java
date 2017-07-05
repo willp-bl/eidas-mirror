@@ -37,6 +37,13 @@ public interface ProtocolProcessorI {
     boolean checkMandatoryAttributes(@Nullable ImmutableAttributeMap immutableAttributeMap);
 
     /**
+     * Checks whether the attribute map satisfy the rules of representation
+     *
+     * @param immutableAttributeMap the attribute map.
+     */
+    boolean checkRepresentativeAttributes(@Nullable ImmutableAttributeMap  immutableAttributeMap);
+
+    /**
      * Ensures that the generated request is complete and is not missing information required by this protocol.
      *
      * @param request the current request
@@ -253,7 +260,8 @@ public interface ProtocolProcessorI {
     IAuthenticationResponse unmarshallResponse(@Nonnull Response response,
                                                boolean verifyBearerIpAddress,
                                                @Nullable String userIpAddress,
-                                               long skewTimeInMillis,
+                                               long beforeSkewTimeInMillis,
+                                               long afterSkewTimeInMillis,
                                                @Nonnull DateTime now,
                                                @Nullable String audienceRestriction) throws EIDASSAMLEngineException;
 
@@ -267,4 +275,6 @@ public interface ProtocolProcessorI {
     @Nonnull
     IAuthenticationRequest updateRequestWithConsent(@Nonnull IAuthenticationRequest request,
                                                     @Nonnull ImmutableAttributeMap consentedAttributes);
+
+
 }

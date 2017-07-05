@@ -173,12 +173,13 @@ public final class EidasExtensionProcessor implements ExtensionProcessorI {
 
     public EidasExtensionProcessor(@Nonnull String eidasAttributesFileNameVal,
                                    @Nonnull String additionalAttributesFileNameVal,
+                                   @Nullable String defaultPath,
                                    @Nullable MetadataFetcherI metadataFetcherVal,
                                    @Nullable MetadataSignerI metadataSignerVal) {
         Preconditions.checkNotNull(eidasAttributesFileNameVal, "eidasAttributesFileName");
         Preconditions.checkNotNull(additionalAttributesFileNameVal, "additionalAttributesFileName");
-        eidasAttributeRegistry = AttributeRegistries.fromFile(eidasAttributesFileNameVal);
-        additionalAttributeRegistry = AttributeRegistries.fromFile(additionalAttributesFileNameVal);
+        eidasAttributeRegistry = AttributeRegistries.fromFile(eidasAttributesFileNameVal, defaultPath);
+        additionalAttributeRegistry = AttributeRegistries.fromFile(additionalAttributesFileNameVal, defaultPath);
         metadataFetcher = metadataFetcherVal;
         metadataSigner = metadataSignerVal;
         if (null == metadataFetcher || null == metadataSigner) {
@@ -214,14 +215,6 @@ public final class EidasExtensionProcessor implements ExtensionProcessorI {
                                    @Nullable MetadataFetcherI metadataFetcher,
                                    @Nullable MetadataSignerI metadataSigner) {
         this(EidasSpec.REGISTRY, additionalAttributeRegistry, metadataFetcher, metadataSigner);
-    }
-
-    @SuppressWarnings("squid:S2637")
-    public EidasExtensionProcessor(@Nonnull String additionalAttributesFileName,
-                                   @Nullable MetadataFetcherI metadataFetcher,
-                                   @Nullable MetadataSignerI metadataSigner) {
-        this(EidasSpec.REGISTRY, AttributeRegistries.fromFile(additionalAttributesFileName), metadataFetcher,
-                metadataSigner);
     }
 
     @SuppressWarnings("squid:S2637")
@@ -510,17 +503,22 @@ public final class EidasExtensionProcessor implements ExtensionProcessorI {
 
     private static void addExtensionSPType(IEidasAuthenticationRequest request, Extensions extensions)
             throws EIDASSAMLEngineException {
-        SpType spType = request.getSpType();
-        if (null != spType) {
-            LOG.trace("Generate SPType");
-            final SPType spTypeObj = (SPType) BuilderFactoryUtil.buildXmlObject(SPType.DEF_ELEMENT_NAME);
-            if (spTypeObj != null) {
-                spTypeObj.setSPType(spType.getValue());
-                extensions.getUnknownXMLObjects().add(spTypeObj);
+        // if SpType is provided for the request
+        if (StringUtils.isNotBlank(request.getSpType())) {
+            SpType spType = SpType.fromString(request.getSpType());
+            if (spType != null) {
+                LOG.trace("Generate SPType provided by light request");
+                final SPType spTypeObj = (SPType) BuilderFactoryUtil.buildXmlObject(SPType.DEF_ELEMENT_NAME);
+                if (spTypeObj != null) {
+                    spTypeObj.setSPType(spType.getValue());
+                    extensions.getUnknownXMLObjects().add(spTypeObj);
+                } else {
+                    LOG.error("Unable to create SPType Object by SAML engine");
+                }
             } else {
-                LOG.error("Unable to create SPType Object by SAML engine");
+                LOG.error("Unable to create SPType Object by SAML engine - wrong value supplied in light request : " + request.getSpType());
+                throw new EIDASSAMLEngineException("Unable to create SPType Object by SAML engine - wrong value supplied in light request : " + request.getSpType());
             }
-
         }
     }
 
@@ -1146,21 +1144,27 @@ public final class EidasExtensionProcessor implements ExtensionProcessorI {
                 }
             }
 
-            // TODO check if this is correct:
-            SpType requestSpType = ((IEidasAuthenticationRequest) authnRequest).getSpType();
-            String metadataSpType = MetadataUtil.getSPTypeFromMetadata(entityDescriptor);
             //exactly one of requestSpType, metadataSpType should be non empty
-            if (null == requestSpType) {
-                if (StringUtils.isEmpty(metadataSpType)) {
+            String metadataSpType = MetadataUtil.getSPTypeFromMetadata(entityDescriptor);
+            if (authnRequest.getSpType() != null) {
+                SpType requestSpType = SpType.fromString(authnRequest.getSpType());
+                // both Metadata and Request supplies SP type - not allowed
+                if (requestSpType != null && StringUtils.isNotBlank(metadataSpType)) {
+                    LOG.error("SPType both in Connector Metadata and Request");
+                    throw new EIDASServiceException(
+                            EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INCONSISTENT_SPTYPE.errorCode()),
+                            EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INCONSISTENT_SPTYPE.errorMessage()), "");
+                }
+            } else {
+                // neither of them has SPType available
+                if (!StringUtils.isNotBlank(metadataSpType)) {
+                    LOG.error("SPType not provided");
                     throw new EIDASServiceException(
                             EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_MISSING_SPTYPE.errorCode()),
                             EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_MISSING_SPTYPE.errorMessage()), "");
                 }
-            } else if (!StringUtils.isEmpty(metadataSpType)) {
-                throw new EIDASServiceException(
-                        EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INCONSISTENT_SPTYPE.errorCode()),
-                        EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INCONSISTENT_SPTYPE.errorMessage()), "");
             }
+
         } catch (EIDASSAMLEngineException e) {
             throw new InternalErrorEIDASException(EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INVALID_SAML.errorCode()),
                                                   EidasErrors.get(
@@ -1479,7 +1483,8 @@ public final class EidasExtensionProcessor implements ExtensionProcessorI {
     public IAuthenticationResponse unmarshallResponse(@Nonnull Response response,
                                                       boolean verifyBearerIpAddress,
                                                       @Nullable String userIpAddress,
-                                                      long skewTimeInMillis,
+                                                      long beforeSkewTimeInMillis,
+                                                      long afterSkewTimeInMillis,
                                                       @Nonnull DateTime now,
                                                       @Nullable String audienceRestriction)
             throws EIDASSAMLEngineException {
@@ -1492,8 +1497,8 @@ public final class EidasExtensionProcessor implements ExtensionProcessorI {
 
         LOG.trace("validateEidasResponse");
         Assertion assertion =
-                ResponseUtil.extractVerifiedAssertion(response, verifyBearerIpAddress, userIpAddress, skewTimeInMillis,
-                                                      now, audienceRestriction);
+                ResponseUtil.extractVerifiedAssertion(response, verifyBearerIpAddress, userIpAddress, beforeSkewTimeInMillis,
+                                                      afterSkewTimeInMillis, now, audienceRestriction);
 
         if (null != assertion) {
             LOG.trace("Set notOnOrAfter.");

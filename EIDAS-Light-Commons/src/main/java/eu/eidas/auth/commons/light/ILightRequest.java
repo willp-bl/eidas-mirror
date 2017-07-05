@@ -91,6 +91,14 @@ public interface ILightRequest extends Serializable {
     String getProviderName();
 
     /**
+     * Returns the type of SP (optional).
+     *
+     * @return type of SP, can be {@code null}.
+     */
+    @Nullable
+    String getSpType();
+
+    /**
      * Returns the requested attributes.
      *
      * @return the requested attributes.

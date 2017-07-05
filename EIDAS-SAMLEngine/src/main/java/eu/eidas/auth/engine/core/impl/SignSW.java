@@ -20,13 +20,20 @@ import java.util.Map;
 import eu.eidas.auth.engine.core.ProtocolSignerI;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 
+import javax.annotation.Nullable;
+
 /**
  * A {@link ProtocolSignerI} implementation which uses the same signature configuration file to load another keyStore
  * used to sign the MetaData content.
  */
 public class SignSW extends KeyStoreProtocolSigner {
 
+    @Deprecated // use the the constructor supporting defaultPath instead
     public SignSW(Map<String, String> properties) throws EIDASSAMLEngineException {
-        super(properties);
+        super(properties, null);
+    }
+
+    public SignSW(Map<String, String> properties, @Nullable String defaultPath) throws EIDASSAMLEngineException {
+        super(properties, defaultPath);
     }
 }

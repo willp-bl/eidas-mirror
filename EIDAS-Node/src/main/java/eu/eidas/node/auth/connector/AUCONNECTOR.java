@@ -15,6 +15,7 @@ package eu.eidas.node.auth.connector;
 
 import javax.annotation.Nonnull;
 
+import eu.eidas.auth.commons.exceptions.EIDASServiceException;
 import org.apache.commons.lang.StringUtils;
 import org.bouncycastle.util.encoders.Base64;
 import org.slf4j.Logger;
@@ -141,6 +142,13 @@ public final class AUCONNECTOR implements ICONNECTORService {
             throw new EidasNodeException(EidasErrors.get(EidasErrorKey.EIDAS_MANDATORY_ATTRIBUTES.errorCode()),
                                          EidasErrors.get(EidasErrorKey.EIDAS_MANDATORY_ATTRIBUTES.errorMessage()));
         }
+        if (connectorUtil != null && !parseBoolean(
+                connectorUtil.getConfigs().getProperty(EIDASValues.DISABLE_CHECK_REPRESENTATIVE_ATTRS.toString())) &&
+                !samlService.checkRepresentativeAttributes(authData.getRequestedAttributes())) {
+            throw new EidasNodeException(EidasErrors.get(EidasErrorKey.EIDAS_REPRESENTATIVE_ATTRIBUTES.errorCode()),
+                    EidasErrors.get(EidasErrorKey.EIDAS_REPRESENTATIVE_ATTRIBUTES.errorMessage()));
+        }
+
         LOG.trace("do not fill in the assertion url");
 
         EidasAuthenticationRequest.Builder builder = EidasAuthenticationRequest.builder(authData);
@@ -155,18 +163,34 @@ public final class AUCONNECTOR implements ICONNECTORService {
             modified = true;
         }
 
-        if (connectorUtil != null && StringUtils.isNotBlank(
-                connectorUtil.getConfigs().getProperty(EIDASValues.EIDAS_SPTYPE.toString()))) {
-            //only the SPType in the connector's metadata will remain active
-
-            if (null != authData.getSpType()) {
-                builder.spType((SpType) null);
-                modified = true;
+        // SP type setting to Request depending on Node type
+        String nodeSpType = connectorUtil.getConfigs().getProperty(EIDASValues.EIDAS_SPTYPE.toString());
+        String spType = authData.getSpType();
+        if (StringUtils.isNotBlank(nodeSpType)) {
+            if (StringUtils.isNotBlank(spType)) {
+                if (spType.equalsIgnoreCase(nodeSpType)) {
+                    // if exists in both config and Request and equals, then silently remove fom request
+                    builder.spType(null);
+                    modified = true;
+                } else {
+                    // if exists and not equals then throw error
+                    String message = "Node SP type not set differently than requested in authentication request";
+                    LOG.error(message);
+                    throw new EidasNodeException(
+                            EidasErrors.get(EidasErrorKey.CONNECTOR_INVALID_SPTYPE.errorCode()),
+                            EidasErrors.get(EidasErrorKey.CONNECTOR_INVALID_SPTYPE.errorMessage()));
+                }
             }
-
-        } else if (null == authData.getSpType()) {
-            builder.spType(SPType.DEFAULT_VALUE);
-            modified = true;
+            // default is in Request not provided
+        } else {
+            // no SP type at all
+            if (StringUtils.isBlank(authData.getSpType())) {
+                String message = "Node SP type not set, authentication request has no SP type";
+                LOG.error(message);
+                throw new EidasNodeException(
+                        EidasErrors.get(EidasErrorKey.CONNECTOR_INVALID_SPTYPE.errorCode()),
+                        EidasErrors.get(EidasErrorKey.CONNECTOR_INVALID_SPTYPE.errorMessage()));
+            }
         }
 
         if (modified) {
@@ -190,18 +214,16 @@ public final class AUCONNECTOR implements ICONNECTORService {
         IAuthenticationResponse connectorResponse = authenticationExchange.getConnectorResponse();
 
         // do not validate mandatory attributes in case of failure
-        if (connectorResponse.isFailure()) {
-            return authenticationExchange;
-        }
+        if (!connectorResponse.isFailure()) {
+            ImmutableAttributeMap attributeMap = connectorResponse.getAttributes();
 
-        ImmutableAttributeMap attributeMap = connectorResponse.getAttributes();
+            boolean disableCheckMandatoryAttributes = parseBoolean(
+                    connectorUtil.getConfigs().getProperty(EIDASValues.DISABLE_CHECK_MANDATORY_ATTRIBUTES.toString()));
 
-        boolean disableCheckMandatoryAttributes = parseBoolean(
-                connectorUtil.getConfigs().getProperty(EIDASValues.DISABLE_CHECK_MANDATORY_ATTRIBUTES.toString()));
-
-        if (!disableCheckMandatoryAttributes && !samlService.checkMandatoryAttributes(attributeMap)) {
-            throw new EidasNodeException(EidasErrors.get(EidasErrorKey.EIDAS_MANDATORY_ATTRIBUTES.errorCode()),
-                                         EidasErrors.get(EidasErrorKey.EIDAS_MANDATORY_ATTRIBUTES.errorMessage()));
+            if (!disableCheckMandatoryAttributes && !samlService.checkMandatoryAttributes(attributeMap)) {
+                throw new EidasNodeException(EidasErrors.get(EidasErrorKey.EIDAS_MANDATORY_ATTRIBUTES.errorCode()),
+                        EidasErrors.get(EidasErrorKey.EIDAS_MANDATORY_ATTRIBUTES.errorMessage()));
+            }
         }
         return authenticationExchange;
     }

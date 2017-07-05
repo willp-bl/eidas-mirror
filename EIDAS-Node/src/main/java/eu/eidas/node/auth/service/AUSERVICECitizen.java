@@ -128,7 +128,6 @@ public final class AUSERVICECitizen implements ISERVICECitizenService {
 
     @Override
     public void checkMandatoryAttributes(@Nonnull ImmutableAttributeMap attributes) throws EIDASServiceException {
-        // validate input
         if (serviceUtil != null && !Boolean.parseBoolean(
                 serviceUtil.getConfigs().getProperty(EIDASValues.DISABLE_CHECK_MANDATORY_ATTRIBUTES.toString())) &&
                 !samlService.checkMandatoryAttributeSet(attributes)) {
@@ -136,6 +135,17 @@ public final class AUSERVICECitizen implements ISERVICECitizenService {
                                             EidasErrors.get(EidasErrorKey.EIDAS_MANDATORY_ATTRIBUTES.errorMessage()));
         }
     }
+
+    @Override
+    public void checkRepresentativeAttributes(@Nonnull ImmutableAttributeMap attributes) throws EIDASServiceException {
+        if (serviceUtil != null && !Boolean.parseBoolean(
+                serviceUtil.getConfigs().getProperty(EIDASValues.DISABLE_CHECK_REPRESENTATIVE_ATTRS.toString())) &&
+                !samlService.checkRepresentativeAttributes(attributes)) {
+            throw new EIDASServiceException(EidasErrors.get(EidasErrorKey.EIDAS_REPRESENTATIVE_ATTRIBUTES.errorCode()),
+                    EidasErrors.get(EidasErrorKey.EIDAS_REPRESENTATIVE_ATTRIBUTES.errorMessage()));
+        }
+    }
+
 
     @Nonnull
     @Override

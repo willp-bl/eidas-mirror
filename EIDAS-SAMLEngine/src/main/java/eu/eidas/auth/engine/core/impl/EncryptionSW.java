@@ -42,13 +42,13 @@ public final class EncryptionSW extends KeyStoreSamlEngineEncryption {
     private static final Logger LOG = LoggerFactory.getLogger(EncryptionSW.class);
 
     @Nullable
-    private static ReloadableProperties initActivationConf(@Nonnull Map<String, String> properties) {
+    private static ReloadableProperties initActivationConf(@Nonnull Map<String, String> properties, String defaultPath) {
         String activationConfigurationFile = EncryptionKey.ENCRYPTION_ACTIVATION.getAsString(properties);
         LOG.debug("File containing encryption configuration: \"" + activationConfigurationFile + "\"");
         if (null == activationConfigurationFile) {
             return null;
         }
-        return new ReloadableProperties(activationConfigurationFile);
+        return new ReloadableProperties(activationConfigurationFile, defaultPath);
     }
 
     private final ImmutableMap<String, String> properties;
@@ -59,10 +59,18 @@ public final class EncryptionSW extends KeyStoreSamlEngineEncryption {
     @Nullable
     private final ReloadableProperties encryptionActivationProperties;
 
+    @Deprecated // use constructor supporting defaultPath
+    //TODO to be removed in 1.4
     public EncryptionSW(Map<String, String> properties) throws EIDASSAMLEngineException {
-        super(properties);
+        super(properties, null);
         this.properties = ImmutableMap.copyOf(properties);
-        encryptionActivationProperties = initActivationConf(properties);
+        encryptionActivationProperties = initActivationConf(properties, null);
+    }
+
+    public EncryptionSW(Map<String, String> properties, String defaultPath) throws EIDASSAMLEngineException {
+        super(properties, defaultPath);
+        this.properties = ImmutableMap.copyOf(properties);
+        encryptionActivationProperties = initActivationConf(properties, defaultPath);
     }
 
     /**

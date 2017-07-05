@@ -135,4 +135,11 @@ public interface ICONNECTORSAMLService {
      */
     boolean checkMandatoryAttributes(@Nonnull ImmutableAttributeMap attributes);
 
+    /**
+     * Checks whether the attribute map satifisfies the rule of representation
+     *
+     * @param attributes
+     */
+    boolean checkRepresentativeAttributes(@Nonnull ImmutableAttributeMap attributes);
+
 }

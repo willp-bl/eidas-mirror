@@ -209,7 +209,7 @@ public class AUSERVICETestCase {
         CONFIGS.setProperty(EidasErrorKey.SERVICE_ATTR_NULL.errorCode(), "202005");
         CONFIGS.setProperty(EidasErrorKey.SERVICE_ATTR_NULL.errorMessage(), "invalid.attrList.service");
 
-        EIDASUtil.createInstance(CONFIGS);
+        //EIDASUtil.createInstance(CONFIGS);
     }
 
     private static WebRequest newWebRequest(String paramName1,

@@ -119,6 +119,8 @@ public class SpecificProxyServiceImpl implements ISpecificProxyService {
                 parameters.put(EidasParameterKeys.EIDAS_SERVICE_LOA.toString(), lightRequest.getLevelOfAssurance());
                 parameters.put(EidasParameterKeys.EIDAS_NAMEID_FORMAT.toString(), lightRequest.getNameIdFormat());
 
+                parameters.put(EidasParameterKeys.SERVICE_PROVIDER_TYPE.toString(), lightRequest.getSpType());
+
                 byte[] samlTokenBytes = specificService.prepareCitizenAuthentication(lightRequest, attrMap, parameters,
                                                                                      getHttpRequestAttributesHeaders(
                                                                                              httpServletRequest));

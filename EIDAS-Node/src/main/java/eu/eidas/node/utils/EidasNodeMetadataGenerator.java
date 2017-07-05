@@ -22,8 +22,11 @@
 
 package eu.eidas.node.utils;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Properties;
 
+import eu.eidas.auth.engine.metadata.*;
 import org.apache.commons.lang.StringUtils;
 import org.opensaml.common.xml.SAMLConstants;
 import org.slf4j.Logger;
@@ -37,9 +40,6 @@ import eu.eidas.auth.engine.ProtocolEngineFactory;
 import eu.eidas.auth.engine.ProtocolEngineI;
 import eu.eidas.auth.engine.configuration.dom.EncryptionKey;
 import eu.eidas.auth.engine.configuration.dom.SignatureKey;
-import eu.eidas.auth.engine.metadata.Contact;
-import eu.eidas.auth.engine.metadata.MetadataConfigParams;
-import eu.eidas.auth.engine.metadata.MetadataGenerator;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 
 import static eu.eidas.node.Constants.EXPRESSION_LANGUAGE_PREFIX;
@@ -66,10 +66,6 @@ public class EidasNodeMetadataGenerator {
     private String connectorMetadataUrl;
     private String serviceMetadataUrl;
 
-    private String connectorCountry;
-    private String connectorUrl;
-    private String serviceCountry;
-    private String serviceUrl;
     private String assertionUrl;
     private Properties nodeProps;
     private long validityDuration;
@@ -78,13 +74,6 @@ public class EidasNodeMetadataGenerator {
     private String  singleSignOnServicePostLocation;
 
     private static final String INVALID_METADATA="invalid metadata";
-
-    private static final String CONNECTOR_TECHNICAL_CONTACT_PROPS[]={"connector.contact.technical.company", "connector.contact.technical.email", "connector.contact.technical.givenname", "connector.contact.technical.surname", "connector.contact.technical.phone"};
-    private static final String CONNECTOR_SUPPORT_CONTACT_PROPS[]={"connector.contact.support.company", "connector.contact.support.email", "connector.contact.support.givenname", "connector.contact.support.surname", "connector.contact.support.phone"};
-    private static final String CONNECTOR_CONTACTS[][]={CONNECTOR_TECHNICAL_CONTACT_PROPS, CONNECTOR_SUPPORT_CONTACT_PROPS};
-    private static final String SERVICE_TECHNICAL_CONTACT_PROPS[]={"service.contact.technical.company", "service.contact.technical.email", "service.contact.technical.givenname", "service.contact.technical.surname", "service.contact.technical.phone"};
-    private static final String SERVICE_SUPPORT_CONTACT_PROPS[]={"service.contact.support.company", "service.contact.support.email", "service.contact.support.givenname", "service.contact.support.surname", "service.contact.support.phone"};
-    private static final String SERVICE_CONTACTS[][]={SERVICE_TECHNICAL_CONTACT_PROPS, SERVICE_SUPPORT_CONTACT_PROPS};
 
     private ProtocolEngineFactory nodeProtocolEngineFactory;
 
@@ -145,8 +134,10 @@ public class EidasNodeMetadataGenerator {
     }
 
     public String generateConnectorMetadata(){
-        return helperGenerateMetadata(samlConnectorSP, samlConnectorIDP, connectorMetadataUrl,getConnectorCountry(),
-                CONNECTOR_CONTACTS, MetadataConfigParams.CONNECTOR_ORG_NAME, getConnectorUrl(), null);
+        ContactData technicalContact = MetadataUtil.createConnectorTechnicalContact(nodeProps);
+        ContactData supportContact = MetadataUtil.createConnectorSupportContact(nodeProps);
+        OrganizationData organization = MetadataUtil.createConnectorOrganization(nodeProps);
+        return generateMetadata(samlConnectorSP, samlConnectorIDP, connectorMetadataUrl, technicalContact, supportContact, organization, null);
     }
 
     public String generateServiceMetadata(){
@@ -154,39 +145,44 @@ public class EidasNodeMetadataGenerator {
         if(getNodeProps()!=null){
             loA=getNodeProps().getProperty(EIDASValues.EIDAS_SERVICE_LOA.toString());
         }
-        return helperGenerateMetadata(samlServiceSP, samlServiceIDP, serviceMetadataUrl,getServiceCountry(),SERVICE_CONTACTS, MetadataConfigParams.SERVICE_ORG_NAME, getServiceUrl(), loA);
+        ContactData technicalContact = MetadataUtil.createServiceTechnicalContact(nodeProps);
+        ContactData supportContact = MetadataUtil.createServiceSupportContact(nodeProps);
+        OrganizationData organization = MetadataUtil.createServiceOrganization(nodeProps);
+        return generateMetadata(samlServiceSP, samlServiceIDP, serviceMetadataUrl, technicalContact, supportContact, organization, loA);
     }
 
-    private String helperGenerateMetadata(String spEngineName, String idpEngineName, String url, String country, String[][] contactsProperties, String orgNameConst, String siteUrl, String loA){
+    private String generateMetadata(String spEngineName, String idpEngineName, String url, ContactData technicalContact, ContactData supportContact, OrganizationData organization, String loA){
         String metadata=INVALID_METADATA;
         ProtocolEngineI spEngine=null;
         ProtocolEngineI idpEngine=null;
         if(url!=null && !url.isEmpty()) {
             try {
+                EidasMetadata.Generator generator = EidasMetadata.generator();
+                MetadataConfigParams.Builder mcp = MetadataConfigParams.builder();
                 if (!StringUtils.isEmpty(spEngineName)) {
                     spEngine = getNodeProtocolEngineFactory().getProtocolEngine(spEngineName);
+                    mcp.spType(nodeProps == null ? null : nodeProps.getProperty(EIDASValues.EIDAS_SPTYPE.toString()));
                 }
                 if (!StringUtils.isEmpty(idpEngineName)) {
                     idpEngine = getNodeProtocolEngineFactory().getProtocolEngine(idpEngineName);
                 }
-                MetadataGenerator generator = generateMetadata(spEngine, idpEngine, url);
-                MetadataConfigParams mcp = generator.getConfigParams();
-                mcp.setCountryName(country);
-                mcp.setNodeUrl(siteUrl);
-                mcp.setAssuranceLevel(loA);
-                mcp.setAssertionConsumerUrl(assertionUrl);
-                mcp.getProtocolBinding().add(SAMLConstants.SAML2_POST_BINDING_URI);
-                mcp.getProtocolBinding().add(SAMLConstants.SAML2_REDIRECT_BINDING_URI);
-                putBindingLocation(idpEngine, spEngine, mcp, url);
-                mcp.setSigningMethods(nodeProps == null ? null : nodeProps.getProperty(SignatureKey.SIGNATURE_ALGORITHM_WHITE_LIST.getKey()));
-                mcp.setDigestMethods(nodeProps == null ? null : nodeProps.getProperty(SignatureKey.SIGNATURE_ALGORITHM_WHITE_LIST.getKey()));
-                mcp.setEncryptionAlgorithms(nodeProps == null ? null : nodeProps.getProperty(EncryptionKey.ENCRYPTION_ALGORITHM_WHITE_LIST.getKey()));
-                mcp.setSpType(nodeProps == null ? null : nodeProps.getProperty(EIDASValues.EIDAS_SPTYPE.toString()));
-                mcp.setValidityDuration(validityDuration);
-                mcp.setTechnicalContact(getTechnicalContact(contactsProperties));
-                mcp.setSupportContact(getSupportContact(contactsProperties));
-                mcp.setOrganizationName(nodeProps == null ? null : nodeProps.getProperty(orgNameConst));
-                return generator.generateMetadata();
+                mcp.idpEngine(idpEngine);
+                mcp.spEngine(spEngine);
+                mcp.entityID(url);
+                mcp.assuranceLevel(loA);
+                mcp.assertionConsumerUrl(assertionUrl);
+                mcp.addProtocolBinding(SAMLConstants.SAML2_POST_BINDING_URI);
+                mcp.addProtocolBinding(SAMLConstants.SAML2_REDIRECT_BINDING_URI);
+                addBindingLocation(idpEngine, spEngine, mcp, url);
+                mcp.signingMethods(nodeProps == null ? null : nodeProps.getProperty(SignatureKey.SIGNATURE_ALGORITHM_WHITE_LIST.getKey()));
+                mcp.digestMethods(nodeProps == null ? null : nodeProps.getProperty(SignatureKey.SIGNATURE_ALGORITHM_WHITE_LIST.getKey()));
+                mcp.encryptionAlgorithms(nodeProps == null ? null : nodeProps.getProperty(EncryptionKey.ENCRYPTION_ALGORITHM_WHITE_LIST.getKey()));
+                mcp.validityDuration(validityDuration);
+                mcp.technicalContact(technicalContact);
+                mcp.supportContact(supportContact);
+                mcp.organization(organization);
+                generator.configParams(mcp.build());
+                return generator.build().getMetadata();
             } catch (EIDASSAMLEngineException eidasSamlexc) {
                 LOGGER.info("ERROR : Error creating Node metadata " + eidasSamlexc.getMessage());
                 LOGGER.debug("ERROR : Error creating Node metadata ", eidasSamlexc);
@@ -211,13 +207,13 @@ public class EidasNodeMetadataGenerator {
      *
      * @throws EIDASSAMLEngineException
      */
-    private void putBindingLocation(ProtocolEngineI idpEngine, ProtocolEngineI spEngine, MetadataConfigParams metadataConfigParams, String url) throws EIDASSAMLEngineException {
+    private void addBindingLocation(ProtocolEngineI idpEngine, ProtocolEngineI spEngine, MetadataConfigParams.Builder metadataConfigParams, String url) throws EIDASSAMLEngineException {
         //This check is necessary to add and validate of single sign on service metadata only for the case of Identity Provider metadata.
         //It is not necessary to add or validate single sign one service metadata for other metadata, e.g. as for Service Provider metadata
         if (idpEngine!=null && spEngine == null) {
-            metadataConfigParams.getProtocolBindingLocation().put(SAMLConstants.SAML2_REDIRECT_BINDING_URI,
+            metadataConfigParams.addProtocolBindingLocation(SAMLConstants.SAML2_REDIRECT_BINDING_URI,
                     validateBindingLocation(SAMLConstants.SAML2_REDIRECT_BINDING_URI, singleSignOnServiceRedirectLocation, url));
-            metadataConfigParams.getProtocolBindingLocation().put(SAMLConstants.SAML2_POST_BINDING_URI,
+            metadataConfigParams.addProtocolBindingLocation(SAMLConstants.SAML2_POST_BINDING_URI,
                     validateBindingLocation(SAMLConstants.SAML2_POST_BINDING_URI, singleSignOnServicePostLocation, url));
         }
     }
@@ -240,53 +236,6 @@ public class EidasNodeMetadataGenerator {
         final String exErrorCode = EidasErrors.get(EidasErrorKey.SAML_ENGINE_NO_METADATA.errorCode());
         final String exErrorMessage = EidasErrors.get(EidasErrorKey.SAML_ENGINE_NO_METADATA.errorMessage());
         throw new EIDASServiceException(exErrorCode, exErrorMessage);
-    }
-
-    private MetadataGenerator generateMetadata(ProtocolEngineI spEngine, ProtocolEngineI idpEngine, String url) throws EIDASSAMLEngineException{
-        MetadataGenerator generator = new MetadataGenerator();
-        MetadataConfigParams mcp=new MetadataConfigParams();
-        generator.setConfigParams(mcp);
-        generator.initialize(spEngine, idpEngine);
-        mcp.setEntityID(url);
-        if(idpEngine!=null) {
-            generator.addIDPRole();
-        }
-        if(spEngine!=null) {
-            generator.addSPRole();
-        }
-        return generator;
-    }
-
-    public String getConnectorCountry() {
-        return connectorCountry;
-    }
-
-    public void setConnectorCountry(String connectorCountry) {
-        this.connectorCountry = connectorCountry;
-    }
-
-    public String getConnectorUrl() {
-        return connectorUrl;
-    }
-
-    public void setConnectorUrl(String connectorUrl) {
-        this.connectorUrl = connectorUrl;
-    }
-
-    public String getServiceCountry() {
-        return serviceCountry;
-    }
-
-    public void setServiceCountry(String serviceCountry) {
-        this.serviceCountry = serviceCountry;
-    }
-
-    public String getServiceUrl() {
-        return serviceUrl;
-    }
-
-    public void setServiceUrl(String serviceUrl) {
-        this.serviceUrl = serviceUrl;
     }
 
     public Properties getNodeProps() {
@@ -329,19 +278,4 @@ public class EidasNodeMetadataGenerator {
         this.singleSignOnServicePostLocation = singleSignOnServicePostLocation;
     }
 
-    private Contact getTechnicalContact(String[][] source){
-        return createContact(source[0]);
-    }
-    private Contact getSupportContact(String[][] source){
-        return createContact(source[1]);
-    }
-    private Contact createContact(String[] propsNames){
-        Contact contact=new Contact();
-        contact.setCompany(propsNames!=null && propsNames.length>0 &&nodeProps!=null?nodeProps.getProperty(propsNames[0]):null);
-        contact.setEmail(propsNames!=null && propsNames.length>1 &&nodeProps!=null?nodeProps.getProperty(propsNames[1]):null);
-        contact.setGivenName(propsNames!=null && propsNames.length>2 &&nodeProps!=null?nodeProps.getProperty(propsNames[2]):null);
-        contact.setSurName(propsNames!=null && propsNames.length>3 &&nodeProps!=null?nodeProps.getProperty(propsNames[3]):null);
-        contact.setPhone(propsNames!=null && propsNames.length>4 &&nodeProps!=null?nodeProps.getProperty(propsNames[4]):null);
-        return contact;
-    }
 }

@@ -249,6 +249,7 @@ public enum EIDASValues {
     METADATA_ACTIVE("metadata.activate"),
     RESPONSE_ENCRYPTION_MANDATORY("response.encryption.mandatory"),
     DISABLE_CHECK_MANDATORY_ATTRIBUTES("disable.check.mandatory.eidas.attributes"),
+    DISABLE_CHECK_REPRESENTATIVE_ATTRS("disable.check.representative.attributes"),
     NODE_SUPPORT_EIDAS_MESSAGE_FORMAT_ONLY("eidasNodeOnly"),
 
     // put the ; on a separate line to make merges easier
@@ -351,8 +352,20 @@ public enum EIDASValues {
      * @param index the number.
      * @return The concatenated String value.
      */
-    public String skew(final int index) {
+    public String beforeSkew(final int index) {
 
-        return value + index + ".skew";
+        return value + index + ".skew.notbefore";
     }
+
+    /**
+     * Construct the return value with the following structure CONSTANT_VALUE+index+".skew".
+     *
+     * @param index the number.
+     * @return The concatenated String value.
+     */
+    public String afterSkew(final int index) {
+
+        return value + index + ".skew.notonorafter";
+    }
+
 }

@@ -14,18 +14,17 @@
 package eu.eidas.auth.engine.metadata;
 
 import java.util.List;
+import java.util.Properties;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import eu.eidas.auth.commons.EidasStringUtil;
+import eu.eidas.auth.commons.xml.opensaml.OpenSamlHelper;
+import eu.eidas.encryption.exception.UnmarshallException;
 import org.apache.commons.lang.StringUtils;
 import org.opensaml.saml2.core.Attribute;
-import org.opensaml.saml2.metadata.AssertionConsumerService;
-import org.opensaml.saml2.metadata.EntityDescriptor;
-import org.opensaml.saml2.metadata.IDPSSODescriptor;
-import org.opensaml.saml2.metadata.RoleDescriptor;
-import org.opensaml.saml2.metadata.SPSSODescriptor;
-import org.opensaml.saml2.metadata.SingleSignOnService;
+import org.opensaml.saml2.metadata.*;
 import org.opensaml.samlext.saml2mdattr.EntityAttributes;
 import org.opensaml.xml.XMLObject;
 import org.opensaml.xml.schema.XSString;
@@ -40,6 +39,29 @@ import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
  * Metadata related utilities.
  */
 public final class MetadataUtil {
+
+    private static final String TECHNICAL_CONTACT_PROPS[]={"contact.technical.company", "contact.technical.email", "contact.technical.givenname", "contact.technical.surname", "contact.technical.phone"};
+    private static final String SUPPORT_CONTACT_PROPS[]={"contact.support.company", "contact.support.email", "contact.support.givenname", "contact.support.surname", "contact.support.phone"};
+    private static final String CONTACTS[][]={TECHNICAL_CONTACT_PROPS, SUPPORT_CONTACT_PROPS};
+
+    private static final String CONNECTOR_TECHNICAL_CONTACT_PROPS[]={"connector.contact.technical.company", "connector.contact.technical.email", "connector.contact.technical.givenname", "connector.contact.technical.surname", "connector.contact.technical.phone"};
+    private static final String CONNECTOR_SUPPORT_CONTACT_PROPS[]={"connector.contact.support.company", "connector.contact.support.email", "connector.contact.support.givenname", "connector.contact.support.surname", "connector.contact.support.phone"};
+    private static final String CONNECTOR_CONTACTS[][]={CONNECTOR_TECHNICAL_CONTACT_PROPS, CONNECTOR_SUPPORT_CONTACT_PROPS};
+    private static final String SERVICE_TECHNICAL_CONTACT_PROPS[]={"service.contact.technical.company", "service.contact.technical.email", "service.contact.technical.givenname", "service.contact.technical.surname", "service.contact.technical.phone"};
+    private static final String SERVICE_SUPPORT_CONTACT_PROPS[]={"service.contact.support.company", "service.contact.support.email", "service.contact.support.givenname", "service.contact.support.surname", "service.contact.support.phone"};
+    private static final String SERVICE_CONTACTS[][]={SERVICE_TECHNICAL_CONTACT_PROPS, SERVICE_SUPPORT_CONTACT_PROPS};
+
+    public static final String CONNECTOR_ORG_NAME = "connector.organization.name";
+    public static final String CONNECTOR_ORG_DISPNAME = "connector.organization.displayname";
+    public static final String CONNECTOR_ORG_URL = "connector.organization.url";
+    public static final String SERVICE_ORG_NAME = "service.organization.name";
+    public static final String SERVICE_ORG_DISPNAME = "service.organization.displayname";
+    public static final String SERVICE_ORG_URL = "service.organization.url";
+    public static final String ORG_NAME = "organization.name";
+    public static final String ORG_DISPNAME = "organization.displayname";
+    public static final String ORG_URL = "organization.url";
+
+
 
     @Nullable
     public static String getAssertionConsumerUrl(@Nullable SPSSODescriptor spSsoDescriptor) {
@@ -157,6 +179,89 @@ public final class MetadataUtil {
         return idpSsoDescriptor.getSingleSignOnServices().get(0).getLocation();
     }
 
+    /**
+     * @param metadata
+     * @return an EntityDescriptor parsed from the given String or null
+     */
+    @Nullable
+    public static EntityDescriptorContainer deserializeEntityDescriptor(@Nonnull String metadata) throws UnmarshallException {
+        EntityDescriptorContainer result = new EntityDescriptorContainer();
+        byte[] metaDataBytes = EidasStringUtil.getBytes(metadata);
+        XMLObject obj = OpenSamlHelper.unmarshall(metaDataBytes);
+        if (obj instanceof EntityDescriptor) {
+            result.addEntityDescriptor((EntityDescriptor) obj, metaDataBytes);
+        } else if (obj instanceof EntitiesDescriptor) {
+            EntitiesDescriptor ed = (EntitiesDescriptor) obj;
+            result.setEntitiesDescriptor(ed);
+            result.getEntityDescriptors().addAll(((EntitiesDescriptor) obj).getEntityDescriptors());
+            result.setSerializedEntitesDescriptor(metaDataBytes);
+        }
+        return result;
+    }
+
+    /** For IdP and SP only */
+    public static ContactData createTechnicalContact(Properties configs){
+        return createContact(TECHNICAL_CONTACT_PROPS, configs);
+    }
+
+    /** For IdP and SP only */
+    public static ContactData createSupportContact(Properties configs){
+        return createContact(SUPPORT_CONTACT_PROPS, configs);
+    }
+
+    public static ContactData createConnectorTechnicalContact(Properties configs){
+        return createContact(CONNECTOR_TECHNICAL_CONTACT_PROPS, configs);
+    }
+
+    public static ContactData createConnectorSupportContact(Properties configs){
+        return createContact(CONNECTOR_SUPPORT_CONTACT_PROPS, configs);
+    }
+
+    public static ContactData createServiceTechnicalContact(Properties configs){
+        return createContact(SERVICE_TECHNICAL_CONTACT_PROPS, configs);
+    }
+
+    public static ContactData createServiceSupportContact(Properties configs){
+        return createContact(SERVICE_SUPPORT_CONTACT_PROPS, configs);
+    }
+
+    private static ContactData createContact(String[] propsNames, Properties configs){
+        ContactData.Builder contact = ContactData.builder();
+        contact.company(propsNames != null && propsNames.length > 0 && configs != null ? configs.getProperty(propsNames[0]) : null);
+        contact.email(propsNames != null && propsNames.length > 1 && configs != null ? configs.getProperty(propsNames[1]) : null);
+        contact.givenName(propsNames != null && propsNames.length > 2 && configs != null ? configs.getProperty(propsNames[2]) : null);
+        contact.surName(propsNames != null && propsNames.length > 3 && configs != null ? configs.getProperty(propsNames[3]) : null);
+        contact.phone(propsNames != null && propsNames.length > 4 && configs != null ? configs.getProperty(propsNames[4]) : null);
+        return contact.build();
+    }
+
+    /** For IdP and SP only */
+    public static OrganizationData createOrganization(Properties configs) {
+        OrganizationData.Builder organization = OrganizationData.builder();
+        organization.name(configs != null ? configs.getProperty(ORG_NAME) : null);
+        organization.displayName(configs != null ? configs.getProperty(ORG_DISPNAME) : null);
+        organization.url(configs != null ? configs.getProperty(ORG_URL) : null);
+        return organization.build();
+    }
+
+    public static OrganizationData createServiceOrganization(Properties configs) {
+        OrganizationData.Builder organization = OrganizationData.builder();
+        organization.name(configs != null ? configs.getProperty(SERVICE_ORG_NAME) : null);
+        organization.displayName(configs != null ? configs.getProperty(SERVICE_ORG_DISPNAME) : null);
+        organization.url(configs != null ? configs.getProperty(SERVICE_ORG_URL) : null);
+        return organization.build();
+    }
+
+    public static OrganizationData createConnectorOrganization(Properties configs) {
+        OrganizationData.Builder organization = OrganizationData.builder();
+        organization.name(configs != null ? configs.getProperty(CONNECTOR_ORG_NAME) : null);
+        organization.displayName(configs != null ? configs.getProperty(CONNECTOR_ORG_DISPNAME) : null);
+        organization.url(configs != null ? configs.getProperty(CONNECTOR_ORG_URL) : null);
+        return organization.build();
+    }
+
+
     private MetadataUtil() {
     }
+
 }

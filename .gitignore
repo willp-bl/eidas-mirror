@@ -1,0 +1,14 @@
+EIDAS-Commons/target/**/*
+EIDAS-ConfigModule/target/**/*
+EIDAS-Encryption/target/**/*
+EIDAS-IdP-1.0/target/**/*
+EIDAS-Light-Commons/target/**/*
+EIDAS-Node/target/**/*
+EIDAS-Node/LOG_HOME_IS_UNDEFINED/**/*
+EIDAS-SAMLEngine/target/**/*
+EIDAS-SP/target/**/*
+EIDAS-SP/LOG_HOME_IS_UNDEFINED/**/*
+EIDAS-Specific/target/**/*
+EIDAS-SpecificCommunicationDefinition/target/**/*
+EIDAS-UPDATER/target/**/*
+EIDAS-Commons/eidas-commons.log

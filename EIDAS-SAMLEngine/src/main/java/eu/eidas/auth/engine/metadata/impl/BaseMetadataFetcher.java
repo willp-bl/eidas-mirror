@@ -226,9 +226,9 @@ public abstract class BaseMetadataFetcher implements MetadataFetcherI {
                         throw new SSLException(e);
                     }
                     SSLSession sslSession = sslSocket.getSession();
-                    if (!sslSession.isValid()) {
+                    if ("SSL_NULL_WITH_NULL_NULL".equals(sslSession.getCipherSuite())) {
                         throw new SSLException("SSLSession was invalid: Likely implicit handshake failure: "
-                                                       + "Set system property javax.net.debug=all for details");
+                                + "Set system property javax.net.debug=all for details");
                     }
                     super.verifyHostname(sslSocket);
                 }

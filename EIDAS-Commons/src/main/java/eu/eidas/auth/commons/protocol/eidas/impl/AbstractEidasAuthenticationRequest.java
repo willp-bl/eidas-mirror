@@ -47,7 +47,6 @@ import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.eidas.IEidasAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.eidas.LevelOfAssurance;
 import eu.eidas.auth.commons.protocol.eidas.LevelOfAssuranceComparison;
-import eu.eidas.auth.commons.protocol.eidas.SpType;
 import eu.eidas.auth.commons.protocol.impl.AbstractAuthenticationRequest;
 import eu.eidas.util.Preconditions;
 
@@ -87,21 +86,17 @@ public abstract class AbstractEidasAuthenticationRequest extends AbstractAuthent
 
         private LevelOfAssuranceComparison levelOfAssuranceComparison;
 
-        private SpType spType;
-
         protected AbstractBuilder() {
         }
 
         protected AbstractBuilder(@Nonnull AbstractBuilder<?, ?> copy) {
             super(copy);
             levelOfAssuranceComparison = copy.levelOfAssuranceComparison;
-            spType = copy.spType;
         }
 
         protected AbstractBuilder(@Nonnull IEidasAuthenticationRequest copy) {
             super(copy);
             levelOfAssuranceComparison = copy.getLevelOfAssuranceComparison();
-            spType = copy.getSpType();
         }
 
         @Nonnull
@@ -125,22 +120,6 @@ public abstract class AbstractEidasAuthenticationRequest extends AbstractAuthent
                         "Invalid levelOfAssuranceComparison \"" + levelOfAssuranceComparison + "\"");
             }
             this.levelOfAssuranceComparison = comparison;
-            return (B) this;
-        }
-
-        @Nonnull
-        public final B spType(String spType) {
-            SpType type = SpType.fromString(spType);
-            if (StringUtils.isNotBlank(spType) && null == type) {
-                throw new IllegalArgumentException("Invalid spType \"" + spType + "\"");
-            }
-            this.spType = type;
-            return (B) this;
-        }
-
-        @Nonnull
-        public final B spType(SpType spType) {
-            this.spType = spType;
             return (B) this;
         }
 
@@ -183,14 +162,6 @@ public abstract class AbstractEidasAuthenticationRequest extends AbstractAuthent
     @Nonnull
     private final LevelOfAssuranceComparison levelOfAssuranceComparison; // Always set to minimum
 
-    /**
-     * The SP type : public or private.
-     *
-     * @serial
-     */
-    @Nullable
-    private final SpType spType;
-
     protected AbstractEidasAuthenticationRequest(@Nonnull AbstractBuilder<?, ?> builder) {
         super(builder);
         String levelOfAssuranceStr = getLevelOfAssurance();
@@ -205,7 +176,6 @@ public abstract class AbstractEidasAuthenticationRequest extends AbstractAuthent
         }
         levelOfAssuranceComparison =
                 builder.levelOfAssuranceComparison; //Kept but since 1.0 technical specs - only minimum is allowed
-        spType = builder.spType;
     }
 
     @Override
@@ -218,12 +188,6 @@ public abstract class AbstractEidasAuthenticationRequest extends AbstractAuthent
     @Nonnull
     public final LevelOfAssuranceComparison getLevelOfAssuranceComparison() {
         return levelOfAssuranceComparison;
-    }
-
-    @Override
-    @Nullable
-    public final SpType getSpType() {
-        return spType;
     }
 
     @Override
@@ -243,15 +207,13 @@ public abstract class AbstractEidasAuthenticationRequest extends AbstractAuthent
         if (levelOfAssuranceComparison != that.levelOfAssuranceComparison) {
             return false;
         }
-        return spType == that.spType;
-
+        return true;
     }
 
     @Override
     public int hashCode() {
         int result = super.hashCode();
         result = 31 * result + (levelOfAssuranceComparison.hashCode());
-        result = 31 * result + (spType != null ? spType.hashCode() : 0);
         return result;
     }
 
@@ -265,9 +227,6 @@ public abstract class AbstractEidasAuthenticationRequest extends AbstractAuthent
         return AbstractAuthenticationRequest.toString(stringBuilder, request)
                 .append(", levelOfAssuranceComparison='")
                 .append(request.getLevelOfAssuranceComparison())
-                .append('\'')
-                .append(", spType='")
-                .append(request.getSpType())
                 .append('\'');
     }
 }

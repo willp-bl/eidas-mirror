@@ -13,7 +13,7 @@
     <!--  SAML 2.0 Schema Validation Rules -->
 
     <ValidatorSuites>
-        <ValidatorSuite id="storkRequestValidatorSuiteId">
+        <!-- ValidatorSuite id="storkRequestValidatorSuiteId">
             <Validator qualifiedName="stork:Institution"
                        className="eu.eidas.auth.engine.core.validator.stork.StorkSpInstitutionValidator"/>
 
@@ -47,9 +47,9 @@
 
 
 
-        </ValidatorSuite>
+        </ValidatorSuite -->
 
-        <ValidatorSuite id="storkResponseValidatorSuiteId">
+        <!--ValidatorSuite id="storkResponseValidatorSuiteId">
 
             <Validator qualifiedName="saml2p:Response"
                        className="eu.eidas.auth.engine.core.validator.stork.StorkResponseValidator"/>
@@ -88,7 +88,7 @@
             <Validator qualifiedName="saml2p:Status"
                        className="eu.eidas.auth.engine.core.validator.stork.StorkStatusValidator"/>
 
-        </ValidatorSuite>
+        </ValidatorSuite-->
 
         <ValidatorSuite id="eidasRequestValidatorSuiteId">
             <Validator qualifiedName="saml2:Issuer"

@@ -89,6 +89,12 @@ public interface ISERVICESAMLService {
      */
     boolean checkMandatoryAttributeSet(@Nullable ImmutableAttributeMap attributes);
 
+    /**
+     * Checks whether the attribute map satifisfies the rule of representation
+     *
+     * @param attributes
+     */
+    boolean checkRepresentativeAttributes(@Nullable ImmutableAttributeMap attributes);
 
     /**
      * Checks if all the requested mandatory attributes have values.

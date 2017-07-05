@@ -20,6 +20,7 @@ import javax.annotation.Nullable;
 
 import com.google.common.collect.ImmutableSet;
 
+import eu.eidas.auth.commons.exceptions.EidasNodeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -127,6 +128,8 @@ public final class AUSERVICE implements ISERVICEService {
 
         citizenService.checkMandatoryAttributes(authnRequest.getRequestedAttributes());
 
+        citizenService.checkRepresentativeAttributes(authnRequest.getRequestedAttributes());
+
         return authnRequest;
     }
 
@@ -224,7 +227,8 @@ public final class AUSERVICE implements ISERVICEService {
         AuthenticationResponse.Builder authenticationResponseBuilder = AuthenticationResponse.builder();
         authenticationResponseBuilder.levelOfAssurance(idpResponse.getLevelOfAssurance())
                 .attributes(updatedResponseAttributes)
-                .inResponseTo(originalRequest.getId());
+                .inResponseTo(originalRequest.getId())
+                .ipAddress(idpResponse.getIPAddress());
 
         authenticationResponseBuilder.id(SAMLEngineUtils.generateNCName())
                 .statusCode(EIDASStatusCode.SUCCESS_URI.toString())

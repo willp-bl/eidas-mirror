@@ -28,9 +28,14 @@
 	<entry key="connector.spCountry">CA</entry>
 	<!-- SP Institution-->
 	<entry key="connector.spInstitution">DEMO-connector</entry>
-
-	<entry key="saml.sp">SP-Specific</entry>
-	<entry key="saml.service">Connector-Service</entry>
+	
+	<!-- specific engine in Connector -->
+	<entry key="saml.sp">SP-Specific</entry>	
+	<!-- Protocol engines for the Nodes -->
+	<entry key="saml.connector">Connector</entry>
+	<entry key="saml.service">Service</entry>	
+	<!-- specific engine in IdP -->
+	<entry key="saml.idp">Specific-IdP</entry>	
 
 	<!-- Number of known Service -->
 	<entry key="service.number">8</entry>
@@ -41,7 +46,8 @@
 	<!-- URL of the first Service -->
 	<entry key="service1.url">http://eidasnode:8888/EidasNode/ColleagueRequest</entry>
 	 <!-- Skew time for Service-->
-        <entry key="service1.skew">1000</entry>
+	<entry key="service1.skew.notbefore">0</entry>
+	<entry key="service1.skew.notonorafter">0</entry>
 	<!-- the url under which  service1 is publishing its metadata -->
 	<entry key="service1.metadata.url">http://eidasnode:8888/EidasNode/ServiceMetadata</entry>
 	<entry key="service2.id">CB</entry>
@@ -49,47 +55,54 @@
 	<entry key="service2.name">LOCAL-EIDAS-CB</entry>
 	<!-- URL of the first Service -->
 	<entry key="service2.url">http://eidasnode:8888/EidasNode/ColleagueRequest</entry>
-	<entry key="service2.skew">1000</entry>
+	<entry key="service2.skew.notbefore">0</entry>
+	<entry key="service2.skew.notonorafter">0</entry>
 	<entry key="service2.metadata.url">http://eidasnode:8888/EidasNode/ServiceMetadata</entry>
 	<entry key="service3.id">CC</entry>
 	<!-- Name of the second Service -->
 	<entry key="service3.name">LOCAL-EIDAS-CC</entry>
 	<!-- URL of the first Service -->
 	<entry key="service3.url">http://vs-cis-k2:8085/EidasNode/ColleagueRequest</entry>
-	<entry key="service3.skew">1000</entry>
+	<entry key="service3.skew.notbefore">0</entry>
+	<entry key="service3.skew.notonorafter">0</entry>
 	<entry key="service3.metadata.url">http://vs-cis-k2:8085/EidasNode/ServiceMetadata</entry>
 	<entry key="service4.id">CD</entry>
 	<!-- Name of the second Service -->
 	<entry key="service4.name">LOCAL-EIDAS-CD</entry>
 	<!-- URL of the first Service -->
 	<entry key="service4.url">http://vs-cis-k2:7001/EidasNode/ColleagueRequest</entry>
-	<entry key="service4.skew">1000</entry>
+	<entry key="service4.skew.notbefore">0</entry>
+	<entry key="service4.skew.notonorafter">0</entry>
 	<entry key="service4.metadata.url">http://vs-cis-k2:7001/EidasNode/ServiceMetadata</entry>
 	<entry key="service5.id">AT</entry>
 	<!-- Name of the second Service -->
 	<entry key="service5.name">AT-VIDP Local</entry>
 	<!-- URL of the first Service -->
 	<entry key="service5.url">http://vs-cis-k2:8185/VIDP-V-PEPS-web/SendPEPSAuthnRequest</entry>
-	<entry key="service5.skew">1000</entry>
+	<entry key="service5.skew.notbefore">0</entry>
+	<entry key="service5.skew.notonorafter">0</entry>
 	<entry key="service5.metadata.url">http://vs-cis-k2:8185/EidasNode/ServiceMetadata</entry>
  	<entry key="service6.id">DE</entry>
 	<!-- Name of the second Service -->
 	<entry key="service6.name">DE-Local</entry>
 	<!-- URL of the first Service -->
 	<entry key="service6.url">http://vs-cis-k2:8185/VIDP-V-PEPS-web/SendPEPSAuthnRequest</entry>
-    <entry key="service6.skew">1000</entry>
+	<entry key="service6.skew.notbefore">0</entry>
+	<entry key="service6.skew.notonorafter">0</entry>
 	<entry key="service6.metadata.url">http://vs-cis-k2:8185/EidasNode/ServiceMetadata</entry>
 	<entry key="service7.id">CF</entry>
 	<!-- Name of the second Service -->
 	<entry key="service7.name">LOCAL-EIDAS-CF</entry>
 	<entry key="service7.url">http://vs-cis-k2:9080/EidasNode/ColleagueRequest</entry>
-	<entry key="service7.skew">1000</entry>
+	<entry key="service7.skew.notbefore">0</entry>
+	<entry key="service7.skew.notonorafter">0</entry>
 	<entry key="service7.metadata.url">http://vs-cis-k2:9080/EidasNode/ServiceMetadata</entry>
 	   <entry key="service8.id">CE</entry>
 	<!-- Name of the second Service -->
 	<entry key="service8.name">LOCAL-EIDAS-CE</entry>
 	<entry key="service8.url">http://vs-cis-k2/EidasNode/ColleagueRequest</entry>
-	<entry key="service8.skew">1000</entry>
+	<entry key="service8.skew.notbefore">0</entry>
+	<entry key="service8.skew.notonorafter">0</entry>
 	<entry key="service8.metadata.url">http://vs-cis-k2/EidasNode/ServiceMetadata</entry>
 	<!-- URL of the first Service -->
 	<!-- service -->
@@ -264,6 +277,8 @@
 
 	<!-- sets the mapprovider for req-rep correlations, antireplay and metadata to distributed - hazelcast needs to be configured for this option -->
 	<entry key="distributedMaps">false</entry>
+	<!-- Retention period for simple metadata cache in seconds, for distributed environment, set in hazelcast.xml -->
+	<entry key="nonDistributedMetadata.retention">86400</entry>
 
 	<!-- check signature of entitydescriptors in metadata -->
 	<entry key="metadata.check.signature">true</entry>
@@ -276,6 +291,8 @@
 
 	<!-- disable the check that the list of attributes contains at least the minimum set (when set to true) -->
 	<entry key="disable.check.mandatory.eidas.attributes">false</entry>
+	<!-- disable the check of representative attributes in the request (when set to true) -->
+	<entry key="disable.check.representative.attributes">false</entry>
 
 	<!-- level of assurance for the service -->
 	<entry key="service.LoA">http://eidas.europa.eu/LoA/high</entry>
@@ -295,8 +312,8 @@
 	<entry key="eidas.supportFramingSamlRequest">false</entry>
 
 
-	<!-- metadata contact attributes -->
-		<!-- Connector-->
+	<!-- METADATA configuration -->
+		<!-- Connector contact -->
 	<entry key="connector.contact.support.email">contact.support@eidas-connector.eu</entry>
 	<entry key="connector.contact.support.company">eIDAS Connector Operator</entry>
 	<entry key="connector.contact.support.givenname">John</entry>
@@ -307,7 +324,11 @@
 	<entry key="connector.contact.technical.givenname">John</entry>
 	<entry key="connector.contact.technical.surname">Doe</entry>
 	<entry key="connector.contact.technical.phone">+41 123456</entry>
-		<!-- ProxyService-->
+		<!-- Connector organization -->
+	<entry key="connector.organization.name">Sample Country Connector</entry>
+	<entry key="connector.organization.displayname">Connector</entry>
+	<entry key="connector.organization.url">https://connector.sample/info</entry>	
+		<!-- ProxyService contact -->
 	<entry key="service.contact.support.email">contact.support@eidas-proxyservice.eu</entry>
 	<entry key="service.contact.support.company">eIDAS ProxyService Operator</entry>
 	<entry key="service.contact.support.givenname">John</entry>
@@ -317,14 +338,12 @@
 	<entry key="service.contact.technical.company">eIDAS ProxyService Operator</entry>
 	<entry key="service.contact.technical.givenname">John</entry>
 	<entry key="service.contact.technical.surname">Doe</entry>
-	<entry key="service.contact.technical.phone">+43 123456</entry>
-		
-	<!-- metadata organization attributes -->
-		<!-- Connector organization -->
-	<entry key="connector.organization.name">Sample Country Connector</entry>
+	<entry key="service.contact.technical.phone">+43 123456</entry>	
 		<!-- ProxyService organization -->
-	<entry key="service.organization.name">Sample Country Proxy Service</entry>		
-
+	<entry key="service.organization.name">Sample Country Proxy Service</entry>
+	<entry key="service.organization.displayname">Service</entry>
+	<entry key="service.organization.url">https://service.sample/info</entry>	
+	
 	<!-- sets the application able to understand eidas message format only (true)or able to understand eidas message format and STORK 1 message format (false)-->
 	<entry key="eidasNodeOnly">false</entry>
 

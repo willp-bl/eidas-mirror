@@ -443,6 +443,8 @@ public enum EidasParameterKeys {
 
     SERVICE_PROVIDER_NAME("serviceProvider.name"),
 
+    SERVICE_PROVIDER_TYPE("serviceProvider.type"),
+
     // put the ; on a separate line to make merges easier
     ;
 

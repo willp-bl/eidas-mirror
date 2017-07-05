@@ -74,7 +74,7 @@ public class EidasSAMLResponseWithAuthorizationSyntaxTest {
         try {
             engine = ProtocolEngineFactory.createProtocolEngine(conf, new EidasProtocolProcessorWithAutorization(
                     "saml-engine-eidas-attributes-" + conf + ".xml",
-                    "saml-engine-additional-attributes-" + conf + ".xml", null, null));
+                    "saml-engine-additional-attributes-" + conf + ".xml", null, null, null));
 
         } catch (EIDASSAMLEngineException exc) {
             fail("Failed to initialize SAMLEngine");
@@ -95,7 +95,7 @@ public class EidasSAMLResponseWithAuthorizationSyntaxTest {
     @Test
     public void testNormalValidationOnSAMLrequest() throws Exception {
         assertNotNull(samlResponseToken);
-        IAuthenticationResponse response = SyntaxTestUtil.getEngine(SyntaxTestUtil.SAMLENGINE_CONF).unmarshallResponseAndValidate(samlResponseToken, null, 0, null);
+        IAuthenticationResponse response = SyntaxTestUtil.getEngine(SyntaxTestUtil.SAMLENGINE_CONF).unmarshallResponseAndValidate(samlResponseToken, null, 0, 0, null);
         assertNotNull(response);
     }
 

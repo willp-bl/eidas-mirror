@@ -40,6 +40,4 @@ public interface IEidasAuthenticationRequest extends IAuthenticationRequest {
     @Nonnull
     LevelOfAssuranceComparison getLevelOfAssuranceComparison();
 
-    @Nullable
-    SpType getSpType();
 }

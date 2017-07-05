@@ -68,6 +68,13 @@ public final class AUCONNECTORUtil extends AUNODEUtil {
      */
     private int maxQAA;
 
+    /**
+     * Local Skew constants
+     */
+    public enum CONSUMER_SKEW_TIME {
+        BEFORE, AFTER
+    }
+
     public AUCONNECTORUtil() {
         // default constructor for use without concurrentMapService
     }
@@ -126,7 +133,7 @@ public final class AUCONNECTORUtil extends AUNODEUtil {
      * @param serviceId the Id of the ProxyService.
      * @return String with the URL of the ProxyService. null if no URL was found.
      */
-    public Long loadConfigServiceTimeSkewInMillis(final String serviceId) {
+    public Long loadConfigServiceTimeSkewInMillis(final String serviceId, CONSUMER_SKEW_TIME skewType) {
         LOG.trace("loadConfigServiceTimeSkewInMillis");
         Long retVal = null;
         if (StringUtils.isEmpty(serviceId)) {
@@ -138,11 +145,15 @@ public final class AUCONNECTORUtil extends AUNODEUtil {
         for (int i = 1; i <= nServices && retVal == null; i++) {
             final String serviceCons = EIDASValues.EIDAS_SERVICE_PREFIX.index(i);
             if (configs.containsKey(serviceCons) && configs.getProperty(serviceCons).equals(serviceId)) {
-                if (StringUtils.isNotEmpty(configs.getProperty(EIDASValues.EIDAS_SERVICE_PREFIX.skew(i)))) {
-                    retVal = Long.parseLong(configs.getProperty(EIDASValues.EIDAS_SERVICE_PREFIX.skew(i)));
-                    LOG.debug("Service SKEW " + retVal);
+                String skew = null;
+                if (skewType == CONSUMER_SKEW_TIME.BEFORE) {
+                    skew = configs.getProperty(EIDASValues.EIDAS_SERVICE_PREFIX.beforeSkew(i));
                 } else {
-                    LOG.error("Service SKEW is empty in eidas.xml");
+                    skew = configs.getProperty(EIDASValues.EIDAS_SERVICE_PREFIX.afterSkew(i));
+                }
+                if (StringUtils.isNotEmpty(skew)) {
+                    retVal = Long.parseLong(skew);
+                } else {
                     retVal = Long.valueOf(0);
                 }
             }

@@ -116,8 +116,9 @@ public class StorkExtensionProcessor implements ExtensionProcessorI {
 
     private static final String STORK_ATTRIBUTES_FILE = "saml-engine-stork-attributes.xml";
 
+    //TODO vargata - apply the default path when relocating this engine
     private static final AttributeRegistry STORK_ATTRIBUTE_REGISTRY =
-            AttributeRegistries.fromFile(STORK_ATTRIBUTES_FILE);
+            AttributeRegistries.fromFile(STORK_ATTRIBUTES_FILE, null);
 
     /**
      * The default instance only implements the STORK specification without any additional attribute.
@@ -137,11 +138,12 @@ public class StorkExtensionProcessor implements ExtensionProcessorI {
     private final AttributeRegistry additionalAttributeRegistry;
 
     public StorkExtensionProcessor(@Nonnull String storkAttributesFileName,
-                                   @Nonnull String additionalAttributesFileName) {
+                                   @Nonnull String additionalAttributesFileName,
+                                   @Nullable String defaultPath) {
         Preconditions.checkNotNull(storkAttributesFileName, "storkAttributesFileName");
         Preconditions.checkNotNull(additionalAttributesFileName, "additionalAttributesFileName");
-        this.storkAttributeRegistry = AttributeRegistries.fromFile(storkAttributesFileName);
-        this.additionalAttributeRegistry = AttributeRegistries.fromFile(additionalAttributesFileName);
+        this.storkAttributeRegistry = AttributeRegistries.fromFile(storkAttributesFileName, defaultPath);
+        this.additionalAttributeRegistry = AttributeRegistries.fromFile(additionalAttributesFileName, defaultPath);
     }
 
     public StorkExtensionProcessor(@Nonnull AttributeRegistry storkAttributeRegistry,
@@ -150,11 +152,6 @@ public class StorkExtensionProcessor implements ExtensionProcessorI {
         Preconditions.checkNotNull(additionalAttributeRegistry, "additionalAttributeRegistry");
         this.storkAttributeRegistry = storkAttributeRegistry;
         this.additionalAttributeRegistry = additionalAttributeRegistry;
-    }
-
-    public StorkExtensionProcessor(@Nonnull String additionalAttributesFileName) {
-        this(STORK_ATTRIBUTE_REGISTRY,
-             AttributeRegistries.fromFile(additionalAttributesFileName));
     }
 
     public StorkExtensionProcessor() {
@@ -1572,7 +1569,8 @@ public class StorkExtensionProcessor implements ExtensionProcessorI {
     public IAuthenticationResponse unmarshallResponse(@Nonnull Response response,
                                                       boolean verifyBearerIpAddress,
                                                       @Nullable String userIpAddress,
-                                                      long skewTimeInMillis,
+                                                      long beforeSkewTimeInMillis,
+                                                      long afterSkewTimeInMillis,
                                                       @Nonnull DateTime now,
                                                       @Nullable String audienceRestriction)
             throws EIDASSAMLEngineException {
@@ -1585,8 +1583,8 @@ public class StorkExtensionProcessor implements ExtensionProcessorI {
 
         LOG.trace("validateEidasResponse");
         Assertion assertion =
-                ResponseUtil.extractVerifiedAssertion(response, verifyBearerIpAddress, userIpAddress, skewTimeInMillis,
-                                                      now, audienceRestriction);
+                ResponseUtil.extractVerifiedAssertion(response, verifyBearerIpAddress, userIpAddress, beforeSkewTimeInMillis,
+                                                      afterSkewTimeInMillis, now, audienceRestriction);
 
         if (null != assertion) {
             LOG.trace("Set notOnOrAfter.");
