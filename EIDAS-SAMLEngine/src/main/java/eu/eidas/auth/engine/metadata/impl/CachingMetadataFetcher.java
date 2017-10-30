@@ -67,7 +67,13 @@ public class CachingMetadataFetcher extends AbstractCachingMetadataFetcher imple
     public void add(EntityDescriptor ed, MetadataSignerI metadataSigner) throws EIDASSAMLEngineException {
         String url = ed.getEntityID();
         if (mustValidateSignature(url)) {
-            metadataSigner.validateMetadataSignature(ed);
+            try {
+                metadataSigner.validateMetadataSignature(ed);
+            } catch (EIDASSAMLEngineException e) {
+                LOG.error("Signature validation failed for " + url);
+                LOG.error(e.toString());
+                throw(e);
+            }
         }
         if (null != cache) {
             cache.putDescriptor(ed.getEntityID(), ed, EntityDescriptorType.STATIC);

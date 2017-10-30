@@ -1,16 +1,25 @@
 /*
- * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
- * the European Commission - subsequent versions of the EUPL (the "Licence");
- * You may not use this work except in compliance with the Licence. You may
- * obtain a copy of the Licence at:
+ * Copyright (c) 2017 by European Commission
  *
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
  * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the Licence is distributed on an "AS IS" basis, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * Licence for the specific language governing permissions and limitations under
- * the Licence.
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
+ *
+ * This product combines work with different licenses. See the
+ * "NOTICE" text file for details on the various modules and licenses.
+ * The "NOTICE" text file is part of the distribution.
+ * Any derivative works that you distribute must include a readable
+ * copy of the "NOTICE" text file.
  */
 package eu.eidas.auth.engine.core.stork;
 
@@ -42,6 +51,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Ordering;
 
+import eu.eidas.auth.engine.SamlEngineClock;
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
 import org.opensaml.common.SAMLVersion;
@@ -1163,13 +1173,37 @@ public class StorkProtocolProcessor implements ProtocolProcessorI {
         return true;
     }
 
+    /**
+     * TODO to be removed
+     *
+     * @deprecated since 1.4
+     * Use {@link ProtocolProcessorI#marshallErrorResponse(IAuthenticationRequest, IAuthenticationResponse, String, SamlEngineCoreProperties, DateTime)}
+     *
+     */
+    @Nonnull
+    @Override
+    @SuppressWarnings("squid:S2583")
+    @Deprecated
+    public Response marshallErrorResponse(@Nonnull IAuthenticationRequest request,
+                                          @Nonnull IAuthenticationResponse response,
+                                          @Nonnull String ipAddress,
+                                          @Nonnull SamlEngineCoreProperties coreProperties)
+            throws EIDASSAMLEngineException {
+
+        //temporary solution for maintaining deprecated method
+        final DateTime currentTime = new DateTime();
+
+        return marshallErrorResponse(request,response,ipAddress,coreProperties,currentTime);
+    }
+
     @Nonnull
     @Override
     @SuppressWarnings("squid:S2583")
     public Response marshallErrorResponse(@Nonnull IAuthenticationRequest request,
                                           @Nonnull IAuthenticationResponse response,
                                           @Nonnull String ipAddress,
-                                          @Nonnull SamlEngineCoreProperties coreProperties)
+                                          @Nonnull SamlEngineCoreProperties coreProperties,
+                                          @Nonnull final DateTime currentTime)
             throws EIDASSAMLEngineException {
         LOG.trace("generateResponseMessageFail");
         validateParamResponseFail(request, response);
@@ -1203,21 +1237,19 @@ public class StorkProtocolProcessor implements ProtocolProcessorI {
         LOG.trace("Generate Response.");
         // RESPONSE
         Response responseFail =
-                newResponse(status, request.getAssertionConsumerServiceURL(), request.getId(), coreProperties);
+                newResponse(status, request.getAssertionConsumerServiceURL(), request.getId(), coreProperties, currentTime);
 
         String responseIssuer = response.getIssuer();
         if (responseIssuer != null && !responseIssuer.isEmpty()) {
             responseFail.getIssuer().setValue(responseIssuer);
         }
-        DateTime notOnOrAfter = new DateTime();
-
-        notOnOrAfter = notOnOrAfter.plusSeconds(coreProperties.getTimeNotOnOrAfter());
+        DateTime notOnOrAfter = currentTime.plusSeconds(coreProperties.getTimeNotOnOrAfter());
 
         Assertion assertion =
                 AssertionUtil.generateResponseAssertion(true, ipAddress, request, responseFail.getIssuer(),
                                                         ImmutableAttributeMap.of(), notOnOrAfter,
                                                         coreProperties.getFormatEntity(), coreProperties.getResponder(),
-                                                        getFormat(), coreProperties.isOneTimeUse());
+                                                        getFormat(), coreProperties.isOneTimeUse(), currentTime);
         addResponseAuthnContextClassRef(response, assertion);
         responseFail.getAssertions().add(assertion);
 
@@ -1235,15 +1267,37 @@ public class StorkProtocolProcessor implements ProtocolProcessorI {
         return validateAuthenticationRequest(requestToBeSent, samlCoreProperties);
     }
 
+    /**
+     * TODO to be removed
+     *
+     * @deprecated since 1.4
+     * Use {@link StorkProtocolProcessor#marshallRequest(IAuthenticationRequest, String, SamlEngineCoreProperties, DateTime)}
+     *
+     */
     @Nonnull
     @Override
+    @Deprecated
     public AuthnRequest marshallRequest(@Nonnull IAuthenticationRequest request,
                                         @Nonnull String serviceIssuer,
                                         @Nonnull SamlEngineCoreProperties coreProperties)
             throws EIDASSAMLEngineException {
 
+        //temporary solution for maintaining deprecated method
+        final DateTime currentTime = new DateTime();
+
+        return marshallRequest(request,serviceIssuer,coreProperties,currentTime);
+    }
+
+    @Nonnull
+    @Override
+    public AuthnRequest marshallRequest(@Nonnull IAuthenticationRequest request,
+                                        @Nonnull String serviceIssuer,
+                                        @Nonnull SamlEngineCoreProperties coreProperties,
+                                        @Nonnull final DateTime currentTime)
+            throws EIDASSAMLEngineException {
+
         AuthnRequest samlRequest = BuilderFactoryUtil.generateAuthnRequest(request.getId(), SAMLVersion.VERSION_20,
-                                                                           SAMLEngineUtils.getCurrentTime());
+                                                                           currentTime);
 
         // Set name spaces.
         registerRequestNamespace(samlRequest);
@@ -1292,6 +1346,10 @@ public class StorkProtocolProcessor implements ProtocolProcessorI {
     }
 
     /**
+     * TODO to be removed
+     *
+     * @deprecated since 1.4
+     *
      * Generates authentication response in one of the supported formats.
      *
      * @param request the request
@@ -1302,10 +1360,35 @@ public class StorkProtocolProcessor implements ProtocolProcessorI {
      */
     @Override
     @Nonnull
+    @Deprecated
     public Response marshallResponse(@Nonnull IAuthenticationRequest request,
                                      @Nonnull IAuthenticationResponse response,
                                      @Nonnull String ipAddress,
                                      @Nonnull SamlEngineCoreProperties coreProperties) throws EIDASSAMLEngineException {
+
+        //temporary solution for maintaining deprecated method
+        final DateTime currentTime = new DateTime();
+
+        return marshallResponse(request,response,ipAddress,coreProperties,currentTime);
+    }
+
+    /**
+     * Generates authentication response in one of the supported formats.
+     *
+     * @param request the request
+     * @param response the authentication response from the IdP
+     * @param ipAddress the IP address
+     * @param currentTime the current time
+     * @return the authentication response
+     * @throws EIDASSAMLEngineException the EIDASSAML engine exception
+     */
+    @Override
+    @Nonnull
+    public Response marshallResponse(@Nonnull IAuthenticationRequest request,
+                                     @Nonnull IAuthenticationResponse response,
+                                     @Nonnull String ipAddress,
+                                     @Nonnull SamlEngineCoreProperties coreProperties,
+                                     @Nonnull final DateTime currentTime) throws EIDASSAMLEngineException {
         LOG.trace("marshallResponse");
 
         // At this point the assertion consumer service URL is mandatory (and must have been replaced by the value from the metadata if needed)
@@ -1330,20 +1413,18 @@ public class StorkProtocolProcessor implements ProtocolProcessorI {
         LOG.trace("Generate Response");
 
         Response samlResponse =
-                newResponse(status, request.getAssertionConsumerServiceURL(), request.getId(), coreProperties);
+                newResponse(status, request.getAssertionConsumerServiceURL(), request.getId(), coreProperties, currentTime);
 
         if (StringUtils.isNotBlank(response.getIssuer()) && null != samlResponse.getIssuer()) {
             samlResponse.getIssuer().setValue(SAMLEngineUtils.getValidIssuerValue(response.getIssuer()));
         }
-        DateTime notOnOrAfter = new DateTime();
-
-        notOnOrAfter = notOnOrAfter.plusSeconds(coreProperties.getTimeNotOnOrAfter().intValue());
+        DateTime notOnOrAfter = currentTime.plusSeconds(coreProperties.getTimeNotOnOrAfter().intValue());
 
         Assertion assertion =
                 AssertionUtil.generateResponseAssertion(false, ipAddress, request, samlResponse.getIssuer(),
                                                         response.getAttributes(), notOnOrAfter,
                                                         coreProperties.getFormatEntity(), coreProperties.getResponder(),
-                                                        getFormat(), coreProperties.isOneTimeUse());
+                                                        getFormat(), coreProperties.isOneTimeUse(), currentTime);
 
         AttributeStatement attrStatement = generateResponseAttributeStatement(response.getAttributes());
 
@@ -1362,6 +1443,7 @@ public class StorkProtocolProcessor implements ProtocolProcessorI {
      * @param status the status
      * @param assertConsumerURL the assert consumer URL.
      * @param inResponseTo the in response to
+     * @param currentTime the current time
      * @return the response
      * @throws EIDASSAMLEngineException the EIDASSAML engine exception
      */
@@ -1369,10 +1451,11 @@ public class StorkProtocolProcessor implements ProtocolProcessorI {
     private Response newResponse(@Nonnull Status status,
                                  @Nullable String assertConsumerURL,
                                  @Nonnull String inResponseTo,
-                                 @Nonnull SamlEngineCoreProperties coreProperties) throws EIDASSAMLEngineException {
+                                 @Nonnull SamlEngineCoreProperties coreProperties,
+                                 @Nonnull final DateTime currentTime) throws EIDASSAMLEngineException {
         LOG.debug("Generate Authentication Response base.");
         Response response =
-                BuilderFactoryUtil.generateResponse(SAMLEngineUtils.generateNCName(), SAMLEngineUtils.getCurrentTime(),
+                BuilderFactoryUtil.generateResponse(SAMLEngineUtils.generateNCName(), currentTime,
                                                     status);
 
         // Set name Spaces

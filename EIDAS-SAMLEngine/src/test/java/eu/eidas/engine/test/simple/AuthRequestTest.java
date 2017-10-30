@@ -15,13 +15,7 @@
 
 package eu.eidas.engine.test.simple;
 
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import eu.eidas.auth.commons.EidasStringUtil;
-import eu.eidas.auth.commons.IPersonalAttributeList;
-import eu.eidas.auth.commons.PersonalAttribute;
 import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.attribute.PersonType;
@@ -32,16 +26,13 @@ import eu.eidas.auth.commons.protocol.stork.IStorkAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.stork.impl.StorkAuthenticationRequest;
 import eu.eidas.auth.engine.ProtocolEngineFactory;
 import eu.eidas.auth.engine.ProtocolEngineI;
-import eu.eidas.auth.engine.core.SAMLCore;
-import eu.eidas.auth.engine.core.eidas.spec.NaturalPersonSpec;
 import eu.eidas.auth.engine.core.stork.StorkProtocolProcessor;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * The Class EidasAuthRequestTest - test support for STORK1 format.
@@ -95,14 +86,6 @@ public class AuthRequestTest {
         }
         return engine;
 
-    }
-
-    private static PersonalAttribute newStorkPersonalAttribute(String friendlyName) {
-        return new PersonalAttribute(SAMLCore.STORK10_BASE_URI.getValue() + friendlyName, friendlyName);
-    }
-
-    private static PersonalAttribute newEidasPersonalAttribute(String canoniclaName, String friendlyName) {
-        return new PersonalAttribute(NaturalPersonSpec.Namespace.URI + "/" + canoniclaName, friendlyName);
     }
 
     private static final AttributeDefinition<String> SIGNED_DOC =
@@ -222,11 +205,6 @@ public class AuthRequestTest {
      * The quality authentication assurance level.
      */
     private static final int QAAL = 3;
-
-    /**
-     * The List of Personal Attributes.
-     */
-    private IPersonalAttributeList pal;
 
     /**
      * The assertion consumer URL.

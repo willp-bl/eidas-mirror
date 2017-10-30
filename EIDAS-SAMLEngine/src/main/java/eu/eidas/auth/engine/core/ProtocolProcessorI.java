@@ -1,16 +1,29 @@
+/*
+ * Copyright (c) 2017 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
+ *
+ * This product combines work with different licenses. See the
+ * "NOTICE" text file for details on the various modules and licenses.
+ * The "NOTICE" text file is part of the distribution.
+ * Any derivative works that you distribute must include a readable
+ * copy of the "NOTICE" text file.
+ */
 package eu.eidas.auth.engine.core;
 
-import java.security.cert.X509Certificate;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import com.google.common.collect.ImmutableSortedSet;
-
-import org.joda.time.DateTime;
-import org.opensaml.saml2.core.AuthnRequest;
-import org.opensaml.saml2.core.Response;
-
 import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.attribute.AttributeRegistry;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
@@ -18,6 +31,13 @@ import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.IAuthenticationResponse;
 import eu.eidas.auth.commons.protocol.impl.SamlBindingUri;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
+import org.joda.time.DateTime;
+import org.opensaml.saml2.core.AuthnRequest;
+import org.opensaml.saml2.core.Response;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.security.cert.X509Certificate;
 
 /**
  * The {@code ProtocolProcessorI} interface is the low-level interface responsible for generating the correct protocol
@@ -170,19 +190,44 @@ public interface ProtocolProcessorI {
     boolean isAcceptableHttpRequest(@Nonnull IAuthenticationRequest authnRequest, @Nullable String httpMethod)
             throws EIDASSAMLEngineException;
 
+
     /**
+     * TODO to be removed
+     *
      * Converts the given kind of {@link IAuthenticationResponse} into the appropriate SAML error response.
      * <p>
      * The returned SAML response is not encrypted and is not signed, encryption and signature are handled by the {@link
      * eu.eidas.auth.engine.ProtocolEngineI} itself.
      *
      * @since 1.1
+     *
+     * @deprecated since 1.4
+     * Use {@link ProtocolProcessorI#marshallErrorResponse(IAuthenticationRequest, IAuthenticationResponse, String, SamlEngineCoreProperties, DateTime)}
+     */
+    @Nonnull
+    @Deprecated
+    Response marshallErrorResponse(@Nonnull IAuthenticationRequest request,
+                                   @Nonnull IAuthenticationResponse response,
+                                   @Nonnull String ipAddress,
+                                   @Nonnull SamlEngineCoreProperties samlCoreProperties)
+            throws EIDASSAMLEngineException;
+
+
+    /**
+     * Converts the given kind of {@link IAuthenticationResponse} into the appropriate SAML error response.
+     * <p>
+     * The returned SAML response is not encrypted and is not signed, encryption and signature are handled by the {@link
+     * eu.eidas.auth.engine.ProtocolEngineI} itself.
+     *
+     * @since 1.4
+     *
      */
     @Nonnull
     Response marshallErrorResponse(@Nonnull IAuthenticationRequest request,
                                    @Nonnull IAuthenticationResponse response,
                                    @Nonnull String ipAddress,
-                                   @Nonnull SamlEngineCoreProperties samlCoreProperties)
+                                   @Nonnull SamlEngineCoreProperties samlCoreProperties,
+                                   @Nonnull final DateTime currentTime)
             throws EIDASSAMLEngineException;
 
     /**
@@ -193,8 +238,7 @@ public interface ProtocolProcessorI {
      * customized for the protocol in use and that the returned instance possesses a newly generated ID, independent of
      * the ID of the given {@code request}.
      * <p>
-     * The returned instance is complete and ready to be marshalled by {@link #marshallRequest(IAuthenticationRequest,
-     * String, SamlEngineCoreProperties)}.
+     * The returned instance is complete and ready to be marshalled by {@link #marshallRequest(IAuthenticationRequest, String, SamlEngineCoreProperties, DateTime)}.
      * <p>
      * If the given {@link IAuthenticationRequest} is not valid, throws an EIDASSAMLEngineException.
      *
@@ -206,32 +250,76 @@ public interface ProtocolProcessorI {
                                                          @Nonnull SamlEngineCoreProperties samlCoreProperties)
             throws EIDASSAMLEngineException;
 
+
     /**
+     * TODO to be removed
+     *
      * Converts the given kind of {@link IAuthenticationRequest} into the appropriate SAML request.
      * <p>
      * The returned SAML request is not encrypted and is not signed, encryption and signature are handled by the {@link
      * eu.eidas.auth.engine.ProtocolEngineI} itself.
      *
      * @since 1.1
+     *
+     * @deprecated since 1.4
+     * Use {@link ProtocolProcessorI#marshallRequest(IAuthenticationRequest, String, SamlEngineCoreProperties, DateTime)}
      */
     @Nonnull
+    @Deprecated
     AuthnRequest marshallRequest(@Nonnull IAuthenticationRequest requestToBeSent,
                                  @Nonnull String serviceIssuer,
                                  @Nonnull SamlEngineCoreProperties samlCoreProperties) throws EIDASSAMLEngineException;
 
     /**
+     * Converts the given kind of {@link IAuthenticationRequest} into the appropriate SAML request.
+     * <p>
+     * The returned SAML request is not encrypted and is not signed, encryption and signature are handled by the {@link
+     * eu.eidas.auth.engine.ProtocolEngineI} itself.
+     *
+     * @since 1.4
+     */
+    @Nonnull
+    AuthnRequest marshallRequest(@Nonnull IAuthenticationRequest requestToBeSent,
+                                 @Nonnull String serviceIssuer,
+                                 @Nonnull SamlEngineCoreProperties samlCoreProperties,
+                                 @Nonnull final DateTime currentTime) throws EIDASSAMLEngineException;
+
+    /**
+     * TODO to be removed
+     *
      * Converts the given kind of {@link IAuthenticationResponse} into the appropriate SAML response.
      * <p>
      * The returned SAML response is not encrypted and is not signed, encryption and signature are handled by the {@link
      * eu.eidas.auth.engine.ProtocolEngineI} itself.
      *
      * @since 1.1
+     *
+     * @deprecated since 1.4
+     * Use {@link ProtocolProcessorI#marshallResponse(IAuthenticationRequest, IAuthenticationResponse, String, SamlEngineCoreProperties, DateTime)}
+     */
+    @Nonnull
+    @Deprecated
+    Response marshallResponse(@Nonnull IAuthenticationRequest request,
+                              @Nonnull IAuthenticationResponse response,
+                              @Nonnull String ipAddress,
+                              @Nonnull SamlEngineCoreProperties samlCoreProperties) throws EIDASSAMLEngineException;
+    
+    /**
+     * Converts the given kind of {@link IAuthenticationResponse} into the appropriate SAML response.
+     * <p>
+     * The returned SAML response is not encrypted and is not signed, encryption and signature are handled by the {@link
+     * eu.eidas.auth.engine.ProtocolEngineI} itself.
+     *
+     * @since 1.4
      */
     @Nonnull
     Response marshallResponse(@Nonnull IAuthenticationRequest request,
                               @Nonnull IAuthenticationResponse response,
                               @Nonnull String ipAddress,
-                              @Nonnull SamlEngineCoreProperties samlCoreProperties) throws EIDASSAMLEngineException;
+                              @Nonnull SamlEngineCoreProperties samlCoreProperties,
+                              @Nonnull final DateTime currentTime) throws EIDASSAMLEngineException;
+
+
 
     /**
      * @since 1.1

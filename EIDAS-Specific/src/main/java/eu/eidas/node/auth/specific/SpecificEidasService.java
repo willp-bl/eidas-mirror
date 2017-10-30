@@ -324,7 +324,8 @@ public final class SpecificEidasService implements IAUService {
                 specificProps.getEidasParameterValue(EidasParameterKeys.DERIVE_ATTRIBUTE_NUMBER.toString()));
 
         for (final AttributeDefinition<?> attributeDefinition : modified.getDefinitions()) {
-            if (!(original.getDefinitions().contains(attributeDefinition))
+
+            if (original.getDefinitionByNameUri(attributeDefinition.getNameUri()) == null
                     && !PersonType.REPV_LEGAL_PERSON.equals(attributeDefinition.getPersonType())
                     && !PersonType.REPV_NATURAL_PERSON.equals(attributeDefinition.getPersonType())) {
                 if (haveExpectedName(original, attributeDefinition.getNameUri(), nNames)) {

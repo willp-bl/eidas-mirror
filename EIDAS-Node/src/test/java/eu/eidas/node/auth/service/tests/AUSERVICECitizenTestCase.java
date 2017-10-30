@@ -22,26 +22,10 @@
 
 package eu.eidas.node.auth.service.tests;
 
-import java.util.Properties;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-
-import org.junit.BeforeClass;
-import org.junit.FixMethodOrder;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
-
-import eu.eidas.auth.commons.CitizenConsent;
-import eu.eidas.auth.commons.EidasErrorKey;
-import eu.eidas.auth.commons.EIDASUtil;
-import eu.eidas.auth.commons.IPersonalAttributeList;
-import eu.eidas.auth.commons.IncomingRequest;
-import eu.eidas.auth.commons.PersonalAttributeList;
-import eu.eidas.auth.commons.PersonalAttributeString;
-import eu.eidas.auth.commons.WebRequest;
+import eu.eidas.auth.commons.*;
 import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.attribute.PersonType;
@@ -53,20 +37,19 @@ import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
 import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
 import eu.eidas.auth.engine.DefaultProtocolEngineFactory;
-import eu.eidas.auth.engine.core.eidas.spec.EidasSpec;
-import eu.eidas.node.auth.service.AUSERVICECitizen;
-import eu.eidas.node.auth.service.AUSERVICESAML;
-import eu.eidas.node.auth.service.AUSERVICEUtil;
-import eu.eidas.node.auth.service.ISERVICECitizenService;
-import eu.eidas.node.auth.service.ISERVICESAMLService;
-import eu.eidas.node.auth.service.ResponseCarryingServiceException;
+import eu.eidas.node.auth.service.*;
 import eu.eidas.node.auth.util.tests.TestingConstants;
+import org.junit.BeforeClass;
+import org.junit.FixMethodOrder;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runners.MethodSorters;
+
+import java.util.Properties;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -158,23 +141,6 @@ public final class AUSERVICECitizenTestCase {
     private static final ImmutableAttributeMap ATTR_LIST = ImmutableAttributeMap.builder().put(IS_AGE_OVER, new IntegerAttributeValue(15)).put(AGE).build();
 
     /**
-     * Personal Attribute List with dummy attributes but no values.
-     */
-    private static final IPersonalAttributeList ATTR_LIST_NO_VALUES = PersonalAttributeString.fromStringList(
-            "http://www.stork.gov.eu/1.0/isAgeOver:true:[15,]:Available;http://www.stork.gov.eu/1.0/age:false:[,]:;");
-
-    /**
-     * Personal Attribute List with dummy attribute values.
-     */
-    private static final IPersonalAttributeList ATTR_LIST_VALUES = PersonalAttributeString.fromStringList(
-            "http://www.stork.gov.eu/1.0/isAgeOver:true:[15,]:Available;http://www.stork.gov.eu/1.0/age:false:[15,]:Available;");
-
-    /**
-     * Immutable Attribute Map with dummy attribute values.
-     */
-    private final ImmutableAttributeMap STORK_IMMUTABLE_ATTR_MAP_VALUES = PersonalAttributeList.retainAttrsExistingInRegistry(ATTR_LIST_VALUES, EidasSpec.REGISTRY);
-
-    /**
      * EidasAuthenticationRequest object.
      */
     private static final StoredAuthenticationRequest AUTH_DATA = StoredAuthenticationRequest.builder().request(EidasAuthenticationRequest.builder().requestedAttributes(ATTR_LIST).destination(TestingConstants.REQUEST_DESTINATION_CONS.toString())
@@ -217,7 +183,7 @@ public final class AUSERVICECitizenTestCase {
     }
 
     /**
-     * Test method for {@link AUSERVICECitizen#getCitizenConsent(WebRequest, IPersonalAttributeList)}. Using an empty
+     * Test method for {@link AUSERVICECitizen# getCitizenConsent(WebRequest, IPersonalAttributeList)}. Using an empty
      * parameters.
      */
     @Test
@@ -227,7 +193,7 @@ public final class AUSERVICECitizenTestCase {
     }
 
     /**
-     * Test method for {@link AUSERVICECitizen#getCitizenConsent(WebRequest, IPersonalAttributeList)}. Using and empty personal
+     * Test method for {@link AUSERVICECitizen# getCitizenConsent(WebRequest, IPersonalAttributeList)}. Using and empty personal
      * attribute list.
      */
     @Test
@@ -237,7 +203,7 @@ public final class AUSERVICECitizenTestCase {
     }
 
     /**
-     * Test method for {@link AUSERVICECitizen#getCitizenConsent(WebRequest, IPersonalAttributeList)}.
+     * Test method for {@link AUSERVICECitizen# getCitizenConsent(WebRequest, IPersonalAttributeList)}.
      */
     @Test
     public void testGetCitizenConsent() {
@@ -246,7 +212,7 @@ public final class AUSERVICECitizenTestCase {
     }
 
     /**
-     * Test method for {@link AUSERVICECitizen#processCitizenConsent(CitizenConsent, IAuthenticationRequest, String,
+     * Test method for {@link AUSERVICECitizen# processCitizenConsent(CitizenConsent, IAuthenticationRequest, String,
      * ISERVICESAMLService)} . Testing empty EidasAuthenticationRequest and no exception should be thrown.
      */
     @Test
@@ -257,7 +223,7 @@ public final class AUSERVICECitizenTestCase {
     }
 
     /**
-     * Test method for {@link AUSERVICECitizen#processCitizenConsent(CitizenConsent, IAuthenticationRequest, String,
+     * Test method for {@link AUSERVICECitizen# processCitizenConsent(CitizenConsent, IAuthenticationRequest, String,
      * ISERVICESAMLService)} . Testing empty Consent and no exception should be thrown.
      */
     @Test(expected = ResponseCarryingServiceException.class)
@@ -268,7 +234,7 @@ public final class AUSERVICECitizenTestCase {
     }
 
     /**
-     * Test method for {@link AUSERVICECitizen#processCitizenConsent(CitizenConsent, IAuthenticationRequest, String,
+     * Test method for {@link AUSERVICECitizen# processCitizenConsent(CitizenConsent, IAuthenticationRequest, String,
      * ISERVICESAMLService)} . No exception should be thrown.
      */
     @Test (expected = ResponseCarryingServiceException.class)
@@ -279,7 +245,7 @@ public final class AUSERVICECitizenTestCase {
     }
 
     /**
-     * Test method for {@link AUSERVICECitizen#processCitizenConsent(CitizenConsent, IAuthenticationRequest, String,
+     * Test method for {@link AUSERVICECitizen# processCitizenConsent(CitizenConsent, IAuthenticationRequest, String,
      * ISERVICESAMLService)} . An ServiceException must be thrown.
      */
     @Test(expected = EIDASServiceException.class)
@@ -296,7 +262,7 @@ public final class AUSERVICECitizenTestCase {
     }
 
     /**
-     * Test method for {@link AUSERVICECitizen#filterConsentedAttributes(CitizenConsent, IPersonalAttributeList)} . Testing
+     * Test method for {@link AUSERVICECitizen# filterConsentedAttributes(CitizenConsent, IPersonalAttributeList)} . Testing
      * and empty Consent type and a personal attribute list must be returned.
      */
     @Test
@@ -307,7 +273,7 @@ public final class AUSERVICECitizenTestCase {
     }
 
     /**
-     * Test method for {@link AUSERVICECitizen#filterConsentedAttributes(CitizenConsent, IPersonalAttributeList)} . Testing an
+     * Test method for {@link AUSERVICECitizen# filterConsentedAttributes(CitizenConsent, IPersonalAttributeList)} . Testing an
      * empty attribute list and an empty attribute list must be returned.
      */
     @Test
@@ -318,7 +284,7 @@ public final class AUSERVICECitizenTestCase {
     }
 
     /**
-     * Test method for {@link AUSERVICECitizen#filterConsentedAttributes(CitizenConsent, IPersonalAttributeList)} . Testing an
+     * Test method for {@link AUSERVICECitizen# filterConsentedAttributes(CitizenConsent, IPersonalAttributeList)} . Testing an
      * empty attribute list and a empty consent type: an empty personal attribute list must be returned.
      */
     @Test
@@ -329,7 +295,7 @@ public final class AUSERVICECitizenTestCase {
     }
 
     /**
-     * Test method for {@link AUSERVICECitizen#filterConsentedAttributes(CitizenConsent, IPersonalAttributeList)} . The same
+     * Test method for {@link AUSERVICECitizen# filterConsentedAttributes(CitizenConsent, IPersonalAttributeList)} . The same
      * attribute list must be returned.
      */
     @Test
@@ -340,7 +306,7 @@ public final class AUSERVICECitizenTestCase {
     }
 
     /**
-     * Test method for {@link AUSERVICECitizen#updateConsentedAttributes(IAuthenticationRequest, IPersonalAttributeList)}. Empty
+     * Test method for {@link AUSERVICECitizen# updateConsentedAttributes(IAuthenticationRequest, IPersonalAttributeList)}. Empty
      * Session led to a NullPointerException.
      */
     @Test(expected = NullPointerException.class)
@@ -352,7 +318,7 @@ public final class AUSERVICECitizenTestCase {
     }
 
     /**
-     * Test method for Test method for {@link AUSERVICECitizen#updateConsentedAttributes(IAuthenticationRequest, IPersonalAttributeList)}
+     * Test method for Test method for {@link AUSERVICECitizen# updateConsentedAttributes(IAuthenticationRequest, IPersonalAttributeList)}
      * . Empty personal attribute list will return the EidasAuthenticationRequest with an empty personal
      * attribute list.
      */
@@ -363,7 +329,7 @@ public final class AUSERVICECitizenTestCase {
     }
 
     /**
-     * Test method for Test method for {@link AUSERVICECitizen#updateConsentedAttributes(IAuthenticationRequest, IPersonalAttributeList)}
+     * Test method for Test method for {@link AUSERVICECitizen# updateConsentedAttributes(IAuthenticationRequest, IPersonalAttributeList)}
      * . Null personal attribute list will return the EidasAuthenticationRequest with a null personal
      * attribute list.
      */
@@ -375,7 +341,7 @@ public final class AUSERVICECitizenTestCase {
     }
 
     /**
-     * Test method for {@link AUSERVICECitizen#updateConsentedAttributes(IAuthenticationRequest, IPersonalAttributeList)}
+     * Test method for {@link AUSERVICECitizen# updateConsentedAttributes(IAuthenticationRequest, IPersonalAttributeList)}
      * . Must succeed.
      */
     @Test
@@ -400,14 +366,5 @@ public final class AUSERVICECitizenTestCase {
         auserviceCitizen.checkMandatoryAttributes(EMPTY_IMMUTABLE_ATTR_MAP);
     }
 
-    /**
-     * Test method for {@link AUSERVICECitizen#checkMandatoryAttributes(ImmutableAttributeMap)}  . Must
-     * return updated Personal attribute list
-     */
-    @Test
-    @Ignore
-    //TODO check why this test fails, added Ignore here only to allow build with execution of all tests that do not fail
-    public void testUpdateAttributeListValues() {
-        AUSERVICECITIZEN.checkMandatoryAttributes(STORK_IMMUTABLE_ATTR_MAP_VALUES);
-    }
+
 }

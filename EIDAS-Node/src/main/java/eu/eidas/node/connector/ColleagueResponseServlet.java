@@ -29,6 +29,11 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.UnmodifiableIterator;
+import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
+import eu.eidas.auth.engine.core.eidas.spec.LegalPersonSpec;
+import eu.eidas.auth.engine.core.eidas.spec.RepresentativeLegalPersonSpec;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -129,9 +134,45 @@ public final class ColleagueResponseServlet extends AbstractConnectorServlet {
             AuthenticationExchange
                     authenticationExchange = controllerService.getConnectorService().getAuthenticationResponse(webRequest);
 
+            //TODO START remove correction of erroneous attributes after transition period of EID-423
+            ImmutableAttributeMap respAttributes = authenticationExchange.getConnectorResponse().getAttributes();
+            ImmutableAttributeMap.Builder correctedAttrs = ImmutableAttributeMap.builder();
+            if (respAttributes.getDefinitions().contains(LegalPersonSpec.Definitions.LEGAL_ADDRESS) ||
+                    respAttributes.getDefinitions().contains(LegalPersonSpec.Definitions.VAT_REGISTRATION) ||
+                    respAttributes.getDefinitions().contains(RepresentativeLegalPersonSpec.Definitions.VAT_REGISTRATION) ||
+                    respAttributes.getDefinitions().contains(RepresentativeLegalPersonSpec.Definitions.VAT_REGISTRATION)) {
+                UnmodifiableIterator<ImmutableAttributeMap.ImmutableAttributeEntry<?>> attrIterator = respAttributes.entrySet().iterator();
+                while (attrIterator.hasNext()) {
+                    ImmutableAttributeMap.ImmutableAttributeEntry<?> attr = attrIterator.next();
+                    if (attr.getKey().equals(LegalPersonSpec.Definitions.VAT_REGISTRATION)) {
+                        LOG.warn("Replacing VATRegistration with VATRegistrationNumber from " + authenticationExchange.getConnectorResponse().getIssuer());
+                        ImmutableSet values = attr.getValues();
+                        correctedAttrs.put(LegalPersonSpec.Definitions.VAT_REGISTRATION_NUMBER, values);
+                    } else if (attr.getKey().equals(LegalPersonSpec.Definitions.LEGAL_ADDRESS)) {
+                        LOG.warn("Replacing LegalAddress to LegalPersonAddress from " + authenticationExchange.getConnectorResponse().getIssuer());
+                        ImmutableSet values = attr.getValues();
+                        correctedAttrs.put(LegalPersonSpec.Definitions.LEGAL_PERSON_ADDRESS, values);
+                    } else if (attr.getKey().equals(RepresentativeLegalPersonSpec.Definitions.VAT_REGISTRATION)) {
+                        LOG.warn("Replacing RepresentativeVATRegistration with RepresentativeVATRegistrationNumber from " + authenticationExchange.getConnectorResponse().getIssuer());
+                        ImmutableSet values = attr.getValues();
+                        correctedAttrs.put(RepresentativeLegalPersonSpec.Definitions.VAT_REGISTRATION_NUMBER, values);
+                    } else if (attr.getKey().equals(RepresentativeLegalPersonSpec.Definitions.LEGAL_ADDRESS)) {
+                        LOG.warn("Replacing RepresentativeLegalAddress to RepresentativeLegalPersonAddress from " + authenticationExchange.getConnectorResponse().getIssuer());
+                        ImmutableSet values = attr.getValues();
+                        correctedAttrs.put(RepresentativeLegalPersonSpec.Definitions.LEGAL_PERSON_ADDRESS, values);
+                    } else {
+                        ImmutableSet values = attr.getValues();
+                        correctedAttrs.put(attr.getKey(), values);
+                    }
+                }
+                respAttributes = correctedAttrs.build();
+            }
+            //TODO END remove correction of erroneous attributes after transition period of EID-423
+
             // Build the LightResponse
             LightResponse lightResponse =
-                    LightResponse.builder(authenticationExchange.getConnectorResponse()).build();
+                    LightResponse.builder(authenticationExchange.getConnectorResponse()).attributes(respAttributes).build();
+
             // Call the specific module
             sendResponse(lightResponse, request, response, controllerService);
 

@@ -1,19 +1,16 @@
 package eu.eidas.node.connector;
 
 import eu.eidas.auth.commons.*;
-import eu.eidas.auth.commons.exceptions.EIDASServiceException;
 import eu.eidas.auth.commons.light.ILightRequest;
 import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.IRequestMessage;
 import eu.eidas.auth.commons.protocol.impl.EidasSamlBinding;
 import eu.eidas.auth.commons.validation.NormalParameterValidator;
-import eu.eidas.node.ApplicationContextProvider;
 import eu.eidas.node.NodeBeanNames;
 import eu.eidas.node.NodeParameterNames;
 import eu.eidas.node.NodeViewNames;
 import eu.eidas.node.specificcommunication.ISpecificConnector;
 import eu.eidas.node.specificcommunication.exception.SpecificException;
-import eu.eidas.node.utils.CountrySpecificUtil;
 import eu.eidas.node.utils.PropertiesUtil;
 import eu.eidas.node.utils.SessionHolder;
 import org.apache.commons.lang.StringUtils;
@@ -127,9 +124,7 @@ public class ServiceProviderServlet extends AbstractConnectorServlet {
         request.setAttribute(EidasParameterKeys.SAML_REQUEST.toString(), samlRequestTokenSaml);
         request.setAttribute(NodeParameterNames.RELAY_STATE.toString(), relayState);
         // Redirecting where it should be
-        prepareCountryData(request, authData);
-        RequestDispatcher dispatcher = request.getRequestDispatcher(
-                handleCountrySelection(authData.getCitizenCountryCode()/*, moaConfigData*/, request));
+        RequestDispatcher dispatcher = request.getRequestDispatcher(NodeViewNames.EIDAS_CONNECTOR_COLLEAGUE_REQUEST_REDIRECT.toString());
 
         session.setAttribute(EidasParameterKeys.SAML_PHASE.toString(), EIDASValues.EIDAS_CONNECTOR_REQUEST);
         SessionHolder.clear();
@@ -166,32 +161,6 @@ public class ServiceProviderServlet extends AbstractConnectorServlet {
             throw new ServletException("Missing specific response: no error and no success");
         }
         return lightRequest;
-    }
-
-    /**
-     * Retrieve the selected country from the request and set the value on the authentication request.
-     */
-    private String handleCountrySelection(String citizenCountry, HttpServletRequest request) throws ServletException {
-        CountrySpecificUtil csu = ApplicationContextProvider.getApplicationContext().getBean(CountrySpecificUtil.class);
-        CountrySpecificService specificCountry = csu.getCountryHandler(citizenCountry);
-        if (specificCountry != null) {
-            if (!specificCountry.isActive()) {
-                throw new EIDASServiceException(
-                        EidasErrors.get(EidasErrorKey.SP_COUNTRY_SELECTOR_INVALID.errorCode()),
-                        EidasErrors.get(EidasErrorKey.SP_COUNTRY_SELECTOR_INVALID.errorMessage()), null);
-            }
-            return specificCountry.getRedirectUrl(request);
-        }
-
-        return NodeViewNames.EIDAS_CONNECTOR_COLLEAGUE_REQUEST_REDIRECT.toString();
-    }
-
-    private void prepareCountryData(HttpServletRequest request, IAuthenticationRequest authData) {
-        CountrySpecificUtil csu = ApplicationContextProvider.getApplicationContext().getBean(CountrySpecificUtil.class);
-        CountrySpecificService specificCountry = csu.getCountryHandler(authData.getCitizenCountryCode());
-        if (specificCountry != null && specificCountry.isActive()) {
-            specificCountry.prepareRequest(request, authData);
-        }
     }
 
 }

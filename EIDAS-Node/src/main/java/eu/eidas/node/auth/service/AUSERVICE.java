@@ -13,30 +13,9 @@
  */
 package eu.eidas.node.auth.service;
 
-import java.util.Map;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import com.google.common.collect.ImmutableSet;
-
-import eu.eidas.auth.commons.exceptions.EidasNodeException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import eu.eidas.auth.commons.CitizenConsent;
-import eu.eidas.auth.commons.EIDASStatusCode;
-import eu.eidas.auth.commons.EIDASSubStatusCode;
-import eu.eidas.auth.commons.EidasErrorKey;
-import eu.eidas.auth.commons.EidasErrors;
-import eu.eidas.auth.commons.EidasParameterKeys;
-import eu.eidas.auth.commons.EidasStringUtil;
-import eu.eidas.auth.commons.WebRequest;
-import eu.eidas.auth.commons.attribute.AttributeDefinition;
-import eu.eidas.auth.commons.attribute.AttributeValue;
-import eu.eidas.auth.commons.attribute.AttributeValueMarshaller;
-import eu.eidas.auth.commons.attribute.AttributeValueMarshallingException;
-import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
+import eu.eidas.auth.commons.*;
+import eu.eidas.auth.commons.attribute.*;
 import eu.eidas.auth.commons.exceptions.EIDASServiceException;
 import eu.eidas.auth.commons.exceptions.InvalidParameterEIDASException;
 import eu.eidas.auth.commons.light.ILightResponse;
@@ -47,8 +26,17 @@ import eu.eidas.auth.commons.protocol.impl.AuthenticationResponse;
 import eu.eidas.auth.commons.tx.CorrelationMap;
 import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
 import eu.eidas.auth.commons.validation.NormalParameterValidator;
+import eu.eidas.auth.engine.core.eidas.spec.LegalPersonSpec;
+import eu.eidas.auth.engine.core.eidas.spec.RepresentativeLegalPersonSpec;
 import eu.eidas.auth.engine.xml.opensaml.SAMLEngineUtils;
 import eu.eidas.node.utils.EidasNodeValidationUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.security.InvalidParameterException;
+import java.util.Map;
 
 /**
  * The AUSERVICE class deals with the requests coming from the Connector. This class communicates with the IdP and APs
@@ -130,6 +118,17 @@ public final class AUSERVICE implements ISERVICEService {
 
         citizenService.checkRepresentativeAttributes(authnRequest.getRequestedAttributes());
 
+        //TODO START remove check of erroneous attributes after transition period of EID-423
+        /* check if there is a tricking requesting erroneous and correct attributes also */
+        ImmutableSet<AttributeDefinition<?>> attrDefs = authnRequest.getRequestedAttributes().getDefinitions();
+        if ((attrDefs.contains(LegalPersonSpec.Definitions.LEGAL_ADDRESS) && attrDefs.contains(LegalPersonSpec.Definitions.LEGAL_PERSON_ADDRESS)) ||
+                (attrDefs.contains(LegalPersonSpec.Definitions.VAT_REGISTRATION) && attrDefs.contains(LegalPersonSpec.Definitions.VAT_REGISTRATION_NUMBER))) {
+            LOG.error("BUSINESS EXCEPTION : Both LEGAL_ADDRESS and LEGAL_PERSON_ADDRESS or VAT_REGISTRATION and VAT_REGISTRATION_NUMBER requested");
+            throw new EIDASServiceException(EidasErrors.get(EidasErrorKey.INVALID_ATTRIBUTE_LIST.errorCode()),
+                    EidasErrors.get(EidasErrorKey.INVALID_ATTRIBUTE_LIST.errorMessage()));
+        }
+        //TODO END remove check of erroneous attributes after transition period of EID-423
+
         return authnRequest;
     }
 
@@ -208,6 +207,26 @@ public final class AUSERVICE implements ISERVICEService {
             return sendFailure(proxyServiceRequest, EidasErrorKey.INVALID_ATTRIBUTE_LIST);
         }
 
+        for (final Map.Entry<AttributeDefinition<?>, ImmutableSet<? extends AttributeValue<?>>> entry : idpResponse
+                .getAttributes().getAttributeMap()
+                .entrySet()) {
+            AttributeDefinition<?> definition = entry.getKey();
+            ImmutableSet<? extends AttributeValue<?>> values = entry.getValue();
+
+            AttributeValueMarshaller<?> attributeValueMarshaller = definition.getAttributeValueMarshaller();
+            for (final AttributeValue<?> attributeValue : values) {
+                String value;
+                try {
+                    value = attributeValueMarshaller.marshal((AttributeValue) attributeValue);
+                    if (!NormalParameterValidator.paramName(EidasParameterKeys.ATTRIBUTE_VALUE).paramValue(value).isValid()) {
+                        throw new InvalidParameterException("Invalid Length value :" + value + " for Parameter " + definition.getFriendlyName() + ". Check also the value for the parameter " + EidasParameterKeys.ATTRIBUTE_VALUE + " in the configuration file " + EidasParameters.getPropertiesFilename());
+                    }
+                } catch (AttributeValueMarshallingException e) {
+                    // TODO improve this:
+                    throw new IllegalStateException(e);
+                }
+            }
+        }
         if (!EidasNodeValidationUtil.isLoAValid(LevelOfAssuranceComparison.MINIMUM,
                                                 originalRequest.getLevelOfAssurance(),
                                                 idpResponse.getLevelOfAssurance())) {
@@ -216,6 +235,29 @@ public final class AUSERVICE implements ISERVICEService {
                      " vs response=" + idpResponse.getLevelOfAssurance());
             return sendFailure(proxyServiceRequest, EidasErrorKey.INVALID_RESPONSE_LOA_VALUE);
         }
+
+       /* EID-423: wrong attribute name was implemented prior to 1.4, backward compatibility if for the Network only to ensure business continuity, the
+        *  Specific must Request the right ones in the interface*/
+        //TODO START remove check of erroneous attributes after transition period of EID-423
+        ImmutableSet<AttributeDefinition<?>> suppliedAttributes = idpResponse.getAttributes().getDefinitions();
+        if (suppliedAttributes != null && suppliedAttributes.contains(LegalPersonSpec.Definitions.LEGAL_ADDRESS)) {
+            LOG.error("BUSINESS EXCEPTION : "+LegalPersonSpec.Definitions.LEGAL_ADDRESS.getNameUri().toASCIIString()+" found in Response instead of "+LegalPersonSpec.Definitions.LEGAL_PERSON_ADDRESS.getNameUri().toASCIIString());
+            sendFailure(proxyServiceRequest, EidasErrorKey.INVALID_ATTRIBUTE_LIST);
+        }
+        if (suppliedAttributes != null && suppliedAttributes.contains(LegalPersonSpec.Definitions.VAT_REGISTRATION)) {
+            LOG.error("BUSINESS EXCEPTION : "+LegalPersonSpec.Definitions.VAT_REGISTRATION.getNameUri().toASCIIString()+" found in Response instead of "+LegalPersonSpec.Definitions.VAT_REGISTRATION_NUMBER.getNameUri().toASCIIString());
+            sendFailure(proxyServiceRequest, EidasErrorKey.INVALID_ATTRIBUTE_LIST);
+        }
+        if (suppliedAttributes != null && suppliedAttributes.contains(RepresentativeLegalPersonSpec.Definitions.LEGAL_ADDRESS)) {
+            LOG.error("BUSINESS EXCEPTION : "+LegalPersonSpec.Definitions.LEGAL_ADDRESS.getNameUri().toASCIIString()+" found in Response instead of "+RepresentativeLegalPersonSpec.Definitions.LEGAL_PERSON_ADDRESS.getNameUri().toASCIIString());
+            sendFailure(proxyServiceRequest, EidasErrorKey.INVALID_ATTRIBUTE_LIST);
+        }
+        if (suppliedAttributes != null && suppliedAttributes.contains(RepresentativeLegalPersonSpec.Definitions.VAT_REGISTRATION)) {
+            LOG.error("BUSINESS EXCEPTION : "+LegalPersonSpec.Definitions.VAT_REGISTRATION.getNameUri().toASCIIString()+" found in Response instead of "+RepresentativeLegalPersonSpec.Definitions.VAT_REGISTRATION_NUMBER.getNameUri().toASCIIString());
+            sendFailure(proxyServiceRequest, EidasErrorKey.INVALID_ATTRIBUTE_LIST);
+        }
+        //TODO END remove check of erroneous attributes after transition period of EID-423
+
 
         // update Response Attributes
 

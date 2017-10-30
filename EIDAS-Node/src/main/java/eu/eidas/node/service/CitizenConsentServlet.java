@@ -28,6 +28,12 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.UnmodifiableIterator;
+import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
+import eu.eidas.auth.commons.protocol.eidas.IEidasAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
+import eu.eidas.auth.engine.core.eidas.spec.LegalPersonSpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -118,6 +124,37 @@ public class CitizenConsentServlet extends AbstractServiceServlet {
 
             // send the request to the specific module:
             ISpecificProxyService specificProxyService = controllerService.getSpecificProxyService();
+
+            //TODO START process erroneous attributes of EID-423, remove this one after transition period
+            /* replace erroneous attributes at servlet layer, if both of them are requested, just discard the erroneous ones
+               the correlation map still takes the original request, because when creating the response we need to see
+               what was in the original request and replace the attributes to the erroneus ones if needed */
+            ImmutableAttributeMap originalAttrs = authenticationRequest.getRequestedAttributes();
+            if (originalAttrs.getDefinitions().contains(LegalPersonSpec.Definitions.LEGAL_ADDRESS) ||
+                    originalAttrs.getDefinitions().contains(LegalPersonSpec.Definitions.VAT_REGISTRATION)) {
+                EidasAuthenticationRequest.Builder correctedRequestBuilder = EidasAuthenticationRequest.builder((IEidasAuthenticationRequest) authenticationRequest);
+                UnmodifiableIterator<ImmutableAttributeMap.ImmutableAttributeEntry<?>> attrIterator = originalAttrs.entrySet().iterator();
+                ImmutableAttributeMap.Builder correctedAttrs = ImmutableAttributeMap.builder();
+                while (attrIterator.hasNext()) {
+                    ImmutableAttributeMap.ImmutableAttributeEntry<?> attr = attrIterator.next();
+                    if (attr.getKey().equals(LegalPersonSpec.Definitions.VAT_REGISTRATION)) {
+                        LOG.warn("Replacing requested VATRegistration with VATRegistrationNumber from " + authenticationRequest.getIssuer());
+                        ImmutableSet values = attr.getValues();
+                        correctedAttrs.put(LegalPersonSpec.Definitions.VAT_REGISTRATION_NUMBER, values);
+                    } else if (attr.getKey().equals(LegalPersonSpec.Definitions.LEGAL_ADDRESS)) {
+                        LOG.warn("Replacing requested LegalAddress to LegalPersonAddress from " + authenticationRequest.getIssuer());
+                        ImmutableSet values = attr.getValues();
+                        correctedAttrs.put(LegalPersonSpec.Definitions.LEGAL_PERSON_ADDRESS, values);
+                    } else {
+                        ImmutableSet values = attr.getValues();
+                        correctedAttrs.put(attr.getKey(), values);
+                    }
+                }
+                correctedRequestBuilder.requestedAttributes(correctedAttrs.build());
+                authenticationRequest = correctedRequestBuilder.build();
+            }
+            //TODO END process erroneous attributes of EID-423, remove this one after transition period
+
             LightRequest specificRequest = LightRequest.builder(authenticationRequest).build();
             specificProxyService.sendRequest(specificRequest, request, response);
 

@@ -20,7 +20,7 @@
   ~
   --%>
 
-<script src="resources/skin0/js/jquery-1.11.3.min.js"></script>
-<script src="resources/skin0/js/bootstrap.min.js"></script>
-<script src="resources/skin0/js/switchery.min.js"></script>
-<script src="resources/skin0/js/function.js"></script>
+<script src="resource/skin0/js/jquery-1.11.3.min.js"></script>
+<script src="resource/skin0/js/bootstrap.min.js"></script>
+<script src="resource/skin0/js/switchery.min.js"></script>
+<script src="resource/skin0/js/function.js"></script>

@@ -38,6 +38,9 @@ public final class RepresentativeLegalPersonSpec {
                 .attributeValueMarshaller(new StringAttributeValueMarshaller())
                 .build();
 
+        /* EID-423, EIDINT-1500: Correction of LegalPersonAddress and VATRegistrationNumber. In version 1.4 this attribute is supported in the network only,
+        and not from/to Specific part because all prior versions are coming with this erroneous attribute. */
+        //TODO remove this attribute after release 1.4, description in comment
         public static final AttributeDefinition<PostalAddress> LEGAL_ADDRESS = AttributeDefinition.<PostalAddress>builder()
                 .nameUri(Namespace.URI + "/LegalAddress")
                 .friendlyName("RepresentativeLegalAddress")
@@ -46,6 +49,17 @@ public final class RepresentativeLegalPersonSpec {
                 .attributeValueMarshaller(new LegalAddressAttributeValueMarshaller())
                 .build();
 
+        public static final AttributeDefinition<PostalAddress> LEGAL_PERSON_ADDRESS = AttributeDefinition.<PostalAddress>builder()
+                .nameUri(Namespace.URI + "/LegalPersonAddress")
+                .friendlyName("RepresentativeLegalAddress")
+                .personType(PersonType.REPV_LEGAL_PERSON)
+                .xmlType(Namespace.URI, "LegalPersonAddressType", Namespace.PREFIX)
+                .attributeValueMarshaller(new LegalAddressAttributeValueMarshaller())
+                .build();
+
+        /* EID-423, EIDINT-1500: Correction of LegalPersonAddress and VATRegistrationNumber. In version 1.4 this attribute is supported in the network only,
+        and not from/to Specific part because all prior versions are coming with this erroneous attribute. */
+        //TODO remove this attribute after release 1.4, description in comment
         public static final AttributeDefinition<String> VAT_REGISTRATION = AttributeDefinition.<String>builder()
                 .nameUri(Namespace.URI + "/VATRegistration")
                 .friendlyName("RepresentativeVATRegistration")
@@ -53,6 +67,15 @@ public final class RepresentativeLegalPersonSpec {
                 .xmlType(Namespace.URI, "VATRegistrationNumberType", Namespace.PREFIX)
                 .attributeValueMarshaller(new LiteralStringAttributeValueMarshaller())
                 .build();
+
+        public static final AttributeDefinition<String> VAT_REGISTRATION_NUMBER = AttributeDefinition.<String>builder()
+                .nameUri(Namespace.URI + "/VATRegistrationNumber")
+                .friendlyName("RepresentativeVATRegistration")
+                .personType(PersonType.REPV_LEGAL_PERSON)
+                .xmlType(Namespace.URI, "VATRegistrationNumberType", Namespace.PREFIX)
+                .attributeValueMarshaller(new LiteralStringAttributeValueMarshaller())
+                .build();
+
 
         public static final AttributeDefinition<String> TAX_REFERENCE = AttributeDefinition.<String>builder()
                 .nameUri(Namespace.URI + "/TaxReference")
@@ -118,10 +141,11 @@ public final class RepresentativeLegalPersonSpec {
 
     public static final AttributeRegistry REGISTRY =
             AttributeRegistries.of(Definitions.LEGAL_PERSON_IDENTIFIER, Definitions.LEGAL_NAME,
-                                   Definitions.LEGAL_ADDRESS, Definitions.VAT_REGISTRATION,
-                                   Definitions.TAX_REFERENCE,
-                                   Definitions.D_2012_17_EU_IDENTIFIER, Definitions.LEI,
-                                   Definitions.EORI, Definitions.SEED, Definitions.SIC);
+                    Definitions.LEGAL_ADDRESS, Definitions.LEGAL_PERSON_ADDRESS,
+                    Definitions.VAT_REGISTRATION, Definitions.VAT_REGISTRATION_NUMBER,
+                    Definitions.TAX_REFERENCE,
+                    Definitions.D_2012_17_EU_IDENTIFIER, Definitions.LEI,
+                    Definitions.EORI, Definitions.SEED, Definitions.SIC);
 
     private RepresentativeLegalPersonSpec() {
     }

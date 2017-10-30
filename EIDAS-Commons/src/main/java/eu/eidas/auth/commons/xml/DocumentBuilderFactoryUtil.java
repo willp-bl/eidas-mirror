@@ -41,14 +41,14 @@ public final class DocumentBuilderFactoryUtil {
      * The Document Builder Factory.
      */
     private static final Queue<DocumentBuilderFactory> DOCUMENT_BUILDER_FACTORY_POOL =
-            new ConcurrentLinkedQueue<DocumentBuilderFactory>();
+            new ConcurrentLinkedQueue<>();
 
-    private static final Queue<DocumentBuilder> DOCUMENT_BUILDER_POOL = new ConcurrentLinkedQueue<DocumentBuilder>();
+    private static final Queue<DocumentBuilder> DOCUMENT_BUILDER_POOL = new ConcurrentLinkedQueue<>();
 
     private static final Queue<TransformerFactory> TRANSFORMER_FACTORY_POOL =
-            new ConcurrentLinkedQueue<TransformerFactory>();
+            new ConcurrentLinkedQueue<>();
 
-    private static final Queue<Transformer> TRANSFORMER_POOL = new ConcurrentLinkedQueue<Transformer>();
+    private static final Queue<Transformer> TRANSFORMER_POOL = new ConcurrentLinkedQueue<>();
 
     /**
      * Configures a given DocumentBuilderFactory with security features turned on.
@@ -65,7 +65,7 @@ public final class DocumentBuilderFactoryUtil {
         documentBuilderFactory.setIgnoringComments(true);
 
         for (final Map.Entry<String, Boolean> entry : getSecureDocumentBuilderFeatures().entrySet()) {
-            documentBuilderFactory.setFeature(entry.getKey(), entry.getValue().booleanValue());
+            documentBuilderFactory.setFeature(entry.getKey(), entry.getValue());
         }
 
         // and these as well, per Timothy Morgan's 2014 paper: "XML Schema, DTD, and Entity Attacks" (see reference below)
@@ -80,7 +80,7 @@ public final class DocumentBuilderFactoryUtil {
      */
     @Nonnull
     public static Map<String, Boolean> getSecureDocumentBuilderFeatures() {
-        Map<String, Boolean> features = new HashMap<String, Boolean>();
+        Map<String, Boolean> features = new HashMap<>();
         features.put(XMLConstants.FEATURE_SECURE_PROCESSING, Boolean.TRUE);
 
         // Ignore the external DTD completely
@@ -102,6 +102,16 @@ public final class DocumentBuilderFactoryUtil {
         return features;
     }
 
+    /**
+     * This method performs marshal on {@param node} and returns it in a byte array.
+     *
+     * Note that it does not protect against XXE. If necessary it should be done the {@param node} before.
+     *
+     * @param node the object to marshall
+     * @param omitXMLDeclaration the flag to omit XML Declaration
+     * @return the marshalled node in a byte array
+     * @throws TransformerException
+     */
     @Nonnull
     public static byte[] marshall(@Nonnull Node node, boolean omitXMLDeclaration) throws TransformerException {
         Preconditions.checkNotNull(node, "node");
@@ -211,14 +221,14 @@ public final class DocumentBuilderFactoryUtil {
             throws IOException, SAXException, ParserConfigurationException {
         // See http://stackoverflow.com/questions/9828254/is-documentbuilderfactory-thread-safe-in-java-5
         Preconditions.checkNotNull(xmlInputStream, "xmlInputStream");
-        DocumentBuilder documentBuilder;
+        DocumentBuilder documentBuilder = null;
         Document doc;
         try {
             documentBuilder = DOCUMENT_BUILDER_POOL.poll();
             documentBuilder = validateDocumentBuilder(documentBuilder);
-            DOCUMENT_BUILDER_POOL.offer(documentBuilder);
             doc =  documentBuilder.parse(xmlInputStream);
         } finally {
+            DOCUMENT_BUILDER_POOL.offer(documentBuilder);
             if (xmlInputStream != null) {
                 xmlInputStream.close();
             }
@@ -250,7 +260,7 @@ public final class DocumentBuilderFactoryUtil {
     /**
      * If the instance retrieved from the Pool is null, create a new one using a pooled factory.
      *
-     * @param documentBuilder a nullable instance
+     * @param documentBuilderVar a nullable instance
      * @return a non-null instance
      * @throws ParserConfigurationException if an instance could not be created
      */

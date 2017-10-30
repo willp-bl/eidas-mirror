@@ -1,25 +1,26 @@
 /*
- * Copyright (c) 2016 by European Commission
+ * Copyright (c) 2017 by European Commission
  *
- * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
- * the European Commission - subsequent versions of the EUPL (the "Licence");
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
  * You may not use this work except in compliance with the Licence.
  * You may obtain a copy of the Licence at:
  * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the Licence is distributed on an "AS IS" basis,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
  * See the Licence for the specific language governing permissions and
  * limitations under the Licence.
  *
- * This product combines work with different licenses. See the "NOTICE" text
- * file for details on the various modules and licenses.
- * The "NOTICE" text file is part of the distribution. Any derivative works
- * that you distribute must include a readable copy of the "NOTICE" text file.
- *
+ * This product combines work with different licenses. See the
+ * "NOTICE" text file for details on the various modules and licenses.
+ * The "NOTICE" text file is part of the distribution.
+ * Any derivative works that you distribute must include a readable
+ * copy of the "NOTICE" text file.
  */
-
 package eu.eidas.auth.engine;
 
 import java.security.cert.X509Certificate;
@@ -173,7 +174,7 @@ public class ProtocolEngine extends AbstractProtocolEngine implements ProtocolEn
         IAuthenticationRequest requestToBeSent =
                 getProtocolProcessor().createProtocolRequestToBeSent(request, serviceIssuer, getCoreProperties());
         AuthnRequest samlRequest =
-                getProtocolProcessor().marshallRequest(requestToBeSent, serviceIssuer, getCoreProperties());
+                getProtocolProcessor().marshallRequest(requestToBeSent, serviceIssuer, getCoreProperties(), getClock().getCurrentTime());
 
         try {
             byte[] bytes = signAndMarshallRequest(samlRequest);
@@ -207,7 +208,7 @@ public class ProtocolEngine extends AbstractProtocolEngine implements ProtocolEn
         validateParamResponse(request, response);
 
         Response samlResponse =
-                getProtocolProcessor().marshallResponse(request, response, ipAddress, getCoreProperties());
+                getProtocolProcessor().marshallResponse(request, response, ipAddress, getCoreProperties(), getClock().getCurrentTime());
 
         // update the assertions in the response to signed assertions if needed:
         if (signAssertion) {
@@ -259,7 +260,7 @@ public class ProtocolEngine extends AbstractProtocolEngine implements ProtocolEn
                                                          @Nonnull String ipAddress) throws EIDASSAMLEngineException {
 
         Response responseFail =
-                getProtocolProcessor().marshallErrorResponse(request, response, ipAddress, getCoreProperties());
+                getProtocolProcessor().marshallErrorResponse(request, response, ipAddress, getCoreProperties(), getClock().getCurrentTime());
 
         IAuthenticationResponse authenticationResponse =
                 getProtocolProcessor().unmarshallErrorResponse(response, responseFail, ipAddress, getCoreProperties());

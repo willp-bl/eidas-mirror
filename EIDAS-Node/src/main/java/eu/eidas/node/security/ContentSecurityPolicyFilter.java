@@ -1,7 +1,6 @@
 package eu.eidas.node.security;
 
 import eu.eidas.node.logging.LoggingMarkerMDC;
-import eu.eidas.node.utils.CountrySpecificUtil;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,9 +50,6 @@ public class ContentSecurityPolicyFilter implements Filter {
         securityResponseHeaderHelper = new SecurityResponseHeaderHelper();
     }
 
-    private boolean shouldDisableFilter(HttpServletRequest httpRequest){
-        return CountrySpecificUtil.isRequestAllowed(httpRequest);
-    }
     /**
      * Add CSP policies on each HTTP response.
      *
@@ -65,11 +61,7 @@ public class ContentSecurityPolicyFilter implements Filter {
             HttpServletRequest httpRequest = (HttpServletRequest) request;
             ExtendedServletResponseWrapper httpResponse = new ExtendedServletResponseWrapper((HttpServletResponse)response);
             LOGGER.trace("ContentSecurityPolicy FILTER for " + httpRequest.getServletPath());
-            if ( shouldDisableFilter(httpRequest)){
-                LOGGER.info("Redirecting to country plugin : no csp defined");
-            } else {
-                securityResponseHeaderHelper.populateResponseHeader(httpRequest, httpResponse);
-            }
+            securityResponseHeaderHelper.populateResponseHeader(httpRequest, httpResponse);
             fchain.doFilter(httpRequest, httpResponse);
         }catch(Exception e){
             LOGGER.info("ERROR : ", e.getMessage());

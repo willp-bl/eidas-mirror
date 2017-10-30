@@ -3,7 +3,6 @@ package eu.eidas.node.security;
 import eu.eidas.node.ApplicationContextProvider;
 import eu.eidas.node.NodeBeanNames;
 import eu.eidas.node.logging.LoggingMarkerMDC;
-import eu.eidas.node.utils.CountrySpecificUtil;
 
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -129,10 +128,6 @@ public class SecurityResponseHeaderHelper {
 
         ApplicationContext context = ApplicationContextProvider.getApplicationContext();
         configurationSecurityBean = (ConfigurationSecurityBean) context.getBean(NodeBeanNames.SECURITY_CONFIG.toString());
-        // Loading the specific country handler plugins to allow plugin dynamic load
-        CountrySpecificUtil csu=context.getBean(CountrySpecificUtil.class);
-        csu.loadCountryHandlers();
-
 
       // Define list of CSP HTTP Headers : used for reverse compatibility
         this.cspHeaders.add(CONTENT_SECURITY_POLICY_HEADER);

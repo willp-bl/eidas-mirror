@@ -22,33 +22,21 @@
 
 package eu.eidas.node.auth.connector.tests;
 
-import java.io.FileNotFoundException;
-import java.util.Map;
-import java.util.Properties;
-
 import com.hazelcast.core.Hazelcast;
-
+import eu.eidas.auth.commons.*;
+import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.cache.ConcurrentMapServiceDefaultImpl;
 import eu.eidas.auth.commons.cache.ConcurrentMapServiceDistributedImpl;
 import eu.eidas.auth.commons.cache.HazelcastInstanceInitializer;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import eu.eidas.auth.commons.EidasParameterKeys;
-import eu.eidas.auth.commons.EIDASValues;
-import eu.eidas.auth.commons.IPersonalAttributeList;
-import eu.eidas.auth.commons.PersonalAttributeString;
-import eu.eidas.auth.commons.RequestState;
-import eu.eidas.auth.commons.WebRequest;
-import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.exceptions.InvalidParameterEIDASException;
 import eu.eidas.node.auth.connector.AUCONNECTORUtil;
 import eu.eidas.node.auth.util.tests.TestingConstants;
+import org.junit.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.FileNotFoundException;
+import java.util.Properties;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -68,11 +56,6 @@ public class AUCONNECTORUtilTestCase {
      * Properties values for testing proposes.
      */
     private static Properties CONFIGS = new Properties();
-
-    /**
-     * Dummy PersonalAttributeList testing proposes.
-     */
-    private static final IPersonalAttributeList ATTR_LIST = PersonalAttributeString.fromStringList("http://www.stork.gov.eu/1.0/Idade:false:[15,]:Available;");
 
     /**
      * Properties values for EIDASUtil testing proposes.
@@ -164,7 +147,7 @@ public class AUCONNECTORUtilTestCase {
     }
 
     /**
-     * Test method for {@link AUCONNECTORUtil#validateSP(Map)} .
+     * Test method for {@link AUCONNECTORUtil# validateSP(Map)} .
      * Must return false.
      */
     @Test
@@ -189,7 +172,7 @@ public class AUCONNECTORUtilTestCase {
     }
 
     /**
-     * Test method for {@link AUCONNECTORUtil#validateSP(Map)} .
+     * Test method for {@link AUCONNECTORUtil# validateSP(Map)} .
      * Must return true.
      */
     @Test
@@ -216,7 +199,7 @@ public class AUCONNECTORUtilTestCase {
 
     /**
      * Test method for
-     * {@link AUCONNECTORUtil#checkContents(String, IPersonalAttributeList)} . Must
+     * {@link AUCONNECTORUtil# checkContents(String, IPersonalAttributeList)} . Must
      * return false.
      */
     @Test
@@ -232,7 +215,7 @@ public class AUCONNECTORUtilTestCase {
 
     /**
      * Test method for
-     * {@link AUCONNECTORUtil#checkContents(String, IPersonalAttributeList)} . Must
+     * {@link AUCONNECTORUtil# checkContents(String, IPersonalAttributeList)} . Must
      * return true.
      */
     @Ignore
@@ -249,7 +232,7 @@ public class AUCONNECTORUtilTestCase {
 
     /**
      * Test method for
-     * {@link AUCONNECTORUtil#checkContents(String, IPersonalAttributeList)} . Must
+     * {@link AUCONNECTORUtil# checkContents(String, IPersonalAttributeList)} . Must
      * return false.
      */
     @Test
@@ -267,7 +250,7 @@ public class AUCONNECTORUtilTestCase {
 
     /**
      * Test method for
-     * {@link AUCONNECTORUtil#checkContents(String, IPersonalAttributeList)} . Must
+     * {@link AUCONNECTORUtil# checkContents(String, IPersonalAttributeList)} . Must
      * return true.
      */
     @Test

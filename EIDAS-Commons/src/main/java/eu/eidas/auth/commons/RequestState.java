@@ -29,11 +29,6 @@ public interface RequestState {
     String getLevelOfAssurance();
 
     @Nullable
-    IPersonalAttributeList getPersonalAttributeList();
-
-    //TODO declare a method ImmutableAttributeMap getImmutableAttributeMap(); and implement it e.g. in {@link IncommingRequestState}
-
-    @Nullable
     String getProviderName();
 
     @Nullable
@@ -56,8 +51,6 @@ public interface RequestState {
     void setIssuer(@Nonnull String issuer);
 
     void setLevelOfAssurance(@Nonnull String levelOfAssurance);
-
-    void setPersonalAttributeList(@Nonnull IPersonalAttributeList personalAttributeList);
 
     void setProviderName(@Nonnull String providerName);
 

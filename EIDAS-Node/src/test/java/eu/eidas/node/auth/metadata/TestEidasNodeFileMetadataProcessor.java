@@ -22,19 +22,21 @@
 
 package eu.eidas.node.auth.metadata;
 
-import java.io.File;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import eu.eidas.auth.commons.EidasStringUtil;
+import eu.eidas.auth.commons.xml.opensaml.OpenSamlHelper;
+import eu.eidas.auth.engine.ProtocolEngineFactory;
+import eu.eidas.auth.engine.ProtocolEngineI;
+import eu.eidas.auth.engine.core.eidas.EidasProtocolProcessor;
+import eu.eidas.auth.engine.metadata.EntityDescriptorContainer;
+import eu.eidas.auth.engine.metadata.MetadataSignerI;
 import eu.eidas.auth.engine.metadata.MetadataUtil;
 import eu.eidas.auth.engine.metadata.impl.FileMetadataLoader;
+import eu.eidas.auth.engine.xml.opensaml.SAMLBootstrap;
 import eu.eidas.engine.exceptions.EIDASMetadataProviderException;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
+import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
+import eu.eidas.node.auth.util.tests.FileUtils;
+import org.apache.commons.lang.StringUtils;
+import org.junit.*;
 import org.junit.runners.MethodSorters;
 import org.opensaml.Configuration;
 import org.opensaml.saml2.metadata.EntitiesDescriptor;
@@ -45,16 +47,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.FileSystemUtils;
 
-import eu.eidas.auth.commons.EidasStringUtil;
-import eu.eidas.auth.commons.xml.opensaml.OpenSamlHelper;
-import eu.eidas.auth.engine.ProtocolEngineFactory;
-import eu.eidas.auth.engine.ProtocolEngineI;
-import eu.eidas.auth.engine.core.eidas.EidasProtocolProcessor;
-import eu.eidas.auth.engine.metadata.EntityDescriptorContainer;
-import eu.eidas.auth.engine.metadata.MetadataSignerI;
-import eu.eidas.auth.engine.xml.opensaml.SAMLBootstrap;
-import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
-import eu.eidas.node.auth.util.tests.FileUtils;
+import java.io.File;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 
 
@@ -70,6 +66,8 @@ public class TestEidasNodeFileMetadataProcessor {
     private static final String FILEREPO_DIR_READ_UPD="src/test/resources/EntityDescriptors1/";
     private static final String FILEREPO_DIR_READ_COMBO="src/test/resources/EntityDescriptors3/";
     private static final String FILEREPO_DIR_WRITE3="target/test/EntityDescriptors3/";
+    private static final String FILEREPO_DIR_READ_COMBO_4="src/test/resources/EntityDescriptors4/";
+    private static final String FILEREPO_DIR_WRITE4="target/test/EntityDescriptors4/";
 
     private static final String ENTITY_ID_1="http://peps:8888/PEPS/SPEPSMetadata";
     private static final String ENTITY_ID_2="eumiddleware";
@@ -92,6 +90,7 @@ public class TestEidasNodeFileMetadataProcessor {
         initWorkFolder(FILEREPO_DIR_READ, FILEREPO_DIR_WRITE2);
         new File(FILEREPO_DIR_WRITE_EMPTY).mkdirs();
         initWorkFolder(FILEREPO_DIR_READ_COMBO, FILEREPO_DIR_WRITE3);
+        initWorkFolder(FILEREPO_DIR_READ_COMBO_4, FILEREPO_DIR_WRITE4);
         try {
         	SAMLBootstrap.bootstrap();
         }catch (ConfigurationException ce){
@@ -109,6 +108,7 @@ public class TestEidasNodeFileMetadataProcessor {
         FileSystemUtils.deleteRecursively(new File(FILEREPO_DIR_WRITE1));
         FileSystemUtils.deleteRecursively(new File(FILEREPO_DIR_WRITE2));
         FileSystemUtils.deleteRecursively(new File(FILEREPO_DIR_WRITE3));
+        FileSystemUtils.deleteRecursively(new File(FILEREPO_DIR_WRITE4));
         FileSystemUtils.deleteRecursively(new File(FILEREPO_DIR_WRITE_EMPTY));
     }
 
@@ -195,7 +195,32 @@ public class TestEidasNodeFileMetadataProcessor {
 		EntityDescriptorContainer edc = MetadataUtil.deserializeEntityDescriptor(s);
 
         signer.validateMetadataSignature(edc.getEntitiesDescriptor());
-
     }
+
+
+    /**
+     * Test method for {@link FileMetadataLoader#getEntityDescriptors()}.
+     *
+     * It should ignore all files except well-formed XML and with the .xml extension
+     *
+     * It must succeed and throw no exception.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testComboFirstXmlFileInvalid() throws Exception {
+        FileMetadataLoader processor=new FileMetadataLoader();
+        processor.setRepositoryPath(FILEREPO_DIR_WRITE4);
+        List<EntityDescriptorContainer> list = processor.getEntityDescriptors();
+
+        Assert.assertTrue("Check if only one file is XML well-formed and has .xml extension.",list.size()==1);
+
+        final String entityIDExpectedWellFormedXmlExtensionFile = "http://eidasnode:8889/EidasNode/ServiceMetadata33";
+        final String entityID = list.get(0).getEntityDescriptors().get(0).getEntityID();
+        final boolean isCorrectEntityId= StringUtils.equals(entityID, entityIDExpectedWellFormedXmlExtensionFile);
+
+        Assert.assertTrue("check if entityID matches the one of XML well-formed and with .xml extension file.",isCorrectEntityId);
+    }
+
 
 }

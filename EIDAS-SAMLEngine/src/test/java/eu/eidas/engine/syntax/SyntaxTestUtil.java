@@ -23,7 +23,6 @@
 package eu.eidas.engine.syntax;
 
 import eu.eidas.auth.commons.EIDASStatusCode;
-import eu.eidas.auth.commons.PersonalAttribute;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.IResponseMessage;
@@ -35,8 +34,6 @@ import eu.eidas.auth.engine.ProtocolEngineFactory;
 import eu.eidas.auth.engine.ProtocolEngineI;
 import eu.eidas.auth.engine.core.eidas.EidasProtocolProcessor;
 import eu.eidas.auth.engine.core.eidas.spec.EidasSpec;
-import eu.eidas.auth.engine.core.eidas.spec.LegalPersonSpec;
-import eu.eidas.auth.engine.core.eidas.spec.NaturalPersonSpec;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 
 import static org.junit.Assert.fail;

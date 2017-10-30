@@ -1,77 +1,10 @@
 package eu.eidas.auth.engine.core.eidas;
 
-import java.net.URI;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.annotation.concurrent.NotThreadSafe;
-import javax.xml.namespace.QName;
-import javax.xml.transform.TransformerException;
-
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Ordering;
-
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
-import org.joda.time.DateTime;
-import org.opensaml.Configuration;
-import org.opensaml.common.SAMLVersion;
-import org.opensaml.common.xml.SAMLConstants;
-import org.opensaml.saml2.common.Extensions;
-import org.opensaml.saml2.core.Assertion;
-import org.opensaml.saml2.core.Attribute;
-import org.opensaml.saml2.core.AttributeStatement;
-import org.opensaml.saml2.core.AttributeValue;
-import org.opensaml.saml2.core.AuthnContextClassRef;
-import org.opensaml.saml2.core.AuthnContextComparisonTypeEnumeration;
-import org.opensaml.saml2.core.AuthnRequest;
-import org.opensaml.saml2.core.Issuer;
-import org.opensaml.saml2.core.NameIDPolicy;
-import org.opensaml.saml2.core.RequestedAuthnContext;
-import org.opensaml.saml2.core.Response;
-import org.opensaml.saml2.core.Status;
-import org.opensaml.saml2.core.StatusCode;
-import org.opensaml.saml2.core.StatusMessage;
-import org.opensaml.saml2.metadata.AssertionConsumerService;
-import org.opensaml.saml2.metadata.EntityDescriptor;
-import org.opensaml.saml2.metadata.IDPSSODescriptor;
-import org.opensaml.saml2.metadata.SPSSODescriptor;
-import org.opensaml.xml.Namespace;
-import org.opensaml.xml.XMLObject;
-import org.opensaml.xml.XMLObjectBuilder;
-import org.opensaml.xml.XMLObjectBuilderFactory;
-import org.opensaml.xml.schema.XSAny;
-import org.opensaml.xml.schema.XSString;
-import org.opensaml.xml.schema.impl.XSAnyImpl;
-import org.opensaml.xml.schema.impl.XSStringImpl;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.Marker;
-import org.slf4j.MarkerFactory;
-
-import eu.eidas.auth.commons.EidasErrorKey;
-import eu.eidas.auth.commons.EidasErrors;
-import eu.eidas.auth.commons.IPersonalAttributeList;
-import eu.eidas.auth.commons.PersonalAttribute;
-import eu.eidas.auth.commons.PersonalAttributeList;
-import eu.eidas.auth.commons.attribute.AttributeDefinition;
-import eu.eidas.auth.commons.attribute.AttributeRegistries;
-import eu.eidas.auth.commons.attribute.AttributeRegistry;
-import eu.eidas.auth.commons.attribute.AttributeValueMarshaller;
-import eu.eidas.auth.commons.attribute.AttributeValueMarshallingException;
-import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
-import eu.eidas.auth.commons.attribute.PersonType;
+import eu.eidas.auth.commons.*;
+import eu.eidas.auth.commons.attribute.*;
 import eu.eidas.auth.commons.exceptions.EIDASServiceException;
 import eu.eidas.auth.commons.exceptions.InternalErrorEIDASException;
 import eu.eidas.auth.commons.light.IResponseStatus;
@@ -95,13 +28,43 @@ import eu.eidas.auth.engine.core.eidas.spec.EidasSpec;
 import eu.eidas.auth.engine.metadata.MetadataFetcherI;
 import eu.eidas.auth.engine.metadata.MetadataSignerI;
 import eu.eidas.auth.engine.metadata.MetadataUtil;
-import eu.eidas.auth.engine.xml.opensaml.AssertionUtil;
-import eu.eidas.auth.engine.xml.opensaml.BuilderFactoryUtil;
-import eu.eidas.auth.engine.xml.opensaml.CertificateUtil;
-import eu.eidas.auth.engine.xml.opensaml.ResponseUtil;
-import eu.eidas.auth.engine.xml.opensaml.SAMLEngineUtils;
+import eu.eidas.auth.engine.xml.opensaml.*;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import eu.eidas.util.Preconditions;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
+import org.joda.time.DateTime;
+import org.opensaml.Configuration;
+import org.opensaml.common.SAMLVersion;
+import org.opensaml.common.xml.SAMLConstants;
+import org.opensaml.saml2.common.Extensions;
+import org.opensaml.saml2.core.*;
+import org.opensaml.saml2.core.AttributeValue;
+import org.opensaml.saml2.metadata.AssertionConsumerService;
+import org.opensaml.saml2.metadata.EntityDescriptor;
+import org.opensaml.saml2.metadata.IDPSSODescriptor;
+import org.opensaml.saml2.metadata.SPSSODescriptor;
+import org.opensaml.xml.Namespace;
+import org.opensaml.xml.XMLObject;
+import org.opensaml.xml.XMLObjectBuilder;
+import org.opensaml.xml.XMLObjectBuilderFactory;
+import org.opensaml.xml.schema.XSAny;
+import org.opensaml.xml.schema.XSString;
+import org.opensaml.xml.schema.impl.XSAnyImpl;
+import org.opensaml.xml.schema.impl.XSStringImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.annotation.concurrent.NotThreadSafe;
+import javax.xml.namespace.QName;
+import javax.xml.transform.TransformerException;
+import java.net.URI;
+import java.security.cert.X509Certificate;
+import java.util.*;
 
 /**
  * @deprecated ()
@@ -921,29 +884,6 @@ public final class EidasExtensionProcessor implements ExtensionProcessorI {
     public String getProtocolBinding(@Nonnull IAuthenticationRequest request,
                                      @Nonnull SamlEngineCoreProperties defaultValues) {
         return null;
-    }
-
-    @Override
-    @Nonnull
-    public ImmutableAttributeMap convert(@Nonnull IPersonalAttributeList copy) {
-        ImmutableAttributeMap.Builder builder = ImmutableAttributeMap.builder();
-        for (final PersonalAttribute personalAttribute : copy) {
-            AttributeDefinition<?> attributeDefinition = getAttributeDefinitionNullable(personalAttribute.getName());
-            if (null == attributeDefinition) {
-                continue;
-            }
-            if (!personalAttribute.isEmptyValue()) {
-                List<String> personalAttributeValue = personalAttribute.getValue();
-                builder.put((AttributeDefinition) attributeDefinition,
-                            (ImmutableSet) PersonalAttributeList.toAttributeValues(attributeDefinition,
-                                                                                   personalAttributeValue));
-            } else if (!personalAttribute.isEmptyComplexValue()) {
-                builder.put(attributeDefinition, personalAttribute.getComplexValue().toString());
-            } else if (personalAttribute.isEmpty()) {
-                builder.put(attributeDefinition);
-            }
-        }
-        return builder.build();
     }
 
     /**

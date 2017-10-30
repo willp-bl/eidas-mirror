@@ -21,12 +21,12 @@
  */
 package eu.eidas.auth.commons.attribute;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import eu.eidas.auth.commons.lang.Canonicalizers;
 import eu.eidas.auth.commons.lang.EnumMapper;
 import eu.eidas.auth.commons.lang.KeyAccessor;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * PersonType

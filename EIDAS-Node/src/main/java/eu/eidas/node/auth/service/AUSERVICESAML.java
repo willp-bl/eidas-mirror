@@ -62,6 +62,7 @@ import eu.eidas.node.utils.EidasNodeValidationUtil;
 
 import static org.apache.commons.lang.StringUtils.isEmpty;
 import static org.apache.commons.lang.StringUtils.isNotEmpty;
+import static org.apache.commons.lang.StringUtils.splitByCharacterType;
 
 /**
  * This class is used by {@link AUSERVICE} to get, process and generate SAML Tokens. Also, it checks attribute values
@@ -297,6 +298,7 @@ public class AUSERVICESAML implements ISERVICESAMLService {
             ProtocolEngineI engine = getSamlEngine();
             IAuthenticationRequest authnRequest = engine.unmarshallRequestAndValidate(samlObj, countryCode);
 
+            EidasAuthenticationRequest.Builder eIDASAuthnRequestBuilder = null;
             // retrieve AssertionConsumerURL from the metadata
             String assertionConsumerUrl = MetadataUtil.getAssertionConsumerUrlFromMetadata(metadataFetcher,
                                                                                      (MetadataSignerI) engine.getSigner(),
@@ -342,8 +344,6 @@ public class AUSERVICESAML implements ISERVICESAMLService {
 
                 IEidasAuthenticationRequest eidasAuthenticationRequest = (IEidasAuthenticationRequest) authnRequest;
 
-                EidasAuthenticationRequest.Builder eIDASAuthnRequestBuilder = null;
-
                 if (isEmpty(authnRequest.getCitizenCountryCode())) {
                     eIDASAuthnRequestBuilder = EidasAuthenticationRequest.builder(eidasAuthenticationRequest);
                     eIDASAuthnRequestBuilder.citizenCountryCode(countryCode);
@@ -364,6 +364,9 @@ public class AUSERVICESAML implements ISERVICESAMLService {
                 if (!isLevelOfAssuranceSupported || !engine.getProtocolProcessor()
                         .isAcceptableHttpRequest(authnRequest,
                                                  validateBindingConfig.booleanValue() ? bindingFromHttp : null)) {
+
+
+
                     String errorMsgCons;
                     String errorCodeCons;
                     if (!isLevelOfAssuranceSupported) {
@@ -387,7 +390,18 @@ public class AUSERVICESAML implements ISERVICESAMLService {
                                                                EidasStringUtil.encodeToBase64(samlTokenFail),
                                                                assertionConsumerUrl, relayState);
                 }
-
+                //put spType in the request (EIDINT-1251)
+                if (isEmpty(authnRequest.getSpType())) {
+                    // retrieve TypeFromMetadata from the metadata
+                    String spTypeFromMetadata = MetadataUtil.getSPTypeFromMetadata(metadataFetcher,
+                            (MetadataSignerI) engine.getSigner(),
+                            authnRequest);
+                    eIDASAuthnRequestBuilder = EidasAuthenticationRequest.builder((IEidasAuthenticationRequest) authnRequest);
+                    eIDASAuthnRequestBuilder.spType(spTypeFromMetadata);
+                    if (null != eIDASAuthnRequestBuilder) {
+                        authnRequest = eIDASAuthnRequestBuilder.build();
+                    }
+                }
             } else {
                 // Non eidas Messages need to be supported
                 assertionConsumerUrl = authnRequest.getAssertionConsumerServiceURL();
@@ -402,6 +416,7 @@ public class AUSERVICESAML implements ISERVICESAMLService {
                                                                EidasStringUtil.encodeToBase64(samlTokenFail),
                                                                assertionConsumerUrl, relayState);
                 }
+
                 NormalParameterValidator.paramName(EidasParameterKeys.EIDAS_CONNECTOR_REDIRECT_URL)
                         .paramValue(assertionConsumerUrl)
                         .eidasError(EidasErrorKey.COLLEAGUE_REQ_INVALID_REDIRECT)
@@ -528,8 +543,8 @@ public class AUSERVICESAML implements ISERVICESAMLService {
                 continue;
             }
 
-            if (responseAttributes.getAttributeValues(attributeDefinition) == null
-                    || responseAttributes.getAttributeValues(attributeDefinition).isEmpty()) {
+            if (responseAttributes.getValuesByNameUri(attributeDefinition.getNameUri()) == null
+                    || responseAttributes.getValuesByNameUri(attributeDefinition.getNameUri()).isEmpty()) {
 
                 LOGGER.info("Missing attributes: " + attributeDefinition);
                 return false;

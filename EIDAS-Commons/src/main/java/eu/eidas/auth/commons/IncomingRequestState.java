@@ -1,9 +1,8 @@
 package eu.eidas.auth.commons;
 
-import java.util.concurrent.atomic.AtomicReference;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * IncomingRequestState
@@ -26,8 +25,6 @@ final class IncomingRequestState implements RequestState {
 
         private final String levelOfAssurance;
 
-        private final IPersonalAttributeList personalAttributeList;
-
         private final String providerName;
 
         private final String qaa;
@@ -43,7 +40,6 @@ final class IncomingRequestState implements RequestState {
             inResponseTo = builder.inResponseTo;
             issuer = builder.issuer;
             levelOfAssurance = builder.levelOfAssurance;
-            personalAttributeList = builder.personalAttributeList;
             providerName = builder.providerName;
             qaa = builder.qaa;
             serviceUrl = builder.serviceUrl;
@@ -66,8 +62,6 @@ final class IncomingRequestState implements RequestState {
 
         private String levelOfAssurance;
 
-        private IPersonalAttributeList personalAttributeList;
-
         private String providerName;
 
         private String qaa;
@@ -86,7 +80,6 @@ final class IncomingRequestState implements RequestState {
             inResponseTo = atomicState.inResponseTo;
             issuer = atomicState.issuer;
             levelOfAssurance = atomicState.levelOfAssurance;
-            personalAttributeList = atomicState.personalAttributeList;
             providerName = atomicState.providerName;
             qaa = atomicState.qaa;
             serviceUrl = atomicState.serviceUrl;
@@ -127,11 +120,6 @@ final class IncomingRequestState implements RequestState {
             return this;
         }
 
-        Builder personalAttributeList(final IPersonalAttributeList personalAttributeList) {
-            this.personalAttributeList = personalAttributeList;
-            return this;
-        }
-
         Builder providerName(final String providerName) {
             this.providerName = providerName;
             return this;
@@ -165,7 +153,7 @@ final class IncomingRequestState implements RequestState {
         /**
          * Updates the existing state to a new state.
          *
-         * @param currentState the current state
+         * @param builder the current state
          * @return the new state
          */
         @Nonnull
@@ -211,12 +199,6 @@ final class IncomingRequestState implements RequestState {
     @Nullable
     public String getLevelOfAssurance() {
         return getState().levelOfAssurance;
-    }
-
-    @Override
-    @Nullable
-    public IPersonalAttributeList getPersonalAttributeList() {
-        return getState().personalAttributeList;
     }
 
     @Override
@@ -315,18 +297,6 @@ final class IncomingRequestState implements RequestState {
             @Override
             public Builder updateBuilder(@Nonnull Builder builder) {
                 return builder.levelOfAssurance(levelOfAssurance);
-            }
-        });
-    }
-
-    @Override
-    public void setPersonalAttributeList(@Nonnull final IPersonalAttributeList personalAttributeList) {
-        updateState(new UpdateFunction() {
-
-            @Nonnull
-            @Override
-            public Builder updateBuilder(@Nonnull Builder builder) {
-                return builder.personalAttributeList(personalAttributeList);
             }
         });
     }

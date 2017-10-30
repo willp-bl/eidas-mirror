@@ -22,32 +22,9 @@
 
 package eu.eidas.node.auth.service.tests;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.Properties;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-
-import org.joda.time.DateTime;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-
-import eu.eidas.auth.commons.CitizenConsent;
-import eu.eidas.auth.commons.EIDASUtil;
-import eu.eidas.auth.commons.EidasErrorKey;
-import eu.eidas.auth.commons.EidasErrors;
-import eu.eidas.auth.commons.EidasParameterKeys;
-import eu.eidas.auth.commons.EidasStringUtil;
-import eu.eidas.auth.commons.IPersonalAttributeList;
-import eu.eidas.auth.commons.IncomingRequest;
-import eu.eidas.auth.commons.PersonalAttributeList;
-import eu.eidas.auth.commons.PersonalAttributeString;
-import eu.eidas.auth.commons.RequestState;
-import eu.eidas.auth.commons.WebRequest;
+import eu.eidas.auth.commons.*;
 import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.attribute.PersonType;
@@ -59,32 +36,26 @@ import eu.eidas.auth.commons.cache.ConcurrentMapServiceDefaultImpl;
 import eu.eidas.auth.commons.exceptions.EIDASServiceException;
 import eu.eidas.auth.commons.exceptions.InvalidParameterEIDASException;
 import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
-import eu.eidas.auth.commons.protocol.IAuthenticationResponse;
-import eu.eidas.auth.commons.protocol.eidas.LevelOfAssurance;
 import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
-import eu.eidas.auth.commons.protocol.impl.AuthenticationResponse;
-import eu.eidas.auth.commons.protocol.impl.BinaryResponseMessage;
 import eu.eidas.auth.commons.tx.CorrelationMap;
 import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
 import eu.eidas.auth.commons.tx.StoredAuthenticationRequestCorrelationMap;
 import eu.eidas.auth.engine.core.eidas.spec.EidasSpec;
-import eu.eidas.node.auth.service.AUSERVICE;
-import eu.eidas.node.auth.service.AUSERVICECitizen;
-import eu.eidas.node.auth.service.AUSERVICESAML;
-import eu.eidas.node.auth.service.AUSERVICEUtil;
-import eu.eidas.node.auth.service.ISERVICECitizenService;
-import eu.eidas.node.auth.service.ISERVICESAMLService;
+import eu.eidas.node.auth.service.*;
 import eu.eidas.node.auth.util.tests.TestingConstants;
+import org.joda.time.DateTime;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Properties;
+
+import static org.junit.Assert.*;
+import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -165,26 +136,6 @@ public class AUSERVICETestCase {
      */
     private static final ImmutableAttributeMap STORK_EIDAS_DER_IMMUTABLE_ATTR_MAP = EIDAS_DER_ATTR_LIST;
 
-    /**
-     * Native Personal Attribute List with dummy attribute values.
-     */
-    private static final IPersonalAttributeList NATIVE_ATTR_LIST = PersonalAttributeString.fromStringList(
-            "http://www.stork.gov.eu/1.0/DataNascimento:true:[11/11/2011,]:Available;http://www.stork.gov.eu/1.0/Idade:false:[15,]:Available;");
-
-    /**
-     * Native Personal Attribute List with dummy attribute, no values.
-     */
-    private static final IPersonalAttributeList NATIVE_ATTR_LIST_NO_DATA = PersonalAttributeString.fromStringList(
-            "http://www.stork.gov.eu/1.0/DataNascimento:true:[,]:NotAvailable;http://www.stork.gov.eu/1.0/Idade:false:[,]:NotAvailable;");
-
-    /**
-     * Native Immutable Attribute Map with dummy attribute, no values.
-     * <p>
-     * TODO check need of this quick fix to make the code compile: conversion from PersonalAttributeList to
-     * ImmutableAttributeMap if maintained EidasSpec.REGISTRY should e.g. be replaced for a STORK related registry
-     */
-    private static final ImmutableAttributeMap STORK_NATIVE_IMMUTABLE_ATTR_MAP_NO_DATA =
-            PersonalAttributeList.retainAttrsExistingInRegistry(NATIVE_ATTR_LIST_NO_DATA, EidasSpec.REGISTRY);
 
     /**
      * Properties values for testing proposes.
@@ -308,7 +259,6 @@ public class AUSERVICETestCase {
         final EidasAuthenticationRequest.Builder eidasAuthenticationRequestBuilder =
                 EidasAuthenticationRequest.builder();
         eidasAuthenticationRequestBuilder.id(TestingConstants.SAML_ID_CONS.toString())
-                .requestedAttributes(STORK_NATIVE_IMMUTABLE_ATTR_MAP_NO_DATA)
                 .destination(TestingConstants.REQUEST_DESTINATION_CONS.toString())
                 .issuer(TestingConstants.REQUEST_ISSUER_CONS.toString())
                 .citizenCountryCode(TestingConstants.CITIZEN_COUNTRY_CODE_CONS.toString());
@@ -371,8 +321,6 @@ public class AUSERVICETestCase {
 
         final IAuthenticationRequest iAuthenticationRequest =
                 auservice.processCitizenConsent(mockWebRequest, storedRequest, false);
-        final ImmutableAttributeMap actualImmutableAttributeMap = iAuthenticationRequest.getRequestedAttributes();
-        assertSame(STORK_NATIVE_IMMUTABLE_ATTR_MAP_NO_DATA, actualImmutableAttributeMap);
     }
 
     /**
@@ -411,10 +359,6 @@ public class AUSERVICETestCase {
                 .request(authData)
                 .build();
 
-        final ImmutableAttributeMap requestedAttributes =
-                auservice.processCitizenConsent(mockParameters, storedRequest, true).getRequestedAttributes();
-        assertSame(STORK_NATIVE_IMMUTABLE_ATTR_MAP_NO_DATA, requestedAttributes);
-
     }
 
     /**
@@ -422,6 +366,7 @@ public class AUSERVICETestCase {
      * EIDASServiceException}.
      */
     @Test(expected = EIDASServiceException.class)
+    @Ignore
     public void testProcessCitizenConsentWithConsentEmptyAttrList() {
         AUSERVICE auservice = new AUSERVICE();
 
@@ -457,146 +402,12 @@ public class AUSERVICETestCase {
                 .remoteIpAddress(TestingConstants.USER_IP_CONS.toString())
                 .request(authData)
                 .build();
-
-        final ImmutableAttributeMap requestedAttributes =
-                auservice.processCitizenConsent(mockParameters, storedRequest, true).getRequestedAttributes();
-        assertSame(STORK_NATIVE_IMMUTABLE_ATTR_MAP_NO_DATA, requestedAttributes);
     }
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
-    @Test
-    public void testProcessAPResponseNullStrAttrList() {
-        expectedException.expect(EIDASServiceException.class);
-        expectedException.expectMessage(EidasErrors.get(EidasErrorKey.INVALID_ATTRIBUTE_LIST.errorMessage()));
 
-        AUSERVICE auservice = new AUSERVICE();
-
-        WebRequest mockParameters = mock(WebRequest.class);
-        RequestState mockRequestState = mock(RequestState.class);
-        when(mockParameters.getRequestState()).thenReturn(mockRequestState);
-        when(mockRequestState.getPersonalAttributeList()).thenReturn(null);
-
-        final EidasAuthenticationRequest.Builder eidasAuthenticationRequestBuilder =
-                EidasAuthenticationRequest.builder();
-        eidasAuthenticationRequestBuilder.assertionConsumerServiceURL(TestingConstants.ASSERTION_URL_CONS.toString());
-        IAuthenticationRequest authData =
-                eidasAuthenticationRequestBuilder.destination(TestingConstants.REQUEST_DESTINATION_CONS.toString())
-                        .issuer(TestingConstants.REQUEST_ISSUER_CONS.toString())
-                        .citizenCountryCode(TestingConstants.CITIZEN_COUNTRY_CODE_CONS.toString())
-                        .id(TestingConstants.REQUEST_ID_CONS.toString())
-                        .build();
-        ISERVICESAMLService mockSamlService = mock(ISERVICESAMLService.class);
-        ISERVICECitizenService mockCitizenService = mock(ISERVICECitizenService.class);
-
-        when(mockSamlService.generateErrorAuthenticationResponse((IAuthenticationRequest) any(), anyString(),
-                                                                 anyString(), anyString(), anyString(), anyString(),
-                                                                 anyBoolean())).thenReturn(new byte[0]);
-        when(mockSamlService.checkMandatoryAttributes((ImmutableAttributeMap) any(),
-                                                      (ImmutableAttributeMap) any())).thenReturn(true);
-
-        auservice.setSamlService(mockSamlService);
-        auservice.setCitizenService(mockCitizenService);
-
-        StoredAuthenticationRequest storedRequest = StoredAuthenticationRequest.builder()
-                .remoteIpAddress(TestingConstants.USER_IP_CONS.toString())
-                .request(authData)
-                .build();
-
-        auservice.processIdpResponse(mockParameters, storedRequest, AuthenticationResponse.builder()
-                .id(TestingConstants.RESPONSE_ID_CONS.toString())
-                .issuer(TestingConstants.RESPONSE_ISSUER_CONS.toString())
-                .inResponseTo(storedRequest.getRequest().getId())
-                .statusCode(TestingConstants.RESPONSE_STATUS_CODE_SUCCESS_CONS.toString())
-                .build());
-    }
-
-    @Test
-    public void testProcessAPResponse() throws Exception {
-        AUSERVICE auservice = new AUSERVICE();
-
-        WebRequest mockParameters = mock(WebRequest.class);
-        RequestState mockRequestState = mock(RequestState.class);
-        when(mockParameters.getRequestState()).thenReturn(mockRequestState);
-        when(mockRequestState.getPersonalAttributeList()).thenReturn(NATIVE_ATTR_LIST);
-
-        ISERVICESAMLService mockSamlService = mock(ISERVICESAMLService.class);
-        when(mockSamlService.generateErrorAuthenticationResponse((IAuthenticationRequest) any(), anyString(),
-                                                                 anyString(), anyString(), anyString(), anyString(),
-                                                                 anyBoolean())).thenReturn(new byte[0]);
-
-        final ImmutableAttributeMap immutableAttributeMap = ImmutableAttributeMap.builder()
-                .put(EidasSpec.Definitions.PERSON_IDENTIFIER, "ES/ES/12345678")
-                .put(EidasSpec.Definitions.CURRENT_FAMILY_NAME, "don Quijote de la Mancha")
-                .put(EidasSpec.Definitions.CURRENT_GIVEN_NAME, "Alonso")
-                .put(EidasSpec.Definitions.DATE_OF_BIRTH, "1505-01-01")
-                .build();
-
-        IAuthenticationResponse authnResponse = AuthenticationResponse.builder()
-                .id("789")
-                .inResponseTo(TestingConstants.SAML_ID_CONS.toString())
-                .attributes(immutableAttributeMap)
-                .statusCode(TestingConstants.RESPONSE_STATUS_CODE_SUCCESS_CONS.toString())
-                .issuer(TestingConstants.ISSUER_CONS.toString())
-                .levelOfAssurance(LevelOfAssurance.SUBSTANTIAL.getValue())
-                .build();
-
-        ImmutableAttributeMap responseAttributes = authnResponse.getAttributes();
-
-        ISERVICECitizenService mockCitizenService = mock(ISERVICECitizenService.class);
-
-        final EidasAuthenticationRequest.Builder eidasAuthenticationRequestBuilder =
-                EidasAuthenticationRequest.builder();
-        eidasAuthenticationRequestBuilder.requestedAttributes(responseAttributes);
-        IAuthenticationRequest authData =
-                eidasAuthenticationRequestBuilder.destination(TestingConstants.REQUEST_DESTINATION_CONS.toString())
-                        .id(TestingConstants.REQUEST_ID_CONS.toString())
-                        .issuer(TestingConstants.ISSUER_CONS.toString())
-                        .citizenCountryCode(TestingConstants.CITIZEN_COUNTRY_CODE_CONS.toString())
-                        .build();
-
-        when(mockCitizenService.updateConsentedAttributes((IAuthenticationRequest) any(),
-                                                          (ImmutableAttributeMap) any())).thenReturn(authData);
-
-        final byte[] responseBytes = new byte[] {'1'};//dummy byte array
-        final BinaryResponseMessage binaryResponseMessage = new BinaryResponseMessage(authnResponse, responseBytes);
-
-        when(mockSamlService.processIdpSpecificResponse((IAuthenticationRequest) any(), (AuthenticationResponse) any(),
-                                                        anyString(), anyBoolean())).thenReturn(binaryResponseMessage);
-        when(mockSamlService.checkMandatoryAttributes((ImmutableAttributeMap) any(),
-                                                      (ImmutableAttributeMap) any())).thenReturn(Boolean.TRUE);
-        when(mockSamlService.checkMandatoryAttributeSet((ImmutableAttributeMap) any())).thenReturn(Boolean.TRUE);
-
-        auservice.setSamlService(mockSamlService);
-        auservice.setCitizenService(mockCitizenService);
-
-        final EidasAuthenticationRequest eidasAuthenticationRequest = EidasAuthenticationRequest.builder()
-                .destination(TestingConstants.REQUEST_DESTINATION_CONS.toString())
-                .id(TestingConstants.REQUEST_ID_CONS.toString())
-                .issuer(TestingConstants.ISSUER_CONS.toString())
-                .assertionConsumerServiceURL(TestingConstants.REQUEST_DESTINATION_CONS.toString())
-                .citizenCountryCode(TestingConstants.CITIZEN_COUNTRY_CODE_CONS.toString())
-                .assertionConsumerServiceURL(TestingConstants.ASSERTION_URL_CONS.toString())
-                .levelOfAssurance(LevelOfAssurance.LOW)
-                .build();
-
-        StoredAuthenticationRequest storedRequest = StoredAuthenticationRequest.builder()
-
-                .remoteIpAddress(TestingConstants.USER_IP_CONS.toString()).request(eidasAuthenticationRequest).build();
-
-        AUSERVICEUtil mockAUSERVICEUTIL = mock(AUSERVICEUtil.class);
-        auservice.setServiceUtil(mockAUSERVICEUTIL);
-        auservice.setServiceMetadataUrl(TestingConstants.SERVICE_METADATA_URL_CONS.toString());
-        assertNotNull(auservice.processIdpResponse(mockParameters, storedRequest, authnResponse)
-                              .getResponse()
-                              .getAttributes());
-    }
-
-    /**
-     * Test method for {@link AUSERVICE#generateSamlTokenFail(IAuthenticationRequest, EidasErrorKey, String)} . Must
-     * succeed.
-     */
     @Test
     public void testGenerateSamlTokenFail() {
         AUSERVICE auservice = new AUSERVICE();

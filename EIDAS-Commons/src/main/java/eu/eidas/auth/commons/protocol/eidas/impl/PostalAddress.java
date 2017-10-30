@@ -1,3 +1,26 @@
+/*
+Copyright (c) $today.year by European Commission
+
+Licensed under the EUPL, Version 1.1 or - as soon they will be
+approved by the European Commission - subsequent versions of the
+ EUPL (the "Licence");
+You may not use this work except in compliance with the Licence.
+You may obtain a copy of the Licence at:
+http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the Licence is distributed on an "AS IS" basis,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+implied.
+See the Licence for the specific language governing permissions and
+limitations under the Licence.
+
+This product combines work with different licenses. See the
+"NOTICE" text file for details on the various modules and licenses.
+The "NOTICE" text file is part of the distribution.
+Any derivative works that you distribute must include a readable
+copy of the "NOTICE" text file.
+ */
 package eu.eidas.auth.commons.protocol.eidas.impl;
 
 import java.io.ObjectStreamException;
@@ -10,37 +33,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import eu.eidas.util.Preconditions;
 
 /**
- * PostalAddress as per eIDAS spec.
- * <p>
- * <pre>
- *     &lt;xsd:complexType name=&quot;CurrentAddressStructuredType&quot;&gt;
- *         &lt;xsd:annotation&gt;
- *             &lt;xsd:documentation&gt; Current address of the natural person. &lt;/xsd:documentation&gt;
- *         &lt;/xsd:annotation&gt;
- *         &lt;xsd:sequence&gt;
- *             &lt;xsd:element name=&quot;PoBox&quot; type=&quot;xsd:string&quot; minOccurs=&quot;0&quot;
- * maxOccurs=&quot;1&quot;/&gt;
- *             &lt;xsd:element name=&quot;LocatorDesignator&quot; type=&quot;xsd:string&quot; minOccurs=&quot;0&quot;
- * maxOccurs=&quot;1&quot;/&gt;
- *             &lt;xsd:element name=&quot;LocatorName&quot; type=&quot;xsd:string&quot; minOccurs=&quot;0&quot;
- * maxOccurs=&quot;1&quot;/&gt;
- *             &lt;xsd:element name=&quot;CvaddressArea&quot; type=&quot;xsd:string&quot; minOccurs=&quot;0&quot;
- * maxOccurs=&quot;1&quot;/&gt;
- *             &lt;xsd:element name=&quot;Thoroughfare&quot; type=&quot;xsd:string&quot; minOccurs=&quot;0&quot;
- * maxOccurs=&quot;1&quot;/&gt;
- *             &lt;xsd:element name=&quot;PostName&quot; type=&quot;xsd:string&quot; minOccurs=&quot;0&quot;
- * maxOccurs=&quot;1&quot;/&gt;
- *             &lt;xsd:element name=&quot;AdminunitFirstline&quot; type=&quot;xsd:string&quot; minOccurs=&quot;0&quot;
- * maxOccurs=&quot;1&quot;/&gt;
- *             &lt;xsd:element name=&quot;AdminunitSecondline&quot; type=&quot;xsd:string&quot; minOccurs=&quot;0&quot;
- * maxOccurs=&quot;1&quot;/&gt;
- *             &lt;xsd:element name=&quot;PostCode&quot; type=&quot;xsd:string&quot; minOccurs=&quot;0&quot;
- * maxOccurs=&quot;1&quot;/&gt;
- *         &lt;/xsd:sequence&gt;
- *     &lt;/xsd:complexType&gt;
- * </pre>
- *
- * @since 1.1
+ * PostalAddress as per CORA ISA Vocabulary v0.3
  */
 public final class PostalAddress implements Serializable {
 
@@ -55,6 +48,8 @@ public final class PostalAddress implements Serializable {
     @SuppressWarnings("ParameterHidesMemberVariable")
     @NotThreadSafe
     public static final class Builder {
+
+        private String addressId;
 
         private String poBox;
 
@@ -81,6 +76,7 @@ public final class PostalAddress implements Serializable {
 
         public Builder(@Nonnull Builder copy) {
             Preconditions.checkNotNull(copy, "copy");
+            addressId = copy.addressId;
             poBox = copy.poBox;
             locatorDesignator = copy.locatorDesignator;
             locatorName = copy.locatorName;
@@ -96,6 +92,7 @@ public final class PostalAddress implements Serializable {
 
         public Builder(@Nonnull PostalAddress copy) {
             Preconditions.checkNotNull(copy, "copy");
+            addressId = copy.addressId;
             poBox = copy.poBox;
             locatorDesignator = copy.locatorDesignator;
             locatorName = copy.locatorName;
@@ -106,6 +103,11 @@ public final class PostalAddress implements Serializable {
             adminUnitSecondLine = copy.adminUnitSecondLine;
             postCode = copy.postCode;
             fullCvaddress = copy.fullCvaddress;
+        }
+
+        public Builder addressId(final String addressId) {
+            this.addressId = addressId;
+            return this;
         }
 
         public Builder poBox(final String poBox) {
@@ -159,12 +161,7 @@ public final class PostalAddress implements Serializable {
         }
 
         private void validate() throws IllegalArgumentException {
-            /*if (StringUtils.isBlank(poBox) && StringUtils.isBlank(locatorDesignator) && StringUtils.isBlank(locatorName)
-                    && StringUtils.isBlank(cvAddressArea) && StringUtils.isBlank(thoroughfare) && StringUtils.isBlank(
-                    postName) && StringUtils.isBlank(adminUnitFirstLine) && StringUtils.isBlank(adminUnitSecondLine)
-                    && StringUtils.isBlank(postCode)) {
-                throw new IllegalArgumentException("PostalAddress cannot be empty");
-            }*/
+            //TODO with validator
         }
 
         @Nonnull
@@ -191,68 +188,42 @@ public final class PostalAddress implements Serializable {
 
     private static final long serialVersionUID = 7410409986167152563L;
 
-    /**
-     * @serial
-     */
+    @Nullable
+    private final String addressId;
+
     @Nullable
     private final String poBox;
 
-    /**
-     * @serial
-     */
     @Nullable
     private final String locatorDesignator;
 
-    /**
-     * @serial
-     */
     @Nullable
     private final String locatorName;
 
-    /**
-     * @serial
-     */
     @Nullable
     private final String cvAddressArea;
 
-    /**
-     * @serial
-     */
     @Nullable
     private final String thoroughfare;
 
-    /**
-     * @serial
-     */
     @Nullable
     private final String postName;
 
-    /**
-     * @serial
-     */
     @Nullable
     private final String adminUnitFirstLine;
 
-    /**
-     * @serial
-     */
     @Nullable
     private final String adminUnitSecondLine;
 
-    /**
-     * @serial
-     */
     @Nullable
     private final String postCode;
 
-    /**
-     * @serial
-     */
     @Nullable
     private final String fullCvaddress;
 
 
     private PostalAddress(@Nonnull Builder builder) {
+        addressId = builder.addressId;
         poBox = builder.poBox;
         locatorDesignator = builder.locatorDesignator;
         locatorName = builder.locatorName;
@@ -263,6 +234,11 @@ public final class PostalAddress implements Serializable {
         adminUnitSecondLine = builder.adminUnitSecondLine;
         postCode = builder.postCode;
         fullCvaddress = builder.fullCvaddress;
+    }
+
+    @Nullable
+    public String getAddressId() {
+        return addressId;
     }
 
     @Nullable
@@ -326,6 +302,9 @@ public final class PostalAddress implements Serializable {
 
         PostalAddress that = (PostalAddress) o;
 
+        if (addressId != null ? !addressId.equals(that.addressId) : that.addressId != null) {
+            return false;
+        }
         if (poBox != null ? !poBox.equals(that.poBox) : that.poBox != null) {
             return false;
         }
@@ -364,6 +343,7 @@ public final class PostalAddress implements Serializable {
     @Override
     public int hashCode() {
         int result = poBox != null ? poBox.hashCode() : 0;
+        result = 31 * result + (addressId != null ? addressId.hashCode() : 0);
         result = 31 * result + (locatorDesignator != null ? locatorDesignator.hashCode() : 0);
         result = 31 * result + (locatorName != null ? locatorName.hashCode() : 0);
         result = 31 * result + (cvAddressArea != null ? cvAddressArea.hashCode() : 0);
@@ -379,6 +359,8 @@ public final class PostalAddress implements Serializable {
     @Override
     public String toString() {
         StringBuffer ret = new StringBuffer();
+        if (addressId != null)
+            ret.append("addressId: "+addressId+"\n");
         if (poBox != null)
             ret.append("poBox: "+poBox+"\n");
         if (locatorDesignator != null)

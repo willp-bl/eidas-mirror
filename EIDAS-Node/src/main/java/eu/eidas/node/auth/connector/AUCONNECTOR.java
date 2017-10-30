@@ -15,7 +15,10 @@ package eu.eidas.node.auth.connector;
 
 import javax.annotation.Nonnull;
 
+import com.google.common.collect.ImmutableSet;
+import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.exceptions.EIDASServiceException;
+import eu.eidas.auth.engine.core.eidas.spec.LegalPersonSpec;
 import org.apache.commons.lang.StringUtils;
 import org.bouncycastle.util.encoders.Base64;
 import org.slf4j.Logger;
@@ -135,6 +138,8 @@ public final class AUCONNECTOR implements ICONNECTORService {
     }
 
     private IEidasAuthenticationRequest prepareEidasRequest(IEidasAuthenticationRequest authData) {
+
+        //Validate MDS
         if (connectorUtil != null && !parseBoolean(
                 connectorUtil.getConfigs().getProperty(EIDASValues.DISABLE_CHECK_MANDATORY_ATTRIBUTES.toString())) &&
                 !samlService.checkMandatoryAttributes(authData.getRequestedAttributes())) {
@@ -142,12 +147,30 @@ public final class AUCONNECTOR implements ICONNECTORService {
             throw new EidasNodeException(EidasErrors.get(EidasErrorKey.EIDAS_MANDATORY_ATTRIBUTES.errorCode()),
                                          EidasErrors.get(EidasErrorKey.EIDAS_MANDATORY_ATTRIBUTES.errorMessage()));
         }
+
+        //Validate Representative
         if (connectorUtil != null && !parseBoolean(
                 connectorUtil.getConfigs().getProperty(EIDASValues.DISABLE_CHECK_REPRESENTATIVE_ATTRS.toString())) &&
                 !samlService.checkRepresentativeAttributes(authData.getRequestedAttributes())) {
             throw new EidasNodeException(EidasErrors.get(EidasErrorKey.EIDAS_REPRESENTATIVE_ATTRIBUTES.errorCode()),
                     EidasErrors.get(EidasErrorKey.EIDAS_REPRESENTATIVE_ATTRIBUTES.errorMessage()));
         }
+
+        /* EID-423: wrong attribute name was implemented prior to 1.4, backward compatibility if for the Network only to ensure business continuity, the
+        *  Specific must Request the right ones in the interface*/
+        //TODO START remove check of erroneous attributes after transition period of EID-423
+        ImmutableSet<AttributeDefinition<?>> requestedAttributes = authData.getRequestedAttributes().getDefinitions();
+        if (requestedAttributes != null && requestedAttributes.contains(LegalPersonSpec.Definitions.LEGAL_ADDRESS)) {
+            LOG.error("BUSINESS EXCEPTION : "+LegalPersonSpec.Definitions.LEGAL_ADDRESS.getNameUri().toASCIIString()+" was requested instead of "+LegalPersonSpec.Definitions.LEGAL_PERSON_ADDRESS.getNameUri().toASCIIString());
+            throw new EidasNodeException(EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INVALID_SAML.errorCode()),
+                    EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INVALID_SAML.errorMessage()));
+        }
+        if (requestedAttributes != null && requestedAttributes.contains(LegalPersonSpec.Definitions.VAT_REGISTRATION)) {
+            LOG.error("BUSINESS EXCEPTION : "+LegalPersonSpec.Definitions.VAT_REGISTRATION.getNameUri().toASCIIString()+" was requested instead of "+LegalPersonSpec.Definitions.VAT_REGISTRATION_NUMBER.getNameUri().toASCIIString());
+            throw new EidasNodeException(EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INVALID_SAML.errorCode()),
+                    EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INVALID_SAML.errorMessage()));
+        }
+        //TODO END remove check of erroneous attributes after transition period of EID-423
 
         LOG.trace("do not fill in the assertion url");
 

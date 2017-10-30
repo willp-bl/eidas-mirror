@@ -13,31 +13,21 @@
  */
 package eu.eidas.auth.engine.metadata.impl;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
-import eu.eidas.auth.engine.metadata.*;
+import eu.eidas.auth.commons.EidasStringUtil;
+import eu.eidas.auth.engine.metadata.EntityDescriptorContainer;
+import eu.eidas.auth.engine.metadata.IStaticMetadataChangeListener;
+import eu.eidas.auth.engine.metadata.MetadataLoaderPlugin;
+import eu.eidas.auth.engine.metadata.MetadataUtil;
 import eu.eidas.encryption.exception.UnmarshallException;
 import eu.eidas.engine.exceptions.EIDASMetadataProviderException;
-import org.apache.commons.io.monitor.FileAlterationListener;
-import org.apache.commons.io.monitor.FileAlterationMonitor;
-import org.apache.commons.io.monitor.FileAlterationObserver;
+import eu.eidas.impl.file.FileService;
 import org.apache.commons.lang.StringUtils;
 import org.opensaml.saml2.metadata.EntityDescriptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
-import org.springframework.context.event.ContextClosedEvent;
-import org.springframework.context.event.ContextStoppedEvent;
 
-import eu.eidas.auth.commons.EidasStringUtil;
-import eu.eidas.impl.file.FileService;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * MetadataLoaderPlugin sample implementation for testing only (not robust)
@@ -60,9 +50,8 @@ public class FileMetadataLoader implements MetadataLoaderPlugin {
             try {
                 descriptors = loadDescriptors(fileName);
             } catch (UnmarshallException e) {
-                LOG.error("Failed to unmarshall entity descriptors from mstatic metadata file '"+fileName+"'");
+                LOG.error("Failed to unmarshall entity descriptors from static metadata file '"+fileName+"'");
                 LOG.error(e.toString());
-                throw new EIDASMetadataProviderException(e.getMessage());
             }
             if (descriptors != null) {
                 list.add(descriptors);
@@ -92,6 +81,11 @@ public class FileMetadataLoader implements MetadataLoaderPlugin {
     }
 
     private EntityDescriptorContainer loadDescriptors(String fileName) throws UnmarshallException {
+        if (!fileName.endsWith(".xml")) {
+            LOG.info("Ignored file: " + fileName + ". Has not a xml extension ");
+            return null;
+        }
+
         LOG.info("Loading entity descriptors from file "+ fileName);
         byte[] content = fileService.loadBinaryFile(fileName);
         return content==null?null : MetadataUtil.deserializeEntityDescriptor(EidasStringUtil.toString(content));

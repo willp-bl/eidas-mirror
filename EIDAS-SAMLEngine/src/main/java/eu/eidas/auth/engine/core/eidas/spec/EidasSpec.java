@@ -44,9 +44,15 @@ public final class EidasSpec {
 
         public static final AttributeDefinition<String> LEGAL_NAME = LegalPersonSpec.Definitions.LEGAL_NAME;
 
+        //TODO remove LEGAL_ADDRESS after transition period of EID-423
         public static final AttributeDefinition<PostalAddress> LEGAL_ADDRESS = LegalPersonSpec.Definitions.LEGAL_ADDRESS;
 
+        public static final AttributeDefinition<PostalAddress> LEGAL_PERSON_ADDRESS = LegalPersonSpec.Definitions.LEGAL_PERSON_ADDRESS;
+
+        //TODO remove VAT_REGISTRATION after transition period of EID-423
         public static final AttributeDefinition<String> VAT_REGISTRATION = LegalPersonSpec.Definitions.VAT_REGISTRATION;
+
+        public static final AttributeDefinition<String> VAT_REGISTRATION_NUMBER = LegalPersonSpec.Definitions.VAT_REGISTRATION_NUMBER;
 
         public static final AttributeDefinition<String> TAX_REFERENCE = LegalPersonSpec.Definitions.TAX_REFERENCE;
 
@@ -86,9 +92,15 @@ public final class EidasSpec {
 
         public static final AttributeDefinition<String> REPV_LEGAL_NAME = RepresentativeLegalPersonSpec.Definitions.LEGAL_NAME;
 
+        //TODO remove REPV_LEGAL_ADDRESS after transition period of EID-423
         public static final AttributeDefinition<PostalAddress> REPV_LEGAL_ADDRESS = RepresentativeLegalPersonSpec.Definitions.LEGAL_ADDRESS;
 
+        public static final AttributeDefinition<PostalAddress> REPV_LEGAL_PERSON_ADDRESS = RepresentativeLegalPersonSpec.Definitions.LEGAL_PERSON_ADDRESS;
+
+        //TODO remove REPV_VAT_REGISTRATION after transition period of EID-423
         public static final AttributeDefinition<String> REPV_VAT_REGISTRATION = RepresentativeLegalPersonSpec.Definitions.VAT_REGISTRATION;
+
+        public static final AttributeDefinition<String> REPV_VAT_REGISTRATION_NUMBER = RepresentativeLegalPersonSpec.Definitions.VAT_REGISTRATION_NUMBER;
 
         public static final AttributeDefinition<String> REPV_TAX_REFERENCE = RepresentativeLegalPersonSpec.Definitions.TAX_REFERENCE;
 

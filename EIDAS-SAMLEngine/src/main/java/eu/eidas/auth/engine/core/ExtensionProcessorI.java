@@ -14,23 +14,7 @@
  */
 package eu.eidas.auth.engine.core;
 
-import java.security.cert.X509Certificate;
-import java.util.Collection;
-import java.util.Map;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import com.google.common.collect.ImmutableSortedSet;
-
-import org.joda.time.DateTime;
-import org.opensaml.saml2.common.Extensions;
-import org.opensaml.saml2.core.Attribute;
-import org.opensaml.saml2.core.AuthnRequest;
-import org.opensaml.saml2.core.Response;
-import org.opensaml.xml.XMLObject;
-
-import eu.eidas.auth.commons.IPersonalAttributeList;
 import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.attribute.AttributeRegistry;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
@@ -38,6 +22,18 @@ import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.IAuthenticationResponse;
 import eu.eidas.auth.commons.protocol.impl.SamlBindingUri;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
+import org.joda.time.DateTime;
+import org.opensaml.saml2.common.Extensions;
+import org.opensaml.saml2.core.Attribute;
+import org.opensaml.saml2.core.AuthnRequest;
+import org.opensaml.saml2.core.Response;
+import org.opensaml.xml.XMLObject;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.security.cert.X509Certificate;
+import java.util.Collection;
+import java.util.Map;
 
 /**
  * Parses or generates a SAML format (either eIDAS or another format).
@@ -55,7 +51,7 @@ public interface ExtensionProcessorI {
             throws EIDASSAMLEngineException;
 
     /**
-     * @param authnRequest
+     * @param  samlRequest
      * @return a parsed request extracted from the SAML extensions
      * @throws EIDASSAMLEngineException
      * @deprecated since 1.1
@@ -223,7 +219,7 @@ public interface ExtensionProcessorI {
      * <p/>
      * TODO: this is STORK only.
      *
-     * @param name the name of the attribute.
+     * @param attributeDefinition the name of the attribute.
      * @param status the status of the parameter: "Available", "NotAvailable" or "Withheld" (only for STORK).
      * @param values the value of the attribute.
      * @param isHashing the is hashing with "SHA-512" algorithm.
@@ -243,18 +239,12 @@ public interface ExtensionProcessorI {
     /**
      * Computes SAML binding from http binding
      *
-     * @param name
+     * @param  request
      * @return
      */
     @Nullable
     String getProtocolBinding(@Nonnull IAuthenticationRequest request, @Nonnull SamlEngineCoreProperties defaultValues);
 
-    /**
-     * @deprecated since 1.1
-     */
-    @Deprecated
-    @Nonnull
-    ImmutableAttributeMap convert(@Nonnull IPersonalAttributeList copy);
 
     /**
      * Checks whether the attribute map contains at least one of the mandatory eIDAS attribute set (either for a natural

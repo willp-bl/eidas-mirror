@@ -276,15 +276,33 @@
                                         </s:else>
                                         <div class="radio-inline-group">
                                             <div class="radio radio-info radio-inline">
-                                                <input type="radio" name="<s:property value="nameUri" />Type" id="Mandatory_<s:property value="friendlyName" />Eidas" value="true" <s:if test="required">checked="checked"</s:if>/>
+                                                <%--TODO next if block regarding deprecated legal person attributes to be removed and then keep only else block content--%>
+												<s:if test='nameUri.toASCIIString().equalsIgnoreCase("http://eidas.europa.eu/attributes/legalperson/LegalAddress") || nameUri.toASCIIString().equalsIgnoreCase("http://eidas.europa.eu/attributes/legalperson/VATRegistration")'>
+                                                    <input type="radio" name="<s:property value="nameUri" />Type" id="Disabled_Mandatory_<s:property value="friendlyName" />Eidas" value="true" <s:if test="required">checked="checked"</s:if>/>
+												</s:if>
+                                                <s:else>
+                                                    <input type="radio" name="<s:property value="nameUri" />Type" id="Mandatory_<s:property value="friendlyName" />Eidas" value="true" <s:if test="required">checked="checked"</s:if>/>
+                                                </s:else>
                                                 <label for="Mandatory_<s:property value="nameUri" />Eidas"><s:property value="%{getText('mandatoryId')}"/></label>
                                             </div>
                                             <div class="radio radio-info radio-inline">
-                                                <input type="radio" name="<s:property value="nameUri" />Type" id="Optional_<s:property value="friendlyName" />Eidas" value="false" <s:if test="!required">checked="checked"</s:if>/>
+                                                <%--TODO next if block regarding deprecated legal person attributes to be removed and then keep only else block content--%>
+                                                <s:if test='nameUri.toASCIIString().equalsIgnoreCase("http://eidas.europa.eu/attributes/legalperson/LegalAddress") || nameUri.toASCIIString().equalsIgnoreCase("http://eidas.europa.eu/attributes/legalperson/VATRegistration")'>
+                                                    <input type="radio" name="<s:property value="nameUri" />Type" id="Disabled_Optional_<s:property value="friendlyName" />Eidas" value="false" <s:if test="!required">checked="checked"</s:if>/>
+                                                </s:if>
+                                                <s:else>
+                                                    <input type="radio" name="<s:property value="nameUri" />Type" id="Optional_<s:property value="friendlyName" />Eidas" value="false" <s:if test="!required">checked="checked"</s:if>/>
+                                                </s:else>
                                                 <label for="Optional_<s:property value="nameUri" />Eidas"><s:property value="%{getText('optionalId')}"/></label>
                                             </div>
                                             <div class="radio radio-info radio-inline">
-                                                <input type="radio" name="<s:property value="nameUri" />Type" id="NoRequest_<s:property value="friendlyName" />Eidas" value="none" />
+                                                <%--TODO next if block regarding deprecated legal person attributes to be removed and then keep only else block content--%>
+                                                <s:if test='nameUri.toASCIIString().equalsIgnoreCase("http://eidas.europa.eu/attributes/legalperson/LegalAddress") || nameUri.toASCIIString().equalsIgnoreCase("http://eidas.europa.eu/attributes/legalperson/VATRegistration")'>
+                                                    <input type="radio" name="<s:property value="nameUri" />Type" id="NoRequest_<s:property value="friendlyName" />Eidas" value="none" checked="checked"/>
+                                                </s:if>
+                                                <s:else>
+                                                    <input type="radio" name="<s:property value="nameUri" />Type" id="NoRequest_<s:property value="friendlyName" />Eidas" value="none"/>
+                                                </s:else>
                                                 <label for="NoRequest_<s:property value="nameUri" />Eidas"><s:property value="%{getText('doNotRequestId')}"/></label>
                                             </div>
                                             <s:if test="%{isRequired()}"><span class="text-error">(*)</span></s:if>

@@ -380,8 +380,7 @@
                 <constructor-arg ref="springServiceCMapAntiReplayProvider#{distributedEnvSuffix.toString()}"/>
 		<property name="configs" ref="nodeProps" />
 	</bean>
-    <bean id="pluginLoader" class="eu.eidas.node.utils.CountrySpecificUtil" scope="singleton">
-    </bean>
+
 	<bean id="nodeFileMetadataProcessor" class="eu.eidas.auth.engine.metadata.impl.FileMetadataLoader">
 		<property name="repositoryPath" value="${metadata.file.repository}"/>
 	</bean>

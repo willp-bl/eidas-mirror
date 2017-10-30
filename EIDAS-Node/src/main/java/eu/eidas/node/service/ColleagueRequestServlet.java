@@ -22,30 +22,8 @@
 
 package eu.eidas.node.service;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import com.google.common.collect.Sets;
-
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import eu.eidas.auth.commons.EIDASStatusCode;
-import eu.eidas.auth.commons.EIDASValues;
-import eu.eidas.auth.commons.EidasErrorKey;
-import eu.eidas.auth.commons.EidasParameterKeys;
-import eu.eidas.auth.commons.IPersonalAttributeList;
-import eu.eidas.auth.commons.IncomingRequest;
-import eu.eidas.auth.commons.PersonalAttribute;
-import eu.eidas.auth.commons.PersonalAttributeList;
-import eu.eidas.auth.commons.WebRequest;
+import eu.eidas.auth.commons.*;
 import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.stork.IStorkAuthenticationRequest;
 import eu.eidas.auth.commons.tx.CorrelationMap;
@@ -58,6 +36,15 @@ import eu.eidas.node.service.validation.NodeParameterValidator;
 import eu.eidas.node.utils.EidasAttributesUtil;
 import eu.eidas.node.utils.PropertiesUtil;
 import eu.eidas.node.utils.SessionHolder;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 @SuppressWarnings("squid:S1989") // due to the code uses correlation maps, not http sessions
 public class ColleagueRequestServlet extends AbstractServiceServlet {
@@ -129,15 +116,15 @@ public class ColleagueRequestServlet extends AbstractServiceServlet {
                     .validate();
         }
         // Validating the personal attribute list
-        IPersonalAttributeList persAttrList = PersonalAttributeList.copyOf(authData.getRequestedAttributes());
-        List<PersonalAttribute> attrList = new ArrayList<PersonalAttribute>();
+       // IPersonalAttributeList persAttrList = PersonalAttributeList.copyOf(authData.getRequestedAttributes());
+        //List<PersonalAttribute> attrList = new ArrayList<PersonalAttribute>();
 
         boolean hasEidasAttributes = !Sets.intersection(EidasSpec.REGISTRY.getAttributes(),
                                                         authData.getRequestedAttributes().getDefinitions()).isEmpty();
         //ImmutablePersonalAttributeSet
-        for (PersonalAttribute pa : persAttrList) {
+/*        for (PersonalAttribute pa : persAttrList) {
             attrList.add(pa);
-        }
+        }*/
         String redirectUrl = authData.getAssertionConsumerServiceURL();
         LOG.debug("RedirectUrl: " + redirectUrl);
         // Validating the citizenConsentUrl
@@ -162,7 +149,8 @@ public class ColleagueRequestServlet extends AbstractServiceServlet {
         request.setAttribute(NodeParameterNames.CITIZEN_CONSENT_URL.toString(),
                              encodeURL(controllerService.getCitizenConsentUrl(),
                                        response)); // Correct URl redirect cookie implementation
-        request.setAttribute(NodeParameterNames.ATTR_LIST.toString(), attrList);
+
+        request.setAttribute(NodeParameterNames.ATTR_LIST.toString(), authData.getRequestedAttributes().entrySet().asList());
         request.setAttribute(NodeParameterNames.REDIRECT_URL.toString(),
                              encodeURL(redirectUrl, response));// Correct URl redirect cookie implementation
         request.setAttribute(NodeParameterNames.EIDAS_ATTRIBUTES_PARAM.toString(), Boolean.valueOf(hasEidasAttributes));

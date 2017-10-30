@@ -22,16 +22,33 @@
 
 package eu.eidas.node.auth.connector.tests;
 
-import java.util.Locale;
-import java.util.Properties;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-
 import eu.eidas.auth.commons.*;
+import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
+import eu.eidas.auth.commons.cache.ConcurrentMapServiceDefaultImpl;
+import eu.eidas.auth.commons.exceptions.*;
+import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.IRequestMessage;
+import eu.eidas.auth.commons.protocol.eidas.LevelOfAssurance;
+import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.impl.SamlNameIdFormat;
+import eu.eidas.auth.commons.tx.*;
+import eu.eidas.auth.engine.DefaultProtocolEngineFactory;
+import eu.eidas.auth.engine.ProtocolEngineI;
+import eu.eidas.auth.engine.core.ProtocolProcessorI;
+import eu.eidas.auth.engine.core.eidas.EidasConstants;
+import eu.eidas.auth.engine.core.eidas.EidasProtocolProcessor;
+import eu.eidas.auth.engine.core.eidas.MetadataEncryptionHelper;
+import eu.eidas.auth.engine.core.eidas.MetadataSignatureHelper;
+import eu.eidas.auth.engine.core.eidas.spec.EidasSpec;
+import eu.eidas.auth.engine.metadata.MetadataFetcherI;
+import eu.eidas.auth.engine.metadata.MetadataSignerI;
+import eu.eidas.node.auth.connector.AUCONNECTORSAML;
+import eu.eidas.node.auth.connector.AUCONNECTORUtil;
+import eu.eidas.node.auth.connector.ICONNECTORSAMLService;
+import eu.eidas.node.auth.metadata.WrappedMetadataFetcher;
+import eu.eidas.node.auth.util.tests.TestingConstants;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -50,43 +67,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 
-import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
-import eu.eidas.auth.commons.cache.ConcurrentMapServiceDefaultImpl;
-import eu.eidas.auth.commons.exceptions.EidasNodeException;
-import eu.eidas.auth.commons.exceptions.InternalErrorEIDASException;
-import eu.eidas.auth.commons.exceptions.InvalidParameterEIDASException;
-import eu.eidas.auth.commons.exceptions.InvalidSessionEIDASException;
-import eu.eidas.auth.commons.exceptions.SecurityEIDASException;
-import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
-import eu.eidas.auth.commons.protocol.IRequestMessage;
-import eu.eidas.auth.commons.protocol.eidas.LevelOfAssurance;
-import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
-import eu.eidas.auth.commons.protocol.impl.SamlNameIdFormat;
-import eu.eidas.auth.commons.tx.CorrelationMap;
-import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
-import eu.eidas.auth.commons.tx.StoredAuthenticationRequestCorrelationMap;
-import eu.eidas.auth.commons.tx.StoredLightRequest;
-import eu.eidas.auth.commons.tx.StoredLightRequestCorrelationMap;
-import eu.eidas.auth.engine.DefaultProtocolEngineFactory;
-import eu.eidas.auth.engine.ProtocolEngineI;
-import eu.eidas.auth.engine.core.ProtocolProcessorI;
-import eu.eidas.auth.engine.core.eidas.EidasConstants;
-import eu.eidas.auth.engine.core.eidas.EidasProtocolProcessor;
-import eu.eidas.auth.engine.core.eidas.MetadataEncryptionHelper;
-import eu.eidas.auth.engine.core.eidas.MetadataSignatureHelper;
-import eu.eidas.auth.engine.core.eidas.spec.EidasSpec;
-import eu.eidas.auth.engine.metadata.MetadataFetcherI;
-import eu.eidas.auth.engine.metadata.MetadataSignerI;
-import eu.eidas.node.auth.connector.AUCONNECTORSAML;
-import eu.eidas.node.auth.connector.AUCONNECTORUtil;
-import eu.eidas.node.auth.connector.ICONNECTORSAMLService;
-import eu.eidas.node.auth.metadata.WrappedMetadataFetcher;
-import eu.eidas.node.auth.util.tests.TestingConstants;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import java.util.Locale;
+import java.util.Properties;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -103,14 +89,7 @@ public class AUCONNECTORSAMLTestCase {
      */
     private static final Logger LOG = LoggerFactory.getLogger(AUCONNECTORSAMLTestCase.class.getName());
 
-    /**
-     * Dummy Personal Attribute List for testing proposes.
-     */
-    private static final IPersonalAttributeList REQUEST_ATTR_LIST = PersonalAttributeString.fromStringList(
-            "http://eidas.europa.eu/attributes/naturalperson/PersonIdentifier:true:[E112]:Available;");
-
-    private static final ImmutableAttributeMap REQUEST_IMMUTABLE_ATTR_MAP =
-            PersonalAttributeList.retainAttrsExistingInRegistry(REQUEST_ATTR_LIST, EidasSpec.REGISTRY);
+    private static final ImmutableAttributeMap REQUEST_IMMUTABLE_ATTR_MAP = ImmutableAttributeMap.builder().put(EidasSpec.Definitions.PERSON_IDENTIFIER,"E112").build();
 
     /**
      * Properties values for testing proposes.
@@ -508,7 +487,7 @@ public class AUCONNECTORSAMLTestCase {
     }
 
     /**
-     * Test method for {@link AUCONNECTORSAML#generateServiceAuthnRequest(IAuthenticationRequest)} . Testing with an
+     * Test method for {@link AUCONNECTORSAML# generateServiceAuthnRequest(IAuthenticationRequest)} . Testing with an
      * empty {@link EidasAuthenticationRequest} object. Must throw a {@link InternalErrorEIDASException}.
      */
     @Test(expected = InternalErrorEIDASException.class)
@@ -532,7 +511,7 @@ public class AUCONNECTORSAMLTestCase {
     }
 
     /**
-     * Test method for {@link AUCONNECTORSAML#generateServiceAuthnRequest(IAuthenticationRequest)} . Must Succeed.
+     * Test method for {@link AUCONNECTORSAML# generateServiceAuthnRequest(IAuthenticationRequest)} . Must Succeed.
      */
     @Test
     @Ignore

@@ -1,15 +1,6 @@
 package eu.eidas.engine.test.simple.eidas;
 
-import javax.annotation.Nonnull;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.opensaml.saml2.core.AuthnRequest;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import eu.eidas.auth.commons.EidasStringUtil;
-import eu.eidas.auth.commons.PersonalAttribute;
 import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
@@ -25,15 +16,18 @@ import eu.eidas.auth.engine.configuration.ProtocolConfigurationAccessor;
 import eu.eidas.auth.engine.configuration.ProtocolEngineConfiguration;
 import eu.eidas.auth.engine.configuration.SamlEngineConfigurationException;
 import eu.eidas.auth.engine.configuration.dom.DefaultProtocolEngineConfigurationFactory;
-import eu.eidas.auth.engine.core.SAMLCore;
 import eu.eidas.auth.engine.core.SAMLExtensionFormat;
-import eu.eidas.auth.engine.core.eidas.spec.NaturalPersonSpec;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
+import org.junit.Before;
+import org.junit.Test;
+import org.opensaml.saml2.core.AuthnRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nonnull;
 
 import static eu.eidas.engine.EidasAttributeTestUtil.newEidasAttributeDefinition;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 public class EidasAuthRequestSignatureTest {
 
@@ -47,13 +41,6 @@ public class EidasAuthRequestSignatureTest {
     public void setUp() {
     }
 
-    private static PersonalAttribute newStorkPersonalAttribute(String friendlyName) {
-        return new PersonalAttribute(SAMLCore.STORK10_BASE_URI.getValue() + friendlyName, friendlyName);
-    }
-
-    private static PersonalAttribute newEidasPersonalAttribute(String canoniclaName, String friendlyName) {
-        return new PersonalAttribute(NaturalPersonSpec.Namespace.URI + "/" + canoniclaName, friendlyName);
-    }
 
     /**
      * Instantiates a new EIDAS authentication request test.

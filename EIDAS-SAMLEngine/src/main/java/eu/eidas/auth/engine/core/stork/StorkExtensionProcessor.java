@@ -18,9 +18,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Ordering;
 import eu.eidas.auth.commons.EidasErrorKey;
-import eu.eidas.auth.commons.IPersonalAttributeList;
-import eu.eidas.auth.commons.PersonalAttribute;
-import eu.eidas.auth.commons.PersonalAttributeList;
 import eu.eidas.auth.commons.attribute.*;
 import eu.eidas.auth.commons.light.IResponseStatus;
 import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
@@ -1116,26 +1113,6 @@ public class StorkExtensionProcessor implements ExtensionProcessorI {
         return defaultValues.getProtocolBinding();
     }
 
-    @Override
-    @Nonnull
-    public ImmutableAttributeMap convert(@Nonnull IPersonalAttributeList copy) {
-        ImmutableAttributeMap.Builder builder = ImmutableAttributeMap.builder();
-        for (final PersonalAttribute personalAttribute : copy) {
-            AttributeDefinition<?> attributeDefinition = getAttributeDefinitionNullable(personalAttribute.getName());
-            if (null == attributeDefinition) {
-                continue;
-            }
-            if (!personalAttribute.isEmptyValue()) {
-                List<String> personalAttributeValue = personalAttribute.getValue();
-                builder.put((AttributeDefinition)attributeDefinition, (ImmutableSet) PersonalAttributeList.toAttributeValues(attributeDefinition, personalAttributeValue));
-            } else if (!personalAttribute.isEmptyComplexValue()) {
-                builder.put(attributeDefinition, personalAttribute.getComplexValue().toString());
-            } else if (personalAttribute.isEmpty()) {
-                builder.put(attributeDefinition);
-            }
-        }
-        return builder.build();
-    }
 
     @Override
     public boolean checkMandatoryAttributes(@Nullable ImmutableAttributeMap immutableAttributeMap) {

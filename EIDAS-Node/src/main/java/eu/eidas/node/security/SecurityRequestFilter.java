@@ -7,7 +7,6 @@ import eu.eidas.auth.commons.exceptions.SecurityEIDASException;
 import eu.eidas.node.ApplicationContextProvider;
 import eu.eidas.node.NodeBeanNames;
 import eu.eidas.node.logging.LoggingMarkerMDC;
-import eu.eidas.node.utils.CountrySpecificUtil;
 import eu.eidas.node.utils.SessionHolder;
 import org.apache.commons.lang.StringUtils;
 import org.owasp.esapi.StringUtilities;
@@ -65,13 +64,10 @@ public class SecurityRequestFilter  extends AbstractSecurityRequest implements F
 
         boolean performDomainCheck = !getConfigurationSecurityBean().getBypassValidation();
 
-        if("ColleagueResponse".equals(pathInvoked)){
-            if(CountrySpecificUtil.isRequestAllowed((HttpServletRequest)servletRequest)) {
-                performDomainCheck = false;
-            }
-        }else if("cspReportHandler".equals(pathInvoked)) {
+        if("cspReportHandler".equals(pathInvoked)) {
             performDomainCheck = false;
         }
+
         if (performDomainCheck) {
             LOG.debug("Performing domain check");
             if (domain == null) {

@@ -22,22 +22,7 @@
 
 package eu.eidas.node.auth.service.tests;
 
-import java.util.Locale;
-import java.util.Properties;
-
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.springframework.context.MessageSource;
-
-import eu.eidas.auth.commons.EIDASUtil;
-import eu.eidas.auth.commons.EIDASValues;
-import eu.eidas.auth.commons.EidasErrorKey;
-import eu.eidas.auth.commons.EidasStringUtil;
-import eu.eidas.auth.commons.IEIDASLogger;
-import eu.eidas.auth.commons.IPersonalAttributeList;
-import eu.eidas.auth.commons.PersonalAttributeList;
-import eu.eidas.auth.commons.PersonalAttributeString;
+import eu.eidas.auth.commons.*;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.attribute.impl.StringAttributeValue;
 import eu.eidas.auth.commons.cache.ConcurrentMapServiceDefaultImpl;
@@ -49,7 +34,6 @@ import eu.eidas.auth.commons.protocol.eidas.LevelOfAssurance;
 import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.impl.AuthenticationResponse;
 import eu.eidas.auth.engine.core.eidas.spec.EidasSpec;
-import eu.eidas.auth.engine.core.stork.StorkExtensionProcessor;
 import eu.eidas.node.auth.connector.AUCONNECTORSAML;
 import eu.eidas.node.auth.connector.AUCONNECTORUtil;
 import eu.eidas.node.auth.service.AUSERVICESAML;
@@ -57,11 +41,15 @@ import eu.eidas.node.auth.service.AUSERVICEUtil;
 import eu.eidas.node.auth.service.ISERVICESAMLService;
 import eu.eidas.node.auth.service.ResponseCarryingServiceException;
 import eu.eidas.node.auth.util.tests.TestingConstants;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.springframework.context.MessageSource;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import java.util.Locale;
+import java.util.Properties;
+
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -86,40 +74,7 @@ public final class AUSERVICESAMLTestCase {
      */
     private static Properties CONFIGS = new Properties();
 
-    /**
-     * Personal Attribute List with dummy attribute values.
-     */
-    private static final IPersonalAttributeList STORK_ATTR_LIST_VALUES = PersonalAttributeString.fromStringList(
-            "http://www.stork.gov.eu/1.0/isAgeOver:true:[15,]:Available;http://www.stork.gov.eu/1.0/age:false:[15,]:Available;http://www.stork.gov.eu/1.0/eIdentifier:true:[EE/CF/12345]:Available;");
-
-    /**
-     * Immutable Attribute Map with dummy attribute values.
-     * <p>
-     * TODO check need of this quick fix to make the code compile: conversion from PersonalAttributeList to
-     * ImmutableAttributeMap if maintained EidasSpec.REGISTRY should e.g. be replaced for a STORK related registry
-     */
-    private static final ImmutableAttributeMap IMMUTABLE_STORK_ATTR_MAP_VALUES =
-            PersonalAttributeList.retainAttrsExistingInRegistry(STORK_ATTR_LIST_VALUES, EidasSpec.REGISTRY);
-
-    private static final IPersonalAttributeList EIDAS_ATTR_LIST_VALUES = PersonalAttributeString.fromStringList(
-            "http://eidas.europa.eu/attributes/naturalperson/PersonIdentifier:true:[ES/IT/aaabbbccc]:Available;http://eidas.europa.eu/attributes/naturalperson/DateOfBirth:true:[1970-01-01]:Available;");
-
     private static final String SERVICE_INSTANCE_NAME = "Service";
-
-    /**
-     * Personal Attribute List with dummy attribute values. Missing mandatory attribute.
-     */
-    private static final IPersonalAttributeList ATTR_LIST_VALUES_MISSING = PersonalAttributeString.fromStringList(
-            "http://www.stork.gov.eu/1.0/isAgeOver:true:[,]:NotAvailable;http://www.stork.gov.eu/1.0/age:false:[15,]:Available;");
-
-    /**
-     * Immutable Atttribute Map with dummy attribute values. Missing mandatory attribute.
-     * <p>
-     * TODO check need of this quick fix to make the code compile: conversion from PersonalAttributeList to
-     * ImmutableAttributeMap if maintained EidasSpec.REGISTRY should e.g. be replaced for a STORK related registry
-     */
-    private static final ImmutableAttributeMap IMMUTABLE_ATTR_MAP_VALUES_MISSING =
-            PersonalAttributeList.retainAttrsExistingInRegistry(ATTR_LIST_VALUES_MISSING, EidasSpec.REGISTRY);
 
     /**
      * Empty EidasAuthenticationRequest object.
@@ -183,8 +138,6 @@ public final class AUSERVICESAMLTestCase {
 
         EidasAuthenticationRequest.Builder eidasAuthenticationRequestBuilder =
                 EidasAuthenticationRequest.builder();
-        eidasAuthenticationRequestBuilder.requestedAttributes(
-                PersonalAttributeList.retainAttrsExistingInRegistry(STORK_ATTR_LIST_VALUES, EidasSpec.REGISTRY));
         eidasAuthenticationRequestBuilder.assertionConsumerServiceURL(TestingConstants.ASSERTION_URL_CONS.toString());
         eidasAuthenticationRequestBuilder.issuer(TestingConstants.SAML_ISSUER_CONS.toString());
         eidasAuthenticationRequestBuilder.id(TestingConstants.SAML_ID_CONS.toString());
@@ -213,7 +166,7 @@ public final class AUSERVICESAMLTestCase {
     }
 
     /**
-     * Test method for {@link AUSERVICESAML#checkAttributeValues(IAuthenticationRequest, String)}. Using null {@link
+     * Test method for {@link AUSERVICESAML# checkAttributeValues (IAuthenticationRequest, String)}. Using null {@link
      * EidasAuthenticationRequest} object must throw a NullPointerException.
      */
     @Test(expected = NullPointerException.class)
@@ -222,7 +175,7 @@ public final class AUSERVICESAMLTestCase {
     }
 
     /**
-     * Test method for {@link AUSERVICESAML#checkAttributeValues(IAuthenticationRequest, String)}. Using empty {@link
+     * Test method for {@link AUSERVICESAML# checkAttributeValues (IAuthenticationRequest, String)}. Using empty {@link
      * EidasAuthenticationRequest} object. Won't throw any exception.
      */
     @Test()
@@ -231,7 +184,7 @@ public final class AUSERVICESAMLTestCase {
     }
 
     /**
-     * Test method for {@link AUSERVICESAML#checkAttributeValues(IAuthenticationRequest, String)}. Testing attribute
+     * Test method for {@link AUSERVICESAML# checkAttributeValues (IAuthenticationRequest, String)}. Testing attribute
      * list without all the mandatory attributes. Must throws a {@link EIDASServiceException}.
      */
     @Test
@@ -240,7 +193,6 @@ public final class AUSERVICESAMLTestCase {
 
         EidasAuthenticationRequest.Builder eidasAuthenticationRequestBuilder =
                 new EidasAuthenticationRequest.Builder(EIDAS_AUTHENTICATION_REQUEST);
-        eidasAuthenticationRequestBuilder.requestedAttributes(IMMUTABLE_ATTR_MAP_VALUES_MISSING);
 
         MessageSource mockMessages = mock(MessageSource.class);
         when(mockMessages.getMessage(anyString(), (Object[]) any(), (Locale) any())).thenReturn(
@@ -255,7 +207,7 @@ public final class AUSERVICESAMLTestCase {
     }
 
     /**
-     * Test method for {@link AUSERVICESAML#generateAuthenticationResponse(IAuthenticationRequest, String, boolean)} .
+     * Test method for {@link AUSERVICESAML# generateAuthenticationResponse(IAuthenticationRequest, String, boolean)} .
      * Testing an empty {@link EidasAuthenticationRequest} with consent. Must throws a {@link
      * InternalErrorEIDASException}.
      */
@@ -267,7 +219,7 @@ public final class AUSERVICESAMLTestCase {
     }
 
     /**
-     * Test method for {@link AUSERVICESAML#generateAuthenticationResponse(IAuthenticationRequest, String, boolean)} .
+     * Test method for {@link AUSERVICESAML# generateAuthenticationResponse (IAuthenticationRequest, String, boolean)} .
      * Testing an empty {@link EidasAuthenticationRequest} with no consent. Must throws a {@link
      * InternalErrorEIDASException}.
      */
@@ -278,45 +230,6 @@ public final class AUSERVICESAMLTestCase {
                                                      TestingConstants.USER_IP_CONS.toString(), false);
     }
 
-    /**
-     * Test method for {@link AUSERVICESAML#generateAuthenticationResponse(IAuthenticationRequest, String, boolean)} .
-     * Must return a byte[].
-     */
-    //@Test() TODO stork only: it always tries to use EidasEngine...
-    public void testGenerateAuthenticationResponseConsent() {
-        AUSERVICESAML auservice = provideauservicesaml();
-        IEIDASLogger mockLoggerBean = mock(IEIDASLogger.class);
-        auservice.setLoggerBean(mockLoggerBean);
-
-        EidasAuthenticationRequest.Builder eidasAuthenticationRequestBuilder =
-                new EidasAuthenticationRequest.Builder(EIDAS_AUTHENTICATION_REQUEST);
-        eidasAuthenticationRequestBuilder.requestedAttributes(IMMUTABLE_STORK_ATTR_MAP_VALUES);
-        EidasAuthenticationRequest eidasAuthenticationRequest = eidasAuthenticationRequestBuilder.build();
-
-        assertTrue(auservice.processIdpSpecificResponse(eidasAuthenticationRequest, AuthenticationResponse.builder()
-                .attributes(asStorkAttributeMap(STORK_ATTR_LIST_VALUES))
-                .build(), TestingConstants.USER_IP_CONS.toString(), true).getResponse().getAttributes().size() > 0);
-    }
-
-    private ImmutableAttributeMap asStorkAttributeMap(IPersonalAttributeList personalAttributeList) {
-        return StorkExtensionProcessor.INSTANCE.convert(personalAttributeList);
-    }
-
-    /**
-     * Test method for {@link AUSERVICESAML#generateAuthenticationResponse(IAuthenticationRequest, String, boolean)} .
-     * Testing with no consent. Must return a byte[].
-     */
-    //@Test() TODO stork only: it always tries to use EidasEngine...
-    public void testGenerateAuthenticationResponse() {
-        AUSERVICESAML auservice = provideauservicesaml();
-        IEIDASLogger mockLoggerBean = mock(IEIDASLogger.class);
-        auservice.setLoggerBean(mockLoggerBean);
-
-        auservice.processIdpSpecificResponse(EIDAS_AUTHENTICATION_REQUEST, AuthenticationResponse.builder()
-                .attributes(asStorkAttributeMap(STORK_ATTR_LIST_VALUES))
-                .build(), TestingConstants.USER_IP_CONS.toString(), false);
-    }
-
     private AUSERVICESAML provideauservicesaml() {
         AUSERVICESAML auservice = new AUSERVICESAML();
         auservice.setSamlEngineInstanceName("Service");
@@ -325,7 +238,7 @@ public final class AUSERVICESAMLTestCase {
     }
 
     /**
-     * Test method for {@link AUSERVICESAML#generateErrorAuthenticationResponse(IAuthenticationRequest, String, String,
+     * Test method for {@link AUSERVICESAML# generateErrorAuthenticationResponse (IAuthenticationRequest, String, String,
      * String, String, boolean)} . Testing an empty {@link EidasAuthenticationRequest} with audit on. Must throws a
      * {@link InternalErrorEIDASException}.
      */
@@ -350,7 +263,7 @@ public final class AUSERVICESAMLTestCase {
     }
 
     /**
-     * Test method for {@link AUSERVICESAML#generateErrorAuthenticationResponse(IAuthenticationRequest, String, String,
+     * Test method for {@link AUSERVICESAML# generateErrorAuthenticationResponse (IAuthenticationRequest, String, String,
      * String, String, boolean)} . Testing an empty {@link EidasAuthenticationRequest} with audit off. Must throws a
      * {@link InternalErrorEIDASException}.
      */
@@ -375,7 +288,7 @@ public final class AUSERVICESAMLTestCase {
     }
 
     /**
-     * Test method for {@link AUSERVICESAML#generateErrorAuthenticationResponse(IAuthenticationRequest, String, String,
+     * Test method for {@link AUSERVICESAML# generateErrorAuthenticationResponse (IAuthenticationRequest, String, String,
      * String, String, boolean)} . Testing with audit on. Must return a byte[].
      */
     @Test()
@@ -400,7 +313,7 @@ public final class AUSERVICESAMLTestCase {
     }
 
     /**
-     * Test method for {@link AUSERVICESAML#generateErrorAuthenticationResponse(IAuthenticationRequest, String, String,
+     * Test method for {@link AUSERVICESAML# generateErrorAuthenticationResponse (IAuthenticationRequest, String, String,
      * String, String, boolean)} . Must return a byte[].
      */
     @Test()
@@ -425,13 +338,13 @@ public final class AUSERVICESAMLTestCase {
     }
 
     /**
-     * Test method for {@link AUSERVICESAML#getSAMLToken(String)}. Testing for dummy value.
+     * Test method for {@link AUSERVICESAML# getSAMLToken(String)}. Testing for dummy value.
      */
     private static String SAML_BASE64_REQUEST = "PFJlcXVlc3Q+Li4uPC9SZXF1ZXN0Pg==";
 //=base64("<Request>...</Request>")
 
     /**
-     * Test method for {@link AUSERVICESAML#processAuthenticationRequest(byte[], String) )}. Testing null
+     * Test method for {@link AUSERVICESAML# processAuthenticationRequest(byte[], String) )}. Testing null
      * saml token. Must return and {@link InternalErrorEIDASException}.
      */
     @Test(expected = InternalErrorEIDASException.class)
@@ -451,7 +364,7 @@ public final class AUSERVICESAMLTestCase {
     }
 
     /**
-     * Test method for {@link AUSERVICESAML#processAuthenticationRequest(byte[], String) )}. Testing
+     * Test method for {@link AUSERVICESAML# processAuthenticationRequest(byte[], String) )}. Testing
      * invalid country code in class. Must return and {@link EIDASServiceException}.
      */
     @Test(expected = EIDASServiceException.class)

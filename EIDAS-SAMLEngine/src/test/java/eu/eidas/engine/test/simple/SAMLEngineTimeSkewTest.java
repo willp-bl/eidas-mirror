@@ -1,35 +1,53 @@
+/*
+ * Copyright (c) 2017 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
+ *
+ * This product combines work with different licenses. See the
+ * "NOTICE" text file for details on the various modules and licenses.
+ * The "NOTICE" text file is part of the distribution.
+ * Any derivative works that you distribute must include a readable
+ * copy of the "NOTICE" text file.
+ */
 package eu.eidas.engine.test.simple;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Proxy;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
+import eu.eidas.auth.commons.EIDASStatusCode;
+import eu.eidas.auth.commons.EidasStringUtil;
+import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
+import eu.eidas.auth.commons.attribute.impl.DateTimeAttributeValue;
+import eu.eidas.auth.commons.attribute.impl.StringAttributeValue;
+import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.IResponseMessage;
+import eu.eidas.auth.commons.protocol.eidas.LevelOfAssurance;
+import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.impl.AuthenticationResponse;
+import eu.eidas.auth.engine.ProtocolEngineFactory;
+import eu.eidas.auth.engine.ProtocolEngineI;
+import eu.eidas.auth.engine.configuration.dom.ReloadableProtocolConfigurationInvocationHandler;
+import eu.eidas.auth.engine.core.eidas.spec.NaturalPersonSpec;
+import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
+import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.eidas.auth.commons.EIDASStatusCode;
-import eu.eidas.auth.commons.EidasStringUtil;
-import eu.eidas.auth.commons.PersonalAttribute;
-import eu.eidas.auth.commons.attribute.AttributeDefinition;
-import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
-import eu.eidas.auth.commons.attribute.impl.StringAttributeValue;
-import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
-import eu.eidas.auth.commons.protocol.IResponseMessage;
-import eu.eidas.auth.commons.protocol.impl.AuthenticationResponse;
-import eu.eidas.auth.commons.protocol.stork.IStorkAuthenticationRequest;
-import eu.eidas.auth.commons.protocol.stork.impl.StorkAuthenticationRequest;
-import eu.eidas.auth.engine.ProtocolEngineFactory;
-import eu.eidas.auth.engine.ProtocolEngineI;
-import eu.eidas.auth.engine.configuration.dom.ReloadableProtocolConfigurationInvocationHandler;
-import eu.eidas.auth.engine.core.SAMLCore;
-import eu.eidas.auth.engine.core.eidas.spec.NaturalPersonSpec;
-import eu.eidas.auth.engine.core.stork.StorkExtensionProcessor;
-import eu.eidas.auth.engine.core.validator.stork.STORKAttributes;
-import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Proxy;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static org.junit.Assert.fail;
 
@@ -78,8 +96,8 @@ public class SAMLEngineTimeSkewTest {
     @Test(expected = EIDASSAMLEngineException.class)
     public void testValidateResponseWithTestClockOneHourLaterAndNoTimeSkew() throws EIDASSAMLEngineException {
         LOG.info("testValidateResponseWithTestClockOneHourLaterAndNoTimeSkew");
-        clock.setDelta(600000);              // clock is now one hour later
         byte[] samlResponse = generateTestSamlResponse();
+        clock.setDelta(600000);              // clock is now one hour later
         engine.unmarshallResponseAndValidate(samlResponse, "", 0, 0, null);
     }
 
@@ -91,8 +109,8 @@ public class SAMLEngineTimeSkewTest {
     @Test(expected = EIDASSAMLEngineException.class)
     public void testValidateResponseWithTestClockOneHourBeforeAndNoTimeSkew() throws EIDASSAMLEngineException {
         LOG.info("testValidateResponseWithTestClockOneHourBeforeAndNoTimeSkew");
-        clock.setDelta(-600000);              // clock is now one hour before
         byte[] samlResponse = generateTestSamlResponse();
+        clock.setDelta(-600000);              // clock is now one hour before
         engine.unmarshallResponseAndValidate(samlResponse, "", 0, 0, null);
     }
 
@@ -107,14 +125,6 @@ public class SAMLEngineTimeSkewTest {
         clock.setDelta(600000);              // clock is now one hour later
         byte[] samlResponse = generateTestSamlResponse();
         engine.unmarshallResponseAndValidate(samlResponse, "", -600000, 600000, null);
-    }
-
-    private static PersonalAttribute newStorkPersonalAttribute(String friendlyName) {
-        return new PersonalAttribute(SAMLCore.STORK10_BASE_URI.getValue() + friendlyName, friendlyName);
-    }
-
-    private static PersonalAttribute newEidasPersonalAttribute(String canoniclaName, String friendlyName) {
-        return new PersonalAttribute(NaturalPersonSpec.Namespace.URI + "/" + canoniclaName, friendlyName);
     }
 
     /**
@@ -167,25 +177,10 @@ public class SAMLEngineTimeSkewTest {
     private static ImmutableAttributeMap newResponseImmutableAttributeMap() {
         ImmutableAttributeMap.Builder builder = ImmutableAttributeMap.builder();
 
-        AttributeDefinition<String> isAgeOver = (AttributeDefinition<String>) StorkExtensionProcessor.INSTANCE.getAttributeDefinitionNullable(
-                STORKAttributes.STORK_ATTRIBUTE_ISAGEOVER);
-
-        builder.put(isAgeOver, new StringAttributeValue("16", false), new StringAttributeValue("18", false));
-
-        AttributeDefinition<String> dateOfBirth = (AttributeDefinition<String>) StorkExtensionProcessor.INSTANCE.getAttributeDefinitionNullable(
-                STORKAttributes.STORK_ATTRIBUTE_DATEOFBIRTH);
-
-        builder.put(dateOfBirth, new StringAttributeValue("16/12/2008", false));
-
-        AttributeDefinition<String> eIdentifier = (AttributeDefinition<String>) StorkExtensionProcessor.INSTANCE.getAttributeDefinitionNullable(
-                STORKAttributes.STORK_ATTRIBUTE_EIDENTIFIER);
-
-        builder.put(eIdentifier, new StringAttributeValue("123456789P\u00D1", false));
-
-        AttributeDefinition<String> canonicalResidenceAddress = (AttributeDefinition<String>) StorkExtensionProcessor.INSTANCE.getAttributeDefinitionNullable(
-                STORKAttributes.STORK_ATTRIBUTE_TEXT_CANONICAL_ADDRESS);
-
-        builder.put(canonicalResidenceAddress, new StringAttributeValue(getAddressValue(), false));
+        builder.put(NaturalPersonSpec.Definitions.PERSON_IDENTIFIER);
+        builder.put(NaturalPersonSpec.Definitions.CURRENT_FAMILY_NAME);
+        builder.put(NaturalPersonSpec.Definitions.CURRENT_GIVEN_NAME);
+        builder.put(NaturalPersonSpec.Definitions.DATE_OF_BIRTH);
 
         return builder.build();
     }
@@ -204,22 +199,17 @@ public class SAMLEngineTimeSkewTest {
         String spId = "EDU001-APP001-APP001";
         int QAAL = 3;
 
-        IStorkAuthenticationRequest request = StorkAuthenticationRequest.builder().
-                id("QDS2QFD"). // Common part
-                assertionConsumerServiceURL(assertConsumerUrl).
-                destination(destination).
-                issuer("https://testIssuer").
-                providerName(spName).
-                serviceProviderCountryCode(spCountry).
-                citizenCountryCode("ES").
-                spId(spId).
-                qaa(QAAL).
-                spSector(spSector).
-                spInstitution(spInstitution).
-                spApplication(spApplication).
-                requestedAttributes(newResponseImmutableAttributeMap()).
-                levelOfAssurance("high").
-                build();
+        EidasAuthenticationRequest request = EidasAuthenticationRequest.builder()
+                .id("QDS2QFD") // Common part
+                .assertionConsumerServiceURL(assertConsumerUrl)
+                .destination(destination)
+                .issuer("https://testIssuer")
+                .providerName(spName)
+                .serviceProviderCountryCode(spCountry)
+                .citizenCountryCode("ES")
+                .requestedAttributes(newResponseImmutableAttributeMap())
+                .levelOfAssurance(LevelOfAssurance.HIGH)
+                .build();
 
         byte[] authRequest;
         IAuthenticationRequest authenRequest = null;
@@ -237,35 +227,20 @@ public class SAMLEngineTimeSkewTest {
 
         ImmutableAttributeMap.Builder attributeMapBuilder = ImmutableAttributeMap.builder();
 
-        AttributeDefinition<String> isAgeOverDef = (AttributeDefinition<String>) StorkExtensionProcessor.INSTANCE.getAttributeDefinitionNullable(
-                STORKAttributes.STORK_ATTRIBUTE_ISAGEOVER);
+        attributeMapBuilder.put(NaturalPersonSpec.Definitions.PERSON_IDENTIFIER,
+                new StringAttributeValue("personIdentifierValue"));
+        attributeMapBuilder.put(NaturalPersonSpec.Definitions.CURRENT_FAMILY_NAME,
+                new StringAttributeValue("currentFamilyNameValue"));
+        attributeMapBuilder.put(NaturalPersonSpec.Definitions.CURRENT_GIVEN_NAME,
+                new StringAttributeValue("currentGivenNameValue"));
 
-        attributeMapBuilder.put(isAgeOverDef, new StringAttributeValue("16", false), new StringAttributeValue("18", false));
+        DateTime birthDate = new DateTime()
+                .withDayOfMonth(16)
+                .withMonthOfYear(12)
+                .withYear(2008);
 
-        AttributeDefinition<String> dateOfBirthDef = (AttributeDefinition<String>) StorkExtensionProcessor.INSTANCE.getAttributeDefinitionNullable(
-                STORKAttributes.STORK_ATTRIBUTE_DATEOFBIRTH);
-
-        attributeMapBuilder.put(dateOfBirthDef, new StringAttributeValue("16/12/2008", false));
-
-        AttributeDefinition<String> eIdentifierDef = (AttributeDefinition<String>) StorkExtensionProcessor.INSTANCE.getAttributeDefinitionNullable(
-                STORKAttributes.STORK_ATTRIBUTE_EIDENTIFIER);
-
-        attributeMapBuilder.put(eIdentifierDef, new StringAttributeValue("123456789P\u00D1", false));
-
-        AttributeDefinition<String> canonicalResidenceAddressDef = (AttributeDefinition<String>) StorkExtensionProcessor.INSTANCE.getAttributeDefinitionNullable(
-                STORKAttributes.STORK_ATTRIBUTE_TEXT_CANONICAL_ADDRESS);
-
-        Map<String, String> address = new HashMap<String, String>();
-        address.put("state", "ES");
-        address.put("municipalityCode", "MA001");
-        address.put("town", "Madrid");
-        address.put("postalCode", "28038");
-        address.put("streetName", "Marchmalo");
-        address.put("streetNumber", "33");
-        address.put("apartamentNumber", "b");
-
-        // TODO: fix this for STORK if needed:
-        attributeMapBuilder.put(canonicalResidenceAddressDef, address.toString());
+        attributeMapBuilder.put(NaturalPersonSpec.Definitions.DATE_OF_BIRTH,
+                new DateTimeAttributeValue(birthDate));
 
         AuthenticationResponse response = new AuthenticationResponse.Builder().id("RESPONSE_ID_TO_QDS2QFD")
                 .inResponseTo("QDS2QFD")

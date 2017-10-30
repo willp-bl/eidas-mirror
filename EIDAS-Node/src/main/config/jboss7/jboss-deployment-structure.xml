@@ -10,6 +10,13 @@
       <module name="org.jboss.resteasy.resteasy-jsapi" />
       <module name="org.jboss.resteasy.resteasy-multipart-provider" />
       <module name="org.jboss.resteasy.async-http-servlet-30" />
+      <module name="org.apache.santuario.xmlsec" />
+      <module name="javaee.api" />
+      <module name="org.apache.cxf" />
+      <module name="org.apache.ws.security" />
+      <module name="org.jboss.as.webservices.server.integration" />
+      <module name="org.jboss.ws.native.jbossws-native-core" />
+      <module name="org.picketlink" />
     </exclusions>
     <dependencies>
       <module name="org.bouncycastle" slot="main" export="true"/>

@@ -13,18 +13,16 @@
  */
 package eu.eidas.node.auth.service;
 
-import java.util.Map;
-
-import javax.annotation.Nonnull;
-
 import eu.eidas.auth.commons.CitizenConsent;
-import eu.eidas.auth.commons.IPersonalAttributeList;
 import eu.eidas.auth.commons.WebRequest;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.exceptions.EIDASServiceException;
 import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
 import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
+
+import javax.annotation.Nonnull;
+import java.util.Map;
 
 /**
  * Interface that supplies methods for processing citizen-related matters.
@@ -40,9 +38,7 @@ public interface ISERVICECitizenService {
      * Checks if the citizen consent has all the required mandatory attributes.
      *
      * @param consent            The citizen supplied consent.
-     * @param authData           The authentication request.
      * @param ipUserAddress      The citizen's IP address.
-     * @param serviceSAMLService The ProxyService Saml Service.
      * @see CitizenConsent
      * @see EidasAuthenticationRequest
      * @see ISERVICESAMLService
@@ -55,13 +51,10 @@ public interface ISERVICECitizenService {
      * Constructs the Citizen Consent based on the checked boxes from consent-type
      * form.
      *
-     * @param parameters   A map of the selected attributes.
-     * @param personalList The personal attribute list.
      * @return CitizenConsent containing the mandatory and optional attributes
      * that the Node has permission to request.
      * @see CitizenConsent
      * @see Map
-     * @see IPersonalAttributeList
      */
     @Nonnull
     CitizenConsent getCitizenConsent(@Nonnull WebRequest webRequest, @Nonnull ImmutableAttributeMap attributes);
@@ -83,11 +76,7 @@ public interface ISERVICECitizenService {
     /**
      * Replaces the attribute list in session with the one provided.
      *
-     * @param requestCorrelationMap The requestCorrelationMap.
-     * @param attributeList         The attribute list.
      * @return The updated Personal Attribute List.
-     * @see RequestCorrelationMap
-     * @see IPersonalAttributeList
      */
     @Nonnull
     IAuthenticationRequest updateConsentedAttributes(@Nonnull IAuthenticationRequest authnRequest,
@@ -96,7 +85,6 @@ public interface ISERVICECitizenService {
     /**
      * Checks that all mandatory values are present in the given attributes otherwise throws an Exception.
      *
-     * @param attributeMap The attributes to check.
      * @throws EIDASServiceException if the attributes are not missing a mandatory attribute
      */
     void checkMandatoryAttributes(@Nonnull ImmutableAttributeMap attributes) throws EIDASServiceException;
@@ -104,7 +92,6 @@ public interface ISERVICECitizenService {
     /**
      * Checks whether the attribute map satifisfies the rule of representation, otherwise thorows an Exception.
      *
-     * @param attributeMap The attributes to check.
      * @throws EIDASServiceException if the attributes are not missing a mandatory attribute
      */
     void checkRepresentativeAttributes(@Nonnull ImmutableAttributeMap attributes) throws EIDASServiceException;

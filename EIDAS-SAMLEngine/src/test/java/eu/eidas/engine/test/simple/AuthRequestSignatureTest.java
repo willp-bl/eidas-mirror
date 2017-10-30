@@ -1,20 +1,6 @@
 package eu.eidas.engine.test.simple;
 
-import java.util.ArrayList;
-
-import javax.annotation.Nonnull;
-
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.opensaml.saml2.core.AuthnRequest;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import eu.eidas.auth.commons.EidasStringUtil;
-import eu.eidas.auth.commons.IPersonalAttributeList;
-import eu.eidas.auth.commons.PersonalAttribute;
-import eu.eidas.auth.commons.PersonalAttributeList;
 import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.attribute.PersonType;
@@ -30,14 +16,18 @@ import eu.eidas.auth.engine.configuration.ProtocolConfigurationAccessor;
 import eu.eidas.auth.engine.configuration.ProtocolEngineConfiguration;
 import eu.eidas.auth.engine.configuration.SamlEngineConfigurationException;
 import eu.eidas.auth.engine.configuration.dom.DefaultProtocolEngineConfigurationFactory;
-import eu.eidas.auth.engine.core.SAMLCore;
 import eu.eidas.auth.engine.core.SAMLExtensionFormat;
-import eu.eidas.auth.engine.core.eidas.spec.NaturalPersonSpec;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.opensaml.saml2.core.AuthnRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import javax.annotation.Nonnull;
+
+import static org.junit.Assert.*;
 
 public class AuthRequestSignatureTest {
 
@@ -49,48 +39,6 @@ public class AuthRequestSignatureTest {
 
     @Before
     public void setUp() {
-    }
-
-    private static PersonalAttribute newStorkPersonalAttribute(String friendlyName) {
-        return new PersonalAttribute(SAMLCore.STORK10_BASE_URI.getValue() + friendlyName, friendlyName);
-    }
-
-    private static PersonalAttribute newEidasPersonalAttribute(String canoniclaName, String friendlyName) {
-        return new PersonalAttribute(NaturalPersonSpec.Namespace.URI + "/" + canoniclaName, friendlyName);
-    }
-
-    /**
-     * Instantiates a new authentication request test.
-     */
-    public AuthRequestSignatureTest() {
-        pal = new PersonalAttributeList();
-
-        final PersonalAttribute isAgeOver = newStorkPersonalAttribute("isAgeOver");
-        isAgeOver.setIsRequired(true);
-        final ArrayList<String> ages = new ArrayList<String>();
-        ages.add("16");
-        ages.add("18");
-        isAgeOver.setValue(ages);
-        pal.add(isAgeOver);
-
-        final PersonalAttribute dateOfBirth = newStorkPersonalAttribute("dateOfBirth");
-        dateOfBirth.setIsRequired(false);
-        pal.add(dateOfBirth);
-
-        final PersonalAttribute eIDNumber = newStorkPersonalAttribute("eIdentifier");
-        eIDNumber.setIsRequired(true);
-        pal.add(eIDNumber);
-
-        destination = "http://proxyservice.gov.xx/EidasNode/ColleagueRequest";
-        assertConsumerUrl = "http://connector.gov.xx/EidasNode/ColleagueResponse";
-
-        spName = "University of Oxford";
-        spSector = "EDU001";
-        spApplication = "APP001";
-        spCountry = "EN";
-
-        spId = "EDU001-OXF001-APP001";
-
     }
 
     /**
@@ -127,11 +75,6 @@ public class AuthRequestSignatureTest {
      * The quality authentication assurance level.
      */
     private static final int QAAL = 3;
-
-    /**
-     * The List of Personal Attributes.
-     */
-    private IPersonalAttributeList pal;
 
     /**
      * The assertion consumer URL.

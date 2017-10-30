@@ -22,31 +22,20 @@
 
 package eu.eidas.node.auth.connector.tests;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
-
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-
-import eu.eidas.auth.commons.Country;
-import eu.eidas.auth.commons.EIDASUtil;
-import eu.eidas.auth.commons.EidasErrorKey;
-import eu.eidas.auth.commons.EidasStringUtil;
-import eu.eidas.auth.commons.IPersonalAttributeList;
-import eu.eidas.auth.commons.PersonalAttributeList;
-import eu.eidas.auth.commons.PersonalAttributeString;
-import eu.eidas.auth.commons.RequestState;
-import eu.eidas.auth.commons.WebRequest;
-import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
+import eu.eidas.auth.commons.*;
 import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
-import eu.eidas.auth.engine.core.eidas.spec.EidasSpec;
 import eu.eidas.node.NodeParameterNames;
 import eu.eidas.node.auth.connector.AUCONNECTOR;
 import eu.eidas.node.auth.connector.ICONNECTORSAMLService;
 import eu.eidas.node.auth.util.tests.TestingConstants;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -59,33 +48,6 @@ import static org.mockito.Mockito.when;
  * @version $Revision: $, $Date:$
  */
 public class AUCONNECTORTestCase {
-
-    /**
-     * Personal Attribute List with dummy attribute values.
-     */
-    private static final IPersonalAttributeList ATTR_LIST =
-            PersonalAttributeString.fromStringList("http://www.stork.gov.eu/1.0/age:true:[15,]:Available;");
-
-    /**
-     * Immutable Attribute Map with dummy attribute values.
-     *
-     * TODO check need of this quick fix to make the code compile: conversion from PersonalAttributeList to ImmutableAttributeMap if maintained EidasSpec.REGISTRY should e.g. be replaced for a STORK related registry
-     */
-    private static final ImmutableAttributeMap STORK_IMMUTABLE_ATTR_MAP =PersonalAttributeList.retainAttrsExistingInRegistry(ATTR_LIST,EidasSpec.REGISTRY);
-
-
-    /**
-     * Personal Attribute List with dummy attribute values.
-     */
-    private static final IPersonalAttributeList NATIVE_ATTR_LIST =
-            PersonalAttributeString.fromStringList("http://www.stork.gov.eu/1.0/idade:true:[15,]:Available;");
-
-    /**
-     * Immutable Attribute Map with dummy attribute values.
-     *
-     * TODO check need of this quick fix to make the code compile: conversion from PersonalAttributeList to ImmutableAttributeMap if maintained EidasSpec.REGISTRY should e.g. be replaced for a STORK related registry
-     */
-    private static final ImmutableAttributeMap STORK_IMMUTABLE_NATIVE_ATTR_MAP = PersonalAttributeList.retainAttrsExistingInRegistry(NATIVE_ATTR_LIST, EidasSpec.REGISTRY);
 
     /**
      * Properties values for testing proposes.
@@ -134,7 +96,6 @@ public class AUCONNECTORTestCase {
 
 
         final EidasAuthenticationRequest.Builder eidasAuthenticationRequestBuilder = EidasAuthenticationRequest.builder();
-        eidasAuthenticationRequestBuilder.requestedAttributes(STORK_IMMUTABLE_NATIVE_ATTR_MAP);
         eidasAuthenticationRequestBuilder.id("123456");
         IAuthenticationRequest authData = eidasAuthenticationRequestBuilder.build();
 
@@ -179,7 +140,6 @@ public class AUCONNECTORTestCase {
         AUCONNECTOR auconnector = new AUCONNECTOR();
 
         final EidasAuthenticationRequest.Builder eidasAuthenticationRequestBuilder = EidasAuthenticationRequest.builder();
-        eidasAuthenticationRequestBuilder.requestedAttributes(STORK_IMMUTABLE_NATIVE_ATTR_MAP);
         eidasAuthenticationRequestBuilder.id("951357");
         IAuthenticationRequest authData = eidasAuthenticationRequestBuilder.build();
 
@@ -227,7 +187,6 @@ public class AUCONNECTORTestCase {
 
         eidasAuthenticationRequestBuilder.id("456");
         eidasAuthenticationRequestBuilder.issuer(TestingConstants.SAML_ISSUER_CONS.toString());
-        eidasAuthenticationRequestBuilder.requestedAttributes(STORK_IMMUTABLE_ATTR_MAP);
         eidasAuthenticationRequestBuilder.assertionConsumerServiceURL("https://ConnectorUrl");
         IAuthenticationRequest authData = eidasAuthenticationRequestBuilder.build();
 

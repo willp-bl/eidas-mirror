@@ -1,27 +1,37 @@
 /*
- * This work is Open Source and licensed by the European Commission under the
- * conditions of the European Public License v1.1
+ * Copyright (c) 2017 by European Commission
  *
- * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1);
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
  *
- * any use of this file implies acceptance of the conditions of this license.
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations
- * under the License.
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
+ *
+ * This product combines work with different licenses. See the
+ * "NOTICE" text file for details on the various modules and licenses.
+ * The "NOTICE" text file is part of the distribution.
+ * Any derivative works that you distribute must include a readable
+ * copy of the "NOTICE" text file.
  */
+
 package eu.eidas.auth.engine.metadata;
 
-import java.util.List;
-import java.util.Properties;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import eu.eidas.auth.commons.EidasStringUtil;
+import eu.eidas.auth.commons.light.ILightRequest;
+import eu.eidas.auth.commons.protocol.impl.SamlBindingUri;
 import eu.eidas.auth.commons.xml.opensaml.OpenSamlHelper;
+import eu.eidas.auth.engine.core.eidas.EidasConstants;
+import eu.eidas.auth.engine.core.eidas.SPType;
 import eu.eidas.encryption.exception.UnmarshallException;
+import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import org.apache.commons.lang.StringUtils;
 import org.opensaml.saml2.core.Attribute;
 import org.opensaml.saml2.metadata.*;
@@ -29,37 +39,37 @@ import org.opensaml.samlext.saml2mdattr.EntityAttributes;
 import org.opensaml.xml.XMLObject;
 import org.opensaml.xml.schema.XSString;
 
-import eu.eidas.auth.commons.light.ILightRequest;
-import eu.eidas.auth.commons.protocol.impl.SamlBindingUri;
-import eu.eidas.auth.engine.core.eidas.EidasConstants;
-import eu.eidas.auth.engine.core.eidas.SPType;
-import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.List;
+import java.util.Properties;
 
 /**
  * Metadata related utilities.
  */
-public final class MetadataUtil {
+public class MetadataUtil {
 
-    private static final String TECHNICAL_CONTACT_PROPS[]={"contact.technical.company", "contact.technical.email", "contact.technical.givenname", "contact.technical.surname", "contact.technical.phone"};
-    private static final String SUPPORT_CONTACT_PROPS[]={"contact.support.company", "contact.support.email", "contact.support.givenname", "contact.support.surname", "contact.support.phone"};
-    private static final String CONTACTS[][]={TECHNICAL_CONTACT_PROPS, SUPPORT_CONTACT_PROPS};
+    public static String TECHNICAL_CONTACT_PROPS[] = {"contact.technical.company", "contact.technical.email", "contact.technical.givenname", "contact.technical.surname", "contact.technical.phone"};
+    public static String SUPPORT_CONTACT_PROPS[] = {"contact.support.company", "contact.support.email", "contact.support.givenname", "contact.support.surname", "contact.support.phone"};
+    public static String CONTACTS[][] = {TECHNICAL_CONTACT_PROPS, SUPPORT_CONTACT_PROPS};
 
-    private static final String CONNECTOR_TECHNICAL_CONTACT_PROPS[]={"connector.contact.technical.company", "connector.contact.technical.email", "connector.contact.technical.givenname", "connector.contact.technical.surname", "connector.contact.technical.phone"};
-    private static final String CONNECTOR_SUPPORT_CONTACT_PROPS[]={"connector.contact.support.company", "connector.contact.support.email", "connector.contact.support.givenname", "connector.contact.support.surname", "connector.contact.support.phone"};
-    private static final String CONNECTOR_CONTACTS[][]={CONNECTOR_TECHNICAL_CONTACT_PROPS, CONNECTOR_SUPPORT_CONTACT_PROPS};
-    private static final String SERVICE_TECHNICAL_CONTACT_PROPS[]={"service.contact.technical.company", "service.contact.technical.email", "service.contact.technical.givenname", "service.contact.technical.surname", "service.contact.technical.phone"};
-    private static final String SERVICE_SUPPORT_CONTACT_PROPS[]={"service.contact.support.company", "service.contact.support.email", "service.contact.support.givenname", "service.contact.support.surname", "service.contact.support.phone"};
-    private static final String SERVICE_CONTACTS[][]={SERVICE_TECHNICAL_CONTACT_PROPS, SERVICE_SUPPORT_CONTACT_PROPS};
+    public static String CONNECTOR_TECHNICAL_CONTACT_PROPS[] = {"connector.contact.technical.company", "connector.contact.technical.email", "connector.contact.technical.givenname", "connector.contact.technical.surname", "connector.contact.technical.phone"};
+    public static String CONNECTOR_SUPPORT_CONTACT_PROPS[] = {"connector.contact.support.company", "connector.contact.support.email", "connector.contact.support.givenname", "connector.contact.support.surname", "connector.contact.support.phone"};
+    public static String CONNECTOR_CONTACTS[][] = {CONNECTOR_TECHNICAL_CONTACT_PROPS, CONNECTOR_SUPPORT_CONTACT_PROPS};
+    public static String SERVICE_TECHNICAL_CONTACT_PROPS[] = {"service.contact.technical.company", "service.contact.technical.email", "service.contact.technical.givenname", "service.contact.technical.surname", "service.contact.technical.phone"};
+    public static String SERVICE_SUPPORT_CONTACT_PROPS[] = {"service.contact.support.company", "service.contact.support.email", "service.contact.support.givenname", "service.contact.support.surname", "service.contact.support.phone"};
+    public static String SERVICE_CONTACTS[][] = {SERVICE_TECHNICAL_CONTACT_PROPS, SERVICE_SUPPORT_CONTACT_PROPS};
 
-    public static final String CONNECTOR_ORG_NAME = "connector.organization.name";
-    public static final String CONNECTOR_ORG_DISPNAME = "connector.organization.displayname";
-    public static final String CONNECTOR_ORG_URL = "connector.organization.url";
-    public static final String SERVICE_ORG_NAME = "service.organization.name";
-    public static final String SERVICE_ORG_DISPNAME = "service.organization.displayname";
-    public static final String SERVICE_ORG_URL = "service.organization.url";
-    public static final String ORG_NAME = "organization.name";
-    public static final String ORG_DISPNAME = "organization.displayname";
-    public static final String ORG_URL = "organization.url";
+    public static String CONNECTOR_ORG_NAME = "connector.organization.name";
+    public static String CONNECTOR_ORG_DISPNAME = "connector.organization.displayname";
+    public static String CONNECTOR_ORG_URL = "connector.organization.url";
+    public static String SERVICE_ORG_NAME = "service.organization.name";
+    public static String SERVICE_ORG_DISPNAME = "service.organization.displayname";
+    public static String SERVICE_ORG_URL = "service.organization.url";
+
+    public static String ORG_NAME = "organization.name";
+    public static String ORG_DISPNAME = "organization.displayname";
+    public static String ORG_URL = "organization.url";
 
 
 
@@ -129,6 +139,21 @@ public final class MetadataUtil {
         List<XMLObject> spTypes = entityDescriptor.getExtensions().getUnknownXMLObjects(SPType.DEF_ELEMENT_NAME);
         final SPType type = (SPType) (spTypes.isEmpty() ? null : spTypes.get(0));
         return type == null ? null : type.getSPType();
+    }
+
+    @Nullable
+    public static String getSPTypeFromMetadata(@Nonnull MetadataFetcherI metadataFetcher,
+                                                             @Nonnull MetadataSignerI metadataSigner,
+                                                             @Nonnull ILightRequest authnRequest)
+            throws EIDASSAMLEngineException {
+
+        String issuer = authnRequest.getIssuer();
+        if (StringUtils.isNotBlank(issuer)) {
+            // This would fetch the metadata only once!
+            EntityDescriptor entityDescriptor = metadataFetcher.getEntityDescriptor(issuer, metadataSigner);
+            return getSPTypeFromMetadata(entityDescriptor);
+        }
+        return null;
     }
 
     /**
