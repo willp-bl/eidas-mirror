@@ -39,6 +39,13 @@ import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 public interface ILightRequest extends Serializable {
 
     /**
+     * Returns the the RelayState sent with saml post/redirect binding
+     *
+     * @return RelayState.
+     */
+    String getRelayState();
+
+    /**
      * Returns the 2-letter country code as defined in ISO 3166 of the country where the citizen must authenticate.
      *
      * @return returns the 2-letter country code as defined in ISO 3166 of the country where the citizen must

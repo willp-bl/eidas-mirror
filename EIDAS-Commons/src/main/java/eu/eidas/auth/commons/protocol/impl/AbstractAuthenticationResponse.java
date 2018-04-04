@@ -1,13 +1,25 @@
-/**
- * This work is Open Source and licensed by the European Commission under the conditions of the European Public License
- * v1.1
- * <p/>
- * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1);
- * <p/>
- * any use of this file implies acceptance of the conditions of this license. Unless required by applicable law or
- * agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT WARRANTIES
- * OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
- * and limitations under the License.
+/*
+ * Copyright (c) 2017 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ *  EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
+ *
+ * This product combines work with different licenses. See the
+ * "NOTICE" text file for details on the various modules and licenses.
+ * The "NOTICE" text file is part of the distribution.
+ * Any derivative works that you distribute must include a readable
+ * copy of the "NOTICE" text file.
  */
 package eu.eidas.auth.commons.protocol.impl;
 
@@ -101,9 +113,12 @@ public abstract class AbstractAuthenticationResponse implements IAuthenticationR
             Preconditions.checkNotNull(copy, "copy");
             responseStatus(copy.getStatus());
             id(copy.getId());
+            relayState(copy.getRelayState());
             inResponseTo(copy.getInResponseToId());
             attributes(copy.getAttributes());
             issuer(copy.getIssuer());
+            subject(copy.getSubject());
+            subjectNameIdFormat(copy.getSubjectNameIdFormat());
             levelOfAssurance(copy.getLevelOfAssurance());
             ipAddress(copy.getIPAddress());
             audienceRestriction = copy.getAudienceRestriction();
@@ -118,9 +133,12 @@ public abstract class AbstractAuthenticationResponse implements IAuthenticationR
             Preconditions.checkNotNull(lightResponse, "lightResponse");
             responseStatus(lightResponse.getStatus());
             id(lightResponse.getId());
+            relayState(lightResponse.getRelayState());
             inResponseTo(lightResponse.getInResponseToId());
             attributes(lightResponse.getAttributes());
             issuer(lightResponse.getIssuer());
+            subject(lightResponse.getSubject());
+            subjectNameIdFormat(lightResponse.getSubjectNameIdFormat());
             levelOfAssurance(lightResponse.getLevelOfAssurance());
             ipAddress(lightResponse.getIPAddress());
             return (B) this;
@@ -139,6 +157,12 @@ public abstract class AbstractAuthenticationResponse implements IAuthenticationR
         @Nonnull
         public final B id(final String id) {
             lightResponseBuilder.id(id);
+            return (B) this;
+        }
+
+        @Nonnull
+        public final B relayState(final String relayState) {
+            lightResponseBuilder.relayState(relayState);
             return (B) this;
         }
 
@@ -227,6 +251,18 @@ public abstract class AbstractAuthenticationResponse implements IAuthenticationR
         @Nonnull
         public final B issuer(final String issuer) {
             lightResponseBuilder.issuer(issuer);
+            return (B) this;
+        }
+
+        @Nonnull
+        public final B subject(final String subject) {
+            lightResponseBuilder.subject(subject);
+            return (B) this;
+        }
+
+        @Nonnull
+        public final B subjectNameIdFormat(final String subjectNameIdFormat) {
+            lightResponseBuilder.subjectNameIdFormat(subjectNameIdFormat);
             return (B) this;
         }
 
@@ -433,6 +469,17 @@ public abstract class AbstractAuthenticationResponse implements IAuthenticationR
     }
 
     /**
+     * Getter for the relayState value.
+     *
+     * @return The relayState value.
+     */
+    @Override
+    @Nullable
+    public String getRelayState() {
+        return lightResponse.getRelayState();
+    }
+
+    /**
      * Getter for the notOnOrAfter value.
      *
      * @return The notOnOrAfter value.
@@ -477,6 +524,18 @@ public abstract class AbstractAuthenticationResponse implements IAuthenticationR
     @Nonnull
     public String getIssuer() {
         return lightResponse.getIssuer();
+    }
+
+    @Override
+    @Nullable
+    public String getSubject() {
+        return lightResponse.getSubject();
+    }
+
+    @Override
+    @Nullable
+    public String getSubjectNameIdFormat() {
+        return lightResponse.getSubjectNameIdFormat();
     }
 
     @Override

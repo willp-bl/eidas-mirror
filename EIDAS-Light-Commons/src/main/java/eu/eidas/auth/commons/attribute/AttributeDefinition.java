@@ -21,21 +21,18 @@
  */
 package eu.eidas.auth.commons.attribute;
 
-import java.io.InvalidObjectException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.ObjectStreamException;
-import java.io.Serializable;
-import java.net.URI;
-import java.net.URISyntaxException;
+import eu.eidas.util.Preconditions;
 
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
 import javax.annotation.concurrent.NotThreadSafe;
 import javax.annotation.concurrent.ThreadSafe;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlType;
 import javax.xml.namespace.QName;
-
-import eu.eidas.util.Preconditions;
+import java.io.*;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 /**
  * The definition of a personal attribute.
@@ -45,7 +42,20 @@ import eu.eidas.util.Preconditions;
 @Immutable
 @ThreadSafe
 @SuppressWarnings("ConstantConditions")
+@XmlType
 public final class AttributeDefinition<T> implements Comparable<AttributeDefinition<?>>, Serializable {
+
+	AttributeDefinition() {
+        nameUri = null;
+        friendlyName = null;
+        personType = null;
+        required = false;
+        transliterationMandatory = false;
+        xmlType = null;
+        uniqueIdentifier = false;
+        attributeValueMarshaller = null;
+        parameterizedType = null;
+    }
 
     /**
      * Effective Java, 2nd Ed. : Item 78: Serialization Proxy pattern.
@@ -226,7 +236,7 @@ public final class AttributeDefinition<T> implements Comparable<AttributeDefinit
      * <p>
      * Defensive serialization ensuring that the validation rules defined in the Builder are always used.
      */
-    private static final class SerializationProxy<T> implements Serializable {
+    static final class SerializationProxy<T> implements Serializable {
 
         private static final long serialVersionUID = -5864667076864193650L;
 
@@ -240,13 +250,13 @@ public final class AttributeDefinition<T> implements Comparable<AttributeDefinit
          * @serial
          */
         @Nonnull
-        private final String friendlyName;
+		private final String friendlyName;
 
         /**
          * @serial
          */
         @Nonnull
-        private final PersonType personType;
+		private final PersonType personType;
 
         /**
          * @serial
@@ -271,7 +281,18 @@ public final class AttributeDefinition<T> implements Comparable<AttributeDefinit
         /**
          * @serial
          */
-        private final String attributeValueMarshallerClassName;
+		private final String attributeValueMarshallerClassName;
+
+        private SerializationProxy() {
+            nameUri = null;
+            friendlyName = null;
+            personType = null;
+            required = false;
+            transliterationMandatory = false;
+            xmlType = null;
+            uniqueIdentifier = false;
+            attributeValueMarshallerClassName = null;
+        }
 
         private SerializationProxy(@Nonnull AttributeDefinition<T> attributeDefinition) {
             nameUri = attributeDefinition.getNameUri();
@@ -293,7 +314,7 @@ public final class AttributeDefinition<T> implements Comparable<AttributeDefinit
          * <p/>
          * The state of this class is transformed back into the class it represents.
          */
-        private Object readResolve() throws ObjectStreamException {
+        Object readResolve() throws ObjectStreamException {
             try {
                 @SuppressWarnings("unchecked") AttributeValueMarshaller<T> marshaller =
                         (AttributeValueMarshaller<T>) AttributeValueMarshallerFactory.newAttributeValueMarshallerInstance(
@@ -313,6 +334,7 @@ public final class AttributeDefinition<T> implements Comparable<AttributeDefinit
                 throw invalidObjectException;
             }
         }
+
     }
 
     @Nonnull
@@ -598,7 +620,12 @@ public final class AttributeDefinition<T> implements Comparable<AttributeDefinit
     /**
      * Effective Java, 2nd Ed. : Item 78: Serialization Proxy pattern.
      */
-    private Object writeReplace() throws ObjectStreamException {
+    Object writeReplace() throws ObjectStreamException {
         return new SerializationProxy<T>(this);
+    }
+    
+    @XmlElement
+    private SerializationProxy<T> getSerializationProxy() throws ObjectStreamException {
+    	return (SerializationProxy<T>)writeReplace();
     }
 }

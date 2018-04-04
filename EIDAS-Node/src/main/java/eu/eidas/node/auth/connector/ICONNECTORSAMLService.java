@@ -30,6 +30,7 @@ import eu.eidas.auth.commons.tx.AuthenticationExchange;
 import eu.eidas.auth.commons.tx.CorrelationMap;
 import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
 import eu.eidas.auth.commons.tx.StoredLightRequest;
+import eu.eidas.auth.engine.ProtocolEngineI;
 
 /**
  * Interface for working with SAMLObjects.
@@ -141,5 +142,12 @@ public interface ICONNECTORSAMLService {
      * @param attributes
      */
     boolean checkRepresentativeAttributes(@Nonnull ImmutableAttributeMap attributes);
+
+    /**
+     * Returns used ProtocolEngine
+     *
+     * @return
+     */
+    ProtocolEngineI getSamlEngine();
 
 }

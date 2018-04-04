@@ -1,12 +1,12 @@
 /*
  * Copyright (c) 2017 by European Commission
  *
- * Licensed under the EUPL, Version 1.1 or - as soon they will be
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
  * approved by the European Commission - subsequent versions of the
  * EUPL (the "Licence");
  * You may not use this work except in compliance with the Licence.
  * You may obtain a copy of the Licence at:
- * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the Licence is distributed on an "AS IS" basis,
@@ -14,13 +14,8 @@
  * implied.
  * See the Licence for the specific language governing permissions and
  * limitations under the Licence.
- *
- * This product combines work with different licenses. See the
- * "NOTICE" text file for details on the various modules and licenses.
- * The "NOTICE" text file is part of the distribution.
- * Any derivative works that you distribute must include a readable
- * copy of the "NOTICE" text file.
  */
+
 package eu.eidas.auth.engine.core;
 
 import com.google.common.collect.ImmutableSortedSet;
@@ -29,11 +24,10 @@ import eu.eidas.auth.commons.attribute.AttributeRegistry;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.IAuthenticationResponse;
-import eu.eidas.auth.commons.protocol.impl.SamlBindingUri;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import org.joda.time.DateTime;
-import org.opensaml.saml2.core.AuthnRequest;
-import org.opensaml.saml2.core.Response;
+import org.opensaml.saml.saml2.core.AuthnRequest;
+import org.opensaml.saml.saml2.core.Response;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -108,14 +102,6 @@ public interface ProtocolProcessorI {
     X509Certificate getEncryptionCertificate(@Nullable String requestIssuer) throws EIDASSAMLEngineException;
 
     /**
-     * // TODO to be removed
-     *
-     * @deprecated since 1.1
-     */
-    @Deprecated
-    SAMLExtensionFormat getFormat();
-
-    /**
      * Returns the registry for standard attributes.
      *
      * @return the registry for standard attributes.
@@ -143,10 +129,6 @@ public interface ProtocolProcessorI {
     @Nullable
     X509Certificate getRequestSignatureCertificate(@Nonnull String issuer) throws EIDASSAMLEngineException;
 
-    /**
-     * @return the id of the configured request validator
-     */
-    String getRequestValidatorId();
 
     /**
      * Returns the certificate that must be used to perform the signature validation for the given issuer for a response
@@ -158,26 +140,6 @@ public interface ProtocolProcessorI {
      */
     @Nullable
     X509Certificate getResponseSignatureCertificate(@Nonnull String issuer) throws EIDASSAMLEngineException;
-
-    /**
-     * @return the id of the configured response validator
-     */
-    String getResponseValidatorId();
-
-    /**
-     * Returns the ProxyService URL where to send requests for the given issuer (metadata URL) and SAML binding URI
-     * (optional method).
-     * <p>
-     * This method can return {@code null} when it is not supported.
-     *
-     * @param issuer the target service issuer (metadata URL)
-     * @param bindingUri the kind of SAML binding
-     * @return the service URL
-     * @throws EIDASSAMLEngineException
-     * @since 1.1
-     */
-    @Nullable
-    String getServiceUrl(@Nonnull String issuer, @Nonnull SamlBindingUri bindingUri) throws EIDASSAMLEngineException;
 
     /**
      * Verifies if the incoming request (received by the Proxy Service) is valid and conform.

@@ -1,41 +1,53 @@
 /*
- * Copyright (c) 2015 by European Commission
+ * Copyright (c) 2017 by European Commission
  *
- * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
- * the European Commission - subsequent versions of the EUPL (the "Licence");
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
  * You may not use this work except in compliance with the Licence.
  * You may obtain a copy of the Licence at:
  * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the Licence is distributed on an "AS IS" basis,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
  * See the Licence for the specific language governing permissions and
  * limitations under the Licence.
  *
- * This product combines work with different licenses. See the "NOTICE" text
- * file for details on the various modules and licenses.
- * The "NOTICE" text file is part of the distribution. Any derivative works
- * that you distribute must include a readable copy of the "NOTICE" text file.
- *
+ * This product combines work with different licenses. See the
+ * "NOTICE" text file for details on the various modules and licenses.
+ * The "NOTICE" text file is part of the distribution.
+ * Any derivative works that you distribute must include a readable
+ * copy of the "NOTICE" text file.
  */
 
 package eu.eidas.node.service;
 
-import com.google.common.collect.Sets;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.UnmodifiableIterator;
 import eu.eidas.auth.commons.*;
+import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
+import eu.eidas.auth.commons.exceptions.AbstractEIDASException;
+import eu.eidas.auth.commons.light.impl.LightRequest;
 import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
-import eu.eidas.auth.commons.protocol.stork.IStorkAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.eidas.IEidasAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.eidas.spec.LegalPersonSpec;
+import eu.eidas.auth.commons.tx.BinaryLightToken;
 import eu.eidas.auth.commons.tx.CorrelationMap;
 import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
-import eu.eidas.auth.engine.core.eidas.spec.EidasSpec;
+import eu.eidas.node.AbstractNodeServlet;
 import eu.eidas.node.NodeBeanNames;
 import eu.eidas.node.NodeParameterNames;
-import eu.eidas.node.NodeViewNames;
+import eu.eidas.node.NodeSpecificViewNames;
 import eu.eidas.node.service.validation.NodeParameterValidator;
-import eu.eidas.node.utils.EidasAttributesUtil;
 import eu.eidas.node.utils.PropertiesUtil;
 import eu.eidas.node.utils.SessionHolder;
+import eu.eidas.specificcommunication.BinaryLightTokenHelper;
+import eu.eidas.specificcommunication.SpecificCommunicationDefinitionBeanNames;
+import eu.eidas.specificcommunication.exception.SpecificCommunicationException;
+import eu.eidas.specificcommunication.protocol.impl.SpecificProxyserviceCommunicationServiceImpl;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +59,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 @SuppressWarnings("squid:S1989") // due to the code uses correlation maps, not http sessions
-public class ColleagueRequestServlet extends AbstractServiceServlet {
+public class ColleagueRequestServlet extends AbstractNodeServlet {
 
     private static final Logger LOG = LoggerFactory.getLogger(ColleagueRequestServlet.class.getName());
 
@@ -69,13 +81,13 @@ public class ColleagueRequestServlet extends AbstractServiceServlet {
     /**
      * Post method
      *
-     * @param request
-     * @param response
+     * @param httpServletRequest
+     * @param httpServletResponse
      * @throws ServletException
      * @throws IOException
      */
     @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+    protected void doPost(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse)
             throws ServletException, IOException {
         PropertiesUtil.checkProxyServiceActive();
         // Obtaining the assertion consumer url from SPRING context
@@ -85,12 +97,12 @@ public class ColleagueRequestServlet extends AbstractServiceServlet {
         CorrelationMap<StoredAuthenticationRequest> requestCorrelationMap = controllerService.getProxyServiceRequestCorrelationMap();
 
         // Prevent cookies from being accessed through client-side script WITHOUT renew of session.
-        setHTTPOnlyHeaderToSession(false, request, response);
-        SessionHolder.setId(request.getSession());
-        request.getSession().setAttribute(EidasParameterKeys.SAML_PHASE.toString(), EIDASValues.EIDAS_SERVICE_REQUEST);
+        setHTTPOnlyHeaderToSession(false, httpServletRequest, httpServletResponse);
+        SessionHolder.setId(httpServletRequest.getSession());
+        httpServletRequest.getSession().setAttribute(EidasParameterKeys.SAML_PHASE.toString(), EIDASValues.EIDAS_SERVICE_REQUEST);
 
         // Obtains the parameters from httpRequest
-        WebRequest webRequest = new IncomingRequest(request);
+        WebRequest webRequest = new IncomingRequest(httpServletRequest);
 
         // Validating the only HTTP parameter: SAMLRequest.
         String samlRequest = webRequest.getEncodedLastParameterValue(EidasParameterKeys.SAML_REQUEST);
@@ -115,56 +127,65 @@ public class ColleagueRequestServlet extends AbstractServiceServlet {
                     .eidasError(EidasErrorKey.SPROVIDER_SELECTOR_INVALID_RELAY_STATE)
                     .validate();
         }
-        // Validating the personal attribute list
-       // IPersonalAttributeList persAttrList = PersonalAttributeList.copyOf(authData.getRequestedAttributes());
-        //List<PersonalAttribute> attrList = new ArrayList<PersonalAttribute>();
 
-        boolean hasEidasAttributes = !Sets.intersection(EidasSpec.REGISTRY.getAttributes(),
-                                                        authData.getRequestedAttributes().getDefinitions()).isEmpty();
-        //ImmutablePersonalAttributeSet
-/*        for (PersonalAttribute pa : persAttrList) {
-            attrList.add(pa);
-        }*/
         String redirectUrl = authData.getAssertionConsumerServiceURL();
         LOG.debug("RedirectUrl: " + redirectUrl);
-        // Validating the citizenConsentUrl
-        NodeParameterValidator.paramName(EidasParameterKeys.EIDAS_SERVICE_REDIRECT_URL)
-                .paramValue(controllerService.getCitizenConsentUrl())
-                .eidasError(EidasErrorKey.COLLEAGUE_REQ_INVALID_DEST_URL)
-                .validate();
-        LOG.debug("sessionId is on cookies () or fromURL ", request.isRequestedSessionIdFromCookie(),
-                  request.isRequestedSessionIdFromURL());
+        LOG.debug("sessionId is on cookies () or fromURL ", httpServletRequest.isRequestedSessionIdFromCookie(),
+                  httpServletRequest.isRequestedSessionIdFromURL());
 
-        request.setAttribute(NodeParameterNames.SAML_TOKEN_FAIL.toString(), controllerService.getProxyService()
-                .generateSamlTokenFail(authData, EIDASStatusCode.REQUESTER_URI.toString(), EidasErrorKey.CITIZEN_RESPONSE_MANDATORY, remoteIpAddress));
+        httpServletRequest.setAttribute(EidasParameterKeys.SP_ID.toString(), authData.getProviderName());
 
-        request.setAttribute(EidasParameterKeys.SP_ID.toString(), authData.getProviderName());
-        if (authData instanceof IStorkAuthenticationRequest) {
-            request.setAttribute(NodeParameterNames.QAA_LEVEL.toString(),
-                                 ((IStorkAuthenticationRequest) authData).getQaa());
+        LightRequest lightRequest = buildLightRequest(httpServletRequest, httpServletResponse, authData);
+
+        final String tokenBase64 = putRequestInCommunicationCache(lightRequest);
+
+        setTokenRedirectAttributes(httpServletRequest, tokenBase64);
+
+        RequestDispatcher dispatcher = getServletContext().getRequestDispatcher(NodeSpecificViewNames.TOKEN_REDIRECT_MS_PROXY_SERVICE.toString());
+        dispatcher.forward(httpServletRequest, httpServletResponse);
+
+    }
+
+    private String putRequestInCommunicationCache(LightRequest lightRequest) throws ServletException {
+        final SpecificProxyserviceCommunicationServiceImpl specificProxyserviceCommunicationService
+                = (SpecificProxyserviceCommunicationServiceImpl) getApplicationContext()
+                .getBean(SpecificCommunicationDefinitionBeanNames.SPECIFIC_PROXYSERVICE_COMMUNICATION_SERVICE.toString());
+
+        final BinaryLightToken binaryLightToken;
+        try {
+            binaryLightToken = specificProxyserviceCommunicationService.putRequest(lightRequest);
+        } catch (SpecificCommunicationException e) {
+            throw new ServletException(e);
         }
 
-        request.setAttribute(NodeParameterNames.LOA_VALUE.toString(),
-                             EidasAttributesUtil.getUserFriendlyLoa(authData.getLevelOfAssurance()));
-        request.setAttribute(NodeParameterNames.CITIZEN_CONSENT_URL.toString(),
-                             encodeURL(controllerService.getCitizenConsentUrl(),
-                                       response)); // Correct URl redirect cookie implementation
+        return BinaryLightTokenHelper.encodeBinaryLightTokenBase64(binaryLightToken);
+    }
 
-        request.setAttribute(NodeParameterNames.ATTR_LIST.toString(), authData.getRequestedAttributes().entrySet().asList());
-        request.setAttribute(NodeParameterNames.REDIRECT_URL.toString(),
-                             encodeURL(redirectUrl, response));// Correct URl redirect cookie implementation
-        request.setAttribute(NodeParameterNames.EIDAS_ATTRIBUTES_PARAM.toString(), Boolean.valueOf(hasEidasAttributes));
+    private void setTokenRedirectAttributes(HttpServletRequest httpServletRequest, String tokenBase64) {
+        httpServletRequest.setAttribute(EidasParameterKeys.TOKEN.toString(), tokenBase64);
+        httpServletRequest.setAttribute(EidasParameterKeys.BINDING.toString(), httpServletRequest.getMethod());
 
-        request.setAttribute(NodeParameterNames.REQUEST_ID.toString(), authData.getId());
-        request.setAttribute(NodeParameterNames.COLLEAGUE_REQUEST.toString(), authData);
+        httpServletRequest.setAttribute(NodeParameterNames.REDIRECT_URL.toString(), getRedirectUrl());
+    }
 
-        NodeViewNames forwardUrl;
-        if (controllerService.isAskConsentType()) {
-            forwardUrl = NodeViewNames.EIDAS_SERVICE_PRESENT_CONSENT;
+    private String getRedirectUrl() {
+        final boolean isSpecificProxyServiceJar = (Boolean) getApplicationContext().getBean(NodeBeanNames.SPECIFIC_PROXYSERVICE_DEPLOYED_JAR.toString());
+        if (isSpecificProxyServiceJar){
+            return NodeSpecificViewNames.IDP_REQUEST.toString();
         } else {
-            forwardUrl = NodeViewNames.EIDAS_SERVICE_NO_CONSENT;
+            return  PropertiesUtil.getProperty(EidasParameterKeys.SPECIFIC_PROXYSERVICE_REQUEST_RECEIVER.toString());
         }
-        RequestDispatcher dispatcher = request.getRequestDispatcher(forwardUrl.toString());
-        dispatcher.forward(request, response);
+    }
+
+    protected LightRequest buildLightRequest(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, IAuthenticationRequest authenticationRequest)
+            throws ServletException, IOException {
+        try {
+            // Prevent cookies from being accessed through client-side script.
+            setHTTPOnlyHeaderToSession(false, httpServletRequest, httpServletResponse);
+            return LightRequest.builder(authenticationRequest).build();
+        } catch (AbstractEIDASException e) {
+            LOG.info("BUSINESS EXCEPTION : " + e, e);
+            throw e;
+        }
     }
 }

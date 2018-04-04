@@ -5,7 +5,6 @@
 <fmt:setBundle basename="eu.eidas.node.package" var="i18n_eng"/>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="e" uri="https://www.owasp.org/index.php/OWASP_Java_Encoder_Project" %>
-<%@ taglib prefix="token" uri="https://eidas.europa.eu/" %>
 
 <html>
 
@@ -31,14 +30,13 @@
                     <form name="redirectForm" method="${e:forHtml(binding)}" action="${e:forHtml(serviceUrl)}">
                         <input type="hidden" id="SAMLRequest" name="SAMLRequest" value="${e:forHtml(SAMLRequest)}"/>
                         <input type="hidden" id="relayState" name="RelayState" value="${e:forHtml(RelayState)}"/>
-                        <token:token/>
                     </form>
                     <noscript>
                         <form id="redirectFormNoJs" name="redirectFormNoJs" method="post" action="${e:forHtml(serviceUrl)}">
-                            <input type="hidden" id="consentValue_SAMLRequest" name="SAMLRequest" value="${e:forHtml(SAMLRequest)}"/>
-                            <input type="hidden" id="consentValue_relayState" name="RelayState" value="${e:forHtml(RelayState)}"/>
+                            <input type="hidden" id="noScriptSAMLRequest" name="SAMLRequest" value="${e:forHtml(SAMLRequest)}"/>
+                            <input type="hidden" id="noScriptrelayState" name="RelayState" value="${e:forHtml(RelayState)}"/>
                             <p class="box-btn">
-                                <input type="submit" id="ConsentValue_button" class="btn btn-next" value="<fmt:message key='accept.button' bundle="${i18n_eng}"/>"/>
+                                <input type="submit" id="noScriptButton" class="btn btn-next" value="<fmt:message key='accept.button' bundle="${i18n_eng}"/>"/>
                             </p>
                         </form>
                     </noscript>

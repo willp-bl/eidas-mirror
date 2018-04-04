@@ -1,59 +1,65 @@
 /*
- * This work is Open Source and licensed by the European Commission under the
- * conditions of the European Public License v1.1
+ * Copyright (c) 2017 by European Commission
  *
- * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1);
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
  *
- * any use of this file implies acceptance of the conditions of this license.
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations
- * under the License.
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
+ *
+ * This product combines work with different licenses. See the
+ * "NOTICE" text file for details on the various modules and licenses.
+ * The "NOTICE" text file is part of the distribution.
+ * Any derivative works that you distribute must include a readable
+ * copy of the "NOTICE" text file.
  */
+
 package eu.eidas.node.connector;
 
-import java.io.IOException;
+import eu.eidas.node.AbstractNodeServlet;
+import eu.eidas.node.NodeBeanNames;
+import eu.eidas.node.utils.EidasNodeMetadataGenerator;
+import eu.eidas.node.utils.PropertiesUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import eu.eidas.node.NodeBeanNames;
-import eu.eidas.node.utils.EidasNodeMetadataGenerator;
-import eu.eidas.node.utils.PropertiesUtil;
+import java.io.IOException;
 
 /**
  * generates metadata used to communicate with the Connector.
  */
 @SuppressWarnings("squid:S1989") // due to the code uses correlation maps, not http sessions
-public class ConnectorMetadataGeneratorServlet extends AbstractConnectorServlet{
+public class ConnectorMetadataGeneratorServlet extends AbstractNodeServlet {
     /**
      * Logger object.
      */
     private static final Logger LOG = LoggerFactory.getLogger(ConnectorMetadataGeneratorServlet.class.getName());
-    //TODO: Connector responder metadata generator belongs in fact to a Connector Specific module
-    private static final String IDP_METADATA_URL="/ConnectorResponderMetadata";
 
     @Override
     protected Logger getLogger() {
         return LOG;
     }
 
-    //the Connector presents itself as either an IdP or a SP
-    //IdP: will use SP-Specific SAMLEngine (since it is an IdP for a SP)
-    //SP: will use Connector-Service SAMLEngine
-
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        String generatorName=request.getServletPath().startsWith(IDP_METADATA_URL)?NodeBeanNames.CONNECTOR_AS_IDP_METADATA_GENERATOR.toString():NodeBeanNames.CONNECTOR_METADATA_GENERATOR.toString();
+        String generatorName = NodeBeanNames.CONNECTOR_METADATA_GENERATOR.toString();
         EidasNodeMetadataGenerator generator = (EidasNodeMetadataGenerator)getApplicationContext().getBean(generatorName);
         PropertiesUtil.checkConnectorActive();
         if(PropertiesUtil.isMetadataEnabled()) {
-            response.getOutputStream().print(generator.generateConnectorMetadata());
+            ConnectorControllerService controllerService = (ConnectorControllerService) getApplicationContext().getBean(
+                    NodeBeanNames.EIDAS_CONNECTOR_CONTROLLER.toString());
+            response.getOutputStream().print(generator.generateConnectorMetadata(controllerService.getConnectorService().getSamlService().getSamlEngine()));
         }else{
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
         }

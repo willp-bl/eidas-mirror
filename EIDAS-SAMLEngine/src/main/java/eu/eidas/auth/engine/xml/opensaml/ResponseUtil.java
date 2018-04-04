@@ -1,12 +1,12 @@
 /*
  * Copyright (c) 2017 by European Commission
  *
- * Licensed under the EUPL, Version 1.1 or - as soon they will be
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
  * approved by the European Commission - subsequent versions of the
  * EUPL (the "Licence");
  * You may not use this work except in compliance with the Licence.
  * You may obtain a copy of the Licence at:
- * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the Licence is distributed on an "AS IS" basis,
@@ -14,13 +14,8 @@
  * implied.
  * See the Licence for the specific language governing permissions and
  * limitations under the Licence.
- *
- * This product combines work with different licenses. See the
- * "NOTICE" text file for details on the various modules and licenses.
- * The "NOTICE" text file is part of the distribution.
- * Any derivative works that you distribute must include a readable
- * copy of the "NOTICE" text file.
  */
+
 package eu.eidas.auth.engine.xml.opensaml;
 
 import com.google.common.base.Function;
@@ -34,8 +29,8 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import org.opensaml.saml2.core.*;
-import org.opensaml.xml.XMLObject;
+import org.opensaml.core.xml.XMLObject;
+import org.opensaml.saml.saml2.core.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,6 +46,24 @@ import java.util.List;
 public final class ResponseUtil {
 
     private static final Logger LOG = LoggerFactory.getLogger(ResponseUtil.class);
+
+    public static String extractSubject(@Nonnull Assertion assertion) {
+        String subject = null;
+        if (assertion.getSubject() != null && assertion.getSubject().getNameID() != null) {
+            NameID nameId = assertion.getSubject().getNameID();
+            subject = nameId.getValue();
+        }
+        return subject;
+    }
+
+    public static String extractSubjectNameIdFormat(@Nonnull Assertion assertion) {
+        String format = null;
+        if (assertion.getSubject() != null && assertion.getSubject().getNameID() != null) {
+            NameID nameId = assertion.getSubject().getNameID();
+            format = nameId.getFormat();
+        }
+        return format;
+    }
 
     public static String extractSubjectConfirmationIPAddress(@Nonnull Assertion assertion) {
         String ipAddress = null;
@@ -126,7 +139,7 @@ public final class ResponseUtil {
     }
 
     public static boolean isFailureStatusCode(@Nonnull String statusCodeValue) {
-        return !StatusCode.SUCCESS_URI.equals(statusCodeValue);
+        return !StatusCode.SUCCESS.equals(statusCodeValue);
     }
 
     public static void verifyAssertion(@Nonnull Assertion assertion,

@@ -1,16 +1,7 @@
 package eu.eidas.auth.engine.configuration.dom;
 
-import java.io.IOException;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
-
 import eu.eidas.auth.commons.io.SingletonAccessor;
 import eu.eidas.auth.commons.lang.reflect.ReflectionUtil;
 import eu.eidas.auth.engine.SamlEngineClock;
@@ -21,6 +12,13 @@ import eu.eidas.auth.engine.core.ProtocolSignerI;
 import eu.eidas.auth.engine.core.SamlEngineCoreProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.io.IOException;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 /**
  * ReloadableConfiguration InvocationHandler
@@ -147,7 +145,7 @@ public final class ReloadableProtocolConfigurationInvocationHandler<T> implement
         ReloadableProtocolConfigurationInvocationHandler<T> invocationHandler =
                 new ReloadableProtocolConfigurationInvocationHandler<>(name, accessor, getter);
 
-        return ReflectionUtil.newProxyInstance(ReloadableConfigurationMap.class.getClassLoader(), type,
+        return ReflectionUtil.newProxyInstance(ReloadableProtocolConfigurationMap.class.getClassLoader(), type,
                                                (Class<? extends T>) proxiedObject.getClass(), invocationHandler);
     }
 

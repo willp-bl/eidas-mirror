@@ -15,21 +15,12 @@
 
 package eu.eidas.engine.test.simple.eidas;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import org.junit.FixMethodOrder;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.runners.MethodSorters;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import eu.eidas.auth.commons.EidasErrorKey;
+import eu.eidas.auth.commons.EidasErrors;
 import eu.eidas.auth.commons.EidasStringUtil;
 import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
-import eu.eidas.auth.commons.attribute.impl.StringAttributeValue;
+import eu.eidas.auth.commons.exceptions.EidasNodeException;
 import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.IRequestMessage;
 import eu.eidas.auth.commons.protocol.eidas.IEidasAuthenticationRequest;
@@ -41,16 +32,20 @@ import eu.eidas.auth.engine.ProtocolEngineI;
 import eu.eidas.auth.engine.core.eidas.EidasProtocolProcessor;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import eu.eidas.engine.test.simple.SSETestUtils;
+import org.junit.FixMethodOrder;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+import org.junit.runners.MethodSorters;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import static eu.eidas.engine.EidasAttributeTestUtil.newAttributeDefinition;
 import static eu.eidas.engine.EidasAttributeTestUtil.newEidasAttributeDefinition;
-import static eu.eidas.engine.EidasAttributeTestUtil.newStorkAttributeDefinition;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * The Class EidasAuthRequestTest performs unit test for EIDAS format requests
@@ -89,7 +84,7 @@ public class EidasAuthRequestTest {
         try {
             engine = ProtocolEngineFactory.createProtocolEngine(conf, new EidasProtocolProcessor(
                     "saml-engine-eidas-attributes-" + conf + ".xml",
-                    "saml-engine-additional-attributes-" + conf + ".xml", null, null, null));
+                    "saml-engine-additional-attributes-" + conf + ".xml", null, null, null, null));
         } catch (EIDASSAMLEngineException exc) {
             fail("Failed to initialize SAMLEngines");
         }
@@ -336,8 +331,8 @@ public class EidasAuthRequestTest {
      */
     @Test
     public void testGenerateAuthnRequestLoAErr() {
-        thrown.expect(IllegalArgumentException.class);
-        thrown.expectMessage("Invalid levelOfAssurance: \"incorrectValue\"");
+        thrown.expect(EidasNodeException.class);
+        thrown.expectMessage(EidasErrors.get(EidasErrorKey.INVALID_LOA_VALUE.errorMessage()));
 
         IAuthenticationRequest request = new EidasAuthenticationRequest.Builder().destination(destination)
                 .providerName(spName)
@@ -457,43 +452,6 @@ public class EidasAuthRequestTest {
     }
 
     /**
-     * Test validate file authentication request. Validate from XML file.
-     *
-     * @throws Exception the exception
-     */
-    @Test
-    public void testValidateFileAuthnRequest() throws Exception {
-
-        byte[] bytes = SSETestUtils.readSamlFromFile("/data/eu/eidas/EIDASSAMLEngine/AuthnRequest.xml");
-
-        try {
-            getEngine().unmarshallRequestAndValidate(bytes, "ES");
-            fail("testValidateFileAuthnRequest(...) should've thrown an EIDASSAMLEngineException!");
-        } catch (EIDASSAMLEngineException e) {
-            LOG.error(e.getMessage());
-        }
-    }
-
-    /**
-     * Test validate file authentication request tag delete.
-     *
-     * @throws Exception the exception
-     */
-    @Test
-    public void testValidateFileAuthnRequestTagDelete() throws Exception {
-
-        byte[] bytes = SSETestUtils.readSamlFromFile("/data/eu/eidas/EIDASSAMLEngine/AuthnRequestTagDelete.xml");
-
-        try {
-            getEngine().unmarshallRequestAndValidate(bytes, "ES");
-            fail("processValidateRequestToken(...) should have thrown an EIDASSAMLEngineException!");
-        } catch (EIDASSAMLEngineException e) {
-            LOG.error(e.getMessage());
-
-        }
-    }
-
-    /**
      * Test validate authentication request not trusted token.
      *
      * @throws EIDASSAMLEngineException the EIDASSAML engine exception
@@ -601,7 +559,7 @@ public class EidasAuthRequestTest {
         try {
             authRequest = getEngine().generateRequestMessage(request, null).getMessageBytes();
             IAuthenticationRequest authenticationRequest = getEngine().unmarshallRequestAndValidate(authRequest, "ES");
-            assertEquals("public", ((IEidasAuthenticationRequest) authenticationRequest).getSpType());
+            assertEquals("public", authenticationRequest.getSpType());
         } catch (EIDASSAMLEngineException e) {
             LOG.error("Error");
         }
@@ -705,41 +663,6 @@ public class EidasAuthRequestTest {
                    reqTrueToken.contains("isRequired=\"true\""));
         assertTrue("The token must contain the chain 'isRequired=\"false\"'",
                    reqFalseToken.contains("isRequired=\"false\""));
-    }
-
-    /**
-     * Test cross validation: a request in EIDAS format validated against an eidas engine
-     *
-     * @throws EIDASSAMLEngineException the EIDASSAML engine exception
-     */
-    @Test
-    public void testCrossValidation() throws Exception {
-
-        AttributeDefinition<String> eIdentifier = newStorkAttributeDefinition("eIdentifier", true);
-        AttributeDefinition<String> isAgeOver = newStorkAttributeDefinition("isAgeOver", true);
-
-        ImmutableAttributeMap attributeMapWithMandatoryDataset = new ImmutableAttributeMap.Builder().put(eIdentifier)
-                .put(isAgeOver, new StringAttributeValue("16", false), new StringAttributeValue("18", false))
-                .build();
-        IAuthenticationRequest request = new EidasAuthenticationRequest.Builder().destination(destination)
-                .providerName(spName)
-                .levelOfAssurance(LEVEL_OF_ASSURANCE)
-                .assertionConsumerServiceURL(assertConsumerUrl)
-                .spType(spType)
-                .requestedAttributes(attributeMapWithMandatoryDataset)
-                .id(DUMMY_SAML_ID)
-                .issuer(DUMMY_ISSUER_URI)
-                .citizenCountryCode("ES")
-                .nameIdFormat(SamlNameIdFormat.PERSISTENT.toString())
-                .build();
-        //prepare request in STORK format
-        ProtocolEngineI storkEngine = getEngine4();
-        IRequestMessage req = storkEngine.generateRequestMessage(request, null);
-
-        //validate request in a EIDAS enabled samlengine
-        IAuthenticationRequest authenticationRequest =
-                getEngine().unmarshallRequestAndValidate(req.getMessageBytes(), "ES");
-        assertNotNull(authenticationRequest);
     }
 
     /**

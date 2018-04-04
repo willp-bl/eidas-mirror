@@ -24,8 +24,8 @@
 	</properties>
 	
     <group>
-        <name>dev</name>
-        <password>dev-pass</password>
+        <name>devServer</name>
+        <password>dev-pass-server</password>
     </group>
     <management-center enabled="false">http://localhost:8080/mancenter</management-center>
     <network>
@@ -42,7 +42,7 @@
                 <multicast-group>224.2.2.7</multicast-group>
                 <multicast-port>54327</multicast-port>
             </multicast>
-            <tcp-ip enabled="false">
+            <tcp-ip enabled="true">
                 <interface>127.0.0.1</interface>
             </tcp-ip>
             <aws enabled="false">
@@ -124,11 +124,6 @@
         <time-to-live-seconds>86400</time-to-live-seconds><!-- 1 day -->
         <eviction-policy>LRU</eviction-policy>
     </map>
-    <map name="specificSpRequestCorrelationCacheService">
-        <in-memory-format>BINARY</in-memory-format>
-        <time-to-live-seconds>86400</time-to-live-seconds><!-- 1 day -->
-        <eviction-policy>LRU</eviction-policy>
-    </map>
     <map name="connectorRequestCorrelationCacheService">
         <in-memory-format>BINARY</in-memory-format>
         <time-to-live-seconds>86400</time-to-live-seconds><!-- 1 day -->
@@ -149,12 +144,36 @@
         <time-to-live-seconds>86400</time-to-live-seconds><!-- 1 day -->
         <eviction-policy>LRU</eviction-policy>
     </map>
-    <map name="specificServiceLtRequestCorrelationCacheService">
+    <map name="specificConsentRequestTokenCorrelationCacheService">
         <in-memory-format>BINARY</in-memory-format>
         <time-to-live-seconds>86400</time-to-live-seconds><!-- 1 day -->
         <eviction-policy>LRU</eviction-policy>
     </map>
-
+    <map name="specificConsentResponseTokenCorrelationCacheService">
+        <in-memory-format>BINARY</in-memory-format>
+        <time-to-live-seconds>86400</time-to-live-seconds><!-- 1 day -->
+        <eviction-policy>LRU</eviction-policy>
+    </map>
+    <map name="specificNodeConnectorRequestProviderCacheService">
+        <in-memory-format>BINARY</in-memory-format>
+        <time-to-live-seconds>300</time-to-live-seconds><!-- 5 minutes -->
+        <eviction-policy>LRU</eviction-policy>
+    </map>
+    <map name="nodeSpecificProxyserviceRequestProviderCacheService">
+        <in-memory-format>BINARY</in-memory-format>
+        <time-to-live-seconds>300</time-to-live-seconds><!-- 5 minutes -->
+        <eviction-policy>LRU</eviction-policy>
+    </map>
+    <map name="specificNodeProxyserviceResponseProviderCacheService">
+        <in-memory-format>BINARY</in-memory-format>
+        <time-to-live-seconds>300</time-to-live-seconds><!-- 5 minutes -->
+        <eviction-policy>LRU</eviction-policy>
+    </map>
+    <map name="nodeSpecificConnectorResponseProviderCacheService">
+        <in-memory-format>BINARY</in-memory-format>
+        <time-to-live-seconds>300</time-to-live-seconds><!-- 5 minutes -->
+        <eviction-policy>LRU</eviction-policy>
+    </map>
 
     <map name="default">
         <!--

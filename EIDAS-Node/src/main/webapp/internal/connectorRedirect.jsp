@@ -5,7 +5,6 @@
 <fmt:setBundle basename="eu.eidas.node.package" var="i18n_eng"/>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="e" uri="https://www.owasp.org/index.php/OWASP_Java_Encoder_Project" %>
-<%@ taglib prefix="token" uri="https://eidas.europa.eu/" %>
 
 
 <html>
@@ -40,10 +39,10 @@
                         <h2><fmt:message key="APRedirect.text" bundle="${i18n_eng}"/></h2>
                         <br/>
                         <form id="ColleagueResponse_NoJs" name="redirectForm" action="${e:forHtml(redirectUrl)}" method="post">
-                            <c:if test="${not empty samlTokenFail}" >a
+                            <c:if test="${not empty samlTokenFail}" >
                                 <input type="hidden" name="SAMLResponse" value="${e:forHtml(samlTokenFail)}" id="ColleagueResponse_SAMLResponse"/>
                             </c:if>
-                            <c:if test="${empty samlTokenFail}" >b
+                            <c:if test="${empty samlTokenFail}" >
                                 <input type="hidden" name="SAMLResponse" value="${e:forHtml(samlToken)}" id="ColleagueResponse_SAMLResponse"/>
                             </c:if>
 

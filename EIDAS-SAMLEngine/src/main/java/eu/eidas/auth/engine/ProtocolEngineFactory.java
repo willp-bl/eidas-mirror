@@ -16,7 +16,7 @@ import eu.eidas.auth.commons.io.SingletonAccessor;
 import eu.eidas.auth.engine.configuration.FixedProtocolConfigurationAccessor;
 import eu.eidas.auth.engine.configuration.ProtocolConfigurationAccessor;
 import eu.eidas.auth.engine.configuration.ProtocolEngineConfiguration;
-import eu.eidas.auth.engine.configuration.SamlEngineConfigurationException;
+import eu.eidas.auth.engine.configuration.ProtocolEngineConfigurationException;
 import eu.eidas.auth.engine.configuration.dom.DefaultProtocolEngineConfigurationFactory;
 import eu.eidas.auth.engine.configuration.dom.ProtocolEngineConfigurationFactory;
 import eu.eidas.auth.engine.core.ProtocolProcessorI;
@@ -63,7 +63,7 @@ public class ProtocolEngineFactory {
                                                        @Nonnull CertificateConfigurationManager configManager,
                                                        @Nonnull ProtocolProcessorI protocolProcessor,
                                                        @Nonnull SamlEngineClock samlEngineClock)
-            throws SamlEngineConfigurationException {
+            throws ProtocolEngineConfigurationException {
         ProtocolEngineConfigurationFactory protocolEngineConfigurationFactory =
                 new ProtocolEngineConfigurationFactory(configManager);
 
@@ -77,7 +77,7 @@ public class ProtocolEngineFactory {
                                                                ProtocolEngineConfigurationFactory protocolEngineConfigurationFactory,
                                                        @Nonnull ProtocolProcessorI protocolProcessor,
                                                        @Nonnull SamlEngineClock samlEngineClock)
-            throws SamlEngineConfigurationException {
+            throws ProtocolEngineConfigurationException {
         LOG.info(AbstractProtocolEngine.SAML_EXCHANGE, "creating new ProtocolEngine instance: {} ", instanceName);
 
         ProtocolEngineConfiguration preConfiguration =
@@ -114,12 +114,12 @@ public class ProtocolEngineFactory {
     private final ImmutableMap<String, ProtocolEngineI> engines;
 
     public ProtocolEngineFactory(@Nonnull ProtocolEngineConfigurationFactory configurationFactory)
-            throws SamlEngineConfigurationException {
+            throws ProtocolEngineConfigurationException {
         this(configurationFactory.getConfigurationMapAccessor());
     }
 
     public ProtocolEngineFactory(@Nonnull SingletonAccessor<ImmutableMap<String, ProtocolEngineConfiguration>> accessor)
-            throws SamlEngineConfigurationException {
+            throws ProtocolEngineConfigurationException {
         Preconditions.checkNotNull(accessor, "accessor");
         this.accessor = accessor;
         ImmutableMap.Builder<String, ProtocolEngineI> builder = ImmutableMap.builder();
@@ -128,7 +128,7 @@ public class ProtocolEngineFactory {
                 builder.put(instanceName, createProtocolEngine(instanceName));
             }
         } catch (IOException e) {
-            throw new SamlEngineConfigurationException(
+            throw new ProtocolEngineConfigurationException(
                     EidasErrors.get(EidasErrorKey.SAML_ENGINE_CONFIGURATION_ERROR.errorCode()),
                     EidasErrors.get(EidasErrorKey.SAML_ENGINE_CONFIGURATION_ERROR.errorMessage()), e);
         }
@@ -141,11 +141,11 @@ public class ProtocolEngineFactory {
 
             @Nonnull
             @Override
-            public ProtocolEngineConfiguration get() throws SamlEngineConfigurationException {
+            public ProtocolEngineConfiguration get() throws ProtocolEngineConfigurationException {
                 try {
                     return accessor.get().get(instanceName);
                 } catch (IOException e) {
-                    throw new SamlEngineConfigurationException(
+                    throw new ProtocolEngineConfigurationException(
                             EidasErrors.get(EidasErrorKey.SAML_ENGINE_CONFIGURATION_ERROR.errorCode()),
                             EidasErrors.get(EidasErrorKey.SAML_ENGINE_CONFIGURATION_ERROR.errorMessage()), e);
                 }

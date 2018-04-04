@@ -10,17 +10,9 @@
     </categories>
     <files>
         <file id="eidas.xml" name="eidas.xml" type="XML"/>
-        <file id="eidasUtil" name="eidasUtil.properties" type="properties"/>
         <file id="specific" name="specific.properties" type="properties"/>
     </files>
     <parameters>
-        <parameter name="DEMO-SP.qaalevel">
-            <category>parameter.category.label.general</category>
-            <info>QAALevel of the Demo SP</info>
-            <label>SP QAA level</label>
-            <default>3</default>
-            <file>eidas.xml</file>
-        </parameter>
         <parameter name="max.requests.ip">
             <category>parameter.category.label.general</category>
             <info>limit of requests per IP during max.time.ip (-1 unlimited)</info>
@@ -93,40 +85,11 @@
             <default>all</default>
             <file>eidas.xml</file>
         </parameter>
-        <parameter name="sp.default.parameters">
-            <category>parameter.category.label.general</category>
-            <info>IF a SP is not listed, the DEFAULT parameters it can access might be
-                (none|all|list;Of;Parameters)</info>
-            <label>Default allowed attributes</label>
-            <default>all</default>
-            <file>eidas.xml</file>
-        </parameter>
-        <parameter name="eidasconnector.id">
-            <category>parameter.category.label.administer.connector</category>
-            <info>Id of this Connector </info>
-            <label>Connector Id</label>
-            <default>CB</default>
-            <file>eidas.xml</file>
-        </parameter>
         <parameter name="connector.assertion.url">
             <category>parameter.category.label.administer.connector</category>
             <info>Connector assertion URL</info>
             <label>Assertion (return) URL</label>
             <default>http://connector.ip.address/eidas.deployment.name/ColleagueResponse</default>
-            <file>eidas.xml</file>
-        </parameter>
-        <parameter name="connector.destination.url">
-            <category>parameter.category.label.administer.connector</category>
-            <info>Connector destination URL</info>
-            <label>SP request handler</label>
-            <default>http://connector.ip.address/eidas.deployment.name/ServiceProvider</default>
-            <file>eidas.xml</file>
-        </parameter>
-        <parameter name="saml.sp">
-            <category>parameter.category.label.administer.connector</category>
-            <info></info>
-            <label>SP-Specific SAML configuration </label>
-            <default></default>
             <file>eidas.xml</file>
         </parameter>
         <parameter name="saml.service">
@@ -185,13 +148,6 @@
             <info>Present consent-value form? (true/false)</info>
             <label>Display consent value form</label>
             <default>true</default>
-            <file>eidas.xml</file>
-        </parameter>
-        <parameter name="service.specificidpredirect.url">
-            <category>parameter.category.label.administer.service</category>
-            <info>Method to call after IdP</info>
-            <label>URL to be called by the IdP</label>
-            <default></default>
             <file>eidas.xml</file>
         </parameter>
         <parameter name="service.citizenConsentUrl">
@@ -464,20 +420,6 @@
             <category>parameter.category.metadata</category>
             <info></info>
             <label>Metadata publishing URL (ProxyService)</label>
-            <default></default>
-            <file>eidas.xml</file>
-        </parameter>
-        <parameter name="connector.node.url">
-            <category>parameter.category.metadata</category>
-            <info></info>
-            <label>Issuer URL (Connector)</label>
-            <default></default>
-            <file>eidas.xml</file>
-        </parameter>
-        <parameter name="service.node.url">
-            <category>parameter.category.metadata</category>
-            <info></info>
-            <label>Issuer URL (ProxyService)</label>
             <default></default>
             <file>eidas.xml</file>
         </parameter>

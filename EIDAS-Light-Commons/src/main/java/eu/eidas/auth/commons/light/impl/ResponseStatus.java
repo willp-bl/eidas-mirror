@@ -7,6 +7,10 @@ import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
 import javax.annotation.concurrent.NotThreadSafe;
 import javax.annotation.concurrent.ThreadSafe;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlType;
 
 import eu.eidas.auth.commons.light.IResponseStatus;
 
@@ -20,8 +24,17 @@ import eu.eidas.auth.commons.light.IResponseStatus;
 @SuppressWarnings("ConstantConditions")
 @Immutable
 @ThreadSafe
+
+@XmlType(factoryMethod="newInstance")
+@XmlAccessorType(XmlAccessType.FIELD)
 public final class ResponseStatus extends AbstractResponseStatus implements Serializable {
 
+	private static ResponseStatus newInstance(){
+		return builder()
+				.statusCode("##").statusMessage("##").subStatusCode("##")
+				.build();
+	}
+	
     /**
      * Builder pattern for the {@link ResponseStatus} class.
      * <p/>

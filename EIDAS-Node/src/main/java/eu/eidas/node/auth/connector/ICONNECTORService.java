@@ -20,6 +20,7 @@ import eu.eidas.auth.commons.light.ILightRequest;
 import eu.eidas.auth.commons.protocol.IRequestMessage;
 import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
 import eu.eidas.auth.commons.tx.AuthenticationExchange;
+import eu.eidas.node.auth.service.ISERVICESAMLService;
 
 /**
  * Interface for managing incoming requests.
@@ -53,4 +54,11 @@ public interface ICONNECTORService {
      */
     @Nonnull
     AuthenticationExchange getAuthenticationResponse(@Nonnull WebRequest webRequest);
+
+
+    /**
+     * Returns with encapsulated saml service bean
+     * @return
+     */
+    ICONNECTORSAMLService getSamlService();
 }

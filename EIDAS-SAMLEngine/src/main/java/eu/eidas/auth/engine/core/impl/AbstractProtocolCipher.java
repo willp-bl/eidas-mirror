@@ -17,7 +17,7 @@ package eu.eidas.auth.engine.core.impl;
 
 import com.google.common.collect.ImmutableSet;
 import eu.eidas.auth.commons.EidasErrorKey;
-import eu.eidas.auth.engine.configuration.SamlEngineConfigurationException;
+import eu.eidas.auth.engine.configuration.ProtocolEngineConfigurationException;
 import eu.eidas.auth.engine.configuration.dom.EncryptionConfiguration;
 import eu.eidas.auth.engine.core.ProtocolCipherI;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
@@ -59,7 +59,7 @@ public abstract class AbstractProtocolCipher implements ProtocolCipherI {
     private final ImmutableSet<String> encryptionAlgorithmWhiteList;
 
     protected AbstractProtocolCipher(@Nonnull EncryptionConfiguration encryptionConfiguration)
-            throws SamlEngineConfigurationException {
+            throws ProtocolEngineConfigurationException {
         this(encryptionConfiguration.isCheckedValidityPeriod(),
              encryptionConfiguration.isDisallowedSelfSignedCertificate(),
              encryptionConfiguration.isResponseEncryptionMandatory(),
@@ -82,7 +82,7 @@ public abstract class AbstractProtocolCipher implements ProtocolCipherI {
                                      boolean disallowedSelfSignedCertificate,
                                      boolean responseEncryptionMandatory,
                                      @Nullable String encryptionAlgorithmWhiteList)
-            throws SamlEngineConfigurationException {
+            throws ProtocolEngineConfigurationException {
         try {
             this.checkedValidityPeriod = checkedValidityPeriod;
             this.disallowedSelfSignedCertificate = disallowedSelfSignedCertificate;
@@ -93,7 +93,7 @@ public abstract class AbstractProtocolCipher implements ProtocolCipherI {
             LOG.trace("AbstractProtocolCipher loaded.");
         } catch (Exception e) {
             LOG.error("AbstractProtocolCipher init: " + e, e);
-            throw new SamlEngineConfigurationException(EidasErrorKey.SAML_ENGINE_CONFIGURATION_ERROR.errorCode(),
+            throw new ProtocolEngineConfigurationException(EidasErrorKey.SAML_ENGINE_CONFIGURATION_ERROR.errorCode(),
                                                        EidasErrorKey.SAML_ENGINE_CONFIGURATION_ERROR.errorMessage(), e);
         }
     }

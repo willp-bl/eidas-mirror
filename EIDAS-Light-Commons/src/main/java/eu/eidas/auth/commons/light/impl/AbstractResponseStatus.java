@@ -5,6 +5,9 @@ import java.io.Serializable;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlType;
 
 import eu.eidas.auth.commons.light.IResponseStatus;
 import eu.eidas.util.Preconditions;
@@ -18,8 +21,17 @@ import eu.eidas.util.Preconditions;
  *
  * @since 1.1
  */
+@XmlType
+@XmlAccessorType(XmlAccessType.FIELD)
 @SuppressWarnings("ConstantConditions")
 public abstract class AbstractResponseStatus implements IResponseStatus, Serializable {
+
+    private AbstractResponseStatus() {
+        failure = false;
+        statusCode = null;
+        statusMessage = null;
+        subStatusCode = null;
+    }
 
     /**
      * Abstract Builder pattern with self-bounding generics for {@link IResponseStatus} subtypes.

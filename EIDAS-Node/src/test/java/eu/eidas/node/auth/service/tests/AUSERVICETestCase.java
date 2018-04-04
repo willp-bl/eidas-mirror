@@ -1,23 +1,19 @@
 /*
- * Copyright (c) 2016 by European Commission
+ * Copyright (c) 2017 by European Commission
  *
- * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
- * the European Commission - subsequent versions of the EUPL (the "Licence");
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
  * You may not use this work except in compliance with the Licence.
  * You may obtain a copy of the Licence at:
- * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the Licence is distributed on an "AS IS" basis,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
  * See the Licence for the specific language governing permissions and
  * limitations under the Licence.
- *
- * This product combines work with different licenses. See the "NOTICE" text
- * file for details on the various modules and licenses.
- * The "NOTICE" text file is part of the distribution. Any derivative works
- * that you distribute must include a readable copy of the "NOTICE" text file.
- *
  */
 
 package eu.eidas.node.auth.service.tests;
@@ -27,25 +23,22 @@ import com.google.common.collect.ImmutableMap;
 import eu.eidas.auth.commons.*;
 import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
-import eu.eidas.auth.commons.attribute.PersonType;
-import eu.eidas.auth.commons.attribute.impl.DateTimeAttributeValueMarshaller;
-import eu.eidas.auth.commons.attribute.impl.IntegerAttributeValueMarshaller;
 import eu.eidas.auth.commons.attribute.impl.StringAttributeValue;
-import eu.eidas.auth.commons.attribute.impl.StringAttributeValueMarshaller;
 import eu.eidas.auth.commons.cache.ConcurrentMapServiceDefaultImpl;
 import eu.eidas.auth.commons.exceptions.EIDASServiceException;
 import eu.eidas.auth.commons.exceptions.InvalidParameterEIDASException;
 import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.eidas.spec.EidasSpec;
 import eu.eidas.auth.commons.tx.CorrelationMap;
 import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
 import eu.eidas.auth.commons.tx.StoredAuthenticationRequestCorrelationMap;
-import eu.eidas.auth.engine.core.eidas.spec.EidasSpec;
-import eu.eidas.node.auth.service.*;
+import eu.eidas.node.auth.service.AUSERVICE;
+import eu.eidas.node.auth.service.AUSERVICESAML;
+import eu.eidas.node.auth.service.ISERVICECitizenService;
+import eu.eidas.node.auth.service.ISERVICESAMLService;
 import eu.eidas.node.auth.util.tests.TestingConstants;
-import org.joda.time.DateTime;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -63,79 +56,6 @@ import static org.mockito.Mockito.when;
  * Functional testing class to {@link AUSERVICE}.
  */
 public class AUSERVICETestCase {
-
-    private static final AttributeDefinition<Integer> IS_AGE_OVER =
-            new AttributeDefinition.Builder<Integer>().nameUri("http://www.stork.gov.eu/1.0/isAgeOver")
-                    .friendlyName("isAgeOver")
-                    .personType(PersonType.NATURAL_PERSON)
-                    .required(true)
-                    .uniqueIdentifier(false)
-                    .xmlType("http://www.w3.org/2001/XMLSchema", "string", "stork")
-                    .attributeValueMarshaller(new IntegerAttributeValueMarshaller())
-                    .build();
-
-    private static final AttributeDefinition<DateTime> DATE_OF_BIRTH =
-            new AttributeDefinition.Builder<DateTime>().nameUri("http://www.stork.gov.eu/1.0/dateOfBirth")
-                    .friendlyName("dateOfBirth")
-                    .personType(PersonType.NATURAL_PERSON)
-                    .required(false)
-                    .uniqueIdentifier(false)
-                    .xmlType("http://www.w3.org/2001/XMLSchema", "string", "stork")
-                    .attributeValueMarshaller(new DateTimeAttributeValueMarshaller())
-                    .build();
-
-    private static final AttributeDefinition<String> DUMMY =
-            new AttributeDefinition.Builder<String>().nameUri("http://www.stork.gov.eu/1.0/DataNascimento")
-                    .friendlyName("DataNascimento")
-                    .personType(PersonType.NATURAL_PERSON)
-                    .required(false)
-                    .uniqueIdentifier(false)
-                    .xmlType("http://www.w3.org/2001/XMLSchema", "string", "stork")
-                    .attributeValueMarshaller(new StringAttributeValueMarshaller())
-                    .build();
-
-    private static final AttributeDefinition<Integer> AGE =
-            new AttributeDefinition.Builder<Integer>().nameUri("http://www.stork.gov.eu/1.0/age")
-                    .friendlyName("age")
-                    .personType(PersonType.NATURAL_PERSON)
-                    .required(false)
-                    .uniqueIdentifier(false)
-                    .xmlType("http://www.w3.org/2001/XMLSchema", "string", "stork")
-                    .attributeValueMarshaller(new IntegerAttributeValueMarshaller())
-                    .build();
-
-    /**
-     * Personal Attribute List with dummy attributes.
-     */
-    private static final ImmutableAttributeMap ATTR_LIST =
-            ImmutableAttributeMap.builder().put(IS_AGE_OVER, "15").put(AGE).build();
-
-    /**
-     * Personal Attribute List with dummy attribute values.
-     */
-    private static final ImmutableAttributeMap EIDAS_ATTR_LIST =
-            ImmutableAttributeMap.builder().put(DATE_OF_BIRTH, "2011-11-11").put(AGE).build();
-
-    /**
-     * Personal Attribute List with dummy derived attribute values.
-     */
-    private static final ImmutableAttributeMap DER_ATTR_LIST =
-            ImmutableAttributeMap.builder().put(DUMMY, "2011-11-11").put(IS_AGE_OVER).build();
-
-    /**
-     * Personal Attribute List with dummy derived attribute values.
-     */
-    private static final ImmutableAttributeMap EIDAS_DER_ATTR_LIST =
-            ImmutableAttributeMap.builder().put(DATE_OF_BIRTH, "2011-11-11").put(IS_AGE_OVER).build();
-
-    /**
-     * Personal Attribute List with dummy derived attribute values.
-     * <p>
-     * TODO check need of this quick fix to make the code compile: conversion from PersonalAttributeList to
-     * ImmutableAttributeMap if maintained EidasSpec.REGISTRY should e.g. be replaced for a STORK related registry
-     */
-    private static final ImmutableAttributeMap STORK_EIDAS_DER_IMMUTABLE_ATTR_MAP = EIDAS_DER_ATTR_LIST;
-
 
     /**
      * Properties values for testing proposes.
@@ -157,8 +77,6 @@ public class AUSERVICETestCase {
 
         CONFIGS.setProperty(EidasErrorKey.INVALID_ATTRIBUTE_LIST.errorCode(), "203001");
         CONFIGS.setProperty(EidasErrorKey.INVALID_ATTRIBUTE_LIST.errorMessage(), "invalid.attrlist");
-        CONFIGS.setProperty(EidasErrorKey.SERVICE_ATTR_NULL.errorCode(), "202005");
-        CONFIGS.setProperty(EidasErrorKey.SERVICE_ATTR_NULL.errorMessage(), "invalid.attrList.service");
 
         //EIDASUtil.createInstance(CONFIGS);
     }
@@ -167,11 +85,11 @@ public class AUSERVICETestCase {
                                             String paramValue1,
                                             String paramName2,
                                             String paramValue2) {
-        return new IncomingRequest(IncomingRequest.Method.POST,
-                                   ImmutableMap.<String, ImmutableList<String>>of(paramName1,
-                                                                                  ImmutableList.<String>of(paramValue1),
-                                                                                  paramName2, ImmutableList.<String>of(
-                                                   paramValue2)), "127.0.0.1", null);
+        return new IncomingRequest(
+                BindingMethod.POST,
+                ImmutableMap.of(paramName1, ImmutableList.of(paramValue1), paramName2, ImmutableList.of(paramValue2)),
+                "127.0.0.1",
+                null);
     }
 
     /**
@@ -213,7 +131,7 @@ public class AUSERVICETestCase {
         CorrelationMap<StoredAuthenticationRequest> correlationMap =
                 new StoredAuthenticationRequestCorrelationMap(new ConcurrentMapServiceDefaultImpl());
         WebRequest mockParameters = mock(WebRequest.class);
-        when(mockParameters.getMethod()).thenReturn(WebRequest.Method.POST);
+        when(mockParameters.getMethod()).thenReturn(BindingMethod.POST);
         AUSERVICE auservice = new AUSERVICE();
         auservice.setSamlService(mockSamlService);
         auservice.processAuthenticationRequest(mockParameters, "relayState", correlationMap,
@@ -241,7 +159,7 @@ public class AUSERVICETestCase {
         CorrelationMap<StoredAuthenticationRequest> correlationMap =
                 new StoredAuthenticationRequestCorrelationMap(new ConcurrentMapServiceDefaultImpl());
         WebRequest mockParameters = mock(WebRequest.class);
-        when(mockParameters.getMethod()).thenReturn(WebRequest.Method.POST);
+        when(mockParameters.getMethod()).thenReturn(BindingMethod.POST);
         AUSERVICE auservice = new AUSERVICE();
         auservice.setSamlService(mockSamlService);
         auservice.processAuthenticationRequest(mockParameters, "relayState", correlationMap,
@@ -269,139 +187,20 @@ public class AUSERVICETestCase {
                                                      eq(TestingConstants.USER_IP_CONS.toString()),
                                                      eq("relayState"))).thenReturn(authData);
 
-        ISERVICECitizenService mockCitizenService = mock(ISERVICECitizenService.class);
-        when(mockCitizenService.updateConsentedAttributes((IAuthenticationRequest) any(),
-                                                          (ImmutableAttributeMap) any())).thenReturn(authData);
-
         CorrelationMap<StoredAuthenticationRequest> correlationMap =
                 new StoredAuthenticationRequestCorrelationMap(new ConcurrentMapServiceDefaultImpl());
         WebRequest mockParameters = mock(WebRequest.class);
-        when(mockParameters.getMethod()).thenReturn(WebRequest.Method.POST);
+        when(mockParameters.getMethod()).thenReturn(BindingMethod.POST);
         when(mockParameters.getRemoteIpAddress()).thenReturn(TestingConstants.USER_IP_CONS.toString());
         when(mockParameters.getEncodedLastParameterValue(EidasParameterKeys.SAML_REQUEST)).thenReturn(
                 EidasStringUtil.encodeToBase64("test".getBytes()));
         AUSERVICE auservice = new AUSERVICE();
         auservice.setSamlService(mockSamlService);
+
+        ISERVICECitizenService mockCitizenService = mock(ISERVICECitizenService.class);
         auservice.setCitizenService(mockCitizenService);
         assertSame(authData, auservice.processAuthenticationRequest(mockParameters, "relayState", correlationMap,
                                                                     TestingConstants.USER_IP_CONS.toString()));
-    }
-
-    /**
-     * Test method for processCitizenConsent(Map, boolean)}. Must succeed.
-     */
-    @Test
-    @Ignore
-    //TODO check why this test fails, added Ignore here only to allow build with execution of all tests that do not fail
-    //This test seems to be stork related therefore no need to still included in eidas
-    public void testProcessCitizenConsentNoConsent() {
-        AUSERVICE auservice = new AUSERVICE();
-        AUSERVICESAML auservicesaml = new AUSERVICESAML();
-        AUSERVICECitizen iserviceCitizenService = new AUSERVICECitizen();
-        auservicesaml.setSamlEngineInstanceName("Service");
-        iserviceCitizenService.setSamlService(auservicesaml);
-        auservice.setCitizenService(iserviceCitizenService);
-
-        final EidasAuthenticationRequest.Builder eidasAuthenticationRequestBuilder =
-                EidasAuthenticationRequest.builder();
-        eidasAuthenticationRequestBuilder.requestedAttributes(STORK_EIDAS_DER_IMMUTABLE_ATTR_MAP)
-                .destination(TestingConstants.REQUEST_DESTINATION_CONS.toString())
-                .id(TestingConstants.REQUEST_ID_CONS.toString())
-                .issuer(TestingConstants.REQUEST_ISSUER_CONS.toString())
-                .citizenCountryCode(TestingConstants.REQUEST_CITIZEN_COUNTRY_CODE_CONS.toString());
-        IAuthenticationRequest eidasAuthenticationRequest = eidasAuthenticationRequestBuilder.build();
-
-        WebRequest mockWebRequest = mock(WebRequest.class);
-
-        final StoredAuthenticationRequest.Builder storedAuthenticationRequestBuilder =
-                StoredAuthenticationRequest.builder()
-                        .remoteIpAddress(TestingConstants.USER_IP_CONS.toString())
-                        .request(eidasAuthenticationRequest);
-        StoredAuthenticationRequest storedRequest = storedAuthenticationRequestBuilder.build();
-
-        final IAuthenticationRequest iAuthenticationRequest =
-                auservice.processCitizenConsent(mockWebRequest, storedRequest, false);
-    }
-
-    /**
-     * Test method for link AUSERVICE#processCitizenConsent(Map, boolean)}. Must succeed.
-     */
-    @Test
-    @Ignore
-    //TODO check why this test fails, added Ignore here only to allow build with execution of all tests that do not fail
-    //This test seems to be stork related therefore no need to still included in eidas
-    public void testProcessCitizenConsentWithConsent() {
-        AUSERVICE auservice = new AUSERVICE();
-
-        final EidasAuthenticationRequest.Builder eidasAuthenticationRequestBuilder =
-                EidasAuthenticationRequest.builder();
-        eidasAuthenticationRequestBuilder.requestedAttributes(STORK_EIDAS_DER_IMMUTABLE_ATTR_MAP)
-                .destination(TestingConstants.REQUEST_DESTINATION_CONS.toString())
-                .id(TestingConstants.REQUEST_ID_CONS.toString())
-                .issuer(TestingConstants.REQUEST_ISSUER_CONS.toString())
-                .citizenCountryCode(TestingConstants.REQUEST_CITIZEN_COUNTRY_CODE_CONS.toString());
-        IAuthenticationRequest authData = eidasAuthenticationRequestBuilder.build();
-
-        ISERVICECitizenService mockCitizenService = mock(ISERVICECitizenService.class);
-        when(mockCitizenService.getCitizenConsent((WebRequest) any(), (ImmutableAttributeMap) any())).thenReturn(
-                new CitizenConsent());
-        when(mockCitizenService.filterConsentedAttributes((CitizenConsent) any(),
-                                                          (ImmutableAttributeMap) any())).thenReturn(
-                EIDAS_DER_ATTR_LIST);
-        when(mockCitizenService.updateConsentedAttributes((IAuthenticationRequest) any(),
-                                                          (ImmutableAttributeMap) any())).thenReturn(authData);
-
-        auservice.setCitizenService(mockCitizenService);
-        WebRequest mockParameters = mock(WebRequest.class);
-
-        StoredAuthenticationRequest storedRequest = StoredAuthenticationRequest.builder()
-                .remoteIpAddress(TestingConstants.USER_IP_CONS.toString())
-                .request(authData)
-                .build();
-
-    }
-
-    /**
-     * Test method for AUSERVICE#processCitizenConsent(Map, boolean)}. Must throw a {@link
-     * EIDASServiceException}.
-     */
-    @Test(expected = EIDASServiceException.class)
-    @Ignore
-    public void testProcessCitizenConsentWithConsentEmptyAttrList() {
-        AUSERVICE auservice = new AUSERVICE();
-
-        final EidasAuthenticationRequest.Builder eidasAuthenticationRequestBuilder =
-                EidasAuthenticationRequest.builder();
-        eidasAuthenticationRequestBuilder.requestedAttributes(STORK_EIDAS_DER_IMMUTABLE_ATTR_MAP);
-        eidasAuthenticationRequestBuilder.assertionConsumerServiceURL("http://AssertionConsumerServiceURL");
-        IAuthenticationRequest authData =
-                eidasAuthenticationRequestBuilder.destination(TestingConstants.REQUEST_DESTINATION_CONS.toString())
-                        .issuer(TestingConstants.REQUEST_ISSUER_CONS.toString())
-                        .citizenCountryCode(TestingConstants.CITIZEN_COUNTRY_CODE_CONS.toString())
-                        .id(TestingConstants.REQUEST_ID_CONS.toString())
-                        .build();
-
-        ISERVICECitizenService mockCitizenService = mock(ISERVICECitizenService.class);
-        when(mockCitizenService.getCitizenConsent((WebRequest) any(), (ImmutableAttributeMap) any())).thenReturn(
-                new CitizenConsent());
-        when(mockCitizenService.filterConsentedAttributes((CitizenConsent) any(),
-                                                          (ImmutableAttributeMap) any())).thenReturn(
-                ImmutableAttributeMap.of());
-
-        ISERVICESAMLService mockSamlService = mock(ISERVICESAMLService.class);
-        when(mockSamlService.generateErrorAuthenticationResponse((IAuthenticationRequest) any(), anyString(),
-                                                                 anyString(), anyString(), anyString(), anyString(),
-                                                                 anyBoolean())).thenReturn(new byte[0]);
-
-        auservice.setSamlService(mockSamlService);
-        auservice.setCitizenService(mockCitizenService);
-
-        WebRequest mockParameters = mock(WebRequest.class);
-
-        StoredAuthenticationRequest storedRequest = StoredAuthenticationRequest.builder()
-                .remoteIpAddress(TestingConstants.USER_IP_CONS.toString())
-                .request(authData)
-                .build();
     }
 
     @Rule

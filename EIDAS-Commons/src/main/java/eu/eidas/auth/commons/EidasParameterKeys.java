@@ -1,25 +1,29 @@
 /*
- * conditions of the European Public License v1.1
+ * Copyright (c) 2017 by European Commission
  *
- * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1);
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
  *
- * any use of this file implies acceptance of the conditions of this license.
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations
- * under the License.
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
  */
 package eu.eidas.auth.commons;
-
-import java.util.Set;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import eu.eidas.auth.commons.lang.Canonicalizers;
 import eu.eidas.auth.commons.lang.EnumMapper;
 import eu.eidas.auth.commons.lang.KeyAccessor;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.Set;
 
 /**
  * This enum class contains all the eIDAS Node, Commons and Specific Parameters.
@@ -104,14 +108,6 @@ public enum EidasParameterKeys {
      */
     COMPLEX_ADDRESS_VALUE("canonicalResidenceAddress"),
     /**
-     * Represents the 'consent-type' parameter constant.
-     */
-    CONSENT_TYPE("consent-type"),
-    /**
-     * Represents the 'consent-value' parameter constant.
-     */
-    CONSENT_VALUE("consent-value"),
-    /**
      * Represents the 'country' parameter constant.
      */
     COUNTRY("country"),
@@ -128,11 +124,6 @@ public enum EidasParameterKeys {
      * Represents the 'callback' parameter constant.
      */
     EIDAS_SERVICE_CALLBACK("callback"),
-    /**
-     * Represents the 'service.specificidpredirect.url' parameter constant.
-     */
-    EIDAS_SERVICE_IDP_CALLBACK_VALUE("service.specificidpredirect.url"),
-
     /**
      * Represents the 'errorCode' parameter constant.
      */
@@ -192,47 +183,9 @@ public enum EidasParameterKeys {
     ISSUER("samlIssuer"),
 
     /**
-     * Represents the 'mandatory' parameter constant.
-     */
-    MANDATORY("mandatory"),
-    /**
-     * Represents the 'mandatoryAttributeMissing' parameter constant.
-     */
-    MANDATORY_ATTR_MISSING("mandatoryAttributeMissing"),
-    /**
-     * Represents the 'mandatoryConsentAttrMissing' parameter constant.
-     */
-    MANDATORY_CONSENT_MISSING("mandatoryConsentAttrMissing"),
-    /**
-     * Represents the 'optional' parameter constant.
-     */
-    OPTIONAL("optional"),
-
-    /**
-     * Represents the 'no-consent-type' parameter constant.
-     */
-    NO_CONSENT_TYPE("no-consent-type"),
-    /**
-     * Represents the 'no-consent-value' parameter constant.
-     */
-    NO_CONSENT_VALUE("no-consent-value"),
-
-    /**
      * Represents the 'provider.name' parameter constant.
      */
     PROVIDER_NAME_VALUE("providerName"),
-    /**
-     * Represents the 'eidas.service.askconsent' parameter constant.
-     */
-    EIDAS_ASK_CONSENT("eidas.service.askconsent"),
-    /**
-     * Represents the 'eidas.service.askconsentvalue' parameter constant.
-     */
-    EIDAS_ASK_CONSENT_VALUE("eidas.service.askconsentvalue"),
-    /**
-     * Represents the 'eidasAuth' parameter constant.
-     */
-    EIDAS_AUTH_CONSENT("eidasAuth"),
     /**
      * Represents the 'validation.bypass' parameter constant.
      */
@@ -261,6 +214,15 @@ public enum EidasParameterKeys {
      */
     EIDAS_SERVICE_REDIRECT_URL("service.redirectUrl"),
     /**
+     * Represents the 'lightRequest' parameter constant.
+     */
+    LIGHT_REQUEST("lightRequest"),
+    /**
+     * Represents the 'lightResponse' parameter constant.
+     */
+    LIGHT_RESPONSE("lightResponse"),
+
+    /**
      * Represents the 'remoteAddr' parameter constant.
      */
     REMOTE_ADDR("remoteAddr"),
@@ -277,6 +239,14 @@ public enum EidasParameterKeys {
      * Represents the 'SAMLResponse' parameter constant.
      */
     SAML_RESPONSE("SAMLResponse"),
+    /**
+     * Represents the 'SMSSPRequest' parameter constant.
+     */
+    SMSSP_REQUEST("SMSSPRequest"),
+    /**
+     * Represents the 'SMSSPResponse' parameter constant.
+     */
+    SMSSP_RESPONSE("SMSSPResponse"),
     /**
      * Represents the 'SAMLResponse' parameter constant.
      */
@@ -317,6 +287,10 @@ public enum EidasParameterKeys {
      */
     SPECIFIC_ALLOW_UNKNOWNS("allow.unknowns"),
     /**
+     * Represents the 'specific.proxyservice.request.receiver' parameter constant.
+     */
+    SPECIFIC_CONNECTOR_RESPONSE_RECEIVER("specific.connector.response.receiver"),
+    /**
      * Represents the 'derivation.date.separator' parameter constant.
      */
     SPECIFIC_DERIVATION_DATE_SEP("derivation.date.separator"),
@@ -332,20 +306,14 @@ public enum EidasParameterKeys {
      * Represents the 'derivation.year.position' parameter constant.
      */
     SPECIFIC_DERIVATION_YEAR_POS("derivation.year.position"),
-
     /**
-     * sp.authorized.parameters Represents the '' parameter constant.
+     * Represents the 'specific.proxyservice.request.receiver' parameter constant.
      */
-    EIDAS_CONNECTOR_AUTHORIZED("sp.authorized.parameters"),
-
+    SPECIFIC_PROXYSERVICE_REQUEST_RECEIVER("specific.proxyservice.request.receiver"),
     /**
      * Represents the 'spSector' constant value.
      */
     SPSECTOR("spSector"),
-    /**
-     * Represents the 'spApplication' constant value.
-     */
-    SPAPPLICATION("spApplication"),
     /**
      * Represents the 'serviceProviderCountryCode' constant value.
      */
@@ -433,7 +401,7 @@ public enum EidasParameterKeys {
      */
     HTTP_METHOD("request.http.method"),
     /**
-     * request format name(eidas, stork1)
+     * request format name(eidas)
      */
     REQUEST_FORMAT("request.format"),
 
@@ -444,6 +412,8 @@ public enum EidasParameterKeys {
     SERVICE_PROVIDER_NAME("serviceProvider.name"),
 
     SERVICE_PROVIDER_TYPE("serviceProvider.type"),
+
+    TOKEN("token"),
 
     // put the ; on a separate line to make merges easier
     ;

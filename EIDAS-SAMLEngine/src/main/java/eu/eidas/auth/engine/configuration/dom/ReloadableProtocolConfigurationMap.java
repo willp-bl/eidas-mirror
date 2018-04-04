@@ -18,10 +18,9 @@ import eu.eidas.auth.commons.io.SingletonAccessor;
 import eu.eidas.auth.commons.io.SingletonAccessors;
 import eu.eidas.auth.commons.io.StreamMarshaller;
 import eu.eidas.auth.engine.configuration.ProtocolEngineConfiguration;
-import eu.eidas.auth.engine.configuration.SamlEngineConfigurationException;
+import eu.eidas.auth.engine.configuration.ProtocolEngineConfigurationException;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineRuntimeException;
 import eu.eidas.util.Preconditions;
-import org.apache.commons.lang.StringUtils;
 
 /**
  * Reloadable ConfigurationMap.
@@ -38,7 +37,7 @@ public final class ReloadableProtocolConfigurationMap {
         try {
             InstanceMap instanceMap = DOMConfigurationParser.parseConfiguration(configurationFileName, input);
             return DOMConfigurator.getProtocolConfigurationMap(instanceMap, defaultPath, overrideFileName);
-        } catch (SamlEngineConfigurationException e) {
+        } catch (ProtocolEngineConfigurationException e) {
             throw new IOException(e);
         }
     }
@@ -107,8 +106,8 @@ public final class ReloadableProtocolConfigurationMap {
         try {
             return accessor.get();
         } catch (IOException e) {
-            if (e.getCause() instanceof SamlEngineConfigurationException) {
-                throw new EIDASSAMLEngineRuntimeException((SamlEngineConfigurationException) e.getCause());
+            if (e.getCause() instanceof ProtocolEngineConfigurationException) {
+                throw new EIDASSAMLEngineRuntimeException((ProtocolEngineConfigurationException) e.getCause());
             }
             throw new EIDASSAMLEngineRuntimeException(e);
         }

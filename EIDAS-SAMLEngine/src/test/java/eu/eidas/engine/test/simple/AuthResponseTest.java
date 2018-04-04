@@ -30,12 +30,11 @@ import eu.eidas.auth.commons.protocol.IResponseMessage;
 import eu.eidas.auth.commons.protocol.eidas.IEidasAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.eidas.LevelOfAssurance;
 import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.eidas.spec.NaturalPersonSpec;
 import eu.eidas.auth.commons.protocol.impl.AuthenticationResponse;
 import eu.eidas.auth.engine.ProtocolEngineFactory;
 import eu.eidas.auth.engine.ProtocolEngineI;
-import eu.eidas.auth.engine.core.eidas.spec.NaturalPersonSpec;
-import eu.eidas.auth.engine.core.stork.StorkExtensionProcessor;
-import eu.eidas.auth.engine.core.validator.stork.STORKAttributes;
+import eu.eidas.auth.engine.core.eidas.EidasProtocolProcessor;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -300,6 +299,8 @@ public class AuthResponseTest {
                 .id("963158")
                 .inResponseTo(authenRequest.getId())
                 .issuer("http://response.issuer")
+                .subject("UK/UK/Banksy")
+                .subjectNameIdFormat("urn:oasis:names:tc:SAML:2.0:nameid-format:persistent")
                 .ipAddress("123.123.123.123")
                 .levelOfAssurance("high")
                 .statusCode(EIDASStatusCode.SUCCESS_URI.toString())
@@ -324,6 +325,8 @@ public class AuthResponseTest {
                 .id("963158")
                 .inResponseTo(authenRequest.getId())
                 .issuer("http://response.issuer")
+                .subject("UK/UK/Banksy")
+                .subjectNameIdFormat("urn:oasis:names:tc:SAML:2.0:nameid-format:persistent")
                 .ipAddress("123.123.123.123")
                 .levelOfAssurance("high")
                 .statusCode(EIDASStatusCode.SUCCESS_URI.toString())
@@ -343,6 +346,8 @@ public class AuthResponseTest {
                 .inResponseTo(authenRequest.getId())
                 .issuer("http://response.issuer")
                 .ipAddress("123.123.123.123")
+                .subject("UK/UK/Banksy")
+                .subjectNameIdFormat("urn:oasis:names:tc:SAML:2.0:nameid-format:persistent")
                 .levelOfAssurance("high")
                 .statusCode(EIDASStatusCode.SUCCESS_URI.toString())
                 .build();
@@ -369,6 +374,8 @@ public class AuthResponseTest {
                 .inResponseTo(authenRequest.getId())
                 .issuer("http://response.issuer")
                 .ipAddress("123.123.123.123")
+                .subject("UK/UK/Banksy")
+                .subjectNameIdFormat("urn:oasis:names:tc:SAML:2.0:nameid-format:persistent")
                 .levelOfAssurance("high")
                 .statusCode(EIDASStatusCode.SUCCESS_URI.toString())
                 .build();
@@ -387,6 +394,8 @@ public class AuthResponseTest {
                 .inResponseTo(authenRequest.getId())
                 .issuer("http://response.issuer")
                 .ipAddress("123.123.123.123")
+                .subject("UK/UK/Banksy")
+                .subjectNameIdFormat("urn:oasis:names:tc:SAML:2.0:nameid-format:persistent")
                 .levelOfAssurance("high")
                 .statusCode(EIDASStatusCode.SUCCESS_URI.toString())
                 .build();
@@ -410,6 +419,8 @@ public class AuthResponseTest {
                 .inResponseTo("456")
                 .issuer("http://response.issuer")
                 .ipAddress("123.123.123.123")
+                .subject("UK/UK/Banksy")
+                .subjectNameIdFormat("urn:oasis:names:tc:SAML:2.0:nameid-format:persistent")
                 .levelOfAssurance("high")
                 .build();
 
@@ -444,6 +455,8 @@ public class AuthResponseTest {
                 .inResponseTo(authenRequest.getId())
                 .issuer("http://response.issuer")
                 .ipAddress("123.123.123.123")
+                .subject("UK/UK/Banksy")
+                .subjectNameIdFormat("urn:oasis:names:tc:SAML:2.0:nameid-format:persistent")
                 .levelOfAssurance("high")
                 .statusCode(EIDASStatusCode.SUCCESS_URI.toString())
                 .build();
@@ -475,6 +488,8 @@ public class AuthResponseTest {
                 .inResponseTo(authenRequest.getId())
                 .issuer("http://response.issuer")
                 .ipAddress("123.123.123.123")
+                .subject("UK/UK/Banksy")
+                .subjectNameIdFormat("urn:oasis:names:tc:SAML:2.0:nameid-format:persistent")
                 .levelOfAssurance("high")
                 .statusCode(EIDASStatusCode.SUCCESS_URI.toString())
                 .build();
@@ -496,16 +511,18 @@ public class AuthResponseTest {
     public final void testResponseInvalidParametersAttrSimpleValue() throws Exception {
         ImmutableAttributeMap.Builder wrongList = ImmutableAttributeMap.builder();
 
-        AttributeDefinition isAgeOver = StorkExtensionProcessor.INSTANCE.getAttributeDefinitionNullable(
-                STORKAttributes.STORK_ATTRIBUTE_ISAGEOVER);
+        EidasProtocolProcessor.INSTANCE.getClass();
+        AttributeDefinition birthName =  NaturalPersonSpec.Definitions.BIRTH_NAME;
 
-        wrongList.put(isAgeOver, "");
+        wrongList.put(birthName, "");
 
         AuthenticationResponse response = new AuthenticationResponse.Builder().attributes(wrongList.build())
                 .id("963158")
                 .inResponseTo(authenRequest.getId())
                 .issuer("http://response.issuer")
                 .ipAddress("123.123.123.123")
+                .subject("UK/UK/Banksy")
+                .subjectNameIdFormat("urn:oasis:names:tc:SAML:2.0:nameid-format:persistent")
                 .levelOfAssurance("high")
                 .statusCode(EIDASStatusCode.SUCCESS_URI.toString())
                 .build();
@@ -526,16 +543,18 @@ public class AuthResponseTest {
     public final void testResponseInvalidParametersAttrNoValue() throws Exception {
         ImmutableAttributeMap.Builder wrongList = ImmutableAttributeMap.builder();
 
-        AttributeDefinition isAgeOver = StorkExtensionProcessor.INSTANCE.getAttributeDefinitionNullable(
-                STORKAttributes.STORK_ATTRIBUTE_ISAGEOVER);
+        EidasProtocolProcessor.INSTANCE.getClass();
+        AttributeDefinition gender =  NaturalPersonSpec.Definitions.GENDER;
 
-        wrongList.put(isAgeOver);
+        wrongList.put(gender);
 
         AuthenticationResponse response = new AuthenticationResponse.Builder().attributes(wrongList.build())
                 .id("963158")
                 .inResponseTo(authenRequest.getId())
                 .issuer("http://response.issuer")
                 .ipAddress("123.123.123.123")
+                .subject("UK/UK/Banksy")
+                .subjectNameIdFormat("urn:oasis:names:tc:SAML:2.0:nameid-format:persistent")
                 .levelOfAssurance("high")
                 .statusCode(EIDASStatusCode.SUCCESS_URI.toString())
                 .build();
@@ -561,6 +580,8 @@ public class AuthResponseTest {
                 .inResponseTo(authenRequest.getId())
                 .issuer("http://response.issuer")
                 .ipAddress("123.123.123.123")
+                .subject("UK/UK/Banksy")
+                .subjectNameIdFormat("urn:oasis:names:tc:SAML:2.0:nameid-format:persistent")
                 .levelOfAssurance("high")
                 .statusCode(EIDASStatusCode.SUCCESS_URI.toString())
                 .build();
@@ -569,35 +590,6 @@ public class AuthResponseTest {
             authResponse = getEngine().generateResponseMessage(authenRequest, response, false, ipAddress).getMessageBytes();
             // In Conf1 ipValidate is false
             getEngine().unmarshallResponseAndValidate(authResponse, null, 0, 0,null);
-        } catch (EIDASSAMLEngineException e) {
-            LOG.error("Error " + e, e);
-        }
-    }
-
-    /**
-     * Test validate authentication response set null complex value into attribute.
-     */
-    @Test
-    public final void testResponseInvalidParametersAttrComplexValue() throws Exception {
-        ImmutableAttributeMap.Builder wrongList = ImmutableAttributeMap.builder();
-
-        AttributeDefinition isAgeOver = StorkExtensionProcessor.INSTANCE.getAttributeDefinitionNullable(
-                STORKAttributes.STORK_ATTRIBUTE_ISAGEOVER);
-
-        wrongList.put(isAgeOver);
-
-        AuthenticationResponse response = new AuthenticationResponse.Builder().attributes(wrongList.build())
-                .id("963158")
-                .inResponseTo(authenRequest.getId())
-                .issuer("http://response.issuer")
-                .ipAddress("123.123.123.123")
-                .levelOfAssurance("high")
-                .statusCode(EIDASStatusCode.SUCCESS_URI.toString())
-                .build();
-        try {
-            authResponse = getEngine().generateResponseMessage(authenRequest, response, false, ipAddress).getMessageBytes();
-            // In Conf1 ipValidate is false
-            getEngine().unmarshallResponseAndValidate(authResponse, null, 0, 0, null);
         } catch (EIDASSAMLEngineException e) {
             LOG.error("Error " + e, e);
         }
@@ -679,7 +671,7 @@ public class AuthResponseTest {
             if ("canonicalResidenceAddress".equalsIgnoreCase(attributeDefinition.getFriendlyName())) {
                 String value = (String) values.iterator().next().getValue();
 
-                assertEquals("Incorrect STORK address: ", getAddressValue(), value);
+                assertEquals("Incorrect eIDAS address: ", getAddressValue(), value);
             }
         }
     }
@@ -701,6 +693,8 @@ public class AuthResponseTest {
         response.id("963158");
         response.inResponseTo(authenRequest.getId());
         response.issuer("http://response.issuer");
+        response.subject("UK/UK/Banksy");
+        response.subjectNameIdFormat("urn:oasis:names:tc:SAML:2.0:nameid-format:persistent");
         response.ipAddress("123.123.123.123");
         response.levelOfAssurance("high");
         response.statusCode(EIDASStatusCode.SUCCESS_URI.toString());
@@ -734,6 +728,8 @@ public class AuthResponseTest {
         response.inResponseTo(authenRequest.getId());
         response.issuer("http://response.issuer");
         response.ipAddress("123.123.123.123");
+        response.subject("UK/UK/Banksy");
+        response.subjectNameIdFormat("urn:oasis:names:tc:SAML:2.0:nameid-format:persistent");
         response.levelOfAssurance("high");
         response.statusCode(EIDASStatusCode.SUCCESS_URI.toString());
 
@@ -764,6 +760,8 @@ public class AuthResponseTest {
         response.inResponseTo(authenRequest.getId());
         response.issuer("http://response.issuer");
         response.ipAddress("123.123.123.123");
+        response.subject("UK/UK/Banksy");
+        response.subjectNameIdFormat("urn:oasis:names:tc:SAML:2.0:nameid-format:persistent");
         response.levelOfAssurance("high");
 
         authResponse =
@@ -785,6 +783,8 @@ public class AuthResponseTest {
         response.issuer("http://response.issuer");
         response.ipAddress("123.123.123.123");
         response.levelOfAssurance("high");
+        response.subject("UK/UK/Banksy");
+        response.subjectNameIdFormat("urn:oasis:names:tc:SAML:2.0:nameid-format:persistent");
         response.statusCode(EIDASStatusCode.SUCCESS_URI.toString());
 
         IResponseMessage responseMessage =
@@ -816,6 +816,8 @@ public class AuthResponseTest {
         response.failure(true);
         response.subStatusCode(EIDASSubStatusCode.AUTHN_FAILED_URI.toString());
         response.statusMessage("message");
+        //response.subject("UK/UK/Banksy");
+        //response.subjectNameIdFormat("urn:oasis:names:tc:SAML:2.0:nameid-format:persistent");
         response.id("963158");
         response.inResponseTo(authenRequest.getId());
         response.issuer("http://response.issuer");

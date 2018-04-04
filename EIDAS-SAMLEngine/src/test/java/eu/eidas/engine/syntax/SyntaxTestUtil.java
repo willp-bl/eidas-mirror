@@ -28,12 +28,12 @@ import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.IResponseMessage;
 import eu.eidas.auth.commons.protocol.eidas.LevelOfAssurance;
 import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.eidas.spec.EidasSpec;
 import eu.eidas.auth.commons.protocol.impl.AuthenticationResponse;
 import eu.eidas.auth.commons.protocol.impl.SamlNameIdFormat;
 import eu.eidas.auth.engine.ProtocolEngineFactory;
 import eu.eidas.auth.engine.ProtocolEngineI;
 import eu.eidas.auth.engine.core.eidas.EidasProtocolProcessor;
-import eu.eidas.auth.engine.core.eidas.spec.EidasSpec;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 
 import static org.junit.Assert.fail;
@@ -94,7 +94,7 @@ public class SyntaxTestUtil {
         try {
             engine = ProtocolEngineFactory.createProtocolEngine(conf, new EidasProtocolProcessor(
                     "saml-engine-eidas-attributes-" + conf + ".xml",
-                    "saml-engine-additional-attributes-" + conf + ".xml", null, null, null));
+                    "saml-engine-additional-attributes-" + conf + ".xml", null, null, null, null));
 
             //engine.setSignerProperty(SAMLEngineSignI.SIGNATURE_ALGORITHM, "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256");
 
@@ -127,6 +127,8 @@ public class SyntaxTestUtil {
                 .issuer("http://C-PEPS.gov.xx")
                 .inResponseTo("456")
                 .ipAddress("111.222.333.4444")
+                .subject("UK/BE/Banksy")
+                .subjectNameIdFormat("urn:oasis:names:tc:SAML:2.0:nameid-format:transient")
                 .levelOfAssurance("high")
                 .statusCode(EIDASStatusCode.SUCCESS_URI.toString())
                 .attributes(newResponseImmutableAttributeMap())

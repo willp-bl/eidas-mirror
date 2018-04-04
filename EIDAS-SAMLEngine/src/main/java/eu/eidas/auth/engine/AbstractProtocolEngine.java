@@ -1,66 +1,58 @@
 /*
- * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
- * the European Commission - subsequent versions of the EUPL (the "Licence");
- * You may not use this work except in compliance with the Licence. You may
- * obtain a copy of the Licence at:
+ * Copyright (c) 2017 by European Commission
  *
- * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the Licence is distributed on an "AS IS" basis, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * Licence for the specific language governing permissions and limitations under
- * the Licence.
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
  */
 
 package eu.eidas.auth.engine;
 
-import java.security.cert.X509Certificate;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import com.google.common.collect.ImmutableSet;
-
-import org.apache.commons.lang.StringUtils;
-import org.opensaml.Configuration;
-import org.opensaml.saml2.core.Assertion;
-import org.opensaml.saml2.core.AuthnRequest;
-import org.opensaml.saml2.core.Response;
-import org.opensaml.saml2.core.StatusCode;
-import org.opensaml.xml.ConfigurationException;
-import org.opensaml.xml.XMLObject;
-import org.opensaml.xml.parse.ParserPool;
-import org.opensaml.xml.schema.XSAny;
-import org.opensaml.xml.schema.impl.XSAnyBuilder;
-import org.opensaml.xml.schema.impl.XSAnyMarshaller;
-import org.opensaml.xml.schema.impl.XSAnyUnmarshaller;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.Marker;
-import org.slf4j.MarkerFactory;
-import org.w3c.dom.Document;
-
 import eu.eidas.auth.commons.EidasErrorKey;
 import eu.eidas.auth.commons.EidasStringUtil;
 import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.xml.opensaml.OpenSamlHelper;
 import eu.eidas.auth.engine.configuration.ProtocolConfigurationAccessor;
 import eu.eidas.auth.engine.configuration.ProtocolEngineConfiguration;
-import eu.eidas.auth.engine.configuration.SamlEngineConfigurationException;
-import eu.eidas.auth.engine.core.ProtocolCipherI;
-import eu.eidas.auth.engine.core.ProtocolDecrypterI;
-import eu.eidas.auth.engine.core.ProtocolEncrypterI;
-import eu.eidas.auth.engine.core.ProtocolProcessorI;
-import eu.eidas.auth.engine.core.ProtocolSignerI;
-import eu.eidas.auth.engine.core.SamlEngineCoreProperties;
-import eu.eidas.auth.engine.xml.opensaml.SAMLBootstrap;
+import eu.eidas.auth.engine.configuration.ProtocolEngineConfigurationException;
+import eu.eidas.auth.engine.core.*;
 import eu.eidas.auth.engine.xml.opensaml.SAMLEngineUtils;
 import eu.eidas.encryption.exception.MarshallException;
 import eu.eidas.encryption.exception.UnmarshallException;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineRuntimeException;
 import eu.eidas.util.Preconditions;
+import org.apache.commons.lang.StringUtils;
+import org.opensaml.core.xml.XMLObject;
+import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
+import org.opensaml.core.xml.schema.XSAny;
+import org.opensaml.core.xml.schema.impl.XSAnyBuilder;
+import org.opensaml.core.xml.schema.impl.XSAnyMarshaller;
+import org.opensaml.core.xml.schema.impl.XSAnyUnmarshaller;
+import org.opensaml.saml.saml2.core.Assertion;
+import org.opensaml.saml.saml2.core.AuthnRequest;
+import org.opensaml.saml.saml2.core.Response;
+import org.opensaml.saml.saml2.core.StatusCode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
+import org.w3c.dom.Document;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.security.cert.X509Certificate;
 
 /**
  * Base class for the ProtocolEngine.
@@ -78,19 +70,10 @@ public abstract class AbstractProtocolEngine {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractProtocolEngine.class);
 
     static {
-        try {
-            SAMLBootstrap.bootstrap();
+        OpenSamlHelper.initialize();
+        XMLObjectProviderRegistrySupport.registerObjectProvider(XSAny.TYPE_NAME, new XSAnyBuilder(), new XSAnyMarshaller(),
+                new XSAnyUnmarshaller());
 
-            Configuration.registerObjectProvider(XSAny.TYPE_NAME, new XSAnyBuilder(), new XSAnyMarshaller(),
-                                                 new XSAnyUnmarshaller());
-        } catch (ConfigurationException ce) {
-            LOG.error("Problem initializing the OpenSAML library: " + ce, ce);
-            throw new IllegalStateException(ce);
-        }
-    }
-
-    public static ParserPool getSecuredParserPool() {
-        return Configuration.getParserPool();
     }
 
     @Nonnull
@@ -158,7 +141,7 @@ public abstract class AbstractProtocolEngine {
                 throw new EIDASSAMLEngineRuntimeException("ProtocolEngine Configuration cannot be obtained");
             }
             return protocolEngineConfiguration;
-        } catch (SamlEngineConfigurationException e) {
+        } catch (ProtocolEngineConfigurationException e) {
             throw new EIDASSAMLEngineRuntimeException(e);
         }
     }
@@ -351,7 +334,7 @@ public abstract class AbstractProtocolEngine {
     /**
      * Method that validates an XML Signature contained in a SAML Token and decrypts it if it was encrypted.
      *
-     * @param samlToken the SAML token
+     * @param response    response that contains the signature
      * @return the SAML object
      * @throws EIDASSAMLEngineException the SAML engine exception
      */
@@ -373,7 +356,7 @@ public abstract class AbstractProtocolEngine {
                 } else {
                     LOG.debug("Decryption finished.");
                 }
-            } else if (StatusCode.SUCCESS_URI.equals(validResponse.getStatus().getStatusCode().getValue())) {
+            } else if (StatusCode.SUCCESS.equals(validResponse.getStatus().getStatusCode().getValue())) {
                 checkReceivingUnencryptedResponsesAllowed();
             }
         }

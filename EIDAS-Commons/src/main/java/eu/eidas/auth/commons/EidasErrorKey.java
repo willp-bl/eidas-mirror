@@ -1,15 +1,25 @@
 /*
- * This work is Open Source and licensed by the European Commission under the
- * conditions of the European Public License v1.1
+ * Copyright (c) 2017 by European Commission
  *
- * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1);
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ *  EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
  *
- * any use of this file implies acceptance of the conditions of this license.
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations
- * under the License.
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
+ *
+ * This product combines work with different licenses. See the
+ * "NOTICE" text file for details on the various modules and licenses.
+ * The "NOTICE" text file is part of the distribution.
+ * Any derivative works that you distribute must include a readable
+ * copy of the "NOTICE" text file.
  */
 package eu.eidas.auth.commons;
 
@@ -95,15 +105,15 @@ public enum EidasErrorKey {
     /**
      * Represents the 'sProviderAction.spAlias' constant error identifier.
      */
-    SPROVIDER_SELECTOR_INVALID_SPALIAS("sProviderAction.invalidSPAlias"),
+    SPROVIDER_SELECTOR_INVALID_SPALIAS("sProviderAction.invalidSPAlias"),//not used
     /**
      * Represents the 'sProviderAction.spDomain' constant error identifier.
      */
-    SPROVIDER_SELECTOR_INVALID_SPDOMAIN("sProviderAction.invalidSPDomain"),
+    SPROVIDER_SELECTOR_INVALID_SPDOMAIN("sProviderAction.invalidSPDomain"),//not used
     /**
      * Represents the 'sProviderAction.spId' constant error identifier.
      */
-    SPROVIDER_SELECTOR_INVALID_SPID("sProviderAction.invalidSPId"),
+    SPROVIDER_SELECTOR_INVALID_SPID("sProviderAction.invalidSPId"),//not used
     /**
      * Represents the 'sProviderAction.spQAAId' constant error identifier.
      */
@@ -145,11 +155,11 @@ public enum EidasErrorKey {
     /**
      * Represents the 'colleagueRequest.invalidQaa' constant error identifier.
      */
-    COLLEAGUE_REQ_INVALID_QAA("colleagueRequest.invalidQaa"),
+    COLLEAGUE_REQ_INVALID_QAA("colleagueRequest.invalidQaa"),//not used ?
     /**
      * Represents the 'colleagueRequest.invalidRedirect' constant error identifier.
      */
-    COLLEAGUE_REQ_INVALID_REDIRECT("colleagueRequest.invalidRedirect"),
+    COLLEAGUE_REQ_INVALID_REDIRECT("colleagueRequest.invalidRedirect"),//not used
     /**
      * Represents the 'colleagueRequest.invalidSAML' constant error identifier.
      */
@@ -174,23 +184,10 @@ public enum EidasErrorKey {
     PROVIDER_ALIAS_INVALID("providernameAlias.invalid"),
 
     /**
-     * Represents the 'service.attrNull' constant error identifier.
-     */
-    SERVICE_ATTR_NULL("service.attrNull"),
-
-    /**
      * Represents the 'colleagueResponse.invalidSAML' constant error identifier.
      */
     COLLEAGUE_RESP_INVALID_SAML("colleagueResponse.invalidSAML"),
 
-    /**
-     * Represents the 'citizenNoConsent.mandatory' constant error identifier.
-     */
-    CITIZEN_NO_CONSENT_MANDATORY("citizenNoConsent.mandatory"),
-    /**
-     * Represents the 'citizenResponse.mandatory' constant error identifier.
-     */
-    CITIZEN_RESPONSE_MANDATORY("citizenResponse.mandatory"),
     /**
      * Represents the 'attVerification.mandatory' constant error identifier.
      */
@@ -320,6 +317,8 @@ public enum EidasErrorKey {
     INVALID_RESPONSE_COUNTRY_ISOCODE("invalid.response.country.isocode"),
 
     ILLEGAL_ARGUMENTS_IN_BUILDER("illegal.arguments.in.builder"),
+
+    INVALID_LIGHT_TOKEN("invalid.light.token"),
 
     // put the ; on a separate line to make merges easier
     ;

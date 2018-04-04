@@ -1,20 +1,32 @@
 /*
- * This work is Open Source and licensed by the European Commission under the
- * conditions of the European Public License v1.1
+ * Copyright (c) 2017 by European Commission
  *
- * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1);
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
  *
- * any use of this file implies acceptance of the conditions of this license.
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations
- * under the License.
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
+ *
+ * This product combines work with different licenses. See the
+ * "NOTICE" text file for details on the various modules and licenses.
+ * The "NOTICE" text file is part of the distribution.
+ * Any derivative works that you distribute must include a readable
+ * copy of the "NOTICE" text file.
  */
+
 package eu.eidas.node.service;
 
 import eu.eidas.auth.commons.EidasParameterKeys;
 import eu.eidas.auth.commons.exceptions.*;
+import eu.eidas.node.AbstractNodeServlet;
 import eu.eidas.node.NodeParameterNames;
 import eu.eidas.node.NodeViewNames;
 import eu.eidas.node.auth.service.ResponseCarryingServiceException;
@@ -36,7 +48,7 @@ import java.io.IOException;
  */
 
 @SuppressWarnings("squid:S1989") // due to the code uses correlation maps, not http sessions
-public final class ServiceExceptionHandlerServlet extends AbstractServiceServlet {
+public final class ServiceExceptionHandlerServlet extends AbstractNodeServlet {
 
     /**
      * Unique identifier.

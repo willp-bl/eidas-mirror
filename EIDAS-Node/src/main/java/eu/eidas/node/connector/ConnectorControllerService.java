@@ -1,30 +1,31 @@
 /*
- * This work is Open Source and licensed by the European Commission under the
- * conditions of the European Public License v1.1
+ * Copyright (c) 2017 by European Commission
  *
- * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1);
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
  *
- * any use of this file implies acceptance of the conditions of this license.
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations
- * under the License.
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
  */
-package eu.eidas.node.connector;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+package eu.eidas.node.connector;
 
 import eu.eidas.auth.commons.tx.CorrelationMap;
 import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
 import eu.eidas.auth.commons.tx.StoredLightRequest;
 import eu.eidas.node.auth.connector.ICONNECTORService;
-import eu.eidas.node.specificcommunication.ISpecificConnector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class ConnectorControllerService {
-
-    private static final Logger LOG = LoggerFactory.getLogger(ConnectorControllerService.class.getName());
 
     private String assertionConsUrl;
 
@@ -36,13 +37,6 @@ public final class ConnectorControllerService {
     private CorrelationMap<StoredLightRequest> specificSpRequestCorrelationMap;
 
     private CorrelationMap<StoredAuthenticationRequest> connectorRequestCorrelationMap;
-
-    private ISpecificConnector specificConnector;
-
-    /**
-     * URL of the Connector authentication service.
-     */
-    private String nodeAuth;
 
     public String getAssertionConsUrl() {
         return assertionConsUrl;
@@ -72,46 +66,13 @@ public final class ConnectorControllerService {
         return connectorService;
     }
 
-    /**
-     * Setter for nodeAuth.
-     *
-     * @param nodeAuth The new nodeAuth value.
-     */
-    public void setNodeAuth(final String nodeAuth) {
-        this.nodeAuth = nodeAuth;
-    }
-
-    /**
-     * Getter for nodeAuth.
-     *
-     * @return The nodeAuth value.
-     */
-    public String getNodeAuth() {
-        return nodeAuth;
-    }
-
-    public CorrelationMap<StoredLightRequest> getSpecificSpRequestCorrelationMap() {
-        return specificSpRequestCorrelationMap;
-    }
 
     public void setSpecificSpRequestCorrelationMap(CorrelationMap<StoredLightRequest> specificSpRequestCorrelationMap) {
         this.specificSpRequestCorrelationMap = specificSpRequestCorrelationMap;
     }
 
-    public CorrelationMap<StoredAuthenticationRequest> getConnectorRequestCorrelationMap() {
-        return connectorRequestCorrelationMap;
-    }
-
     public void setConnectorRequestCorrelationMap(CorrelationMap<StoredAuthenticationRequest> connectorRequestCorrelationMap) {
         this.connectorRequestCorrelationMap = connectorRequestCorrelationMap;
-    }
-
-    public ISpecificConnector getSpecificConnector() {
-        return specificConnector;
-    }
-
-    public void setSpecificConnector(ISpecificConnector specificConnector) {
-        this.specificConnector = specificConnector;
     }
 
     @Override

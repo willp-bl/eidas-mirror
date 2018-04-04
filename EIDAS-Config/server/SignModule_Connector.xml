@@ -2,12 +2,12 @@
 <!--
   ~ Copyright (c) 2017 by European Commission
   ~
-  ~ Licensed under the EUPL, Version 1.1 or - as soon they will be
+  ~ Licensed under the EUPL, Version 1.2 or - as soon they will be
   ~ approved by the European Commission - subsequent versions of the
   ~ EUPL (the "Licence");
   ~ You may not use this work except in compliance with the Licence.
   ~ You may obtain a copy of the Licence at:
-  ~ http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
+  ~ https://joinup.ec.europa.eu/page/eupl-text-11-12
   ~
   ~ Unless required by applicable law or agreed to in writing, software
   ~ distributed under the Licence is distributed on an "AS IS" basis,
@@ -15,12 +15,6 @@
   ~ implied.
   ~ See the Licence for the specific language governing permissions and
   ~ limitations under the Licence.
-  ~
-  ~ This product combines work with different licenses. See the
-  ~ "NOTICE" text file for details on the various modules and licenses.
-  ~ The "NOTICE" text file is part of the distribution.
-  ~ Any derivative works that you distribute must include a readable
-  ~ copy of the "NOTICE" text file.
   -->
 
 <!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">

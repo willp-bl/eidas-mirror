@@ -1,5 +1,36 @@
+/*
+ * Copyright (c) 2017 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
+ */
+
 package eu.eidas.auth.engine.configuration.dom;
 
+import com.google.common.collect.ImmutableSet;
+import eu.eidas.auth.commons.EidasErrorKey;
+import eu.eidas.auth.commons.io.ResourceLocator;
+import eu.eidas.auth.engine.configuration.ProtocolEngineConfigurationException;
+import eu.eidas.auth.engine.xml.opensaml.CertificateUtil;
+import eu.eidas.util.Preconditions;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.security.auth.DestroyFailedException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -11,22 +42,6 @@ import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Enumeration;
 import java.util.Map;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.security.auth.DestroyFailedException;
-
-import com.google.common.collect.ImmutableSet;
-
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import eu.eidas.auth.commons.EidasErrorKey;
-import eu.eidas.auth.commons.io.ResourceLocator;
-import eu.eidas.auth.engine.configuration.SamlEngineConfigurationException;
-import eu.eidas.auth.engine.xml.opensaml.CertificateUtil;
-import eu.eidas.util.Preconditions;
 
 /**
  * The KeyStore Configurator takes care of loading a keyStore from configured properties.
@@ -197,7 +212,7 @@ public final class KeyStoreConfigurator {
     }
 
     public static ImmutableSet<X509Certificate> getCertificates(KeyStore keyStore)
-            throws SamlEngineConfigurationException {
+            throws ProtocolEngineConfigurationException {
         try {
             ImmutableSet.Builder<X509Certificate> certificates = ImmutableSet.builder();
             for (Enumeration<String> aliases = keyStore.aliases(); aliases.hasMoreElements(); ) {
@@ -209,7 +224,7 @@ public final class KeyStoreConfigurator {
             }
             return certificates.build();
         } catch (Exception e) {
-            throw new SamlEngineConfigurationException(EidasErrorKey.SAML_ENGINE_INVALID_KEYSTORE.errorCode(),
+            throw new ProtocolEngineConfigurationException(EidasErrorKey.SAML_ENGINE_INVALID_KEYSTORE.errorCode(),
                                                        EidasErrorKey.SAML_ENGINE_INVALID_KEYSTORE.errorMessage(), e);
         }
     }
@@ -218,7 +233,7 @@ public final class KeyStoreConfigurator {
     public static KeyStoreConfiguration getKeyStoreConfiguration(@Nonnull Map<String, String> properties,
                                                                  @Nonnull KeyStoreConfigurationKeys configurationKeys,
                                                                  @Nullable String defaultPath)
-            throws SamlEngineConfigurationException {
+            throws ProtocolEngineConfigurationException {
         Preconditions.checkNotNull(properties, "properties");
         Preconditions.checkNotNull(configurationKeys, "configurationKeys");
 
@@ -233,7 +248,7 @@ public final class KeyStoreConfigurator {
             String msg = "Missing KeyStore configuration key \"" + configurationKeys.getKeyStorePathConfigurationKey()
                     + "\"";
             LOG.error(msg);
-            throw new SamlEngineConfigurationException(EidasErrorKey.SAML_ENGINE_INVALID_KEYSTORE.errorCode(),
+            throw new ProtocolEngineConfigurationException(EidasErrorKey.SAML_ENGINE_INVALID_KEYSTORE.errorCode(),
                                                        EidasErrorKey.SAML_ENGINE_INVALID_KEYSTORE.errorMessage(), msg);
         }
         String keyStoreType = properties.get(configurationKeys.getKeyStoreTypeConfigurationKey());
@@ -248,7 +263,7 @@ public final class KeyStoreConfigurator {
     }
 
     public static KeyStoreContent getKeyStoreContent(KeyStore keyStore, char[] password)
-            throws SamlEngineConfigurationException {
+            throws ProtocolEngineConfigurationException {
         try {
             ImmutableSet.Builder<KeyStore.PrivateKeyEntry> privateKeys = ImmutableSet.builder();
             ImmutableSet.Builder<X509Certificate> certificates = ImmutableSet.builder();
@@ -289,16 +304,16 @@ public final class KeyStoreConfigurator {
                 throw wrongPasswordException;
             }
             return new KeyStoreContent(entries, certificates.build());
-        } catch (SamlEngineConfigurationException e) {
+        } catch (ProtocolEngineConfigurationException e) {
             throw e;
         } catch (Exception e) {
-            throw new SamlEngineConfigurationException(EidasErrorKey.SAML_ENGINE_INVALID_KEYSTORE.errorCode(),
+            throw new ProtocolEngineConfigurationException(EidasErrorKey.SAML_ENGINE_INVALID_KEYSTORE.errorCode(),
                                                        EidasErrorKey.SAML_ENGINE_INVALID_KEYSTORE.errorMessage(), e);
         }
     }
 
     public static ImmutableSet<KeyStore.PrivateKeyEntry> getPrivateKeyEntries(KeyStore keyStore, char[] password)
-            throws SamlEngineConfigurationException {
+            throws ProtocolEngineConfigurationException {
         try {
             ImmutableSet.Builder<KeyStore.PrivateKeyEntry> keys = ImmutableSet.builder();
             // if the keyStore contains other keys with different passwords, ignore them:
@@ -321,16 +336,16 @@ public final class KeyStoreConfigurator {
                 throw wrongPasswordException;
             }
             return entries;
-        } catch (SamlEngineConfigurationException e) {
+        } catch (ProtocolEngineConfigurationException e) {
             throw e;
         } catch (Exception e) {
-            throw new SamlEngineConfigurationException(EidasErrorKey.SAML_ENGINE_INVALID_KEYSTORE.errorCode(),
+            throw new ProtocolEngineConfigurationException(EidasErrorKey.SAML_ENGINE_INVALID_KEYSTORE.errorCode(),
                                                        EidasErrorKey.SAML_ENGINE_INVALID_KEYSTORE.errorMessage(), e);
         }
     }
 
     public static KeyStore.PrivateKeyEntry getPrivateKeyEntry(KeyStore keyStore, String alias, char[] password)
-            throws SamlEngineConfigurationException, UnrecoverableEntryException {
+            throws ProtocolEngineConfigurationException, UnrecoverableEntryException {
         try {
             if (keyStore.isKeyEntry(alias)) {
                 return decryptPrivateKey(keyStore, alias, password);
@@ -339,7 +354,7 @@ public final class KeyStoreConfigurator {
             // The password does not match this alias
             throw wrongPassword;
         } catch (Exception e) {
-            throw new SamlEngineConfigurationException(EidasErrorKey.SAML_ENGINE_INVALID_KEYSTORE.errorCode(),
+            throw new ProtocolEngineConfigurationException(EidasErrorKey.SAML_ENGINE_INVALID_KEYSTORE.errorCode(),
                                                        EidasErrorKey.SAML_ENGINE_INVALID_KEYSTORE.errorMessage(), e);
         }
         return null;
@@ -348,7 +363,7 @@ public final class KeyStoreConfigurator {
     public static KeyStore.PrivateKeyEntry getPrivateKeyEntry(KeyStore keyStore,
                                                               String serialNumber,
                                                               String issuer,
-                                                              char[] password) throws SamlEngineConfigurationException {
+                                                              char[] password) throws ProtocolEngineConfigurationException {
         try {
             for (Enumeration<String> aliases = keyStore.aliases(); aliases.hasMoreElements(); ) {
                 String alias = aliases.nextElement();
@@ -365,7 +380,7 @@ public final class KeyStoreConfigurator {
             }
             return null;
         } catch (Exception e) {
-            throw new SamlEngineConfigurationException(EidasErrorKey.SAML_ENGINE_INVALID_KEYSTORE.errorCode(),
+            throw new ProtocolEngineConfigurationException(EidasErrorKey.SAML_ENGINE_INVALID_KEYSTORE.errorCode(),
                                                        EidasErrorKey.SAML_ENGINE_INVALID_KEYSTORE.errorMessage(), e);
         }
     }
@@ -391,21 +406,21 @@ public final class KeyStoreConfigurator {
     }
 
     public KeyStoreConfigurator(@Nonnull Map<String, String> properties,
-                                @Nullable String defaultPath) throws SamlEngineConfigurationException {
+                                @Nullable String defaultPath) throws ProtocolEngineConfigurationException {
         this(getKeyStoreConfiguration(properties, DEFAULT_KEYSTORE_CONFIGURATION_KEYS, defaultPath));
     }
 
     public KeyStoreConfigurator(@Nonnull Map<String, String> properties,
                                 @Nonnull KeyStoreConfigurationKeys configurationKeys,
                                 @Nullable String defaultPath)
-            throws SamlEngineConfigurationException {
+            throws ProtocolEngineConfigurationException {
         this(getKeyStoreConfiguration(properties, configurationKeys, defaultPath));
     }
 
     /**
      * Loads the KeyStore.
      */
-    public KeyStore loadKeyStore() throws SamlEngineConfigurationException {
+    public KeyStore loadKeyStore() throws ProtocolEngineConfigurationException {
         boolean traceEnabled = LOG.isTraceEnabled();
         String keyStoreType = keyStoreConfiguration.getKeyStoreType();
         if (null == keyStoreType) {
@@ -431,7 +446,7 @@ public final class KeyStoreConfigurator {
             try {
                 resource = ResourceLocator.getResource(keyStoreConfiguration.getKeyStorePath());
             } catch (IOException ioe) {
-                throw new SamlEngineConfigurationException(EidasErrorKey.SAML_ENGINE_INVALID_KEYSTORE.errorCode(),
+                throw new ProtocolEngineConfigurationException(EidasErrorKey.SAML_ENGINE_INVALID_KEYSTORE.errorCode(),
                                                            EidasErrorKey.SAML_ENGINE_INVALID_KEYSTORE.errorMessage(),
                                                            ioe);
             }
@@ -452,12 +467,12 @@ public final class KeyStoreConfigurator {
                 }
                 return keyStore;
             }
-        } catch (SamlEngineConfigurationException e) {
+        } catch (ProtocolEngineConfigurationException e) {
             LOG.error("Unable to load keyStore: " + e, e);
             throw e;
         } catch (Exception e) {
             LOG.error("Unable to load keyStore: " + e, e);
-            throw new SamlEngineConfigurationException(EidasErrorKey.SAML_ENGINE_INVALID_KEYSTORE.errorCode(),
+            throw new ProtocolEngineConfigurationException(EidasErrorKey.SAML_ENGINE_INVALID_KEYSTORE.errorCode(),
                                                        EidasErrorKey.SAML_ENGINE_INVALID_KEYSTORE.errorMessage(), e);
         }
     }
@@ -465,9 +480,9 @@ public final class KeyStoreConfigurator {
     /**
      * Loads and decrypts the content of the configured KeyStore.
      *
-     * @throws SamlEngineConfigurationException the configuration exception
+     * @throws ProtocolEngineConfigurationException the configuration exception
      */
-    public KeyStoreContent loadKeyStoreContent() throws SamlEngineConfigurationException {
+    public KeyStoreContent loadKeyStoreContent() throws ProtocolEngineConfigurationException {
         KeyStore keyStore = loadKeyStore();
         return getKeyStoreContent(keyStore, keyStoreConfiguration.getKeyPassword());
     }
@@ -475,15 +490,15 @@ public final class KeyStoreConfigurator {
     /**
      * Loads and decrypts the content of the configured KeyStore and returns the key matching the configured alias.
      *
-     * @throws SamlEngineConfigurationException the configuration exception
+     * @throws ProtocolEngineConfigurationException the configuration exception
      */
-    public KeyStore.PrivateKeyEntry loadPrivateKeyAlias() throws SamlEngineConfigurationException {
+    public KeyStore.PrivateKeyEntry loadPrivateKeyAlias() throws ProtocolEngineConfigurationException {
         KeyStore keyStore = loadKeyStore();
         try {
             return getPrivateKeyEntry(keyStore, keyStoreConfiguration.getKeyAlias(),
                                       keyStoreConfiguration.getKeyPassword());
         } catch (UnrecoverableEntryException e) {
-            throw new SamlEngineConfigurationException(EidasErrorKey.SAML_ENGINE_INVALID_KEYSTORE.errorCode(),
+            throw new ProtocolEngineConfigurationException(EidasErrorKey.SAML_ENGINE_INVALID_KEYSTORE.errorCode(),
                                                        EidasErrorKey.SAML_ENGINE_INVALID_KEYSTORE.errorMessage(), e);
         }
     }
@@ -492,9 +507,9 @@ public final class KeyStoreConfigurator {
      * Loads and decrypts the content of the configured KeyStore and returns all the keys matching the configured
      * password.
      *
-     * @throws SamlEngineConfigurationException the configuration exception
+     * @throws ProtocolEngineConfigurationException the configuration exception
      */
-    public ImmutableSet<KeyStore.PrivateKeyEntry> loadPrivateKeyEntries() throws SamlEngineConfigurationException {
+    public ImmutableSet<KeyStore.PrivateKeyEntry> loadPrivateKeyEntries() throws ProtocolEngineConfigurationException {
         KeyStore keyStore = loadKeyStore();
         return getPrivateKeyEntries(keyStore, keyStoreConfiguration.getKeyPassword());
     }
@@ -503,10 +518,10 @@ public final class KeyStoreConfigurator {
      * Loads and decrypts the content of the configured KeyStore and returns the key matching the given serialNumber and
      * issuer.
      *
-     * @throws SamlEngineConfigurationException the configuration exception
+     * @throws ProtocolEngineConfigurationException the configuration exception
      */
     public KeyStore.PrivateKeyEntry loadPrivateKeyEntry(String serialNumber, String issuer)
-            throws SamlEngineConfigurationException {
+            throws ProtocolEngineConfigurationException {
         KeyStore keyStore = loadKeyStore();
         return getPrivateKeyEntry(keyStore, serialNumber, issuer, keyStoreConfiguration.getKeyPassword());
     }

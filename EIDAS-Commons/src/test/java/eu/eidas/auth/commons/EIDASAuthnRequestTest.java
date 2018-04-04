@@ -22,22 +22,18 @@
 
 package eu.eidas.auth.commons;
 
-import org.junit.Test;
-
 import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.attribute.PersonType;
 import eu.eidas.auth.commons.attribute.impl.StringAttributeValue;
 import eu.eidas.auth.commons.attribute.impl.StringAttributeValueMarshaller;
 import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.eidas.IEidasAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
-import eu.eidas.auth.commons.protocol.stork.IStorkAuthenticationRequest;
-import eu.eidas.auth.commons.protocol.stork.impl.StorkAuthenticationRequest;
+import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 
 /**
  * EIDASAuthnRequestTest
@@ -105,7 +101,7 @@ public class EIDASAuthnRequestTest {
        /* ImmutableAttributeMap.Builder mapBuilder = ImmutableAttributeMap.builder();
         mapBuilder.put(PERSON_IDENTIFIER, Collections.<String>emptySet());*/
 
-        IStorkAuthenticationRequest storkAuthnRequest1 = new StorkAuthenticationRequest.Builder().
+        IEidasAuthenticationRequest eidasAuthnRequest1 = new EidasAuthenticationRequest.Builder().
                 id(SAMLID). // Common part
                 assertionConsumerServiceURL(ASSERTION_CONSUMER_SERVICE_URL).
                 destination(DESTINATION).
@@ -115,44 +111,28 @@ public class EIDASAuthnRequestTest {
                 serviceProviderCountryCode(SP_COUNTRY).
                 citizenCountryCode(CITIZEN_COUNTRY).
                 originCountryCode(ORIGIN_COUNTRY).
-                spId(SP_ID).
                 requestedAttributes(REQUESTED_ATTRIBUTES).
                 nameIdFormat(NAME_ID_FORMAT). // eidas part
                 levelOfAssurance(LEVEL_OF_ASSURANCE).
                 binding(BINDING).
-                spSector(SP_SECTOR). // STORK part
-                spInstitution(SP_INSTITUTION).
-                spApplication(SP_APPLICATION).
-                eidCrossBorderShare(true).
-                eidCrossSectorShare(true).
-                eidSectorShare(true).
-                qaa(1).
                 build();
 
-        IStorkAuthenticationRequest storkAuthnRequest2 = new StorkAuthenticationRequest.Builder(storkAuthnRequest1).build();
+        IEidasAuthenticationRequest eidasAuthenticationRequest = new EidasAuthenticationRequest.Builder(eidasAuthnRequest1).build();
 
-        assertEquals(storkAuthnRequest1.getAssertionConsumerServiceURL(), storkAuthnRequest2.getAssertionConsumerServiceURL());
-        assertEquals(storkAuthnRequest1.getCitizenCountryCode(), storkAuthnRequest2.getCitizenCountryCode());
-        assertEquals(storkAuthnRequest1.getOriginCountryCode(), storkAuthnRequest2.getOriginCountryCode());
-        assertEquals(storkAuthnRequest1.getDestination(), storkAuthnRequest2.getDestination());
-        assertEquals(storkAuthnRequest1.getIssuer(), storkAuthnRequest2.getIssuer());
-        assertEquals(storkAuthnRequest1.getProviderName(), storkAuthnRequest2.getProviderName());
-        assertEquals(storkAuthnRequest1.getQaa(), storkAuthnRequest2.getQaa());
-        assertEquals(storkAuthnRequest1.getId(), storkAuthnRequest2.getId());
-        assertEquals(storkAuthnRequest1.getOriginCountryCode(), storkAuthnRequest2.getOriginCountryCode());
-        assertEquals(storkAuthnRequest1.getSpId(), storkAuthnRequest2.getSpId());
-        assertEquals(storkAuthnRequest1.getSpSector(), storkAuthnRequest2.getSpSector());
-        assertEquals(storkAuthnRequest1.getSpInstitution(), storkAuthnRequest2.getSpInstitution());
-        assertEquals(storkAuthnRequest1.getSpApplication(), storkAuthnRequest2.getSpApplication());
-        assertEquals(storkAuthnRequest1.isEIDCrossBorderShare(), storkAuthnRequest2.isEIDCrossBorderShare());
-        assertEquals(storkAuthnRequest1.isEIDCrossSectorShare(), storkAuthnRequest2.isEIDCrossSectorShare());
-        assertEquals(storkAuthnRequest1.isEIDSectorShare(), storkAuthnRequest2.isEIDSectorShare());
+        assertEquals(eidasAuthnRequest1.getAssertionConsumerServiceURL(), eidasAuthenticationRequest.getAssertionConsumerServiceURL());
+        assertEquals(eidasAuthnRequest1.getCitizenCountryCode(), eidasAuthenticationRequest.getCitizenCountryCode());
+        assertEquals(eidasAuthnRequest1.getOriginCountryCode(), eidasAuthenticationRequest.getOriginCountryCode());
+        assertEquals(eidasAuthnRequest1.getDestination(), eidasAuthenticationRequest.getDestination());
+        assertEquals(eidasAuthnRequest1.getIssuer(), eidasAuthenticationRequest.getIssuer());
+        assertEquals(eidasAuthnRequest1.getProviderName(), eidasAuthenticationRequest.getProviderName());
+        assertEquals(eidasAuthnRequest1.getId(), eidasAuthenticationRequest.getId());
+        assertEquals(eidasAuthnRequest1.getOriginCountryCode(), eidasAuthenticationRequest.getOriginCountryCode());
     }
 
     @Test
     public void testFieldsCreation() throws Exception {
 
-        IStorkAuthenticationRequest eidasAuthenticationRequest = StorkAuthenticationRequest.builder().
+        IEidasAuthenticationRequest eidasAuthenticationRequest = EidasAuthenticationRequest.builder().
                 id(SAMLID). // Common part
                 assertionConsumerServiceURL(ASSERTION_CONSUMER_SERVICE_URL).
                 destination(DESTINATION).
@@ -162,18 +142,10 @@ public class EIDASAuthnRequestTest {
                 serviceProviderCountryCode(SP_COUNTRY).
                 citizenCountryCode(CITIZEN_COUNTRY).
                 originCountryCode(ORIGIN_COUNTRY).
-                spId(SP_ID).
                 requestedAttributes(REQUESTED_ATTRIBUTES).
                 nameIdFormat(NAME_ID_FORMAT). // eidas part
                 levelOfAssurance(LEVEL_OF_ASSURANCE).
                 binding(BINDING).
-                spSector(SP_SECTOR). // STORK part
-                spInstitution(SP_INSTITUTION).
-                spApplication(SP_APPLICATION).
-                eidCrossBorderShare(true).
-                eidCrossSectorShare(true).
-                eidSectorShare(true).
-                qaa(1).
                 build();
 
         assertThat(eidasAuthenticationRequest.getId(), is(SAMLID));
@@ -185,18 +157,10 @@ public class EIDASAuthnRequestTest {
         assertThat(eidasAuthenticationRequest.getOriginCountryCode(), is(ORIGIN_COUNTRY));
         assertThat(eidasAuthenticationRequest.getCitizenCountryCode(), is(CITIZEN_COUNTRY));
         assertThat(eidasAuthenticationRequest.getServiceProviderCountryCode(), is(SP_COUNTRY));
-        assertThat(eidasAuthenticationRequest.getSpId(), is(SP_ID));
         assertThat(eidasAuthenticationRequest.getRequestedAttributes(), is(REQUESTED_ATTRIBUTES));
         assertThat(eidasAuthenticationRequest.getNameIdFormat(), is(NAME_ID_FORMAT));
         assertThat(eidasAuthenticationRequest.getLevelOfAssurance(), is(LEVEL_OF_ASSURANCE));
         assertThat(eidasAuthenticationRequest.getBinding(), is(BINDING));
-        assertThat(eidasAuthenticationRequest.getSpSector(), is(SP_SECTOR));
-        assertThat(eidasAuthenticationRequest.getSpInstitution(), is(SP_INSTITUTION));
-        assertThat(eidasAuthenticationRequest.getSpApplication(), is(SP_APPLICATION));
-        assertThat(eidasAuthenticationRequest.isEIDCrossBorderShare(), is(true));
-        assertThat(eidasAuthenticationRequest.isEIDCrossSectorShare(), is(true));
-        assertThat(eidasAuthenticationRequest.isEIDSectorShare(), is(true));
-        assertThat(eidasAuthenticationRequest.getQaa(), is(1));
     }
 
 

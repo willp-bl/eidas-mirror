@@ -1,13 +1,13 @@
 package eu.eidas.node.auth.metadata;
 
-import javax.annotation.Nonnull;
-
-import org.opensaml.saml2.metadata.EntityDescriptor;
-
+import eu.eidas.auth.engine.metadata.EidasMetadataParametersI;
+import eu.eidas.auth.engine.metadata.MetadataClockI;
 import eu.eidas.auth.engine.metadata.MetadataFetcherI;
 import eu.eidas.auth.engine.metadata.MetadataSignerI;
-import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
+import eu.eidas.engine.exceptions.EIDASMetadataException;
 import eu.eidas.util.Preconditions;
+
+import javax.annotation.Nonnull;
 
 /**
  * Decorated MetadataFetcher.
@@ -21,9 +21,9 @@ public final class WrappedMetadataFetcher implements MetadataFetcherI {
 
     @Override
     @Nonnull
-    public EntityDescriptor getEntityDescriptor(@Nonnull String url, @Nonnull MetadataSignerI metadataSigner)
-            throws EIDASSAMLEngineException {
-        return metadataFetcher.getEntityDescriptor(url, metadataSigner);
+    public EidasMetadataParametersI getEidasMetadata(@Nonnull String url, @Nonnull MetadataSignerI metadataSigner, MetadataClockI metadataClock)
+            throws EIDASMetadataException {
+        return metadataFetcher.getEidasMetadata(url, metadataSigner, metadataClock);
     }
 
     @Nonnull

@@ -1,3 +1,26 @@
+/*
+ * Copyright (c) 2017 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ *  EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
+ *
+ * This product combines work with different licenses. See the
+ * "NOTICE" text file for details on the various modules and licenses.
+ * The "NOTICE" text file is part of the distribution.
+ * Any derivative works that you distribute must include a readable
+ * copy of the "NOTICE" text file.
+ */
 package eu.eidas.auth.commons.light.impl;
 
 import java.io.Serializable;
@@ -5,10 +28,16 @@ import java.io.Serializable;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlSeeAlso;
+import javax.xml.bind.annotation.XmlType;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
+import eu.eidas.auth.commons.attribute.AttributeMapType;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.light.ILightResponse;
-import eu.eidas.auth.commons.light.IResponseStatus;
 import eu.eidas.util.Preconditions;
 
 /**
@@ -20,8 +49,24 @@ import eu.eidas.util.Preconditions;
  *
  * @since 1.1
  */
+@XmlType
+@XmlAccessorType(XmlAccessType.FIELD)
 @SuppressWarnings("ConstantConditions")
+@XmlSeeAlso(ResponseStatus.class)
 public abstract class AbstractLightResponse implements ILightResponse, Serializable {
+
+    private AbstractLightResponse() {
+        id = null;
+        relayState = null;
+        issuer = null;
+        ipAddress = null;
+        subject = null;
+        subjectNameIdFormat = null;
+        status = null;
+        inResponseToId = null;
+        levelOfAssurance = null;
+        attributes = null;
+    }
 
     /**
      * Abstract Builder pattern with self-bounding generics for {@link ILightResponse} subtypes.
@@ -38,15 +83,21 @@ public abstract class AbstractLightResponse implements ILightResponse, Serializa
      */
     @NotThreadSafe
     @SuppressWarnings({"ParameterHidesMemberVariable", "unchecked"})
-    public abstract static class AbstractBuilder<B extends AbstractBuilder<B, T>, T extends ILightResponse> {
+    public abstract static class AbstractBuilder<B extends AbstractBuilder<B, T>, T extends LightResponse> {
 
         private String id;
+
+        private String relayState;
 
         private String issuer;
 
         private String ipAddress;
 
-        private IResponseStatus status;
+        private String subject;
+
+        private String subjectNameIdFormat;
+
+        private ResponseStatus status;
 
         private String inResponseToId;
 
@@ -60,8 +111,11 @@ public abstract class AbstractLightResponse implements ILightResponse, Serializa
         protected AbstractBuilder(@Nonnull AbstractBuilder<?, ?> copy) {
             Preconditions.checkNotNull(copy, "copy");
             id = copy.id;
+            relayState = copy.relayState;
             issuer = copy.issuer;
             ipAddress = copy.ipAddress;
+            subject = copy.subject;
+            subjectNameIdFormat = copy.subjectNameIdFormat;
             status = copy.status;
             inResponseToId = copy.inResponseToId;
             levelOfAssurance = copy.levelOfAssurance;
@@ -71,9 +125,12 @@ public abstract class AbstractLightResponse implements ILightResponse, Serializa
         protected AbstractBuilder(@Nonnull ILightResponse copy) {
             Preconditions.checkNotNull(copy, "copy");
             id = copy.getId();
+            relayState = copy.getRelayState();
             issuer = copy.getIssuer();
             ipAddress = copy.getIPAddress();
-            status = copy.getStatus();
+            subject = copy.getSubject();
+            subjectNameIdFormat = copy.getSubjectNameIdFormat();
+            status = (ResponseStatus) copy.getStatus();
             inResponseToId = copy.getInResponseToId();
             levelOfAssurance = copy.getLevelOfAssurance();
             attributes = copy.getAttributes();
@@ -86,7 +143,7 @@ public abstract class AbstractLightResponse implements ILightResponse, Serializa
         }
 
         @Nonnull
-        public final B status(IResponseStatus status) {
+        public final B status(ResponseStatus status) {
             this.status = status;
             return (B) this;
         }
@@ -94,6 +151,12 @@ public abstract class AbstractLightResponse implements ILightResponse, Serializa
         @Nonnull
         public final B id(String id) {
             this.id = id;
+            return (B) this;
+        }
+
+        @Nonnull
+        public final B relayState(String relayState) {
+            this.relayState = relayState;
             return (B) this;
         }
 
@@ -116,6 +179,18 @@ public abstract class AbstractLightResponse implements ILightResponse, Serializa
         }
 
         @Nonnull
+        public final B subject(String subject) {
+            this.subject = subject;
+            return (B) this;
+        }
+
+        @Nonnull
+        public final B subjectNameIdFormat(String subjectNameIdFormat) {
+            this.subjectNameIdFormat = subjectNameIdFormat;
+            return (B) this;
+        }
+
+        @Nonnull
         public final B levelOfAssurance(String levelOfAssurance) {
             this.levelOfAssurance = levelOfAssurance;
             return (B) this;
@@ -132,6 +207,10 @@ public abstract class AbstractLightResponse implements ILightResponse, Serializa
             Preconditions.checkNotBlank(id, "id");
             Preconditions.checkNotBlank(issuer, "issuer");
             Preconditions.checkNotNull(status, "status");
+            if (!status.isFailure()) {
+                Preconditions.checkNotBlank(subject, "subject");
+                Preconditions.checkNotBlank(subjectNameIdFormat, "subjectNameIdFormat");
+            }
             Preconditions.checkNotBlank(inResponseToId, "inResponseToId");
             if (null == attributes) {
                 attributes = ImmutableAttributeMap.of();
@@ -181,6 +260,12 @@ public abstract class AbstractLightResponse implements ILightResponse, Serializa
     private final String id;
 
     /**
+     * @relayState
+     */
+    @Nullable
+    private final String relayState;
+
+    /**
      * @serial
      */
     @Nonnull
@@ -195,8 +280,20 @@ public abstract class AbstractLightResponse implements ILightResponse, Serializa
     /**
      * @serial
      */
-    @Nonnull
-    private final IResponseStatus status;
+    @Nullable
+    private final String subject;
+
+    /**
+     * @serial
+     */
+    @Nullable
+    private final String subjectNameIdFormat;
+
+    /**
+     * @serial
+     */
+    @Nonnull @XmlElement
+    private final ResponseStatus status;
 
     /**
      * @serial
@@ -214,12 +311,16 @@ public abstract class AbstractLightResponse implements ILightResponse, Serializa
      * @serial
      */
     @Nonnull
+    @XmlJavaTypeAdapter(AttributeMapType.ImmutableAttributeMapAdapter.class)
     private final ImmutableAttributeMap attributes;
 
     protected AbstractLightResponse(@Nonnull AbstractBuilder<?, ?> builder) {
         id = builder.id;
+        relayState = builder.relayState;
         issuer = builder.issuer;
         ipAddress = builder.ipAddress;
+        subject = builder.subject;
+        subjectNameIdFormat = builder.subjectNameIdFormat;
         status = builder.status;
         inResponseToId = builder.inResponseToId;
         levelOfAssurance = builder.levelOfAssurance;
@@ -244,10 +345,28 @@ public abstract class AbstractLightResponse implements ILightResponse, Serializa
         return id;
     }
 
+    @Nullable
+    @Override
+    public final String getRelayState() {
+        return relayState;
+    }
+
     @Nonnull
     @Override
     public final String getInResponseToId() {
         return inResponseToId;
+    }
+
+    @Nullable
+    @Override
+    public final String getSubject() {
+        return subject;
+    }
+
+    @Nullable
+    @Override
+    public final String getSubjectNameIdFormat() {
+        return subjectNameIdFormat;
     }
 
     @Nonnull
@@ -264,7 +383,7 @@ public abstract class AbstractLightResponse implements ILightResponse, Serializa
 
     @Nonnull
     @Override
-    public final IResponseStatus getStatus() {
+    public final ResponseStatus getStatus() {
         return status;
     }
 
@@ -282,7 +401,16 @@ public abstract class AbstractLightResponse implements ILightResponse, Serializa
         if (!id.equals(that.id)) {
             return false;
         }
+        if (relayState != null ? !relayState.equals(that.relayState) : that.relayState != null) {
+            return false;
+        }
         if (!issuer.equals(that.issuer)) {
+            return false;
+        }
+        if (subject != null ? !subject.equals(that.subject) : that.subject != null) {
+            return false;
+        }
+        if (subjectNameIdFormat != null ? !subjectNameIdFormat.equals(that.subjectNameIdFormat) : that.subjectNameIdFormat != null) {
             return false;
         }
         if (ipAddress != null ? !ipAddress.equals(that.ipAddress) : that.ipAddress != null) {
@@ -305,7 +433,10 @@ public abstract class AbstractLightResponse implements ILightResponse, Serializa
     @Override
     public int hashCode() {
         int result = id != null ? id.hashCode() : 0;
+        result = 31 * result + (null != relayState ? relayState.hashCode() : 0);
         result = 31 * result + (issuer.hashCode());
+        result = 31 * result + (null != subject ? subject.hashCode() : 0);
+        result = 31 * result + (null != subjectNameIdFormat ? subjectNameIdFormat.hashCode() : 0);
         result = 31 * result + (null != ipAddress ? ipAddress.hashCode() : 0);
         result = 31 * result + (status.hashCode());
         result = 31 * result + (inResponseToId.hashCode());
@@ -329,8 +460,17 @@ public abstract class AbstractLightResponse implements ILightResponse, Serializa
         return stringBuilder.append("id=\'")
                 .append(response.getId())
                 .append('\'')
+                .append(", relayState='")
+                .append(response.getRelayState())
+                .append('\'')
                 .append(", issuer='")
                 .append(response.getIssuer())
+                .append('\'')
+                .append(", subject='")
+                .append(response.getSubject())
+                .append('\'')
+                .append(", subjectNameIdFormat='")
+                .append(response.getSubjectNameIdFormat())
                 .append('\'')
                 .append(", status='")
                 .append(response.getStatus())

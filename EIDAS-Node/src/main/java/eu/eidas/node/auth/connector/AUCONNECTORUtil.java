@@ -213,51 +213,6 @@ public final class AUCONNECTORUtil extends AUNODEUtil {
                 && Integer.parseInt(confQAALevel) >= Integer.parseInt(spQAALevel);
     }
 
-    private boolean checkPermission(final String permission, ImmutableAttributeMap requestedAttributes) {
-        LOG.trace("List of permitted attributes: " + permission);
-        // Creates an array list from a String in the format perm1;perm2;permN;.
-        final String[] perms = permission.split(EIDASValues.ATTRIBUTE_SEP.toString());
-        final Set<String> permissions = new HashSet<String>(Arrays.asList(perms));
-        for (final AttributeDefinition definition : requestedAttributes.getDefinitions()) {
-            if (!permissions.contains(definition.getFriendlyName())) {
-                LOG.trace("False:No Permission - " + definition.getFriendlyName());
-                return false;
-            }
-        }
-        return true;
-
-    }
-
-    /**
-     * Checks if the Service provider, with the ID spID has access to the requested attributes.
-     *
-     * @param spId The id of the SP.
-     * @param attributeList The requested attributes.
-     * @return True if the SP has access to the contents, False otherwise.
-     */
-    @Deprecated
-    public boolean checkContents(String spId, ImmutableAttributeMap requestedAttributes) {
-
-        String loadConfig = loadConfig(spId);
-        final String permission =
-                StringUtilities.isEmpty(loadConfig) ? loadConfig(EIDASValues.DEFAULT.toString()) : loadConfig;
-
-        if (!StringUtilities.isEmpty(permission)) {
-            if (EIDASValues.ALL.toString().equals(permission)) {
-                LOG.debug("True:ALL_VALUES");
-                return true;
-            } else if (EIDASValues.NONE.toString().equals(permission)) {
-                LOG.debug("False:NO_VALUES");
-                return false;
-            } else {
-                return checkPermission(permission, requestedAttributes);
-            }
-        } else {
-            LOG.debug("No attribute configuration found!");
-            return false;
-        }
-    }
-
     /**
      * Setter for bypassValidation.
      *

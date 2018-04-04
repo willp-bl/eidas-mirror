@@ -16,7 +16,7 @@ import eu.eidas.auth.commons.EidasErrors;
 import eu.eidas.auth.commons.io.SingletonAccessor;
 import eu.eidas.auth.commons.io.SingletonAccessors;
 import eu.eidas.auth.engine.configuration.ProtocolEngineConfiguration;
-import eu.eidas.auth.engine.configuration.SamlEngineConfigurationException;
+import eu.eidas.auth.engine.configuration.ProtocolEngineConfigurationException;
 import eu.eidas.samlengineconfig.CertificateConfigurationManager;
 import eu.eidas.util.Preconditions;
 
@@ -34,11 +34,11 @@ public final class ProtocolEngineConfigurationFactory {
 
     @Nonnull
     private static InstanceMap adaptToInstanceMap(@Nonnull CertificateConfigurationManager configManager)
-            throws SamlEngineConfigurationException {
+            throws ProtocolEngineConfigurationException {
         if (isActiveConfigurationManager(configManager)) {
             return ConfigurationAdapter.adapt(configManager);
         }
-        throw new SamlEngineConfigurationException(
+        throw new ProtocolEngineConfigurationException(
                 EidasErrors.get(EidasErrorKey.SAML_ENGINE_CONFIGURATION_ERROR.errorCode()),
                 EidasErrors.get(EidasErrorKey.SAML_ENGINE_CONFIGURATION_ERROR.errorMessage()),
                 "The given CertificateConfigurationManager is null or not active.");
@@ -46,7 +46,7 @@ public final class ProtocolEngineConfigurationFactory {
 
     @Nonnull
     public static ImmutableMap<String, ProtocolEngineConfiguration> getConfigurationMap(
-            @Nonnull CertificateConfigurationManager configManager) throws SamlEngineConfigurationException {
+            @Nonnull CertificateConfigurationManager configManager) throws ProtocolEngineConfigurationException {
         return DOMConfigurator.getProtocolConfigurationMap(adaptToInstanceMap(configManager));
     }
 
@@ -55,9 +55,9 @@ public final class ProtocolEngineConfigurationFactory {
     }
 
     @Nonnull
-    private static <T> T throwConfigurationException(@Nonnull String message) throws SamlEngineConfigurationException {
+    private static <T> T throwConfigurationException(@Nonnull String message) throws ProtocolEngineConfigurationException {
         LOG.error(message);
-        throw new SamlEngineConfigurationException(
+        throw new ProtocolEngineConfigurationException(
                 EidasErrors.get(EidasErrorKey.SAML_ENGINE_CONFIGURATION_ERROR.errorCode()),
                 EidasErrors.get(EidasErrorKey.SAML_ENGINE_CONFIGURATION_ERROR.errorMessage()), message);
     }
@@ -73,7 +73,7 @@ public final class ProtocolEngineConfigurationFactory {
     }
 
     public ProtocolEngineConfigurationFactory(@Nonnull CertificateConfigurationManager configManager)
-            throws SamlEngineConfigurationException {
+            throws ProtocolEngineConfigurationException {
         Preconditions.checkNotNull(configManager, "configManager");
         accessor = SingletonAccessors.immutableAccessor(getConfigurationMap(configManager));
     }
@@ -85,7 +85,7 @@ public final class ProtocolEngineConfigurationFactory {
      */
     @Nonnull
     public ProtocolEngineConfiguration getConfiguration(@Nonnull String instanceName)
-            throws SamlEngineConfigurationException {
+            throws ProtocolEngineConfigurationException {
         if (StringUtils.isBlank(instanceName)) {
             return throwConfigurationException("instanceName cannot be null or empty.");
         }
@@ -94,7 +94,7 @@ public final class ProtocolEngineConfigurationFactory {
         try {
             samlEngineConfiguration = accessor.get().get(name);
         } catch (IOException e) {
-            throw new SamlEngineConfigurationException(
+            throw new ProtocolEngineConfigurationException(
                     EidasErrors.get(EidasErrorKey.SAML_ENGINE_CONFIGURATION_ERROR.errorCode()),
                     EidasErrors.get(EidasErrorKey.SAML_ENGINE_CONFIGURATION_ERROR.errorMessage()), e);
         }

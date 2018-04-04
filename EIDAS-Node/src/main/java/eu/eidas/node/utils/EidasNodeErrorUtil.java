@@ -22,28 +22,8 @@
 
 package eu.eidas.node.utils;
 
-import java.util.Arrays;
-import java.util.Locale;
-
-import javax.servlet.http.HttpServletRequest;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.context.NoSuchMessageException;
-import org.springframework.context.support.ResourceBundleMessageSource;
-
-import eu.eidas.auth.commons.EIDASStatusCode;
-import eu.eidas.auth.commons.EIDASSubStatusCode;
-import eu.eidas.auth.commons.EIDASValues;
-import eu.eidas.auth.commons.EidasErrorKey;
-import eu.eidas.auth.commons.EidasErrors;
-import eu.eidas.auth.commons.EidasParameterKeys;
-import eu.eidas.auth.commons.EidasStringUtil;
-import eu.eidas.auth.commons.exceptions.AbstractEIDASException;
-import eu.eidas.auth.commons.exceptions.EidasNodeException;
-import eu.eidas.auth.commons.exceptions.InternalErrorEIDASException;
-import eu.eidas.auth.commons.exceptions.InvalidParameterEIDASException;
-import eu.eidas.auth.commons.exceptions.InvalidParameterEIDASServiceException;
+import eu.eidas.auth.commons.*;
+import eu.eidas.auth.commons.exceptions.*;
 import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import eu.eidas.engine.exceptions.SAMLEngineException;
@@ -52,6 +32,14 @@ import eu.eidas.node.NodeBeanNames;
 import eu.eidas.node.auth.connector.ICONNECTORSAMLService;
 import eu.eidas.node.auth.service.ISERVICESAMLService;
 import eu.eidas.node.logging.LoggingMarkerMDC;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.NoSuchMessageException;
+import org.springframework.context.support.ResourceBundleMessageSource;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.Arrays;
+import java.util.Locale;
 
 /**
  * Utility class for preparing error saml response
@@ -72,7 +60,6 @@ public class EidasNodeErrorUtil {
      * returned substatuscode
      */
     private static final EIDASSubStatusCode EIDAS_SUB_STATUS_CODES[] = {
-            EIDASSubStatusCode.QAA_NOT_SUPPORTED,
             EIDASSubStatusCode.REQUEST_DENIED_URI,
             EIDASSubStatusCode.INVALID_ATTR_NAME_VALUE_URI,
             EIDASSubStatusCode.AUTHN_FAILED_URI,

@@ -1,33 +1,34 @@
 /*
- * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
- * the European Commission - subsequent versions of the EUPL (the "Licence");
- * You may not use this work except in compliance with the Licence. You may
- * obtain a copy of the Licence at:
+ * Copyright (c) 2017 by European Commission
  *
- * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the Licence is distributed on an "AS IS" basis, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * Licence for the specific language governing permissions and limitations under
- * the Licence.
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
  */
 
 package eu.eidas.auth.engine.core.eidas.impl;
 
+import eu.eidas.auth.engine.core.eidas.RequestedAttribute;
+import org.opensaml.core.xml.XMLObject;
+import org.opensaml.core.xml.schema.XSBooleanValue;
+import org.opensaml.core.xml.util.AttributeMap;
+import org.opensaml.core.xml.util.XMLObjectChildrenList;
+import org.opensaml.saml.common.AbstractSAMLObject;
+
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import org.opensaml.common.impl.AbstractSAMLObject;
-import org.opensaml.xml.XMLObject;
-import org.opensaml.xml.schema.XSBooleanValue;
-import org.opensaml.xml.util.AttributeMap;
-import org.opensaml.xml.util.XMLObjectChildrenList;
-
-import eu.eidas.auth.engine.core.eidas.RequestedAttribute;
-
-import javax.annotation.Nullable;
 
 /**
  * The Class RequestedAttributeImpl.
@@ -218,6 +219,7 @@ public class RequestedAttributeImpl extends AbstractSAMLObject implements
     public void setIsRequired(@Nullable  Boolean aBoolean) {
         this.isRequired = String.valueOf(aBoolean);
     }
+
 
     @Override
     public void setIsRequired(@ Nullable XSBooleanValue xsBooleanValue) {

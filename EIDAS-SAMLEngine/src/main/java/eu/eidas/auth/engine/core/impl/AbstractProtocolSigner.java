@@ -1,23 +1,19 @@
 /*
  * Copyright (c) 2017 by European Commission
  *
- * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
- * the European Commission - subsequent versions of the EUPL (the "Licence");
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
  * You may not use this work except in compliance with the Licence.
  * You may obtain a copy of the Licence at:
- * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the Licence is distributed on an "AS IS" basis,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
  * See the Licence for the specific language governing permissions and
  * limitations under the Licence.
- *
- * This product combines work with different licenses. See the "NOTICE" text
- * file for details on the various modules and licenses.
- * The "NOTICE" text file is part of the distribution. Any derivative works
- * that you distribute must include a readable copy of the "NOTICE" text file.
- *
  */
 
 package eu.eidas.auth.engine.core.impl;
@@ -26,37 +22,40 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import eu.eidas.auth.commons.EidasErrorKey;
-import eu.eidas.auth.engine.configuration.SamlEngineConfigurationException;
+import eu.eidas.auth.engine.configuration.ProtocolEngineConfigurationException;
 import eu.eidas.auth.engine.configuration.dom.SignatureConfiguration;
 import eu.eidas.auth.engine.core.ProtocolSignerI;
 import eu.eidas.auth.engine.metadata.MetadataSignerI;
 import eu.eidas.auth.engine.xml.opensaml.CertificateUtil;
+import eu.eidas.engine.exceptions.EIDASMetadataException;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import eu.eidas.util.Preconditions;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.xml.security.signature.XMLSignature;
-import org.opensaml.Configuration;
-import org.opensaml.common.impl.SAMLObjectContentReference;
-import org.opensaml.security.SAMLSignatureProfileValidator;
-import org.opensaml.xml.io.MarshallingException;
-import org.opensaml.xml.security.BasicSecurityConfiguration;
-import org.opensaml.xml.security.SecurityConfiguration;
-import org.opensaml.xml.security.SecurityHelper;
-import org.opensaml.xml.security.credential.Credential;
-import org.opensaml.xml.security.keyinfo.KeyInfoGenerator;
-import org.opensaml.xml.security.keyinfo.KeyInfoGeneratorFactory;
-import org.opensaml.xml.security.keyinfo.KeyInfoGeneratorManager;
-import org.opensaml.xml.security.keyinfo.NamedKeyInfoGeneratorManager;
-import org.opensaml.xml.security.x509.X509Credential;
-import org.opensaml.xml.signature.*;
-import org.opensaml.xml.validation.ValidationException;
+import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
+import org.opensaml.core.xml.io.MarshallingException;
+import org.opensaml.saml.common.SAMLObjectContentReference;
+import org.opensaml.saml.security.impl.SAMLSignatureProfileValidator;
+import org.opensaml.security.credential.Credential;
+import org.opensaml.security.x509.X509Credential;
+import org.opensaml.xmlsec.SecurityConfigurationSupport;
+import org.opensaml.xmlsec.SignatureSigningConfiguration;
+import org.opensaml.xmlsec.keyinfo.KeyInfoGenerator;
+import org.opensaml.xmlsec.keyinfo.KeyInfoGeneratorFactory;
+import org.opensaml.xmlsec.keyinfo.KeyInfoGeneratorManager;
+import org.opensaml.xmlsec.keyinfo.NamedKeyInfoGeneratorManager;
+import org.opensaml.xmlsec.signature.KeyInfo;
+import org.opensaml.xmlsec.signature.SignableXMLObject;
+import org.opensaml.xmlsec.signature.Signature;
+import org.opensaml.xmlsec.signature.support.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.security.KeyStore;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.List;
@@ -150,7 +149,7 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
     private final String signatureAlgorithm;
 
     protected AbstractProtocolSigner(@Nonnull SignatureConfiguration signatureConfiguration)
-            throws SamlEngineConfigurationException {
+            throws ProtocolEngineConfigurationException {
         this(signatureConfiguration.isCheckedValidityPeriod(),
                 signatureConfiguration.isDisallowedSelfSignedCertificate(),
                 signatureConfiguration.isResponseSignAssertions(),
@@ -167,7 +166,7 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
                                      @Nullable String signatureAlgorithmVal,
                                      @Nullable String signatureAlgorithmWhiteListStr,
                                      @Nullable KeyStore.PrivateKeyEntry metadataSigningKeyAndCertificate)
-            throws SamlEngineConfigurationException {
+            throws ProtocolEngineConfigurationException {
         Preconditions.checkNotNull(signatureKeyAndCertificate, "signatureKeyAndCertificate");
         Preconditions.checkNotNull(trustedCertificates, "trustedCertificates");
         String signatureAlg = signatureAlgorithmVal;
@@ -203,22 +202,10 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
 
     private static X509Certificate getSignatureCertificate(Signature signature) throws EIDASSAMLEngineException {
         KeyInfo keyInfo = signature.getKeyInfo();
-        return CertificateUtil.toCertificate(keyInfo);
-    }
-
-    /**
-     * @deprecated this is a global static OpenSAML configuration, it should not be invoked!
-     */
-    @Deprecated
-    protected static void setDigestMethodAlgorithm(@Nonnull String signatureAlgorithm)
-            throws SamlEngineConfigurationException {
-        BasicSecurityConfiguration config = (BasicSecurityConfiguration) Configuration.getGlobalSecurityConfiguration();
-        if (config != null && isNotBlank(signatureAlgorithm)) {
-            String digestAlgorithm = validateDigestAlgorithm(signatureAlgorithm);
-            config.setSignatureReferenceDigestMethod(digestAlgorithm);
-        } else {
-            LOG.error("Configuration error - Unable to set DigestMethodAlgorithm - config {} algorithm {} not set",
-                      config, signatureAlgorithm);
+        try {
+            return CertificateUtil.toCertificate(keyInfo);
+        } catch (CertificateException e) {
+            throw new EIDASSAMLEngineException(e);
         }
     }
 
@@ -228,10 +215,10 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
      * @param signatureAlgorithmName the signature algorithm name as defined in the XML Digital Signature standards.
      * @return the canonical algorithm name of the corresponding digest algorithm if allowed, otherwise throws an
      * exception
-     * @throws SamlEngineConfigurationException if the given algorithm is not allowed
+     * @throws ProtocolEngineConfigurationException if the given algorithm is not allowed
      */
     public static String validateDigestAlgorithm(String signatureAlgorithmName)
-            throws SamlEngineConfigurationException {
+            throws ProtocolEngineConfigurationException {
         if (StringUtils.isBlank(signatureAlgorithmName)) {
             return DEFAULT_DIGEST_ALGORITHM;
         }
@@ -243,7 +230,7 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
         String msg =
                 "Signing algorithm \"" + signatureAlgorithmName + "\" does not contain an allowed digest algorithm";
         LOG.error(msg);
-        throw new SamlEngineConfigurationException(msg);
+        throw new ProtocolEngineConfigurationException(msg);
     }
 
     /**
@@ -251,10 +238,10 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
      *
      * @param signatureAlgorithmName the signature algorithm name as defined in the XML Digital Signature standards.
      * @return the canonical algorithm name if allowed, otherwise throws an exception
-     * @throws SamlEngineConfigurationException if the given algorithm is not allowed
+     * @throws ProtocolEngineConfigurationException if the given algorithm is not allowed
      */
     public static String validateSigningAlgorithm(@Nullable String signatureAlgorithmName)
-            throws SamlEngineConfigurationException {
+            throws ProtocolEngineConfigurationException {
         if (signatureAlgorithmName == null || StringUtils.isBlank(signatureAlgorithmName)) {
             return DEFAULT_SIGNATURE_ALGORITHM;
         }
@@ -264,7 +251,7 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
         }
         String msg = "Signing algorithm \"" + signatureAlgorithmName + "\" is not allowed";
         LOG.error(msg);
-        throw new SamlEngineConfigurationException(msg);
+        throw new ProtocolEngineConfigurationException(msg);
     }
 
     protected void checkCertificateIssuer(X509Certificate certificate) throws EIDASSAMLEngineException {
@@ -283,7 +270,7 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
         try {
             LOG.debug("Creating an OpenSAML signature object");
 
-            signature = (Signature) Configuration.getBuilderFactory()
+            signature = (Signature) XMLObjectProviderRegistrySupport.getBuilderFactory()
                     .getBuilder(Signature.DEFAULT_ELEMENT_NAME)
                     .buildObject(Signature.DEFAULT_ELEMENT_NAME);
 
@@ -291,7 +278,7 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
 
             signature.setSignatureAlgorithm(getSignatureAlgorithm());
 
-            SecurityConfiguration secConfiguration = Configuration.getGlobalSecurityConfiguration();
+            SignatureSigningConfiguration secConfiguration = SecurityConfigurationSupport.getGlobalSignatureSigningConfiguration();
             NamedKeyInfoGeneratorManager keyInfoManager = secConfiguration.getKeyInfoGeneratorManager();
             KeyInfoGeneratorManager keyInfoGenManager = keyInfoManager.getDefaultManager();
             KeyInfoGeneratorFactory keyInfoGenFac = keyInfoGenManager.getFactory(credential);
@@ -301,7 +288,7 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
 
             signature.setKeyInfo(keyInfo);
             signature.setCanonicalizationAlgorithm(SignatureConstants.ALGO_ID_C14N_EXCL_OMIT_COMMENTS);
-        } catch (org.opensaml.xml.security.SecurityException e) {
+        } catch (org.opensaml.security.SecurityException e) {
             LOG.error("ERROR : Security exception: " + e, e);
             throw new EIDASSAMLEngineException(e);
         }
@@ -349,7 +336,12 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
         // Exist only one certificate
         X509Credential entityX509Cred = CertificateUtil.toCredential(cert);
 
-        CertificateUtil.checkTrust(entityX509Cred, trustedCredentialList);
+        try {
+            CertificateUtil.checkTrust(entityX509Cred, trustedCredentialList);
+        } catch (CertificateException ce) {
+            throw new EIDASSAMLEngineException(EidasErrorKey.SAML_ENGINE_UNTRUSTED_CERTIFICATE.errorCode(),
+                    EidasErrorKey.SAML_ENGINE_UNTRUSTED_CERTIFICATE.errorMessage());
+        }
         checkCertificateValidityPeriod(cert);
         checkCertificateIssuer(cert);
         return entityX509Cred;
@@ -395,7 +387,7 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
             }
 
             LOG.trace("Marshall samlToken.");
-            Configuration.getMarshallerFactory().getMarshaller(signableObject).marshall(signableObject);
+            XMLObjectProviderRegistrySupport.getMarshallerFactory().getMarshaller(signableObject).marshall(signableObject);
 
             LOG.trace("Sign samlToken.");
             Signer.signObject(signature);
@@ -419,18 +411,28 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
      */
     @Override
     @Nonnull
-    public <T extends SignableXMLObject> T signMetadata(@Nonnull T signableObject) throws EIDASSAMLEngineException {
+    public <T extends SignableXMLObject> T signMetadata(@Nonnull T signableObject) throws EIDASMetadataException {
         if (null == privateMetadataSigningCredential) {
-            throw new SamlEngineConfigurationException("No metadataSigningCredential configured");
+            throw new EIDASMetadataException("No metadataSigningCredential configured");
         }
-        return sign(signableObject, privateMetadataSigningCredential);
+        try {
+            return sign(signableObject, privateMetadataSigningCredential);
+        } catch (EIDASSAMLEngineException e) {
+            //TODO remove this conversion when metadata is physically decoupled
+            throw new EIDASMetadataException(e);
+        }
     }
 
     @Nonnull
     @Override
     public <T extends SignableXMLObject> T validateMetadataSignature(@Nonnull T signedMetadata)
-            throws EIDASSAMLEngineException {
-        return validateSignature(signedMetadata, null);
+            throws EIDASMetadataException {
+        try {
+            return validateSignature(signedMetadata, null);
+        } catch (EIDASSAMLEngineException e) {
+            //TODO remove this conversion when metadata is physically decoupled
+            throw new EIDASMetadataException(e);
+        }
     }
 
     private SAMLSignatureProfileValidator validateSamlSignatureStructure(SignableXMLObject signableObject)
@@ -439,7 +441,7 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
         try {
             // Indicates signature id conform to SAML Signature profile
             sigProfValidator.validate(signableObject.getSignature());
-        } catch (ValidationException e) {
+        } catch (SignatureException e) {
             LOG.error("ERROR : ValidationException: signature isn't conform to SAML Signature profile: " + e, e);
             throw new EIDASSAMLEngineException(e);
         }
@@ -483,7 +485,7 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
             throws EIDASSAMLEngineException {
         // 1) check that we accept the signature algorithm
         String signatureAlgorithmVal = signature.getSignatureAlgorithm();
-        LOG.trace("Key algorithm {}", SecurityHelper.getKeyAlgorithmFromURI(signatureAlgorithmVal));
+        LOG.trace("Key algorithm {}", signatureAlgorithmVal);
         if (!isAlgorithmAllowedForVerifying(signatureAlgorithmVal)) {
             LOG.error("ERROR : the algorithm {} used by the signature is not allowed", signatureAlgorithmVal);
             throw new EIDASSAMLEngineException(EidasErrorKey.INVALID_SIGNATURE_ALGORITHM.errorCode());
@@ -494,10 +496,9 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
 
         // 3) verify the XML Digital Signature itself (XML-DSig)
         // DOM information related to the signature should be still available at this point
-        SignatureValidator sigValidator = new SignatureValidator(entityX509Cred);
         try {
-            sigValidator.validate(signature);
-        } catch (ValidationException e) {
+            SignatureValidator.validate(signature, entityX509Cred);
+        } catch (SignatureException e) {
             LOG.error("ERROR : Signature Validation Exception: " + e, e);
             throw new EIDASSAMLEngineException(e);
         }

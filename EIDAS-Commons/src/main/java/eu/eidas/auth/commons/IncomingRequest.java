@@ -22,7 +22,7 @@ import eu.eidas.util.Preconditions;
 public final class IncomingRequest implements WebRequest {
 
     @Nonnull
-    private final Method method;
+    private final BindingMethod method;
 
     @Nonnull
     private final ImmutableMap<String, ImmutableList<String>> parameterMap;
@@ -39,7 +39,7 @@ public final class IncomingRequest implements WebRequest {
     public IncomingRequest(@Nonnull HttpServletRequest request) {
         Preconditions.checkNotNull(request, "request");
         String httpMethod = request.getMethod();
-        Method webMethod = Method.fromString(httpMethod);
+        BindingMethod webMethod = BindingMethod.fromString(httpMethod);
         parameterMap = newParameterMap(request);
         method = webMethod;
         remoteIpAddress = getRemoteAddress(request);
@@ -49,7 +49,7 @@ public final class IncomingRequest implements WebRequest {
         }
     }
 
-    public IncomingRequest(@Nonnull Method webMethod,
+    public IncomingRequest(@Nonnull BindingMethod webMethod,
                            @Nonnull ImmutableMap<String, ImmutableList<String>> parameters,
                            @Nonnull String remoteIpAddr,
                            @Nullable String relaySt) {
@@ -59,7 +59,7 @@ public final class IncomingRequest implements WebRequest {
         relayState = relaySt;
     }
 
-    public IncomingRequest(@Nonnull Method webMethod,
+    public IncomingRequest(@Nonnull BindingMethod webMethod,
                            @Nonnull Map<String, String[]> parameterMap,
                            @Nonnull String remoteIpAddress,
                            @Nullable String relayState) {
@@ -228,7 +228,7 @@ public final class IncomingRequest implements WebRequest {
 
     @Override
     @Nonnull
-    public Method getMethod() {
+    public BindingMethod getMethod() {
         return method;
     }
 

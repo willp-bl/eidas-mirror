@@ -1,32 +1,29 @@
 /*
- * Licensed under the EUPL, Version 1.1 or â€“ as soon they will be approved by
- * the European Commission - subsequent versions of the EUPL (the "Licence");
- * You may not use this work except in compliance with the Licence. You may
- * obtain a copy of the Licence at:
+ * Copyright (c) 2017 by European Commission
  *
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ *  EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
  * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the Licence is distributed on an "AS IS" basis, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * Licence for the specific language governing permissions and limitations under
- * the Licence.
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
+ *
+ * This product combines work with different licenses. See the
+ * "NOTICE" text file for details on the various modules and licenses.
+ * The "NOTICE" text file is part of the distribution.
+ * Any derivative works that you distribute must include a readable
+ * copy of the "NOTICE" text file.
  */
-
 package eu.eidas.engine.test.simple.eidas;
 
-import java.io.IOException;
-import java.util.Map;
-
 import com.google.common.collect.ImmutableSet;
-
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import eu.eidas.auth.commons.EIDASStatusCode;
 import eu.eidas.auth.commons.EIDASSubStatusCode;
 import eu.eidas.auth.commons.EidasStringUtil;
@@ -34,7 +31,6 @@ import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.attribute.AttributeValue;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.attribute.PersonType;
-import eu.eidas.auth.commons.attribute.impl.StringAttributeValue;
 import eu.eidas.auth.commons.attribute.impl.StringAttributeValueMarshaller;
 import eu.eidas.auth.commons.protocol.IAuthenticationResponse;
 import eu.eidas.auth.commons.protocol.IResponseMessage;
@@ -42,28 +38,32 @@ import eu.eidas.auth.commons.protocol.eidas.IEidasAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.eidas.LevelOfAssurance;
 import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.eidas.impl.PostalAddress;
+import eu.eidas.auth.commons.protocol.eidas.spec.EidasSpec;
 import eu.eidas.auth.commons.protocol.impl.AuthenticationResponse;
 import eu.eidas.auth.commons.protocol.impl.SamlNameIdFormat;
 import eu.eidas.auth.engine.ProtocolEngineFactory;
 import eu.eidas.auth.engine.ProtocolEngineI;
 import eu.eidas.auth.engine.core.eidas.EidasProtocolProcessor;
-import eu.eidas.auth.engine.core.eidas.spec.EidasSpec;
-import eu.eidas.auth.engine.core.stork.StorkExtensionProcessor;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import eu.eidas.engine.test.simple.SSETestUtils;
+import org.junit.Ignore;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Map;
 
 import static eu.eidas.engine.EidasAttributeTestUtil.newEidasAttributeDefinition;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * The Class EidasResponseTest.
  */
 public class EidasAuthResponseTest {
 
-    private static final String STORK_ADDRESS = getStorkAddress();
+    private static final String EIDAS_ADDRESS = getEidasAddress();
 
     /**
      * The engine.
@@ -75,7 +75,7 @@ public class EidasAuthResponseTest {
         try {
             engine = ProtocolEngineFactory.createProtocolEngine(conf, new EidasProtocolProcessor(
                     "saml-engine-eidas-attributes-" + conf + ".xml",
-                    "saml-engine-additional-attributes-" + conf + ".xml", null, null, null));
+                    "saml-engine-additional-attributes-" + conf + ".xml", null, null, null, null));
         } catch (EIDASSAMLEngineException exc) {
             fail("Failed to initialize SAMLEngines");
         }
@@ -250,7 +250,7 @@ public class EidasAuthResponseTest {
                 postCode("postCodeTest").build();
     }
 
-    private static String getStorkAddress() {
+    private static String getEidasAddress() {
         StringBuilder builder = new StringBuilder(150);
 
         builder.append("<eidas:PoBox>");
@@ -357,6 +357,9 @@ public class EidasAuthResponseTest {
                 .inResponseTo(authenRequest.getId())
                 .issuer("http://Responder")
                 .statusCode(EIDASStatusCode.SUCCESS_URI.toString())
+                .failure(false)
+                .subject("UK/UK/Banksy")
+                .subjectNameIdFormat("urn:oasis:names:tc:SAML:2.0:nameid-format:transient")
                 .build();
 
         IResponseMessage responseMessage =
@@ -424,6 +427,8 @@ public class EidasAuthResponseTest {
                 .inResponseTo(authenRequest.getId())
                 .issuer("http://Responder")
                 .statusCode(EIDASStatusCode.SUCCESS_URI.toString())
+                .subject("UK/UK/Banksy")
+                .subjectNameIdFormat("urn:oasis:names:tc:SAML:2.0:nameid-format:transient")
                 .build();
         try {
             getEngine().generateResponseMessage(authnRequestCopyButNullAssertionConsumerUrl, response, false,
@@ -463,6 +468,8 @@ public class EidasAuthResponseTest {
         AuthenticationResponse response = new AuthenticationResponse.Builder().id("963158")
                 .inResponseTo(authenRequest.getId())
                 .issuer("http://Responder")
+                .subject("UK/UK/Banksy")
+                .subjectNameIdFormat("urn:oasis:names:tc:SAML:2.0:nameid-format:transient")
                 .statusCode(EIDASStatusCode.SUCCESS_URI.toString())
                 .build();
 
@@ -497,6 +504,8 @@ public class EidasAuthResponseTest {
                 .inResponseTo(authenRequest.getId())
                 .issuer("http://Responder")
                 .statusCode(EIDASStatusCode.SUCCESS_URI.toString())
+                .subject("UK/UK/Banksy")
+                .subjectNameIdFormat("urn:oasis:names:tc:SAML:2.0:nameid-format:transient")
                 .build();
         try {
             authResponse =
@@ -527,6 +536,8 @@ public class EidasAuthResponseTest {
                 .inResponseTo(authenRequest.getId())
                 .issuer("http://Responder")
                 .statusCode(EIDASStatusCode.SUCCESS_URI.toString())
+                .subject("UK/UK/Banksy")
+                .subjectNameIdFormat("urn:oasis:names:tc:SAML:2.0:nameid-format:transient")
                 .build();
 
         try {
@@ -538,91 +549,6 @@ public class EidasAuthResponseTest {
         } catch (EIDASSAMLEngineException expected) {
             // expected
         }
-    }
-
-    /**
-     * Test validate authentication response set null value into attribute.
-     */
-    @Test
-    public final void testResponseInvalidParametersAttrSimpleValue() throws Exception {
-
-        AuthenticationResponse response = newStorkResponse();
-
-        try {
-            authResponse =
-                    getEngine().generateResponseMessage(authenRequest, response, false, ipAddress).getMessageBytes();
-            // In Conf1 ipValidate is false
-            getEngine().unmarshallResponseAndValidate(authResponse, null, 0, 0, null);
-        } catch (EIDASSAMLEngineException e) {
-            LOG.error("Error: " + e, e);
-        }
-    }
-
-    /**
-     * Test validate authentication response set null value into attribute.
-     */
-    @Test
-    public final void testResponseInvalidParametersAttrNoValue() throws Exception {
-        AuthenticationResponse response = newStorkResponse();
-
-        try {
-            authResponse =
-                    getEngine().generateResponseMessage(authenRequest, response, false, ipAddress).getMessageBytes();
-            // In Conf1 ipValidate is false
-            getEngine().unmarshallResponseAndValidate(authResponse, null, 0, 0, null);
-        } catch (EIDASSAMLEngineException e) {
-            LOG.error("Error: " + e, e);
-        }
-    }
-
-    /**
-     * Test validate authentication response set null value into attribute.
-     */
-    @Test
-    public final void testResponseInvalidParametersAttrNoName() throws Exception {
-
-        AuthenticationResponse response = newStorkResponse();
-
-        try {
-            authResponse =
-                    getEngine().generateResponseMessage(authenRequest, response, false, ipAddress).getMessageBytes();
-            // In Conf1 ipValidate is false
-            getEngine().unmarshallResponseAndValidate(authResponse, null, 0, 0, null);
-        } catch (EIDASSAMLEngineException e) {
-            LOG.error("Error: " + e, e);
-        }
-    }
-
-    /**
-     * Test validate authentication response set null complex value into attribute.
-     */
-    @Test
-    public final void testResponseInvalidParametersAttrComplexValue() throws Exception {
-
-        AuthenticationResponse response = newStorkResponse();
-
-        try {
-            authResponse =
-                    getEngine().generateResponseMessage(authenRequest, response, false, ipAddress).getMessageBytes();
-            // In Conf1 ipValidate is false
-            getEngine().unmarshallResponseAndValidate(authResponse, null, 0, 0, null);
-        } catch (EIDASSAMLEngineException e) {
-            LOG.error("Error: " + e, e);
-        }
-    }
-
-    private AuthenticationResponse newStorkResponse() throws IOException {
-        ImmutableAttributeMap attributeMap = ImmutableAttributeMap.builder()
-                .put((AttributeDefinition<String>) StorkExtensionProcessor.INSTANCE.getMinimumDataSetAttributes()
-                        .getByName("http://www.stork.gov.eu/1.0/isAgeOver"), new StringAttributeValue("18", false))
-                .build();
-
-        return new AuthenticationResponse.Builder().attributes(attributeMap)
-                .id("963158")
-                .inResponseTo(authenRequest.getId())
-                .issuer("http://Responder")
-                .statusCode(EIDASStatusCode.SUCCESS_URI.toString())
-                .build();
     }
 
     /**
@@ -638,6 +564,8 @@ public class EidasAuthResponseTest {
             response.inResponseTo(authenRequest.getId());
             response.issuer("http://Responder");
             response.statusCode(EIDASStatusCode.SUCCESS_URI.toString());
+            response.subject("UK/UK/Banksy");
+            response.subjectNameIdFormat("urn:oasis:names:tc:SAML:2.0:nameid-format:transient");
 
             IResponseMessage responseMessage =
                     getEngine().generateResponseMessage(authenRequest, response.build(), false, ipAddress);
@@ -710,7 +638,7 @@ public class EidasAuthResponseTest {
             if ("canonicalResidenceAddress".equalsIgnoreCase(attributeDefinition.getFriendlyName())) {
                 String value = (String) values.iterator().next().getValue();
 
-                assertEquals("Incorrect STORK address: ", STORK_ADDRESS, value);
+                assertEquals("Incorrect eIDAS address: ", EIDAS_ADDRESS, value);
             }
         }
     }
@@ -761,6 +689,7 @@ public class EidasAuthResponseTest {
         response.statusCode(EIDASStatusCode.REQUESTER_URI.toString());
         response.subStatusCode(EIDASSubStatusCode.AUTHN_FAILED_URI.toString());
         response.statusMessage("");
+        response.failure(true);
         response.id("963158");
         response.inResponseTo(authenRequest.getId());
         response.issuer("http://Responder");
@@ -811,6 +740,8 @@ public class EidasAuthResponseTest {
         response.inResponseTo(authenRequest.getId());
         response.issuer("http://Responder");
         response.statusCode(EIDASStatusCode.SUCCESS_URI.toString());
+        response.subject("UK/UK/Banksy");
+        response.subjectNameIdFormat("urn:oasis:names:tc:SAML:2.0:nameid-format:transient");
 
         IResponseMessage responseMessage =
                 getEngine().generateResponseMessage(authenRequest, response.build(), false, ipAddress);
@@ -843,6 +774,7 @@ public class EidasAuthResponseTest {
         response.id("963158");
         response.inResponseTo(authenRequest.getId());
         response.issuer("http://Responder");
+        response.failure(true);
 
         authResponse =
                 getEngine().generateResponseErrorMessage(authenRequest, response.build(), ipAddress).getMessageBytes();
@@ -868,6 +800,8 @@ public class EidasAuthResponseTest {
         response.inResponseTo(authenRequest.getId());
         response.issuer("http://Responder");
         response.statusCode(EIDASStatusCode.SUCCESS_URI.toString());
+        response.subject("UK/UK/Banksy");
+        response.subjectNameIdFormat("urn:oasis:names:tc:SAML:2.0:nameid-format:transient");
 
         IResponseMessage responseMessage =
                 getEngine().generateResponseMessage(authenRequest, response.build(), false, ipAddress);

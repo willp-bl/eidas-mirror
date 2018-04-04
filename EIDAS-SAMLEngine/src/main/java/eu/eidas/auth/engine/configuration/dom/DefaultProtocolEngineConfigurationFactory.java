@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import eu.eidas.auth.commons.io.SingletonAccessor;
 import eu.eidas.auth.engine.configuration.ProtocolEngineConfiguration;
-import eu.eidas.auth.engine.configuration.SamlEngineConfigurationException;
+import eu.eidas.auth.engine.configuration.ProtocolEngineConfigurationException;
 
 /**
  * Default ProtocolEngineConfiguration Factory
@@ -65,7 +65,7 @@ public final class DefaultProtocolEngineConfigurationFactory {
      */
     @Nonnull
     public static ProtocolEngineConfiguration getDefaultConfiguration(@Nonnull String instanceName)
-            throws SamlEngineConfigurationException {
+            throws ProtocolEngineConfigurationException {
         return getInstance().getConfiguration(instanceName);
     }
 

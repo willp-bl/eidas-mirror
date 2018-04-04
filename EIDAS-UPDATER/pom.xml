@@ -10,7 +10,7 @@
     <parent>
         <groupId>eu.eidas</groupId>
         <artifactId>eidas-parent</artifactId>
-        <version>1.4.0</version>
+        <version>2.0.0</version>
         <relativePath>../EIDAS-Parent/pom.xml</relativePath>
     </parent>
     <dependencies>
@@ -24,14 +24,14 @@
         <!-- 2) Dependencies on libraries: -->
         <dependency>
             <groupId>javax.servlet</groupId>
-            <artifactId>servlet-api</artifactId>
+            <artifactId>javax.servlet-api</artifactId>
         </dependency>
 
         <!-- WebService -->
-        <dependency>
-            <groupId>com.sun.jersey</groupId>
-            <artifactId>jersey-server</artifactId>
-        </dependency>
+        <!--        <dependency>
+                    <groupId>com.sun.jersey</groupId>
+                    <artifactId>jersey-server</artifactId>
+                </dependency>-->
 
         <!-- Application Context -->
         <dependency>
@@ -42,5 +42,9 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-context-support</artifactId>
         </dependency>
+        <!--        <dependency>
+                    <groupId>com.sun.jersey.contribs</groupId>
+                    <artifactId>jersey-spring</artifactId>
+                </dependency>-->
     </dependencies>
 </project>

@@ -3,16 +3,6 @@
 <properties>
 
 	<!-- SPEPS -->
-	<!-- QAALevel of the Demo SP -->
-	<entry key="DEMO-SP.qaalevel">3</entry>
-	<!-- IF a SP is not listed, the DEFAULT parameters it can access might be 
-		(none|all|list;Of;Parameters) -->
-	<entry key="sp.default.parameters">all</entry>
-	<!-- Specific case for a listed SP (none|all|list;Of;Parameters) -->
-	<!-- <entry key="DEMO-SP">givenName;age;dateOfBirth;nationalityCode;isAgeOver;eIdentifier</entry> -->
-
-	<!-- Id of this connector -->
-	<entry key="connector.id">CB</entry>
 
 	<entry key="service.number">8</entry>
     <entry key="service1.id">CA</entry>

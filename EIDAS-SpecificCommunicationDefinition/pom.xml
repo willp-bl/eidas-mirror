@@ -5,37 +5,37 @@
     <artifactId>eidas-specific-communication-definition</artifactId>
     <packaging>jar</packaging>
     <name>eIDAS Specific Communication Definition</name>
-    <description>
-        Separated specific modules used to define the communication protocol used in the communications.
-        Provides Java Interfaces to plug specific integration on SP and IdP sides.
-    </description>
+    <description>Defines and implements the communication protocol to be used between specific and node modules.</description>
     <parent>
         <groupId>eu.eidas</groupId>
         <artifactId>eidas-parent</artifactId>
-        <version>1.4.0</version>
+        <version>2.0.0</version>
         <relativePath>../EIDAS-Parent/pom.xml</relativePath>
     </parent>
-
     <dependencies>
         <dependency>
-            <groupId>eu.eidas</groupId>
-            <artifactId>eidas-light-commons</artifactId>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
         </dependency>
-        <!-- Servlet & JSP -->
+        <dependency>
+            <groupId>eu.eidas</groupId>
+            <artifactId>eidas-commons</artifactId>
+        </dependency>
         <dependency>
             <groupId>javax.servlet</groupId>
-            <artifactId>servlet-api</artifactId>
+            <artifactId>javax.servlet-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>javax</groupId>
-            <artifactId>javaee-api</artifactId>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-test</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>commons-lang</groupId>
-            <artifactId>commons-lang</artifactId>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
-
     <build>
         <finalName>${artifactId}</finalName>
         <plugins>
@@ -45,4 +45,87 @@
             </plugin>
         </plugins>
     </build>
+    <profiles>
+        <profile>
+            <id>specificProxyServiceWarPackaging</id>
+            <activation>
+                <property>
+                    <name>!specificJar</name>
+                </property>
+            </activation>
+            <properties>
+                <packaging.type>war</packaging.type>
+            </properties>
+            <build>
+                <finalName>${proj.name}</finalName>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-specific-connector-config</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${project.build.directory}/${proj.name}/WEB-INF/classes
+                                    </outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.basedir}/src/main/config/warPackaging</directory>
+                                            <filtering>false</filtering>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>specificProxyServiceJarPackaging</id>
+            <activation>
+                <property>
+                    <name>specificJar</name>
+                </property>
+            </activation>
+            <properties>
+                <packaging.type>jar</packaging.type>
+            </properties>
+            <build>
+                <finalName>${artifactId}</finalName>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-specific-connector-config</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${project.build.directory}/${proj.name}/WEB-INF/classes</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.basedir}/src/main/config/jarPackaging</directory>
+                                            <filtering>false</filtering>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

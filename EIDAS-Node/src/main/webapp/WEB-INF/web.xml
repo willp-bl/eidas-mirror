@@ -1,8 +1,43 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) 2017 by European Commission
+  ~
+  ~ Licensed under the EUPL, Version 1.2 or - as soon they will be
+  ~ approved by the European Commission - subsequent versions of the
+  ~ EUPL (the "Licence");
+  ~ You may not use this work except in compliance with the Licence.
+  ~ You may obtain a copy of the Licence at:
+  ~ https://joinup.ec.europa.eu/page/eupl-text-11-12
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the Licence is distributed on an "AS IS" basis,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+  ~ implied.
+  ~ See the Licence for the specific language governing permissions and
+  ~ limitations under the Licence.
+  -->
+<web-app xmlns="http://java.sun.com/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+         id="WebApp_ID" version="3.0">
 
-<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://java.sun.com/xml/ns/javaee"
+    <!-- ****************** -->
+    <!--Session config      -->
+    <!-- ****************** -->
+    <!-- the session should last 15 min. -->
+    <session-config>
+        <session-timeout>15</session-timeout>
+        <!-- Available for SERVLET 3.0 containers -->
+        <cookie-config>
+            <http-only>true</http-only>
+            <secure>true</secure>
+            <max-age>900</max-age>
+        </cookie-config>
+        <tracking-mode>COOKIE</tracking-mode>
+    </session-config>
+<!--<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://java.sun.com/xml/ns/javaee"
          xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
-         id="WebApp_ID" version="2.5">
+         id="WebApp_ID" version="2.5">-->
 
     <filter>
         <filter-name>CharacterEncodingFilter</filter-name>
@@ -42,10 +77,6 @@
         <auth-constraint/>
     </security-constraint>
     <filter>
-       <filter-name>jersey</filter-name>
-       <filter-class>com.sun.jersey.spi.spring.container.servlet.SpringServlet</filter-class>
-     </filter>
-    <filter>
         <filter-name>securityFilter</filter-name>
         <filter-class>eu.eidas.node.security.SecurityRequestFilter</filter-class>
         <init-param>
@@ -61,12 +92,6 @@
         <filter-name>removeHeadersFilter</filter-name>
         <filter-class>eu.eidas.node.security.RemoveHttpHeadersFilter</filter-class>
     </filter>
-    <!-- ENABLE THE UPDATER ONLY IN TEST ENVIRONMENT! -->
-    <!--filter-mapping>
-        <filter-name>jersey</filter-name>
-        <url-pattern>/updater/*</url-pattern>
-    </filter-mapping-->
-
     <filter-mapping>
         <filter-name>securityFilter</filter-name>
         <url-pattern>/*</url-pattern>
@@ -135,10 +160,10 @@
 
     <!--Connector servlets -->
     <servlet>
-        <description>ServiceProvider</description>
-        <display-name>ServiceProviderServlet</display-name>
-        <servlet-name>ServiceProviderServlet</servlet-name>
-        <servlet-class>eu.eidas.node.connector.ServiceProviderServlet</servlet-class>
+        <description>SpecificConnectorRequest</description>
+        <display-name>SpecificConnectorRequestServlet</display-name>
+        <servlet-name>SpecificConnectorRequestServlet</servlet-name>
+        <servlet-class>eu.eidas.node.connector.SpecificConnectorRequestServlet</servlet-class>
     </servlet>
     <servlet>
         <description>ColleagueResponse</description>
@@ -163,27 +188,20 @@
         <servlet-class>eu.eidas.node.service.ColleagueRequestServlet</servlet-class>
     </servlet>
     <servlet>
-        <description>IdPResponse</description>
-        <display-name>IdPResponseServlet</display-name>
-        <servlet-name>IdPResponseServlet</servlet-name>
-        <servlet-class>eu.eidas.node.service.IdPResponseServlet</servlet-class>
+        <description>SpecificProxyServiceResponse</description>
+        <display-name>SpecificProxyServiceResponse</display-name>
+        <servlet-name>SpecificProxyServiceResponse</servlet-name>
+        <servlet-class>eu.eidas.node.service.SpecificProxyServiceResponse</servlet-class>
     </servlet>
     <servlet>
         <description>ProxyService MetadataGenerator</description>
         <display-name>ServiceMetadataGeneratorServlet</display-name>
         <servlet-name>ServiceMetadataGeneratorServlet</servlet-name>
-        <servlet-class>eu.eidas.node.service.ServiceMetadataGeneratorServlet</servlet-class>
+        <servlet-class>eu.eidas.node.service.ProxyServiceMetadataGeneratorServlet</servlet-class>
     </servlet>
 
 
     <!-- Specific servlets -->
-
-    <servlet>
-        <description>CitizenConsent</description>
-        <display-name>CitizenConsentServlet</display-name>
-        <servlet-name>CitizenConsentServlet</servlet-name>
-        <servlet-class>eu.eidas.node.service.CitizenConsentServlet</servlet-class>
-    </servlet>
 
     <servlet>
         <description>ContentSecurityPolicyReport</description>
@@ -191,6 +209,7 @@
         <servlet-name>ContentSecurityPolicyReportServlet</servlet-name>
         <servlet-class>eu.eidas.node.security.ContentSecurityPolicyReportServlet</servlet-class>
     </servlet>
+
 
     <!-- Error Handler Servlets-->
     <servlet>
@@ -213,8 +232,8 @@
     <!-- ****************** -->
     <!--Connector servlets -->
     <servlet-mapping>
-        <servlet-name>ServiceProviderServlet</servlet-name>
-        <url-pattern>/ServiceProvider</url-pattern>
+        <servlet-name>SpecificConnectorRequestServlet</servlet-name>
+        <url-pattern>/SpecificConnectorRequest</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>ColleagueResponseServlet</servlet-name>
@@ -224,32 +243,20 @@
         <servlet-name>ConnectorMetadataGeneratorServlet</servlet-name>
         <url-pattern>/ConnectorMetadata</url-pattern>
     </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>ConnectorMetadataGeneratorServlet</servlet-name>
-        <url-pattern>/ConnectorResponderMetadata</url-pattern>
-    </servlet-mapping>
     <!--ProxyService servlet -->
     <servlet-mapping>
         <servlet-name>ColleagueRequestServlet</servlet-name>
         <url-pattern>/ColleagueRequest</url-pattern>
     </servlet-mapping>
-    <servlet-mapping>
-    <servlet-name>CitizenConsentServlet</servlet-name>
-        <url-pattern>/CitizenConsent</url-pattern>
-    </servlet-mapping>
 
     <servlet-mapping>
-        <servlet-name>IdPResponseServlet</servlet-name>
-        <url-pattern>/IdpResponse</url-pattern>
+        <servlet-name>SpecificProxyServiceResponse</servlet-name>
+        <url-pattern>/SpecificProxyServiceResponse</url-pattern>
     </servlet-mapping>
 
     <servlet-mapping>
         <servlet-name>ServiceMetadataGeneratorServlet</servlet-name>
         <url-pattern>/ServiceMetadata</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>ServiceMetadataGeneratorServlet</servlet-name>
-        <url-pattern>/ServiceRequesterMetadata</url-pattern>
     </servlet-mapping>
 
 
@@ -263,6 +270,7 @@
         <servlet-name>ContentSecurityPolicyReportServlet</servlet-name>
         <url-pattern>/cspReportHandler</url-pattern>
     </servlet-mapping>
+
 
     <!--Handles the all the Exception and the eu.eidas.exceptions.NodeInterceptorException.-->
     <servlet-mapping>
@@ -311,18 +319,7 @@
         <location>/EidasNodeExceptionHandler</location>
     </error-page>
 
-    <!-- ****************** -->
-    <!--Session config      -->
-    <!-- ****************** -->
 
-    <session-config>
-        <session-timeout>15</session-timeout>
-        <!-- Available for SERVLET 3.0 containers -->
-        <!--cookie-config>
-            <secure>true</secure>
-            <http-only>true</http-only>
-        </cookie-config-->
-    </session-config>
 
     <!-- ===================== Default MIME Type Mappings =================== -->
     <!-- When serving static resources, server will automatically generate    -->

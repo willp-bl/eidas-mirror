@@ -24,13 +24,14 @@
 package eu.eidas.engine.test.simple;
 
 import eu.eidas.auth.engine.SamlEngineClock;
+import eu.eidas.auth.engine.metadata.MetadataClockI;
 import org.joda.time.DateTime;
 
 /**
  * A SamlEngineClock test implementation that can set its time relative to the system clock.
  */
 
-public class SamlEngineTestClock implements SamlEngineClock {
+public class SamlEngineTestClock implements SamlEngineClock, MetadataClockI {
     private long delta = 0;
 
     public DateTime getCurrentTime() {

@@ -22,37 +22,31 @@
 
 package eu.eidas.encryption;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.crypto.SecretKey;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerException;
-
-import org.opensaml.saml2.core.EncryptedAssertion;
-import org.opensaml.saml2.core.Response;
-import org.opensaml.saml2.encryption.Decrypter;
-import org.opensaml.xml.encryption.EncryptedKey;
-import org.opensaml.xml.security.SecurityHelper;
-import org.opensaml.xml.security.credential.Credential;
-import org.opensaml.xml.security.keyinfo.StaticKeyInfoCredentialResolver;
-import org.opensaml.xml.security.x509.X509Credential;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.DocumentFragment;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
 import eu.eidas.auth.commons.EidasStringUtil;
 import eu.eidas.auth.commons.xml.DocumentBuilderFactoryUtil;
 import eu.eidas.auth.commons.xml.opensaml.OpenSamlHelper;
 import eu.eidas.encryption.exception.DecryptionException;
 import eu.eidas.encryption.exception.MarshallException;
 import eu.eidas.encryption.exception.UnmarshallException;
+import org.opensaml.saml.saml2.core.EncryptedAssertion;
+import org.opensaml.saml.saml2.core.Response;
+import org.opensaml.security.credential.Credential;
+import org.opensaml.security.credential.CredentialSupport;
+import org.opensaml.security.x509.X509Credential;
+import org.opensaml.xmlsec.encryption.EncryptedKey;
+import org.opensaml.xmlsec.encryption.support.Decrypter;
+import org.opensaml.xmlsec.keyinfo.impl.StaticKeyInfoCredentialResolver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.*;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.crypto.SecretKey;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Low-level implementation of the OpenSAML decryption process.
@@ -85,16 +79,16 @@ public final class SAMLAuthnResponseDecrypter {
                 //KEY DECRYPTER
                 Decrypter keyDecrypter = new Decrypter(null, new StaticKeyInfoCredentialResolver(credential), null);
                 SecretKey dataDecKey = (SecretKey) keyDecrypter.decryptKey(encryptedSymmetricKey,
-                                                                           encAssertion.getEncryptedData()
-                                                                                   .getEncryptionMethod()
-                                                                                   .getAlgorithm());
+                        encAssertion.getEncryptedData()
+                                .getEncryptionMethod()
+                                .getAlgorithm());
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debug("SAML Response decrypting with data encryption algorithm: '"
-                                         + encAssertion.getEncryptedData().getEncryptionMethod().getAlgorithm() + "'");
+                            + encAssertion.getEncryptedData().getEncryptionMethod().getAlgorithm() + "'");
                 }
 
                 //DATA DECRYPTER
-                Credential dataDecCredential = SecurityHelper.getSimpleCredential(dataDecKey);
+                Credential dataDecCredential = CredentialSupport.getSimpleCredential(dataDecKey);
                 Decrypter dataDecrypter =
                         new Decrypter(new StaticKeyInfoCredentialResolver(dataDecCredential), null, null);
                 dataDecrypter.setRootInNewDocument(false);
@@ -110,8 +104,8 @@ public final class SAMLAuthnResponseDecrypter {
 
                 // We only want to work on the DOM tree because:
                 //
-                // When you call add() on an OpenSAML list: see org.opensaml.xml.util.XMLObjectChildrenList.add()
-                // it calls org.opensaml.xml.util.XMLObjectChildrenList.setParent()
+                // When you call add() on an OpenSAML list: see org.opensaml.core.xml.util.XMLObjectChildrenList.add()
+                // it calls org.opensaml.core.xml.util.XMLObjectChildrenList.setParent()
                 // which invokes: element.releaseParentDOM(true);
                 // therefore after this call, the DOM is null
             }
@@ -147,7 +141,7 @@ public final class SAMLAuthnResponseDecrypter {
             Element newRootElement = newDocument.getDocumentElement();
             NodeList encryptedAssertionList =
                     newRootElement.getElementsByTagNameNS(EncryptedAssertion.DEFAULT_ELEMENT_NAME.getNamespaceURI(),
-                                                          EncryptedAssertion.DEFAULT_ELEMENT_NAME.getLocalPart());
+                            EncryptedAssertion.DEFAULT_ELEMENT_NAME.getLocalPart());
 
             // Replace the encrypted assertions by the decrypted assertions in the new DOM tree:
             for (int i = 0, n = encryptedAssertionList.getLength(); i < n; i++) {
@@ -155,9 +149,9 @@ public final class SAMLAuthnResponseDecrypter {
                 DocumentFragment decryptedAssertionFragment = decryptedAssertionFragments.get(i);
                 // we may use adoptNode() instead of importNode() because the unmarshaller rectifies the ID-ness:
                 // See org.opensaml.saml1.core.impl.AssertionUnmarshaller.unmarshall()
-                // See org.opensaml.saml2.core.impl.AssertionUnmarshaller.processAttribute()
+                // See org.opensaml.saml.saml2.core.impl.AssertionUnmarshaller.processAttribute()
                 // And org.opensaml.saml1.core.impl.ResponseAbstractTypeUnmarshaller.unmarshall()
-                // And org.opensaml.saml2.core.impl.StatusResponseTypeUnmarshaller.processAttribute()
+                // And org.opensaml.saml.saml2.core.impl.StatusResponseTypeUnmarshaller.processAttribute()
                 Node copiedFragment = newDocument.adoptNode(decryptedAssertionFragment);
                 newRootElement.replaceChild(copiedFragment, encryptedAssertion);
             }
@@ -165,9 +159,9 @@ public final class SAMLAuthnResponseDecrypter {
             // Finally unmarshall the updated DOM into a new XMLObject graph:
             // The unmarshaller rectifies the ID-ness:
             // See org.opensaml.saml1.core.impl.AssertionUnmarshaller.unmarshall()
-            // See org.opensaml.saml2.core.impl.AssertionUnmarshaller.processAttribute()
+            // See org.opensaml.saml.saml2.core.impl.AssertionUnmarshaller.processAttribute()
             // And org.opensaml.saml1.core.impl.ResponseAbstractTypeUnmarshaller.unmarshall()
-            // And org.opensaml.saml2.core.impl.StatusResponseTypeUnmarshaller.processAttribute()
+            // And org.opensaml.saml.saml2.core.impl.StatusResponseTypeUnmarshaller.processAttribute()
             Response decryptedResponse = (Response) OpenSamlHelper.unmarshallFromDom(newDocument);
 
             if (LOGGER.isTraceEnabled()) {
@@ -181,7 +175,7 @@ public final class SAMLAuthnResponseDecrypter {
 
             return decryptedResponse;
 
-        } catch (org.opensaml.xml.encryption.DecryptionException | ParserConfigurationException | UnmarshallException e) {
+        } catch ( ParserConfigurationException | UnmarshallException | org.opensaml.xmlsec.encryption.support.DecryptionException e) {
             throw new DecryptionException(e);
         }
     }

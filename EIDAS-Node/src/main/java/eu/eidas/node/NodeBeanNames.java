@@ -29,8 +29,6 @@ import javax.annotation.Nonnull;
  */
 public enum NodeBeanNames {
 
-    IdP_RESPONSE("springManagedIdPResponse"),
-
     CONNECTOR_AS_IDP_METADATA_GENERATOR("connectorMetadataGeneratorIDP"),
 
     CONNECTOR_METADATA_GENERATOR("connectorMetadataGeneratorSP"),
@@ -50,6 +48,10 @@ public enum NodeBeanNames {
     SERVICE_METADATA_GENERATOR("serviceMetadataGeneratorIDP"),
 
     SYSADMIN_MESSAGE_RESOURCES("sysadminMessageSource"),
+
+    SPECIFIC_CONNECTOR_DEPLOYED_JAR("specificConnectorJar"),
+
+    SPECIFIC_PROXYSERVICE_DEPLOYED_JAR("specificProxyServiceJar"),
 
     // put the ; on a separate line to make merges easier
     ;

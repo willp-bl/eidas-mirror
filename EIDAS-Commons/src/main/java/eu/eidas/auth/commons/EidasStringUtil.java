@@ -1,30 +1,30 @@
 package eu.eidas.auth.commons;
 
-import javax.annotation.Nonnull;
-
 import org.apache.commons.lang.StringUtils;
-import org.bouncycastle.util.encoders.Base64;
+
+import javax.annotation.Nonnull;
+import javax.xml.bind.DatatypeConverter;
 
 public final class EidasStringUtil {
 
     /**
-     * Decodes the given {@link Base64} String into a byte array.
+     * Decodes the given {@link DatatypeConverter} String into a byte array.
      *
      * @param base64String the BASE64 String to be decoded.
      * @return The decoded byte array.
-     * @see Base64#decode
+     * @see DatatypeConverter#parseBase64Binary
      */
     @Nonnull
     public static byte[] decodeBytesFromBase64(@Nonnull String base64String) {
-        return Base64.decode(base64String);
+        return DatatypeConverter.parseBase64Binary(base64String);
     }
 
     /**
-     * Decodes the given {@link Base64} String into a byte array.
+     * Decodes the given {@link DatatypeConverter} String into a byte array.
      *
      * @param base64String the BASE64 String to be decoded.
      * @return The decoded byte array.
-     * @see Base64#decode
+     * @see DatatypeConverter#parseBase64Binary
      */
     @Nonnull
     public static String decodeStringFromBase64(@Nonnull String base64String) {
@@ -32,26 +32,26 @@ public final class EidasStringUtil {
     }
 
     /**
-     * {@link Base64} encodes the given byte array into a BASE64 string.
+     * {@link DatatypeConverter} encodes the given byte array into a BASE64 string.
      *
      * @param bytes the byte array to be encoded.
      * @return The Base64 String of the encoded bytes.
-     * @see Base64#encode
+     * @see DatatypeConverter#printBase64Binary
      */
     @Nonnull
     public static String encodeToBase64(@Nonnull byte[] bytes) {
         if (bytes.length == 0) {
             return StringUtils.EMPTY;
         }
-        return toString(Base64.encode(bytes));
+        return DatatypeConverter.printBase64Binary(bytes);
     }
 
     /**
-     * {@link Base64} encodes the given normal string into a BASE64 string.
+     * {@link DatatypeConverter} encodes the given normal string into a BASE64 string.
      *
-     * @param bytes the value to be encoded.
+     * @param value the value to be encoded.
      * @return The Base64 String of the encoded bytes coming from the given string.
-     * @see Base64#encode
+     * @see DatatypeConverter#printBase64Binary
      */
     @Nonnull
     public static String encodeToBase64(@Nonnull String value) {

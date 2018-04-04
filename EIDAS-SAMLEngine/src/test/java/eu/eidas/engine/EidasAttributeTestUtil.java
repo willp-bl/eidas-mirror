@@ -3,8 +3,7 @@ package eu.eidas.engine;
 import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.attribute.PersonType;
 import eu.eidas.auth.commons.attribute.impl.StringAttributeValueMarshaller;
-import eu.eidas.auth.engine.core.SAMLCore;
-import eu.eidas.auth.engine.core.eidas.spec.NaturalPersonSpec;
+import eu.eidas.auth.commons.protocol.eidas.spec.NaturalPersonSpec;
 
 /**
  * EidasAttributeTestUtil
@@ -12,16 +11,6 @@ import eu.eidas.auth.engine.core.eidas.spec.NaturalPersonSpec;
  * @since 1.1
  */
 public class EidasAttributeTestUtil {
-
-    public static AttributeDefinition<String> newStorkAttributeDefinition(String friendlyName, boolean required) {
-        return new AttributeDefinition.Builder<String>().nameUri(SAMLCore.STORK10_BASE_URI.getValue() + friendlyName)
-                .friendlyName(friendlyName)
-                .personType(PersonType.NATURAL_PERSON)
-                .xmlType("http://www.w3.org/2001/XMLSchema", "string", "xs")
-                .required(required)
-                .attributeValueMarshaller(new StringAttributeValueMarshaller())
-                .build();
-    }
 
     public static AttributeDefinition<String> newEidasAttributeDefinition(String canoniclaName,
                                                                   String friendlyName,

@@ -13,15 +13,15 @@
  */
 package eu.eidas.node.auth.service;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.IResponseMessage;
 import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.impl.AuthenticationResponse;
 import eu.eidas.auth.engine.ProtocolEngineI;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Interface for communicating with the SAMLEngine.
@@ -51,14 +51,12 @@ public interface ISERVICESAMLService {
      *
      * @param originalRequest The original authentication request.
      * @param ipUserAddress The citizen's IP address.
-     * @param isConsent Is a Citizen's consent page?
      * @return A byte array containing the SAML Response Token.
      * @see EidasAuthenticationRequest
      */
     IResponseMessage processIdpSpecificResponse(IAuthenticationRequest originalRequest,
                                                 AuthenticationResponse response,
-                                                String ipUserAddress,
-                                                boolean isConsent);
+                                                String ipUserAddress);
 
     /**
      * Constructs a SAML response token in case of error.

@@ -25,17 +25,10 @@ package eu.eidas.node.service;
 import eu.eidas.auth.commons.tx.CorrelationMap;
 import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
 import eu.eidas.node.auth.service.ISERVICEService;
-import eu.eidas.node.specificcommunication.ISpecificProxyService;
 
 public class ServiceControllerService {
 
     private CorrelationMap<StoredAuthenticationRequest> proxyServiceRequestCorrelationMap;
-
-    private ISpecificProxyService specificProxyService;
-
-    private boolean askConsentType;
-
-    private String citizenConsentUrl;
 
     public CorrelationMap<StoredAuthenticationRequest> getProxyServiceRequestCorrelationMap() {
         return proxyServiceRequestCorrelationMap;
@@ -43,22 +36,6 @@ public class ServiceControllerService {
 
     public void setProxyServiceRequestCorrelationMap(CorrelationMap<StoredAuthenticationRequest> proxyServiceRequestCorrelationMap) {
         this.proxyServiceRequestCorrelationMap = proxyServiceRequestCorrelationMap;
-    }
-
-    public boolean isAskConsentType() {
-        return askConsentType;
-    }
-
-    public void setAskConsentType(boolean askConsentType) {
-        this.askConsentType = askConsentType;
-    }
-
-    public String getCitizenConsentUrl() {
-        return citizenConsentUrl;
-    }
-
-    public void setCitizenConsentUrl(String citizenConsentUrl) {
-        this.citizenConsentUrl = citizenConsentUrl;
     }
 
     /**
@@ -74,22 +51,11 @@ public class ServiceControllerService {
         this.proxyService = proxyService;
     }
 
-    public ISpecificProxyService getSpecificProxyService() {
-        return specificProxyService;
-    }
-
-    public void setSpecificProxyService(ISpecificProxyService specificProxyService) {
-        this.specificProxyService = specificProxyService;
-    }
-
     @Override
     public String toString() {
         return "ServiceControllerService{" +
-                "askConsentType=" + askConsentType +
-                ", citizenConsentUrl='" + citizenConsentUrl + '\'' +
                 ", proxyService=" + proxyService +
                 ", proxyServiceRequestCorrelationMap=" + proxyServiceRequestCorrelationMap +
-                ", specificProxyService=" + specificProxyService +
                 '}';
     }
 }

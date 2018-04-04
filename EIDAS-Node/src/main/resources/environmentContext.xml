@@ -7,7 +7,6 @@
 
     Configuration repository path either from ENVIRONMENT variable or COMMAND LINE -D option of
             EIDAS_CONFIG_REPOSITORY and
-            SPECIFIC_CONFIG_REPOSITORY
          For any other option - like hard-coded values - modify this file.
           Hard coding example:
 
@@ -15,18 +14,11 @@
         <constructor-arg value="c:/PGM/projects/configEidas/glassfish/" />
     </bean>
 
-    <bean id="eidasSpecificConfigRepository" class="java.lang.String">
-        <constructor-arg value="c:/PGM/projects/configEidas/glassfish/specific/" />
-    </bean>
-
     -->
 
     <bean id="eidasConfigRepository" class="java.lang.String">
-        <constructor-arg value="#{ systemProperties['EIDAS_CONFIG_REPOSITORY'] ?: systemEnvironment['EIDAS_CONFIG_REPOSITORY'] }" />
-    </bean>
-
-    <bean id="eidasSpecificConfigRepository" class="java.lang.String">
-        <constructor-arg value="#{ systemProperties['SPECIFIC_CONFIG_REPOSITORY'] ?: systemEnvironment['SPECIFIC_CONFIG_REPOSITORY'] }" />
+        <constructor-arg
+                value="#{ systemProperties['EIDAS_CONFIG_REPOSITORY'] ?: (systemEnvironment['EIDAS_CONFIG_REPOSITORY'].endsWith(systemProperties['file.separator']) ? systemEnvironment['EIDAS_CONFIG_REPOSITORY'] : (systemEnvironment['EIDAS_CONFIG_REPOSITORY'] + systemProperties['file.separator'])) }"/>
     </bean>
 
 </beans>

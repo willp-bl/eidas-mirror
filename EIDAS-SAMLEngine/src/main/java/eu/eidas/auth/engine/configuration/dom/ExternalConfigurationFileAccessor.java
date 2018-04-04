@@ -13,7 +13,7 @@ import com.google.common.collect.Maps;
 import eu.eidas.auth.commons.io.PropertiesConverter;
 import eu.eidas.auth.commons.io.SingletonAccessor;
 import eu.eidas.auth.commons.io.SingletonAccessors;
-import eu.eidas.auth.engine.configuration.SamlEngineConfigurationException;
+import eu.eidas.auth.engine.configuration.ProtocolEngineConfigurationException;
 
 /**
  * ExternalConfigurationFile Accessor
@@ -52,7 +52,7 @@ final class ExternalConfigurationFileAccessor {
                             allParameters.putAll(overrideParameters);
 
                             return mapConverter.convert(ImmutableMap.copyOf(allParameters));
-                        } catch (SamlEngineConfigurationException e) {
+                        } catch (ProtocolEngineConfigurationException e) {
                             throw new IllegalArgumentException(e);
                         }
                     }

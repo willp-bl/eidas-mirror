@@ -113,6 +113,7 @@ public abstract class AbstractAuthenticationRequest implements IAuthenticationRe
             nameIdFormat(copy.getNameIdFormat());
             levelOfAssurance(copy.getLevelOfAssurance());
             spType(copy.getSpType());
+            relayState(copy.getRelayState());
             assertionConsumerServiceURL = copy.getAssertionConsumerServiceURL();
             binding = copy.getBinding();
             destination = copy.getDestination();
@@ -128,6 +129,7 @@ public abstract class AbstractAuthenticationRequest implements IAuthenticationRe
             issuer(lightRequest.getIssuer());
             providerName(lightRequest.getProviderName());
             citizenCountryCode(lightRequest.getCitizenCountryCode());
+            relayState(lightRequest.getRelayState());
             requestedAttributes(lightRequest.getRequestedAttributes());
             nameIdFormat(lightRequest.getNameIdFormat());
             levelOfAssurance(lightRequest.getLevelOfAssurance());
@@ -216,6 +218,12 @@ public abstract class AbstractAuthenticationRequest implements IAuthenticationRe
         @Nonnull
         public final B spType(String spType) {
             lightRequestBuilder.spType(spType);
+            return (B) this;
+        }
+
+        @Nonnull
+        public final B relayState(String relayState) {
+            lightRequestBuilder.relayState(relayState);
             return (B) this;
         }
 
@@ -372,6 +380,12 @@ public abstract class AbstractAuthenticationRequest implements IAuthenticationRe
     @Nonnull
     public final String getSpType() {
         return lightRequest.getSpType();
+    }
+
+    @Override
+    @Nonnull
+    public final String getRelayState() {
+        return lightRequest.getRelayState();
     }
 
     @Override

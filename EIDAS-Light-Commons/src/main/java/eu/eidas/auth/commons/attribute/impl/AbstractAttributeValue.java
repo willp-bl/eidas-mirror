@@ -1,17 +1,19 @@
 package eu.eidas.auth.commons.attribute.impl;
 
+import java.io.Serializable;
+
 import javax.annotation.Nonnull;
+import javax.xml.bind.annotation.XmlType;
 
 import eu.eidas.auth.commons.attribute.AttributeValue;
 import eu.eidas.util.Preconditions;
-
-import java.io.Serializable;
 
 /**
  * Abstract AttributeValue
  *
  * @since 1.1
  */
+@XmlType
 public abstract class AbstractAttributeValue<T extends Serializable> implements AttributeValue<T> {
 
     private static final long serialVersionUID = 7154869930698510327L;
@@ -26,6 +28,11 @@ public abstract class AbstractAttributeValue<T extends Serializable> implements 
      * @serial
      */
     private final boolean nonLatinScriptAlternateVersion;
+
+    public AbstractAttributeValue() {
+        value = null;
+        nonLatinScriptAlternateVersion = false;
+    }
 
     protected AbstractAttributeValue(@Nonnull T val, boolean nonLatinScriptAlternateVer) {
         Preconditions.checkNotNull(val, "value");

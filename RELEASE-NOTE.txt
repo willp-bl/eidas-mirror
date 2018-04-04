@@ -1,3 +1,93 @@
+CEF eID eIDAS-Node Build 2.0.0 Content
+
+This release is based on version 1.1 of the eIDAS Technical Specifications.
+This release includes major improvements in the architecture by mainly decoupling the Specific modules from the core of the eIDAS-Node. 
+
+
+** Documentation **
+
++ CEF eID technical documentation pertaining to this release can be found on:
+++ CEF Digital Home > eID > All eID services > eIDAS Node integration package > View latest version.
+
+** Distribution **
+
++ EIDAS-2.0.0.zip : Distribution version 2.0.0 of the sample eIDAS-Node
+++  EIDAS-Sources-2.0.0.zip :  Source files (Maven project) of the sample eIDAS-Node including an example of implementation of a Specific Proxy Service module, Specific Connector module , a SP (Service Provider) and IdP (Identity Provider).
+++  EIDAS-Binaries-Glassfish-2.0.0.zip : Deployable war files of a preconfigured eIDAS-Node for a Glassfish server (including SpecificConnector.war, SpecificProxyService.war,IdP.war, EidasNode.war, SP.war)
+++  EIDAS-Binaries-Jboss-2.0.0.zip: Deployable war files of a preconfigured eIDAS-Node for a JBoss server (including SpecificConnector.war, SpecificProxyService.war, IdP.war, EidasNode.war, SP.war)
+++  EIDAS-Binaries-Tomcat-2.0.0.zip: Deployable war files of a preconfigured eIDAS-Node for a Tomcat server (including SpecificConnector.war, SpecificProxyService.war, IdP.war, EidasNode.war, SP.war)
+++  EIDAS-Binaries-Was-2.0.0.zip : Deployable war files of a preconfigured eIDAS-Node for a WebSphere server (including SpecificConnector.war, SpecificProxyService.war, IdP.war, EidasNode.war, SP.war) 
+++  EIDAS-Binaries-Wls-2.0.0.zip : Deployable war files of a preconfigured eIDAS-Node for a WebLogic server (including SpecificConnector.war, SpecificProxyService.war, IdP.war, EidasNode.war, SP.war)
+
+**This release contains the following improvements: (Please note that EIDINT-XXXX references are for internal use only)
+
++ Add support of  application server GlassFish Open Source Edition 5.0 (full profile), Glassfish 3 is deprecated.
++ Add support of  application server WildFly with version 11.
++ Add support of  application server Tomcat 8.5.
++ Add support of  application server WebSphere Application Server Liberty Core 9.
++ Analyse and validate the OWASP dependency check report on EidasNode (EIDINT-1595) 
+
+** This release contains the following changes to eIDAS-Node
+
++ Migration from OpenSAML 2.6.5 to OpenSAML 3.0 (EIDINT-1531, EIDINT-1545, EIDINT-1996)
++ New look and feel (EIDINT-1961, EIDINT-1999 )
++ Upgrade eIDAS-Node to servlet 3.0 (EIDINT-1634) 
++ Relocate Metadata infrastructure to a new module (EIDINT-1635).
++ Definition and implementation of the data communication between Specific [Connector|Proxy-Service] and eIDAS-Node (EIDINT-1663, EIDINT-1943)
++ Improvements to Light Objects interface regarding Subject and RelayState (EIDINT-1777) .
++ Change the build process to produce wars or jar from Specific Connector and Specific Proxy-Service (EIDINT-1661)
++ Citizen consent logic moved to Specific Proxy-Service module (EIDINT-1648)
++ Change properties for enabling display of attributes/values in consent pages. (EIDINT-1848)
++ Improvements to Light Objects interface regarding Subject and RelayState (EIDINT-1777) .
++ Updater component activated by Maven profile (EIDINT-1886)
+
+** Changes to Demo Tools
+
++ New Service Provider 2.0 Demo Tools communicating using a simple protocol. (EIDINT-1650, EIDINT-1781)
++ New Identity Provider 2.0 Demo Tools communicating using a simple protocol. (EIDINT-2049, EIDINT-1779, EIDINT-1651, EIDINT-1686, EIDINT-1689, EIDINT-1675)
++ Removal of Relay State from the Service Provider 2.0 (EIDINT-1785)
++ Upgrade struts library in Demo Tools (EIDINT-1863)
++ New Look and feel (EIDINT-1961, EIDINT-1999 )
++ Definition of the Simple Protocol between the SP 2.0  and the Specific Connector and between the Specific Proxy Service and the Identity Provider 2.0 . (EIDINT-1704 , EIDINT-1696 , EIDINT-1700)
++ Split Specific Module (EIDAS-Specific) to Specific Proxy Service module (EIDAS-SpecificProxyService) and Specific Connector module (EIDAS-SpecificConnector) (EIDINT-1820, EIDINT-1652 ,EIDINT-1778,EIDINT-1628, EIDINT-1658, EIDINT-1657,EIDINT-1654 , EIDINT-1655, EIDINT-2005 )
++ Change simple protocol's LOA possible values to distinguish further from eIDAS LOA (EIDINT-1846)
+ 
+**This release contains the following bug fixes:
+
++ Correct German integration : Exception when parsing German metadata (EIDINT-2030) 
++ Correct support of ciphersuite TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256(EIDINT-2080)
++ Correction of LegalPersonAddress and VATRegistrationNumber attributes (EIDINT-1583)
++ Correction of NameIDFormat changed to optional (EIDINT-1706)
++ Add "AddressID" property to PostalAddress (EIDINT-1664)
+
+** Known Limitations
+
+(Note: The up to date list can be found at https://ec.europa.eu/cefdigital/wiki/x/SzuHAw)
++ Node checks metadata signature explicitly, rather than against a trust chain (EID-82)
++ SAML HTTP Redirect Binding not implemented correctly (EID-575)
++ Key representation as ds:KeyValue/RSAKeyValue in ds:KeyInfo not supported in eIDAS Response (EID-570)
++ Metadata Aggregator Format (ser:MetadataServiceList) not supported (EID-598)
++ Key rollover not supported (EID-581)
++ Key agreement method not supported for encryption of session keys (EID-594)
++ eIDAS Connector and ProxyService should be separate components (EID-599)
++ Using Gender attribute with 3rd value fails to work (EID-582)
+
+####### IMPORTANT NOTICE #################################################################################################################################################################################
+
+The eIDAS-Node logs may contain person identification data. Hence, these logs should be handled and protected appropriately, following the European privacy regulations [Dir95/46/EC] and [Reg2016/679].
+
+[Reg2016/679] REGULATION (EU) 2016/679 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 27 April 2016 on the protection of natural persons with regard to the processing of personal data and on the free 
+movement of such data, and repealing Directive 95/46/EC.
+
+[Dir95/46/EC] Directive 95/46/EC of the European Parliament and of the Council of 24 October 1995 on the protection of individuals with regard to the processing of personal data and on the free movement
+of such data.
+
+#########################################################################################################################################################################################################
+
+
+####################### previous releases #######################
+
+
 eIDAS-Node Build 1.4.0 Content
 
 This release is based on version 1.1 of the eIDAS Technical Specifications.
@@ -7,8 +97,6 @@ This release includes stability improvements.
 
 CEF eID technical documentation pertaining to this release can be found on:
 CEF Digital Home > eID > All eID services > eIDAS Node integration package > View latest version.
-
-
 
 + EIDAS-1.4.0.zip : Distribution version 1.4.0 of the sample eIDAS-Node
 ++  EIDAS-Sources-1.4.0.zip :  Source files (Maven project) of the sample eIDAS-Node including an example of implementation of a SP (Service Provider) and IdP (Identity Provider).
@@ -24,7 +112,7 @@ CEF Digital Home > eID > All eID services > eIDAS Node integration package > Vie
 + Analyse and validate the OWASP dependency check report (EIDINT-1665)
 + Default JBoss server is now 7.1.1, JBoss 6 is deprecated (EIDINT-1626)
 + Metadata file loader improvements: Load files only with 'xml' extension and if one loaded file contains an error, the others still need to be loaded /checked (EIDINT-1619)
-+ Display the ID of Metadata failed on signature check (EDINT-1566)
++ Display the ID of metadata failed on signature check (EDINT-1566)
 + Protocol Engine - use ProtocolEngine clock (EIDINT-1611)
 + Make Metadatautil extendable by MS implementers (EDINT-1609)
 + Remove unnecessary code and properties related to old AT and DE plugins (EIDINT-1608)
@@ -41,20 +129,6 @@ CEF Digital Home > eID > All eID services > eIDAS Node integration package > Vie
 + Thread safety bug in document builder pool (EIDAS-1606)
 + Correct Wrong paths to encryptionConf.xml and backslashes in config files ( EIDINT-1582; EDINT-1489)
 + Correction of LegalPersonAddress and VATRegistrationNumber attributes (EIDINT-1500)
-
-
-####### IMPORTANT NOTICE #################################################################################################################################################################################
-
-The eIDAS-Node logs may contain person identification data. Hence, these logs should be handled and protected appropriately, following the European privacy regulations [Dir95/46/EC] and [Reg2016/679].
-
-[Reg2016/679] REGULATION (EU) 2016/679 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 27 April 2016 on the protection of natural persons with regard to the processing of personal data and on the free 
-movement of such data, and repealing Directive 95/46/EC.
-
-[Dir95/46/EC] Directive 95/46/EC of the European Parliament and of the Council of 24 October 1995 on the protection of individuals with regard to the processing of personal data and on the free movement
-of such data.
-
-#########################################################################################################################################################################################################
-
 
 ####################### previous releases #######################
 

@@ -1,12 +1,12 @@
 /*
  * Copyright (c) 2017 by European Commission
  *
- * Licensed under the EUPL, Version 1.1 or - as soon they will be
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
  * approved by the European Commission - subsequent versions of the
  * EUPL (the "Licence");
  * You may not use this work except in compliance with the Licence.
  * You may obtain a copy of the Licence at:
- * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the Licence is distributed on an "AS IS" basis,
@@ -14,12 +14,6 @@
  * implied.
  * See the Licence for the specific language governing permissions and
  * limitations under the Licence.
- *
- * This product combines work with different licenses. See the
- * "NOTICE" text file for details on the various modules and licenses.
- * The "NOTICE" text file is part of the distribution.
- * Any derivative works that you distribute must include a readable
- * copy of the "NOTICE" text file.
  */
 package eu.eidas.auth.engine.xml.opensaml;
 
@@ -29,8 +23,8 @@ import eu.eidas.auth.commons.protocol.impl.EidasSamlBinding;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import eu.eidas.engine.exceptions.SAMLEngineException;
 import org.joda.time.DateTime;
-import org.opensaml.saml2.core.Response;
-import org.opensaml.saml2.core.StatusCode;
+import org.opensaml.saml.saml2.core.Response;
+import org.opensaml.saml.saml2.core.StatusCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,7 +57,7 @@ public final class SAMLEngineUtils {
      * @deprecated use {@link eu.eidas.auth.commons.EidasDigestUtil} instead.
      */
     @Deprecated
-    // TODO lauredo: badly named as this performs a hash not an encoding
+    // TODO rename this method as this performs a hash not an encoding
     public static String encode(final String value, final String alg) throws EIDASSAMLEngineException {
         LOG.debug("Encode value with  " + alg + " algorithm.");
 
@@ -154,6 +148,6 @@ public final class SAMLEngineUtils {
     }
 
     public static boolean isErrorSamlResponse(Response response) {
-        return response != null && !StatusCode.SUCCESS_URI.equals(response.getStatus().getStatusCode().getValue());
+        return response != null && !StatusCode.SUCCESS.equals(response.getStatus().getStatusCode().getValue());
     }
 }

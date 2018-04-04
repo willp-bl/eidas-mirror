@@ -1,35 +1,46 @@
 /*
- * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
- * the European Commission - subsequent versions of the EUPL (the "Licence");
- * You may not use this work except in compliance with the Licence. You may
- * obtain a copy of the Licence at:
+ * Copyright (c) 2017 by European Commission
  *
- * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the Licence is distributed on an "AS IS" basis, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * Licence for the specific language governing permissions and limitations under
- * the Licence.
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
  */
 
 package eu.eidas.auth.engine.core.validator.eidas;
 
-import java.nio.charset.Charset;
-
-import org.opensaml.common.SAMLVersion;
-import org.opensaml.common.xml.SAMLConstants;
-import org.opensaml.saml2.core.AuthnRequest;
-import org.opensaml.saml2.core.validator.AuthnRequestSchemaValidator;
-import org.opensaml.xml.util.XMLHelper;
-import org.opensaml.xml.validation.ValidationException;
-
+import eu.eidas.auth.commons.EidasErrorKey;
+import eu.eidas.auth.commons.EidasErrors;
+import eu.eidas.auth.commons.exceptions.EidasNodeException;
 import eu.eidas.auth.commons.protocol.impl.SamlNameIdFormat;
+import eu.eidas.engine.exceptions.ValidationException;
+import net.shibboleth.utilities.java.support.xml.SerializeSupport;
+import org.apache.commons.lang.StringUtils;
+import org.opensaml.saml.common.SAMLVersion;
+import org.opensaml.saml.common.xml.SAMLConstants;
+import org.opensaml.saml.saml2.core.AuthnRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.nio.charset.Charset;
 
 /**
  * The Class ExtensionsSchemaValidator for eIDAS request format.
  */
 public class EidasAuthnRequestValidator extends AuthnRequestSchemaValidator {
+    /**
+     * Logger object.
+     */
+    private static final Logger LOG = LoggerFactory.getLogger(EidasAuthnRequestValidator.class);
     private static final int MAX_SIZE = 131072;
     private static final String ALLOWED_CONSENT = "urn:oasis:names:tc:SAML:2.0:consent:unspecified";
     private static final String ALLOWED_PROTOCOL_BINDING_HTTP_POST = "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST";
@@ -48,7 +59,7 @@ public class EidasAuthnRequestValidator extends AuthnRequestSchemaValidator {
     @Override
     public void validate(AuthnRequest request) throws ValidationException {
 
-        if (XMLHelper.prettyPrintXML(request.getDOM()).getBytes(Charset.forName("UTF-8")).length > MAX_SIZE) {
+        if (SerializeSupport.prettyPrintXML(request.getDOM()).getBytes(Charset.forName("UTF-8")).length > MAX_SIZE) {
             throw new ValidationException("SAML AuthnRequest exceeds max size.");
         }
 
@@ -118,11 +129,15 @@ public class EidasAuthnRequestValidator extends AuthnRequestSchemaValidator {
 
             throw new ValidationException("Extensions is required.");
         }
-        if(request.getNameIDPolicy() == null) {
-            throw new ValidationException("NameIDPolicy is required.");
-        }else if(null == SamlNameIdFormat.fromString(request.getNameIDPolicy().getFormat())){
-            throw new ValidationException("NameIDPolicy format has to be one of the following: "+
-                                                  SamlNameIdFormat.mapper().unmodifiableKeyList(SamlNameIdFormat.values()));
+        if (request.getNameIDPolicy() != null &&
+            StringUtils.isNotBlank(request.getNameIDPolicy().getFormat()) &&
+            null == SamlNameIdFormat.fromString(request.getNameIDPolicy().getFormat())) {
+            String message = "NameIDPolicy format has to be one of the following: " +
+                    SamlNameIdFormat.mapper().unmodifiableKeyList(SamlNameIdFormat.values());
+            LOG.error(message);
+            throw new EidasNodeException(
+                    EidasErrors.get(EidasErrorKey.MESSAGE_VALIDATION_ERROR.errorCode()),
+                    EidasErrors.get(EidasErrorKey.MESSAGE_VALIDATION_ERROR.errorMessage()));
         }
     }
 

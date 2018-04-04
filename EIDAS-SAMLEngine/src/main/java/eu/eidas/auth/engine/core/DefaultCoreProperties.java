@@ -1,45 +1,46 @@
 /*
- * Licensed under the EUPL, Version 1.1 or â€“ as soon they will be approved by
- * the European Commission - subsequent versions of the EUPL (the "Licence");
- * You may not use this work except in compliance with the Licence. You may
- * obtain a copy of the Licence at:
+ * Copyright (c) 2017 by European Commission
  *
- * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the Licence is distributed on an "AS IS" basis, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * Licence for the specific language governing permissions and limitations under
- * the Licence.
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
  */
 
 package eu.eidas.auth.engine.core;
 
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
+import eu.eidas.auth.engine.configuration.ProtocolEngineConfigurationException;
+import eu.eidas.auth.engine.configuration.dom.DOMConfigurationParser;
+import eu.eidas.auth.engine.core.eidas.spec.EidasSAMLFormat;
+import eu.eidas.engine.exceptions.EIDASSAMLEngineRuntimeException;
+import eu.eidas.util.Preconditions;
+import org.apache.commons.lang.StringUtils;
+import org.opensaml.saml.common.xml.SAMLConstants;
+import org.opensaml.saml.saml2.core.NameIDType;
+import org.opensaml.saml.saml2.core.RequestAbstractType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
 import javax.annotation.concurrent.NotThreadSafe;
 import javax.annotation.concurrent.ThreadSafe;
-
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Maps;
-
-import org.apache.commons.lang.StringUtils;
-import org.opensaml.common.xml.SAMLConstants;
-import org.opensaml.saml2.core.NameIDType;
-import org.opensaml.saml2.core.RequestAbstractType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import eu.eidas.auth.engine.configuration.SamlEngineConfigurationException;
-import eu.eidas.auth.engine.configuration.dom.DOMConfigurationParser;
-import eu.eidas.engine.exceptions.EIDASSAMLEngineRuntimeException;
-import eu.eidas.util.Preconditions;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 
 /**
  * Saml Engine Core Properties.
@@ -295,7 +296,7 @@ public final class DefaultCoreProperties implements SamlEngineCoreProperties {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultCoreProperties.class.getName());
 
     private static final String[] AVAILABLE_FORMATS =
-            {SAMLExtensionFormat.EIDAS_FORMAT_NAME, SAMLExtensionFormat.STORK1_FORMAT_NAME};
+            {(new EidasSAMLFormat()).getName()};
 
     /**
      * The SAML core properties.
@@ -497,7 +498,6 @@ public final class DefaultCoreProperties implements SamlEngineCoreProperties {
     /**
      * Method that loads the configuration file for the SAML Engine.
      *
-     * @param instance the instance of the Engine properties.
      */
     @Nonnull
     private TypedState loadConfiguration() {
@@ -544,7 +544,7 @@ public final class DefaultCoreProperties implements SamlEngineCoreProperties {
             if (timeNotOnOrAfter.intValue() < 0) {
                 LOGGER.error("{} - timeNotOnOrAfter cannot be negative.",
                              DOMConfigurationParser.DEFAULT_CONFIGURATION_FILE);
-                throw new SamlEngineConfigurationException(
+                throw new ProtocolEngineConfigurationException(
                         DOMConfigurationParser.DEFAULT_CONFIGURATION_FILE + " - timeNotOnOrAfter cannot be negative.");
             }
             builder.timeNotOnOrAfter(timeNotOnOrAfter);
@@ -560,7 +560,7 @@ public final class DefaultCoreProperties implements SamlEngineCoreProperties {
             builder.supportedMessageFormatNames(loadSupportedFormats());
 
             return builder.build();
-        } catch (SamlEngineConfigurationException e) {
+        } catch (ProtocolEngineConfigurationException e) {
             LOGGER.error("SAMLCore: error loadConfiguration. ", e);
             throw new EIDASSAMLEngineRuntimeException(e);
         } catch (RuntimeException e) {
@@ -572,7 +572,7 @@ public final class DefaultCoreProperties implements SamlEngineCoreProperties {
     /**
      * Load consent authentication response.
      */
-    private String loadConsentAuthResp() throws SamlEngineConfigurationException {
+    private String loadConsentAuthResp() throws ProtocolEngineConfigurationException {
         // Consent Authentication Response
         String consentAuthnResp = samlCoreProp.get(SAMLCore.CONSENT_AUTHN_RES.getValue());
 
@@ -590,7 +590,7 @@ public final class DefaultCoreProperties implements SamlEngineCoreProperties {
             LOGGER.info("ERROR : " + DOMConfigurationParser.DEFAULT_CONFIGURATION_FILE + " - "
                                 + SAMLCore.CONSENT_AUTHN_RES.getValue() + " is not supported (" + consentAuthnResp
                                 + ").");
-            throw new SamlEngineConfigurationException(
+            throw new ProtocolEngineConfigurationException(
                     DOMConfigurationParser.DEFAULT_CONFIGURATION_FILE + " - " + SAMLCore.CONSENT_AUTHN_RES.getValue()
                             + " is not supported (" + consentAuthnResp + ").");
         }
@@ -600,12 +600,12 @@ public final class DefaultCoreProperties implements SamlEngineCoreProperties {
     /**
      * Load protocol biding.
      *
-     * @throws SamlEngineConfigurationException the SAML engine exception
+     * @throws ProtocolEngineConfigurationException the SAML engine exception
      *
      * // TODO check this, as it means that the SAML Engine can only be used with HTTP-POST
      */
     @Nonnull
-    private String loadProtocolBiding() throws SamlEngineConfigurationException {
+    private String loadProtocolBiding() throws ProtocolEngineConfigurationException {
         // Protocol Binding
         String protocolBinding = samlCoreProp.get(SAMLCore.PROT_BINDING_TAG.getValue());
 
@@ -613,7 +613,7 @@ public final class DefaultCoreProperties implements SamlEngineCoreProperties {
             LOGGER.info(
                     "ERROR : " + DOMConfigurationParser.DEFAULT_CONFIGURATION_FILE + " - " + SAMLCore.PROT_BINDING_TAG
                             + " is mandatory.");
-            throw new SamlEngineConfigurationException(
+            throw new ProtocolEngineConfigurationException(
                     DOMConfigurationParser.DEFAULT_CONFIGURATION_FILE + " - " + SAMLCore.PROT_BINDING_TAG
                             + " is mandatory.");
         } else if ("HTTP-POST".equalsIgnoreCase(protocolBinding)) {
@@ -622,7 +622,7 @@ public final class DefaultCoreProperties implements SamlEngineCoreProperties {
             LOGGER.info(
                     "ERROR : " + DOMConfigurationParser.DEFAULT_CONFIGURATION_FILE + " - " + SAMLCore.PROT_BINDING_TAG
                             + " is not supported (" + protocolBinding + ").");
-            throw new SamlEngineConfigurationException(
+            throw new ProtocolEngineConfigurationException(
                     DOMConfigurationParser.DEFAULT_CONFIGURATION_FILE + " - " + SAMLCore.PROT_BINDING_TAG
                             + " is not supported (" + protocolBinding + ").");
         }

@@ -18,6 +18,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 
+import com.google.common.collect.ImmutableSortedSet;
+import eu.eidas.auth.commons.attribute.AttributeDefinition;
+import eu.eidas.auth.commons.attribute.AttributeRegistries;
 import org.apache.commons.lang.StringUtils;
 
 /**
@@ -230,5 +233,34 @@ public final class AttributeUtil {
             }
         }
         return listOfMissingAttributes.toString();
+    }
+
+    /**
+     * Safecopy of attribute definitions into another set (clone)
+     *
+     * @param attributes
+     * @return cloned attribute list
+     */
+    public static ImmutableSortedSet<AttributeDefinition<?>> clone(ImmutableSortedSet<AttributeDefinition<?>> attributes) {
+        return AttributeRegistries.of(attributes).getAttributes();
+    }
+
+    /**
+     * Compares to attribute definition sets
+     *
+     * @param src
+     * @param trgt
+     * @return true if equals
+     */
+    public static boolean areDefinitionsEqual(ImmutableSortedSet<AttributeDefinition<?>> src, ImmutableSortedSet<AttributeDefinition<?>> trgt) {
+        boolean ret = false;
+        if (src != null && trgt != null) {
+            if (src.containsAll(trgt) && trgt.containsAll(src)) {
+                ret = true;
+            }
+        } else if (src == trgt) {
+            ret = true;
+        }
+        return ret;
     }
 }

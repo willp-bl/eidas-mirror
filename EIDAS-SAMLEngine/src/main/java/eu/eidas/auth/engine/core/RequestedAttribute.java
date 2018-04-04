@@ -1,26 +1,30 @@
 /*
- * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
- * the European Commission - subsequent versions of the EUPL (the "Licence");
- * You may not use this work except in compliance with the Licence. You may
- * obtain a copy of the Licence at:
+ * Copyright (c) 2017 by European Commission
  *
- * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the Licence is distributed on an "AS IS" basis, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * Licence for the specific language governing permissions and limitations under
- * the Licence.
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
  */
 
 package eu.eidas.auth.engine.core;
 
-import java.util.List;
 
-import org.opensaml.common.SAMLObject;
-import org.opensaml.xml.AttributeExtensibleXMLObject;
-import org.opensaml.xml.XMLObject;
-import org.opensaml.xml.schema.XSBooleanValue;
+import org.opensaml.core.xml.AttributeExtensibleXMLObject;
+import org.opensaml.core.xml.XMLObject;
+import org.opensaml.core.xml.schema.XSBooleanValue;
+import org.opensaml.saml.common.SAMLObject;
+
+import java.util.List;
 
 /**
  * The Interface RequestedAttribute.
@@ -28,7 +32,7 @@ import org.opensaml.xml.schema.XSBooleanValue;
  * @author fjquevedo
  */
 public interface RequestedAttribute extends SAMLObject,
-	AttributeExtensibleXMLObject , org.opensaml.saml2.metadata.RequestedAttribute{
+        AttributeExtensibleXMLObject, org.opensaml.saml.saml2.metadata.RequestedAttribute{
 
 
     /** Element local name. */

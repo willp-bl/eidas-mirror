@@ -8,9 +8,12 @@
     <parent>
         <groupId>eu.eidas</groupId>
         <artifactId>eidas-parent</artifactId>
-        <version>1.4.0</version>
+        <version>2.0.0</version>
         <relativePath>../EIDAS-Parent/pom.xml</relativePath>
     </parent>
+    <properties>
+        <proj.name>SP</proj.name>
+    </properties>
     <dependencies>
         <!-- 1) Dependencies on other modules: -->
         <dependency>
@@ -19,47 +22,19 @@
         </dependency>
         <dependency>
             <groupId>eu.eidas</groupId>
-            <artifactId>eidas-saml-engine</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>xalan</groupId>
-                    <artifactId>serializer</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>xalan</groupId>
-                    <artifactId>xalan</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>xerces</groupId>
-                    <artifactId>xercesImpl</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>xml-resolver</groupId>
-                    <artifactId>xml-resolver</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>xml-apis</groupId>
-                    <artifactId>xml-apis</artifactId>
-                </exclusion>
-            </exclusions>
+            <artifactId>SimpleProtocol</artifactId>
         </dependency>
 
         <!-- 2) Dependencies on libraries: -->
-        <!-- bouncyCastle -->
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk15on</artifactId>
-        </dependency>
         <!-- Servlet & JSP-->
         <dependency>
             <groupId>javax.servlet</groupId>
-            <artifactId>servlet-api</artifactId>
+            <artifactId>javax.servlet-api</artifactId>
         </dependency>
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>jsp-api</artifactId>
         </dependency>
-
         <!-- Struts2 -->
         <dependency>
             <groupId>org.apache.struts</groupId>
@@ -95,12 +70,11 @@
         <dependency>
             <groupId>xerces</groupId>
             <artifactId>xercesImpl</artifactId>
-            <scope>package</scope>
+            <!-- TOBEREMOVED <optional>true</optional>-->
         </dependency>
         <dependency>
             <groupId>xalan</groupId>
             <artifactId>xalan</artifactId>
-            <scope>package</scope>
         </dependency>
         <dependency>
             <groupId>xalan</groupId>
@@ -118,6 +92,10 @@
             <artifactId>slf4j-simple</artifactId>
             <scope>test</scope>
         </dependency>
+        <!--     TOBEREMOVED   <dependency>
+                    <groupId>org.apache.struts</groupId>
+                    <artifactId>struts2-core</artifactId>
+                </dependency>-->
     </dependencies>
 
     <build>
@@ -156,30 +134,16 @@
         </plugins>
     </build>
     <profiles>
-        <!-- tomcat & glassfish profile -->
-        <profile>
-            <id>tomcat</id>
-            <dependencies>
-                <dependency>
-                    <groupId>org.bouncycastle</groupId>
-                    <artifactId>bcprov-jdk15on</artifactId>
-                    <!-- overrides the parent's scope which is provided -->
-                    <scope>compile</scope>
-                </dependency>
-            </dependencies>
-        </profile>
         <!-- websphere profile -->
         <profile>
             <id>websphere</id>
             <dependencies>
                 <dependency>
-                    <groupId>org.bouncycastle</groupId>
-                    <artifactId>bcprov-jdk15on</artifactId>
-                    <!-- overrides the parent's scope which is provided -->
-                    <scope>compile</scope>
+                    <groupId>xml-apis</groupId>
+                    <artifactId>xml-apis</artifactId>
                 </dependency>
-            </dependencies>
-            <build>
+             </dependencies>   
+             <build>
                 <resources>
                     <resource>
                         <directory>${project.basedir}/src/main/config/websphere/resources</directory>
@@ -196,10 +160,13 @@
                     <artifactId>xml-apis</artifactId>
                 </dependency>
                 <dependency>
-                    <groupId>org.bouncycastle</groupId>
-                    <artifactId>bcprov-jdk15on</artifactId>
-                    <!-- overrides the parent's scope which is provided -->
-                    <scope>compile</scope>
+                    <groupId>joda-time</groupId>
+                    <artifactId>joda-time</artifactId>
+                </dependency>
+                <!-- https://mvnrepository.com/artifact/org.apache.tomcat/jasper-el -->
+                <dependency>
+                    <groupId>org.apache.tomcat</groupId>
+                    <artifactId>jasper-el</artifactId>
                 </dependency>
             </dependencies>
             <build>
@@ -270,6 +237,84 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>cobertura-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>specificConnectorJarPackaging</id>
+            <activation>
+                <property>
+                    <name>specificJar</name>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>eu.eidas</groupId>
+                    <artifactId>eidas-specific-communication-definition</artifactId>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-specific-connector-config</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>
+                                        ${project.build.directory}/${proj.name}/WEB-INF/classes
+                                    </outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.basedir}/src/main/config/specificConnector/jarPackaging</directory>
+                                            <filtering>false</filtering>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>specificConnectorWarPackaging</id>
+            <activation>
+                <property>
+                    <name>!specificJar</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-specific-connector-config</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>
+                                        ${project.build.directory}/${proj.name}/WEB-INF/classes
+                                    </outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.basedir}/src/main/config/specificConnector/warPackaging</directory>
+                                            <filtering>false</filtering>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>

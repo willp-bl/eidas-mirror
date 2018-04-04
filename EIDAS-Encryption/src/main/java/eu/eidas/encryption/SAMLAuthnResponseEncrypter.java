@@ -22,9 +22,32 @@
 
 package eu.eidas.encryption;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import eu.eidas.auth.commons.EidasStringUtil;
+import eu.eidas.auth.commons.xml.DocumentBuilderFactoryUtil;
+import eu.eidas.auth.commons.xml.opensaml.OpenSamlHelper;
+import eu.eidas.encryption.exception.EncryptionException;
+import eu.eidas.encryption.exception.MarshallException;
+import eu.eidas.encryption.exception.UnmarshallException;
+import eu.eidas.util.Preconditions;
+import org.apache.commons.lang.StringUtils;
+import org.opensaml.core.xml.Namespace;
+import org.opensaml.saml.common.xml.SAMLConstants;
+import org.opensaml.saml.saml2.core.Assertion;
+import org.opensaml.saml.saml2.core.EncryptedAssertion;
+import org.opensaml.saml.saml2.core.Response;
+import org.opensaml.saml.saml2.encryption.Encrypter;
+import org.opensaml.security.credential.Credential;
+import org.opensaml.security.x509.BasicX509Credential;
+import org.opensaml.xmlsec.SecurityConfigurationSupport;
+import org.opensaml.xmlsec.encryption.support.DataEncryptionParameters;
+import org.opensaml.xmlsec.encryption.support.KeyEncryptionParameters;
+import org.opensaml.xmlsec.keyinfo.KeyInfoGeneratorFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -33,34 +56,8 @@ import javax.annotation.concurrent.NotThreadSafe;
 import javax.annotation.concurrent.ThreadSafe;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
-
-import org.apache.commons.lang.StringUtils;
-import org.opensaml.common.xml.SAMLConstants;
-import org.opensaml.saml2.core.Assertion;
-import org.opensaml.saml2.core.EncryptedAssertion;
-import org.opensaml.saml2.core.Response;
-import org.opensaml.saml2.encryption.Encrypter;
-import org.opensaml.xml.Configuration;
-import org.opensaml.xml.Namespace;
-import org.opensaml.xml.encryption.EncryptionParameters;
-import org.opensaml.xml.encryption.KeyEncryptionParameters;
-import org.opensaml.xml.security.credential.Credential;
-import org.opensaml.xml.security.keyinfo.KeyInfoGeneratorFactory;
-import org.opensaml.xml.security.x509.BasicX509Credential;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
-import eu.eidas.auth.commons.EidasStringUtil;
-import eu.eidas.auth.commons.xml.DocumentBuilderFactoryUtil;
-import eu.eidas.auth.commons.xml.opensaml.OpenSamlHelper;
-import eu.eidas.encryption.exception.EncryptionException;
-import eu.eidas.encryption.exception.MarshallException;
-import eu.eidas.encryption.exception.UnmarshallException;
-import eu.eidas.util.Preconditions;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Low-level implementation of the OpenSAML encryption process.
@@ -231,21 +228,6 @@ public final class SAMLAuthnResponseEncrypter {
             assertion.getNamespaceManager().registerNamespaceDeclaration(saml2NS);
             assertion.getDOM().setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:saml2", SAMLConstants.SAML20_NS);
         }
-
-        Namespace storkNS = new Namespace("urn:eu:stork:names:tc:STORK:1.0:assertion", "stork");
-        Set<Namespace> namespaces = assertion.getNamespaceManager().getAllNamespacesInSubtreeScope();
-        for (Namespace namespace : namespaces) {
-            if (namespace.getNamespaceURI().equals(storkNS.getNamespaceURI())
-                    && assertion.getDOM().getAttributeNode("xmlns:stork") == null) {
-                assertion.getNamespaceManager().registerNamespaceDeclaration(storkNS);
-                assertion.getDOM()
-                        .setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:stork",
-                                        "urn:eu:stork:names:tc:STORK:1.0:assertion");
-                break;
-            }
-        }
-
-        // TODO: what about eIDAS?
     }
 
     @Nonnull
@@ -253,14 +235,14 @@ public final class SAMLAuthnResponseEncrypter {
             throws EncryptionException {
         try {
             // Set Data Encryption parameters
-            EncryptionParameters encParams = new EncryptionParameters();
+            DataEncryptionParameters encParams = new DataEncryptionParameters();
             encParams.setAlgorithm(getDataEncAlgorithm());
             // Set Key Encryption parameters
             KeyEncryptionParameters kekParams = new KeyEncryptionParameters();
             kekParams.setEncryptionCredential(credential);
             kekParams.setAlgorithm(getKeyEncAlgorithm());
-            KeyInfoGeneratorFactory kigf = Configuration.getGlobalSecurityConfiguration()
-                    .getKeyInfoGeneratorManager()
+            KeyInfoGeneratorFactory kigf = SecurityConfigurationSupport.getGlobalEncryptionConfiguration()
+                    .getDataKeyInfoGeneratorManager()
                     .getDefaultManager()
                     .getFactory(credential);
             kekParams.setKeyInfoGenerator(kigf.newInstance());
@@ -297,7 +279,7 @@ public final class SAMLAuthnResponseEncrypter {
             Element newRootElement = newDocument.getDocumentElement();
             NodeList assertionList =
                     newRootElement.getElementsByTagNameNS(Assertion.DEFAULT_ELEMENT_NAME.getNamespaceURI(),
-                                                          Assertion.DEFAULT_ELEMENT_NAME.getLocalPart());
+                            Assertion.DEFAULT_ELEMENT_NAME.getLocalPart());
 
             // Replace the encrypted assertions by the decrypted assertions in the new DOM tree:
             for (int i = 0, n = assertionList.getLength(); i < n; i++) {
@@ -316,9 +298,9 @@ public final class SAMLAuthnResponseEncrypter {
             // Finally unmarshall the updated DOM into a new XMLObject graph:
             // The unmarshaller rectifies the ID-ness:
             // See org.opensaml.saml1.core.impl.AssertionUnmarshaller.unmarshall()
-            // See org.opensaml.saml2.core.impl.AssertionUnmarshaller.processAttribute()
+            // See org.opensaml.saml.saml2.core.impl.AssertionUnmarshaller.processAttribute()
             // And org.opensaml.saml1.core.impl.ResponseAbstractTypeUnmarshaller.unmarshall()
-            // And org.opensaml.saml2.core.impl.StatusResponseTypeUnmarshaller.processAttribute()
+            // And org.opensaml.saml.saml2.core.impl.StatusResponseTypeUnmarshaller.processAttribute()
             Response encryptedResponse = (Response) OpenSamlHelper.unmarshallFromDom(newDocument);
 
             if (LOGGER.isTraceEnabled()) {
@@ -332,7 +314,7 @@ public final class SAMLAuthnResponseEncrypter {
 
             return encryptedResponse;
 
-        } catch (org.opensaml.xml.encryption.EncryptionException | ParserConfigurationException | MarshallException | UnmarshallException e) {
+        } catch (ParserConfigurationException | MarshallException | UnmarshallException | org.opensaml.xmlsec.encryption.support.EncryptionException e) {
             throw new EncryptionException(e);
         }
     }

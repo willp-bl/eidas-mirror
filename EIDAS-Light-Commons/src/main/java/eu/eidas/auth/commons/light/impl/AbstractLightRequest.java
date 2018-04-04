@@ -5,7 +5,12 @@ import java.io.Serializable;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlType;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
+import eu.eidas.auth.commons.attribute.AttributeMapType;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.light.ILightRequest;
 import eu.eidas.util.Preconditions;
@@ -19,8 +24,22 @@ import eu.eidas.util.Preconditions;
  *
  * @since 1.1
  */
+@XmlType
+@XmlAccessorType(XmlAccessType.FIELD)
 @SuppressWarnings("ConstantConditions")
 public abstract class AbstractLightRequest implements ILightRequest, Serializable {
+
+    private AbstractLightRequest (){
+        id = null;
+        issuer = null;
+        citizenCountryCode = null;
+        levelOfAssurance = null;
+        nameIdFormat = null;
+        providerName = null;
+        requestedAttributes = null;
+        spType = null;
+        relayState = null;
+    }
 
     /**
      * Abstract Builder pattern with self-bounding generics for {@link ILightRequest} subtypes.
@@ -53,6 +72,8 @@ public abstract class AbstractLightRequest implements ILightRequest, Serializabl
 
         private String spType;
 
+        private String relayState;
+
         private ImmutableAttributeMap requestedAttributes;
 
         protected AbstractBuilder() {
@@ -68,6 +89,7 @@ public abstract class AbstractLightRequest implements ILightRequest, Serializabl
             providerName = copy.providerName;
             requestedAttributes = copy.requestedAttributes;
             spType = copy.spType;
+            relayState = copy.relayState;
         }
 
         protected AbstractBuilder(@Nonnull ILightRequest copy) {
@@ -80,6 +102,7 @@ public abstract class AbstractLightRequest implements ILightRequest, Serializabl
             providerName = copy.getProviderName();
             requestedAttributes = copy.getRequestedAttributes();
             spType = copy.getSpType();
+            relayState = copy.getRelayState();
         }
 
         @Nonnull
@@ -121,6 +144,12 @@ public abstract class AbstractLightRequest implements ILightRequest, Serializabl
         @Nonnull
         public final B spType(String spType) {
             this.spType = spType;
+            return (B) this;
+        }
+
+        @Nonnull
+        public final B relayState(String relayState) {
+            this.relayState = relayState;
             return (B) this;
         }
 
@@ -223,9 +252,16 @@ public abstract class AbstractLightRequest implements ILightRequest, Serializabl
     private final String spType;
 
     /**
+     * @relayState
+     */
+    @Nullable
+    private String relayState;
+
+    /**
      * @serial
      */
     @Nonnull
+    @XmlJavaTypeAdapter(AttributeMapType.ImmutableAttributeMapAdapter.class)
     private final ImmutableAttributeMap requestedAttributes;
 
     protected AbstractLightRequest(@Nonnull AbstractBuilder<?, ?> builder) {
@@ -237,6 +273,7 @@ public abstract class AbstractLightRequest implements ILightRequest, Serializabl
         providerName = builder.providerName;
         requestedAttributes = builder.requestedAttributes;
         spType = builder.spType;
+        relayState = builder.relayState;
     }
 
     @Override
@@ -278,6 +315,12 @@ public abstract class AbstractLightRequest implements ILightRequest, Serializabl
     @Override
     public final String getSpType() {
         return spType;
+    }
+
+    @Nullable
+    @Override
+    public final String getRelayState() {
+        return relayState;
     }
 
     @Nonnull
@@ -323,6 +366,11 @@ public abstract class AbstractLightRequest implements ILightRequest, Serializabl
                 : lightRequestObj.spType != null) {
             return false;
         }
+
+        if (relayState != null ? !relayState.equals(lightRequestObj.relayState)
+                : lightRequestObj.relayState != null) {
+            return false;
+        }
         return !(!requestedAttributes.equals(lightRequestObj.requestedAttributes));
     }
 
@@ -335,6 +383,7 @@ public abstract class AbstractLightRequest implements ILightRequest, Serializabl
         result = 31 * result + (null != providerName ? providerName.hashCode() : 0);
         result = 31 * result + (null != nameIdFormat ? nameIdFormat.hashCode() : 0);
         result = 31 * result + (null != spType ? spType.hashCode() : 0);
+        result = 31 * result + (null != relayState ? relayState.hashCode() : 0);
         result = 31 * result + (requestedAttributes.hashCode());
         return result;
     }
@@ -371,6 +420,9 @@ public abstract class AbstractLightRequest implements ILightRequest, Serializabl
                 .append('\'')
                 .append(", spType='")
                 .append(request.getSpType())
+                .append('\'')
+                .append(", relayState='")
+                .append(request.getRelayState())
                 .append('\'')
                 .append(", requestedAttributes='")
                 .append(request.getRequestedAttributes())

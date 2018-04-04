@@ -13,12 +13,12 @@
  */
 package eu.eidas.auth.commons;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import eu.eidas.auth.commons.lang.Canonicalizers;
 import eu.eidas.auth.commons.lang.EnumMapper;
 import eu.eidas.auth.commons.lang.KeyAccessor;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * This enum class contains the SAML Token Sub Status Code.
@@ -50,10 +50,7 @@ public enum EIDASSubStatusCode {
      */
     REQUEST_DENIED_URI("urn:oasis:names:tc:SAML:2.0:status:RequestDenied"),
 
-    /**
-     * URI for QaaNotSupported status code.
-     */
-    QAA_NOT_SUPPORTED("http://www.stork.gov.eu/saml20/statusCodes/QAANotSupported");
+    ;
 
     /**
      * Represents the constant's value.

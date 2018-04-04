@@ -14,13 +14,12 @@ import eu.eidas.auth.engine.ProtocolEngine;
 import eu.eidas.auth.engine.ProtocolEngineFactory;
 import eu.eidas.auth.engine.configuration.ProtocolConfigurationAccessor;
 import eu.eidas.auth.engine.configuration.ProtocolEngineConfiguration;
-import eu.eidas.auth.engine.configuration.SamlEngineConfigurationException;
+import eu.eidas.auth.engine.configuration.ProtocolEngineConfigurationException;
 import eu.eidas.auth.engine.configuration.dom.DefaultProtocolEngineConfigurationFactory;
-import eu.eidas.auth.engine.core.SAMLExtensionFormat;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import org.junit.Before;
 import org.junit.Test;
-import org.opensaml.saml2.core.AuthnRequest;
+import org.opensaml.saml.saml2.core.AuthnRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -182,7 +181,7 @@ public class EidasAuthRequestSignatureTest {
 
                 @Nonnull
                 @Override
-                public ProtocolEngineConfiguration get() throws SamlEngineConfigurationException {
+                public ProtocolEngineConfiguration get() throws ProtocolEngineConfigurationException {
                     return DefaultProtocolEngineConfigurationFactory.getInstance().getConfiguration(SAML_ENGINE_NAME);
                 }
             });
@@ -200,10 +199,6 @@ public class EidasAuthRequestSignatureTest {
         public String getSigningAlgo(final byte[] token) throws EIDASSAMLEngineException {
             AuthnRequest unmarshalled = samlEngine.unmarshallRequest(token);
             return unmarshalled.getSignature().getSignatureAlgorithm();
-        }
-
-        public SAMLExtensionFormat getMessageFormat() {
-            return SAMLExtensionFormat.EIDAS10;
         }
 
     }

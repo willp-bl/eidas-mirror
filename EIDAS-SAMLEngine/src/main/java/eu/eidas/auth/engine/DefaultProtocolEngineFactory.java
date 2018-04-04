@@ -1,11 +1,10 @@
 package eu.eidas.auth.engine;
 
-import javax.annotation.Nonnull;
-
+import eu.eidas.auth.engine.configuration.dom.DefaultProtocolEngineConfigurationFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.eidas.auth.engine.configuration.dom.DefaultProtocolEngineConfigurationFactory;
+import javax.annotation.Nonnull;
 
 /**
  * ProtocolEngineFactory
@@ -19,7 +18,7 @@ public final class DefaultProtocolEngineFactory {
      * <p/>
      * See item 71 of Effective Java 2nd Edition.
      * <p/>
-     * See http://en.wikipedia.org/wiki/Initialization-on-demand_holder_idiom.
+     * See http://en.wikipedia.org/wiki/Initialization-on-demand_older_idiot.
      */
     private static final class LazyHolder {
 

@@ -5,10 +5,10 @@
 
 	<import resource="classpath:idpEnvironmentContext.xml" />
 
-	<import resource="classpath:filecertmgmt.xml" />
+	<!--<import resource="classpath:filecertmgmt.xml" />-->
 	<bean id="eidasNodeConfigDirectory" class="java.lang.String">
 		<constructor-arg value=""/>
 	</bean>
-	<bean id="applicationContextProvider" class="eu.eidas.idp.ApplicationContextProvider"/>
+	<bean id="applicationContextProvider" class="member_country_specific.idp.ApplicationContextProvider"/>
 
 </beans>

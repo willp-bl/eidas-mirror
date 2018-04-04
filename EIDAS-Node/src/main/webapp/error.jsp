@@ -7,7 +7,6 @@
 <fmt:setBundle basename="eu.eidas.node.package" var="i18n_eng"/>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="e" uri="https://www.owasp.org/index.php/OWASP_Java_Encoder_Project" %>
-<%@ taglib prefix="token" uri="https://eidas.europa.eu/" %>
 <%/* this page is displayed for redirecting error to ServiceProvider*/%>
 
 <%

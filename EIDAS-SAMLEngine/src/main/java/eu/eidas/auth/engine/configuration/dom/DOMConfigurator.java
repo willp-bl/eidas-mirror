@@ -1,27 +1,7 @@
 package eu.eidas.auth.engine.configuration.dom;
 
-import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
-
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import eu.eidas.auth.commons.EidasErrorKey;
 import eu.eidas.auth.commons.EidasErrors;
 import eu.eidas.auth.commons.attribute.AttributeRegistries;
@@ -33,20 +13,28 @@ import eu.eidas.auth.commons.lang.reflect.ReflectionUtil;
 import eu.eidas.auth.engine.SamlEngineClock;
 import eu.eidas.auth.engine.SamlEngineSystemClock;
 import eu.eidas.auth.engine.configuration.ProtocolEngineConfiguration;
-import eu.eidas.auth.engine.configuration.SamlEngineConfiguration;
-import eu.eidas.auth.engine.configuration.SamlEngineConfigurationException;
-import eu.eidas.auth.engine.core.DefaultCoreProperties;
-import eu.eidas.auth.engine.core.ExtensionProcessorI;
-import eu.eidas.auth.engine.core.ProtocolCipherI;
-import eu.eidas.auth.engine.core.ProtocolProcessorI;
-import eu.eidas.auth.engine.core.ProtocolSignerI;
-import eu.eidas.auth.engine.core.SamlEngineCoreProperties;
-import eu.eidas.auth.engine.core.SamlEngineEncryptionI;
-import eu.eidas.auth.engine.core.eidas.EidasExtensionProcessor;
+import eu.eidas.auth.engine.configuration.ProtocolEngineConfigurationException;
+import eu.eidas.auth.engine.core.*;
 import eu.eidas.auth.engine.core.eidas.EidasProtocolProcessor;
+import eu.eidas.auth.engine.metadata.MetadataClockI;
 import eu.eidas.auth.engine.metadata.MetadataFetcherI;
 import eu.eidas.auth.engine.metadata.MetadataSignerI;
 import eu.eidas.util.Preconditions;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Properties;
 
 /**
  * Creates typed configuration objects (BaseConfigurations) based on parsing results (InstanceMap).
@@ -101,7 +89,7 @@ public final class DOMConfigurator {
 
     @Nonnull
     private static SamlEngineClock configureClock(@Nonnull String instanceName, @Nonnull InstanceEntry instanceEntry)
-            throws SamlEngineConfigurationException {
+            throws ProtocolEngineConfigurationException {
         ConfigurationEntry clockConfigurationEntry = instanceEntry.get(ConfigurationKey.CLOCK_CONFIGURATION);
 
         if (null == clockConfigurationEntry) {
@@ -130,148 +118,7 @@ public final class DOMConfigurator {
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
             LOG.error("Error creating clock for SAML engine \"" + instanceName + "\" in " + clockClassName + " due to "
                               + e, e);
-            throw new SamlEngineConfigurationException(EidasErrorKey.SAML_ENGINE_CONFIGURATION_ERROR.errorCode(),
-                                                       EidasErrorKey.SAML_ENGINE_CONFIGURATION_ERROR.errorMessage(), e);
-        }
-    }
-
-    /**
-     * @deprecated since 1.1, use {@link #configureCipher(String, InstanceEntry, String)} instead.
-     */
-    @Deprecated
-    @Nullable
-    private static SamlEngineEncryptionI configureEncryption(@Nonnull String instanceName,
-                                                             @Nonnull InstanceEntry instanceEntry,
-                                                             @Nullable String defaultPath,
-                                                             @Nullable String overrideFile) {
-        // LOADING ENCRYPTION CONFIGURATION
-        ConfigurationEntry encryptionConfigurationEntry = instanceEntry.get(ConfigurationKey.ENCRYPTION_CONFIGURATION);
-
-        if (encryptionConfigurationEntry == null) {
-            LOG.info("ERROR : Encryption module configuration not found. SAML Engine  '" + instanceName
-                             + "' in non-encryption mode!");
-        } else {
-            try {
-                LOG.trace("Loading Encryption for \"" + instanceName + "\"");
-
-                String encryptionClassName = encryptionConfigurationEntry.get(ParameterKey.CLASS);
-
-                ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
-                @SuppressWarnings("unchecked") Class<SamlEngineEncryptionI> encryptionClass =
-                        (Class<SamlEngineEncryptionI>) Class.forName(encryptionClassName, true, contextClassLoader);
-
-                Constructor<SamlEngineEncryptionI> constructor = encryptionClass.getConstructor(Map.class);
-
-                SamlEngineEncryptionI cipher = createReloadableProxyIfNeeded(instanceName, encryptionConfigurationEntry,
-                                                                             ConfigurationKey.ENCRYPTION_CONFIGURATION, defaultPath,
-                                                                             SamlEngineEncryptionI.class, constructor,
-                                                                             contextClassLoader, overrideFile);
-                return cipher;
-            } catch (Exception e) {
-                LOG.error("Encryption Module could not be loaded! SAML Engine '" + instanceName
-                                  + "' in non-encryption mode! Because of " + e, e);
-            }
-        }
-        return null;
-    }
-
-    /**
-     * @deprecated since 1.1, use {@link #configureProtocolProcessor(String, InstanceEntry, MetadataSignerI)} instead.
-     */
-    @Deprecated
-    @Nonnull
-    private static ExtensionProcessorI configureExtensionProcessor(@Nonnull String instanceName,
-                                                                   @Nonnull InstanceEntry instanceEntry,
-                                                                   @Nullable MetadataSignerI metadataSigner)
-            throws SamlEngineConfigurationException {
-        ConfigurationEntry extensionProcessorConfigurationEntry =
-                instanceEntry.get(ConfigurationKey.EXTENSION_PROCESSOR_CONFIGURATION);
-
-        if (null == extensionProcessorConfigurationEntry) {
-            ExtensionProcessorI extensionProcessor = EidasExtensionProcessor.INSTANCE;
-            LOG.info("No custom ExtensionProcessor configured for \"" + instanceName + "\", using default: "
-                             + extensionProcessor);
-            return extensionProcessor;
-        }
-
-        LOG.trace("Loading extension processor for \"" + instanceName + "\"");
-
-        String extensionProcessorClassName = extensionProcessorConfigurationEntry.get(ParameterKey.CLASS);
-        try {
-            ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
-            @SuppressWarnings("unchecked") Class<ExtensionProcessorI> extensionProcessorClass =
-                    (Class<ExtensionProcessorI>) Class.forName(extensionProcessorClassName, true, contextClassLoader);
-            ImmutableMap<String, String> parameters = extensionProcessorConfigurationEntry.getParameters();
-            String coreAttributeRegistryFile = parameters.get(ParameterKey.CORE_ATTRIBUTE_REGISTRY_FILE.getKey());
-            String additionalAttributeRegistryFile =
-                    parameters.get(ParameterKey.ADDITIONAL_ATTRIBUTE_REGISTRY_FILE.getKey());
-            String metadataFetcherClassName = parameters.get(ParameterKey.METADATA_FETCHER_CLASS.getKey());
-            MetadataFetcherI metadataFetcher = null;
-            if (StringUtils.isNotBlank(metadataFetcherClassName)) {
-                @SuppressWarnings("unchecked") Class<MetadataFetcherI> metadataFetcherClass =
-                        (Class<MetadataFetcherI>) Class.forName(metadataFetcherClassName, true, contextClassLoader);
-                metadataFetcher = metadataFetcherClass.newInstance();
-            }
-
-            List<Class<?>> constructorParameterTypes = new ArrayList<>();
-            List<Object> constructorParameters = new ArrayList<>();
-
-            if (StringUtils.isNotBlank(additionalAttributeRegistryFile)) {
-                constructorParameterTypes.add(String.class);
-                constructorParameters.add(additionalAttributeRegistryFile);
-                if (StringUtils.isNotBlank(coreAttributeRegistryFile)) {
-                    constructorParameterTypes.add(String.class);
-                    constructorParameters.add(0, coreAttributeRegistryFile);
-                }
-            }
-            Class<?>[] constructorParameterTypesWithoutMetadata =
-                    constructorParameterTypes.toArray(new Class[constructorParameterTypes.size()]);
-            constructorParameterTypes.add(MetadataFetcherI.class);
-            constructorParameterTypes.add(MetadataSignerI.class);
-            Class<?>[] constructorParameterTypesWithMetadata =
-                    constructorParameterTypes.toArray(new Class[constructorParameterTypes.size()]);
-
-            Constructor<ExtensionProcessorI> constructorWithoutMetadata = null;
-            Constructor<ExtensionProcessorI> constructorWithMetadata = null;
-
-            Constructor<ExtensionProcessorI>[] constructors =
-                    (Constructor<ExtensionProcessorI>[]) extensionProcessorClass.getConstructors();
-            for (final Constructor<ExtensionProcessorI> constructor : constructors) {
-                Class<?>[] parameterTypes = constructor.getParameterTypes();
-                if (Arrays.equals(parameterTypes, constructorParameterTypesWithoutMetadata)) {
-                    constructorWithoutMetadata = constructor;
-                } else if (Arrays.equals(parameterTypes, constructorParameterTypesWithMetadata)) {
-                    constructorWithMetadata = constructor;
-                }
-            }
-
-            ExtensionProcessorI extensionProcessor;
-            Constructor<ExtensionProcessorI> constructor;
-            if (null != constructorWithMetadata) {
-                constructorParameters.add(metadataFetcher);
-                constructorParameters.add(metadataSigner);
-                constructor = constructorWithMetadata;
-            } else if (null != constructorWithoutMetadata) {
-                constructor = constructorWithoutMetadata;
-            } else {
-                throw new NoSuchMethodException(
-                        "No available constructor matching " + constructorParameterTypes + " in class "
-                                + extensionProcessorClassName);
-            }
-            extensionProcessor =
-                    constructor.newInstance(constructorParameters.toArray(new Object[constructorParameters.size()]));
-
-            LOG.trace("Loaded extension processor for \"" + instanceName + "\": " + extensionProcessor);
-
-            extensionProcessor.configureExtension();
-
-            LOG.trace("Configured extension processor for \"" + instanceName + "\": " + extensionProcessor);
-
-            return extensionProcessor;
-        } catch (ClassNotFoundException | ClassCastException | NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
-            LOG.error("Error creating extension processor for SAML engine \"" + instanceName + "\" in "
-                              + extensionProcessorClassName + " due to " + e, e);
-            throw new SamlEngineConfigurationException(EidasErrorKey.SAML_ENGINE_CONFIGURATION_ERROR.errorCode(),
+            throw new ProtocolEngineConfigurationException(EidasErrorKey.SAML_ENGINE_CONFIGURATION_ERROR.errorCode(),
                                                        EidasErrorKey.SAML_ENGINE_CONFIGURATION_ERROR.errorMessage(), e);
         }
     }
@@ -283,8 +130,9 @@ public final class DOMConfigurator {
     private static ProtocolProcessorI configureProtocolProcessor(@Nonnull String instanceName,
                                                                  @Nullable String defaultPath,
                                                                  @Nonnull InstanceEntry instanceEntry,
-                                                                 @Nullable MetadataSignerI metadataSigner)
-            throws SamlEngineConfigurationException {
+                                                                 @Nullable MetadataSignerI metadataSigner,
+                                                                 @Nullable MetadataClockI clock)
+            throws ProtocolEngineConfigurationException {
         ConfigurationEntry protocolProcessorConfigurationEntry =
                 instanceEntry.get(ConfigurationKey.PROTOCOL_PROCESSOR_CONFIGURATION);
 
@@ -329,7 +177,7 @@ public final class DOMConfigurator {
             ProtocolProcessorI protocolProcessor = null;
 
             Class<?>[] constructorParameterTypesWithMetadata = {
-                    AttributeRegistry.class, AttributeRegistry.class, MetadataFetcherI.class, MetadataSignerI.class};
+                    AttributeRegistry.class, AttributeRegistry.class, MetadataFetcherI.class, MetadataSignerI.class, MetadataClockI.class};
 
             Constructor<ProtocolProcessorI>[] constructors =
                     (Constructor<ProtocolProcessorI>[]) protocolProcessorClass.getConstructors();
@@ -339,17 +187,17 @@ public final class DOMConfigurator {
                 if (Arrays.equals(parameterTypes, constructorParameterTypesWithMetadata)) {
                     protocolProcessor =
                             constructor.newInstance(coreAttributeRegistry, additionalAttributeRegistry, metadataFetcher,
-                                                    metadataSigner);
+                                                    metadataSigner, clock);
                     break;
                 }
             }
-
+/*
             if (null == protocolProcessor) {
                 Constructor<ProtocolProcessorI> constructor =
                         protocolProcessorClass.getConstructor(AttributeRegistry.class, AttributeRegistry.class);
                 protocolProcessor = constructor.newInstance(coreAttributeRegistry, additionalAttributeRegistry);
             }
-
+*/
             LOG.trace("Loaded protocol processor for \"" + instanceName + "\": " + protocolProcessor);
 
             protocolProcessor.configure();
@@ -357,10 +205,10 @@ public final class DOMConfigurator {
             LOG.trace("Configured protocol processor for \"" + instanceName + "\": " + protocolProcessor);
 
             return protocolProcessor;
-        } catch (ClassNotFoundException | ClassCastException | NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
+        } catch (ClassNotFoundException | ClassCastException /*| NoSuchMethodException */| IllegalAccessException | InstantiationException | InvocationTargetException e) {
             LOG.error("Error creating protocol processor for SAML engine \"" + instanceName + "\" in "
                               + protocolProcessorClassName + " due to " + e, e);
-            throw new SamlEngineConfigurationException(EidasErrorKey.SAML_ENGINE_CONFIGURATION_ERROR.errorCode(),
+            throw new ProtocolEngineConfigurationException(EidasErrorKey.SAML_ENGINE_CONFIGURATION_ERROR.errorCode(),
                                                        EidasErrorKey.SAML_ENGINE_CONFIGURATION_ERROR.errorMessage(), e);
         }
     }
@@ -370,13 +218,13 @@ public final class DOMConfigurator {
                                                                     @Nonnull InstanceEntry instanceEntry,
                                                                     @Nullable String defaultPath,
                                                                     @Nullable String overrideFile)
-            throws SamlEngineConfigurationException {
+            throws ProtocolEngineConfigurationException {
         ConfigurationEntry samlEngineConfigurationEntry = instanceEntry.get(ConfigurationKey.SAML_ENGINE_CONFIGURATION);
 
         if (null == samlEngineConfigurationEntry || samlEngineConfigurationEntry.getParameters().isEmpty()) {
             LOG.error("ConfigurationEntry: \"" + ConfigurationKey.SAML_ENGINE_CONFIGURATION.getKey()
                               + "\" does not exist for SAML Engine '" + instanceName + "'.");
-            throw new SamlEngineConfigurationException(
+            throw new ProtocolEngineConfigurationException(
                     EidasErrors.get(EidasErrorKey.SAML_ENGINE_CONFIGURATION_ERROR.errorCode()),
                     EidasErrors.get(EidasErrorKey.SAML_ENGINE_CONFIGURATION_ERROR.errorMessage()),
                     "ConfigurationEntry: \"" + ConfigurationKey.SAML_ENGINE_CONFIGURATION.getKey()
@@ -391,7 +239,7 @@ public final class DOMConfigurator {
                                                  SamlEngineCoreProperties.class, constructor,
                                                  Thread.currentThread().getContextClassLoader(), overrideFile);
         } catch (Exception e) {
-            throw new SamlEngineConfigurationException(
+            throw new ProtocolEngineConfigurationException(
                     EidasErrors.get(EidasErrorKey.SAML_ENGINE_CONFIGURATION_ERROR.errorCode()),
                     EidasErrors.get(EidasErrorKey.SAML_ENGINE_CONFIGURATION_ERROR.errorMessage()) + " : " +
                             "ConfigurationEntry: \"" + ConfigurationKey.SAML_ENGINE_CONFIGURATION.getKey()
@@ -404,7 +252,7 @@ public final class DOMConfigurator {
                                                       @Nonnull InstanceEntry instanceEntry,
                                                       @Nullable String defaultPath,
                                                       @Nullable String overrideFile)
-            throws SamlEngineConfigurationException {
+            throws ProtocolEngineConfigurationException {
         ConfigurationEntry signatureConfigurationEntry = instanceEntry.get(ConfigurationKey.SIGNATURE_CONFIGURATION);
 
         if (null == signatureConfigurationEntry || signatureConfigurationEntry.getParameters().isEmpty()) {
@@ -441,7 +289,7 @@ public final class DOMConfigurator {
         } catch (Exception e) {
             LOG.error("Error creating signature for SAML engine \"" + instanceName + "\" in " + signerClassName
                               + " due to " + e, e);
-            throw new SamlEngineConfigurationException(EidasErrorKey.SAML_ENGINE_CONFIGURATION_ERROR.errorCode(),
+            throw new ProtocolEngineConfigurationException(EidasErrorKey.SAML_ENGINE_CONFIGURATION_ERROR.errorCode(),
                                                        EidasErrorKey.SAML_ENGINE_CONFIGURATION_ERROR.errorMessage(), e);
         }
     }
@@ -542,102 +390,10 @@ public final class DOMConfigurator {
      * Returns the corresponding configuration.
      *
      * @param instanceName the instance name
-     * @throws SamlEngineConfigurationException the EIDASSAML engine exception
-     * @since 1.1
-     */
-    public static SamlEngineConfiguration getConfiguration(@Nonnull String instanceName,
-                                                           @Nonnull InstanceEntry instanceEntry)
-            throws SamlEngineConfigurationException {
-        return getConfiguration(instanceName, instanceEntry, null, null);
-    }
-
-    /**
-     * Returns the corresponding configuration.
-     *
-     * @param instanceName the instance name
      * @param instanceEntry the instance entry object
      * @param overrideFile the configuration properties file name containing overriding properties if any, otherwise
      * {@code null}.
-     * @throws SamlEngineConfigurationException the SAML engine configuration exception
-     * @deprecated since 1.1, use {@link #getProtocolConfiguration(String, InstanceEntry, String)} instead.
-     */
-    @Deprecated
-    @SuppressWarnings("squid:S2259")
-    public static SamlEngineConfiguration getConfiguration(@Nonnull String instanceName,
-                                                           @Nonnull InstanceEntry instanceEntry,
-                                                           @Nullable String defaultPath,
-                                                           @Nullable String overrideFile)
-            throws SamlEngineConfigurationException {
-        if (null == instanceEntry) {
-            throwConfigurationException("Instance : \"" + instanceName + "\" does not exist.");
-        } else
-        if (instanceEntry.getConfigurationEntries().isEmpty()) {
-            throwConfigurationException("Instance: \"" + instanceName + "\" is empty.");
-        } else
-        if (!instanceEntry.getName().equals(instanceName)) {
-            throwConfigurationException(
-                    "Instance: \"" + instanceEntry.getName() + "\" does not match supplied name \"" + instanceName
-                            + "\"");
-        }
-
-        Preconditions.checkNotBlank(instanceEntry.getName(), "instanceName");
-        SamlEngineCoreProperties samlCore = configureSamlEngineCore(instanceName, instanceEntry, defaultPath, overrideFile);
-        ProtocolSignerI signer = configureSignature(instanceName, instanceEntry, defaultPath, overrideFile);
-        SamlEngineEncryptionI cipher = configureEncryption(instanceName, instanceEntry, defaultPath, overrideFile);
-        MetadataSignerI metadataSigner = null;
-        if (signer instanceof MetadataSignerI) {
-            metadataSigner = (MetadataSignerI) signer;
-        }
-        ExtensionProcessorI extensionProcessor =
-                configureExtensionProcessor(instanceName, instanceEntry, metadataSigner);
-        SamlEngineClock clock = configureClock(instanceName, instanceEntry);
-        return SamlEngineConfiguration.builder()
-                .instanceName(instanceEntry.getName())
-                .coreProperties(samlCore)
-                .signer(signer)
-                .cipher(cipher)
-                .extensionProcessor(extensionProcessor)
-                .clock(clock)
-                .build();
-    }
-
-    /**
-     * @deprecated since 1.1, use {@link #getProtocolConfigurationMap(InstanceMap)} instead.
-     */
-    @Deprecated
-    @Nonnull
-    public static ImmutableMap<String, SamlEngineConfiguration> getConfigurationMap(@Nonnull InstanceMap instanceMap)
-            throws SamlEngineConfigurationException {
-        return getConfigurationMap(instanceMap, null, null);
-    }
-
-    /**
-     * @deprecated since 1.1, use {@link #getProtocolConfigurationMap(InstanceMap, String)} instead.
-     */
-    @Deprecated
-    @Nonnull
-    public static ImmutableMap<String, SamlEngineConfiguration> getConfigurationMap(@Nonnull InstanceMap instanceMap,
-                                                                                    @Nullable String defaultPath,
-                                                                                    @Nullable String overrideFile)
-            throws SamlEngineConfigurationException {
-        Preconditions.checkNotNull(instanceMap, "instanceMap");
-        ImmutableMap.Builder<String, SamlEngineConfiguration> configurationBuilder = ImmutableMap.builder();
-        for (final Map.Entry<String, InstanceEntry> entry : instanceMap.getInstances().entrySet()) {
-            String instanceName = entry.getKey();
-            SamlEngineConfiguration configuration = getConfiguration(instanceName, entry.getValue(), defaultPath, overrideFile);
-            configurationBuilder.put(instanceName, configuration);
-        }
-        return configurationBuilder.build();
-    }
-
-    /**
-     * Returns the corresponding configuration.
-     *
-     * @param instanceName the instance name
-     * @param instanceEntry the instance entry object
-     * @param overrideFile the configuration properties file name containing overriding properties if any, otherwise
-     * {@code null}.
-     * @throws SamlEngineConfigurationException the SAML engine configuration exception
+     * @throws ProtocolEngineConfigurationException the SAML engine configuration exception
      * @since 1.1
      */
     @SuppressWarnings("squid:S2259")
@@ -645,7 +401,7 @@ public final class DOMConfigurator {
                                                                        @Nonnull InstanceEntry instanceEntry,
                                                                        @Nullable String defaultPath,
                                                                        @Nullable String overrideFile)
-            throws SamlEngineConfigurationException {
+            throws ProtocolEngineConfigurationException {
         if (null == instanceEntry) {
             throwConfigurationException("Instance : \"" + instanceName + "\" does not exist.");
         } else
@@ -666,8 +422,8 @@ public final class DOMConfigurator {
         if (signer instanceof MetadataSignerI) {
             metadataSigner = (MetadataSignerI) signer;
         }
-        ProtocolProcessorI protocolProcessor = configureProtocolProcessor(instanceName, defaultPath, instanceEntry, metadataSigner);
         SamlEngineClock clock = configureClock(instanceName, instanceEntry);
+        ProtocolProcessorI protocolProcessor = configureProtocolProcessor(instanceName, defaultPath, instanceEntry, metadataSigner, (MetadataClockI) clock);
         return ProtocolEngineConfiguration.builder()
                 .instanceName(instanceEntry.getName())
                 .coreProperties(samlCore)
@@ -683,7 +439,7 @@ public final class DOMConfigurator {
      */
     @Nonnull
     public static ImmutableMap<String, ProtocolEngineConfiguration> getProtocolConfigurationMap(
-            @Nonnull InstanceMap instanceMap) throws SamlEngineConfigurationException {
+            @Nonnull InstanceMap instanceMap) throws ProtocolEngineConfigurationException {
         return getProtocolConfigurationMap(instanceMap, null, null);
     }
 
@@ -692,7 +448,7 @@ public final class DOMConfigurator {
      */
     @Nonnull
     public static ImmutableMap<String, ProtocolEngineConfiguration> getProtocolConfigurationMap(
-            @Nonnull InstanceMap instanceMap, @Nullable String defaultPath, @Nullable String overrideFile) throws SamlEngineConfigurationException {
+            @Nonnull InstanceMap instanceMap, @Nullable String defaultPath, @Nullable String overrideFile) throws ProtocolEngineConfigurationException {
         Preconditions.checkNotNull(instanceMap, "instanceMap");
         ImmutableMap.Builder<String, ProtocolEngineConfiguration> configurationBuilder = ImmutableMap.builder();
         for (final Map.Entry<String, InstanceEntry> entry : instanceMap.getInstances().entrySet()) {
@@ -727,9 +483,9 @@ public final class DOMConfigurator {
     }
 
     @Nonnull
-    private static <T> T throwConfigurationException(@Nonnull String message) throws SamlEngineConfigurationException {
+    private static <T> T throwConfigurationException(@Nonnull String message) throws ProtocolEngineConfigurationException {
         LOG.error(message);
-        throw new SamlEngineConfigurationException(
+        throw new ProtocolEngineConfigurationException(
                 EidasErrors.get(EidasErrorKey.SAML_ENGINE_CONFIGURATION_ERROR.errorCode()),
                 EidasErrors.get(EidasErrorKey.SAML_ENGINE_CONFIGURATION_ERROR.errorMessage()), message);
     }

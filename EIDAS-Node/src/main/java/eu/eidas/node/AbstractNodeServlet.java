@@ -22,22 +22,19 @@
 
 package eu.eidas.node;
 
-import java.io.IOException;
+import eu.eidas.auth.commons.EidasParameterKeys;
+import eu.eidas.node.logging.LoggingMarkerMDC;
+import eu.eidas.node.logging.LoggingUtil;
+import org.slf4j.Logger;
+import org.slf4j.MDC;
+import org.springframework.context.ApplicationContext;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import org.slf4j.Logger;
-import org.slf4j.MDC;
-import org.springframework.context.ApplicationContext;
-
-import eu.eidas.auth.commons.EidasParameterKeys;
-import eu.eidas.auth.commons.EIDASValues;
-import eu.eidas.node.logging.LoggingMarkerMDC;
-import eu.eidas.node.logging.LoggingUtil;
+import java.io.IOException;
 
 /**
  * Generic EidasNode servlet ancestor.
@@ -120,13 +117,20 @@ public abstract class AbstractNodeServlet extends HttpServlet {
 //NOSONAR                 cookie.setHttpOnly(true);
 //NOSONAR                 response.addCookie(cookie);
 
+cookie.setMaxAge(0);
+cookie.setPath(getServletContext().getContextPath());
+cookie.setDomain(request.getServerName());
+cookie.setSecure(isSecure);
+cookie.setHttpOnly(true);
+response.addCookie(cookie);
+
                         // Create new one httpOnly
-                        StringBuilder httpOnlyCookie = new StringBuilder(cookie.getName()).append(EIDASValues.EQUAL.toString()).append(cookie.getValue()).append(EIDASValues.SEMICOLON.toString()).append(" ")
+                     /*   StringBuilder httpOnlyCookie = new StringBuilder(cookie.getName()).append(EIDASValues.EQUAL.toString()).append(cookie.getValue()).append(EIDASValues.SEMICOLON.toString()).append(" ")
                                 .append(EIDASValues.DOMAIN.toString()).append(EIDASValues.EQUAL.toString()).append(request.getServerName()).append(EIDASValues.SEMICOLON.toString()).append(" ")
                                 .append(EIDASValues.PATH.toString()).append(EIDASValues.EQUAL.toString()).append(getServletContext().getContextPath()).append(EIDASValues.SEMICOLON.toString()).append(" ")
                                 .append(EIDASValues.HTTP_ONLY.toString()).append(EIDASValues.SEMICOLON.toString())
                                 .append(isSecure ? EIDASValues.SECURE.toString()  : "");
-                        response.setHeader(EIDASValues.SETCOOKIE.toString(), httpOnlyCookie.toString());
+                        response.setHeader(EIDASValues.SETCOOKIE.toString(), httpOnlyCookie.toString());*/
                     }
                 }
             }

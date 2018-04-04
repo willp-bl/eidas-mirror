@@ -32,11 +32,11 @@ import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.IResponseMessage;
 import eu.eidas.auth.commons.protocol.eidas.LevelOfAssurance;
 import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.eidas.spec.NaturalPersonSpec;
 import eu.eidas.auth.commons.protocol.impl.AuthenticationResponse;
 import eu.eidas.auth.engine.ProtocolEngineFactory;
 import eu.eidas.auth.engine.ProtocolEngineI;
 import eu.eidas.auth.engine.configuration.dom.ReloadableProtocolConfigurationInvocationHandler;
-import eu.eidas.auth.engine.core.eidas.spec.NaturalPersonSpec;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import org.joda.time.DateTime;
 import org.junit.Before;
@@ -246,6 +246,8 @@ public class SAMLEngineTimeSkewTest {
                 .inResponseTo("QDS2QFD")
                 .issuer("http://Responder")
                 .statusCode(EIDASStatusCode.SUCCESS_URI.toString())
+                .subject("UK/UK/Banksy")
+                .subjectNameIdFormat("urn:oasis:names:tc:SAML:2.0:nameid-format:transient")
                 .levelOfAssurance("high")
                 .ipAddress("123.123.123.123")
                 .attributes(attributeMapBuilder.build())

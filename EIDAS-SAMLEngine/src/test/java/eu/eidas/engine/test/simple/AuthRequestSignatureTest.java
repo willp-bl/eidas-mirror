@@ -1,3 +1,21 @@
+/*
+ * Copyright (c) 2017 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
+ */
+
 package eu.eidas.engine.test.simple;
 
 import eu.eidas.auth.commons.EidasStringUtil;
@@ -7,21 +25,20 @@ import eu.eidas.auth.commons.attribute.PersonType;
 import eu.eidas.auth.commons.attribute.impl.StringAttributeValueMarshaller;
 import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.IRequestMessage;
-import eu.eidas.auth.commons.protocol.stork.IStorkAuthenticationRequest;
-import eu.eidas.auth.commons.protocol.stork.impl.StorkAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.eidas.IEidasAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
 import eu.eidas.auth.engine.AbstractProtocolEngine;
 import eu.eidas.auth.engine.ProtocolEngine;
 import eu.eidas.auth.engine.ProtocolEngineFactory;
 import eu.eidas.auth.engine.configuration.ProtocolConfigurationAccessor;
 import eu.eidas.auth.engine.configuration.ProtocolEngineConfiguration;
-import eu.eidas.auth.engine.configuration.SamlEngineConfigurationException;
+import eu.eidas.auth.engine.configuration.ProtocolEngineConfigurationException;
 import eu.eidas.auth.engine.configuration.dom.DefaultProtocolEngineConfigurationFactory;
-import eu.eidas.auth.engine.core.SAMLExtensionFormat;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.opensaml.saml2.core.AuthnRequest;
+import org.opensaml.saml.saml2.core.AuthnRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -87,7 +104,7 @@ public class AuthRequestSignatureTest {
     private static final Logger LOG = LoggerFactory.getLogger(AuthRequestSignatureTest.class.getName());
 
     private static final AttributeDefinition<String> EIDENTIFIER =
-            new AttributeDefinition.Builder<String>().nameUri("http://www.stork.gov.eu/1.0/eIdentifier")
+            new AttributeDefinition.Builder<String>().nameUri("http://eidas.europa.eu/attributes/naturalperson/PersonIdentifierr")
                     .friendlyName("eIdentifier")
                     .personType(PersonType.NATURAL_PERSON)
                     .required(false)
@@ -104,8 +121,8 @@ public class AuthRequestSignatureTest {
      */
     @Test
     @Ignore
-    public final void testGenerateStorkAuthnRequest() throws Exception {
-        IStorkAuthenticationRequest request = StorkAuthenticationRequest.builder().
+    public final void testGenerateEidasAuthnRequest() throws Exception {
+        IEidasAuthenticationRequest request = EidasAuthenticationRequest.builder().
                 id("f5e7e0f5-b9b8-4256-a7d0-4090141b326d").
                 issuer("http://localhost:7001/SP/metadata").
                 providerName("TestProvider").
@@ -113,30 +130,9 @@ public class AuthRequestSignatureTest {
                 destination(destination).
                 serviceProviderCountryCode(spCountry).
                 citizenCountryCode("BE").
-                spId(spId).
-                qaa(QAAL).
-                spSector(spSector).
-                spInstitution(null).
-                spApplication(spApplication).
                 requestedAttributes(REQUESTED_ATTRIBUTES).
                 levelOfAssurance("high").
                 build();
-
-        /*final EidasAuthenticationRequest request = new EidasAuthenticationRequest();
-
-        request.setDestination(destination);
-        request.setProviderName(spName);
-        request.setQaa(QAAL);
-        request.setPersonalAttributeList(pal);
-        request.setAssertionConsumerServiceURL(assertConsumerUrl);
-
-        // news parameters
-        request.setSpSector(spSector);
-        request.setSpInstitution(null);
-        request.setSpApplication(spApplication);
-        request.setSpCountry(spCountry);
-        request.setSPID(spId);
-        request.setCitizenCountryCode("BE");*/
 
         ProtocolEngineInterceptor engineInterceptor = null;
         try {
@@ -145,10 +141,6 @@ public class AuthRequestSignatureTest {
             fail("error while initializing samlengine " + exc);
         }
         assertNotNull(engineInterceptor);
-        /*
-        engineInterceptor.setSignerProperty(SamlEngineSignI.SIGNATURE_ALGORITHM,
-                                            "http://www.w3.org/2001/04/xmldsig-more#rsa-sha384");
-                                            */
         IRequestMessage authReq;
         try {
 
@@ -204,7 +196,7 @@ public class AuthRequestSignatureTest {
 
                 @Nonnull
                 @Override
-                public ProtocolEngineConfiguration get() throws SamlEngineConfigurationException {
+                public ProtocolEngineConfiguration get() throws ProtocolEngineConfigurationException {
                     return DefaultProtocolEngineConfigurationFactory.getInstance().getConfiguration(SAML_ENGINE_NAME);
                 }
             });
@@ -225,9 +217,6 @@ public class AuthRequestSignatureTest {
             return unmarshalled.getSignature().getSignatureAlgorithm();
         }
 
-        public SAMLExtensionFormat getMessageFormat() {
-            return SAMLExtensionFormat.EIDAS10;
-        }
 
     }
 }

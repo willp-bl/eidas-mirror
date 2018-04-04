@@ -1,23 +1,19 @@
 /*
- * Copyright (c) 2016 by European Commission
+ * Copyright (c) 2017 by European Commission
  *
- * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
- * the European Commission - subsequent versions of the EUPL (the "Licence");
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
  * You may not use this work except in compliance with the Licence.
  * You may obtain a copy of the Licence at:
- * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the Licence is distributed on an "AS IS" basis,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
  * See the Licence for the specific language governing permissions and
  * limitations under the Licence.
- *
- * This product combines work with different licenses. See the "NOTICE" text
- * file for details on the various modules and licenses.
- * The "NOTICE" text file is part of the distribution. Any derivative works
- * that you distribute must include a readable copy of the "NOTICE" text file.
- *
  */
 
 package eu.eidas.node.auth.metadata;
@@ -31,18 +27,16 @@ import eu.eidas.auth.engine.metadata.EntityDescriptorContainer;
 import eu.eidas.auth.engine.metadata.MetadataSignerI;
 import eu.eidas.auth.engine.metadata.MetadataUtil;
 import eu.eidas.auth.engine.metadata.impl.FileMetadataLoader;
-import eu.eidas.auth.engine.xml.opensaml.SAMLBootstrap;
 import eu.eidas.engine.exceptions.EIDASMetadataProviderException;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import eu.eidas.node.auth.util.tests.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.junit.*;
 import org.junit.runners.MethodSorters;
-import org.opensaml.Configuration;
-import org.opensaml.saml2.metadata.EntitiesDescriptor;
-import org.opensaml.saml2.metadata.EntityDescriptor;
-import org.opensaml.xml.ConfigurationException;
-import org.opensaml.xml.XMLObjectBuilderFactory;
+import org.opensaml.core.xml.XMLObjectBuilderFactory;
+import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
+import org.opensaml.saml.saml2.metadata.EntitiesDescriptor;
+import org.opensaml.saml.saml2.metadata.EntityDescriptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.FileSystemUtils;
@@ -51,8 +45,6 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-
 
 
 @FixMethodOrder(MethodSorters.JVM)
@@ -91,11 +83,7 @@ public class TestEidasNodeFileMetadataProcessor {
         new File(FILEREPO_DIR_WRITE_EMPTY).mkdirs();
         initWorkFolder(FILEREPO_DIR_READ_COMBO, FILEREPO_DIR_WRITE3);
         initWorkFolder(FILEREPO_DIR_READ_COMBO_4, FILEREPO_DIR_WRITE4);
-        try {
-        	SAMLBootstrap.bootstrap();
-        }catch (ConfigurationException ce){
-            Assert.assertTrue("opensaml configuration exception", false);
-        }
+        OpenSamlHelper.initialize();
     }
     private static void initWorkFolder(String sourceFolder, String folderName){
         File sampleNodeRepo=new File(folderName);
@@ -181,7 +169,7 @@ public class TestEidasNodeFileMetadataProcessor {
         processor.setRepositoryPath(FILEREPO_DIR_WRITE3);
         List<EntityDescriptorContainer> list = processor.getEntityDescriptors();
         Assert.assertTrue(list.size()==2);
-        XMLObjectBuilderFactory builderFactory = Configuration.getBuilderFactory();
+        XMLObjectBuilderFactory builderFactory = XMLObjectProviderRegistrySupport.getBuilderFactory();
         EntitiesDescriptor eds = (EntitiesDescriptor)builderFactory.getBuilder(EntitiesDescriptor.DEFAULT_ELEMENT_NAME).buildObject(EntitiesDescriptor.DEFAULT_ELEMENT_NAME);
         for(EntityDescriptorContainer edc:list){
         	eds.getEntityDescriptors().addAll(edc.getEntityDescriptors());

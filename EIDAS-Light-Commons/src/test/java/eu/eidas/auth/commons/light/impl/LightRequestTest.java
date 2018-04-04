@@ -25,6 +25,7 @@ public final class LightRequestTest {
     private static final String CITIZEN_COUNTRY_CODE = "ES";
     private static final String LEVEL_OF_ASSURANCE = "http://eidas.europa.eu/LoA/low";
     private static final String UNSPECIFIED = "unspecified";
+    private static final String RELAYSTATE = "MyRelayState";
 
     private static final AttributeDefinition<String> CURRENT_FAMILY_NAME =
             new AttributeDefinition.Builder<String>().nameUri("http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName")
@@ -63,6 +64,7 @@ public final class LightRequestTest {
                 citizenCountryCode(CITIZEN_COUNTRY_CODE).
                 levelOfAssurance(LEVEL_OF_ASSURANCE).
                 providerName("TEST").
+                relayState(RELAYSTATE).
                 build();
         assertNotNull(lightRequest);
     }
@@ -157,8 +159,9 @@ public final class LightRequestTest {
                         .requestedAttributes(REQUESTED_ATTRIBUTES)
                         .nameIdFormat(UNSPECIFIED)
                         .spType(PUBLIC)
+                        .relayState(RELAYSTATE)
                         .build();
-        String expected = "LightRequest{id='f5e7e0f5-b9b8-4256-a7d0-4090141b326d', citizenCountryCode='ES', issuer='http://localhost:7001/SP/metadata', levelOfAssurance='http://eidas.europa.eu/LoA/low', providerName='null', nameIdFormat='unspecified', spType='public', requestedAttributes='{AttributeDefinition{nameUri='http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName', friendlyName='FamilyName', personType=NaturalPerson, required=true, transliterationMandatory=false, uniqueIdentifier=false, xmlType='{http://eidas.europa.eu/attributes/naturalperson}CurrentFamilyNameType', attributeValueMarshaller='eu.eidas.auth.commons.attribute.impl.StringAttributeValueMarshaller'}=[Juncker], AttributeDefinition{nameUri='http://eidas.europa.eu/attributes/naturalperson/CurrentGivenName', friendlyName='FirstName', personType=NaturalPerson, required=true, transliterationMandatory=false, uniqueIdentifier=false, xmlType='{http://eidas.europa.eu/attributes/naturalperson}CurrentGivenNameType', attributeValueMarshaller='eu.eidas.auth.commons.attribute.impl.StringAttributeValueMarshaller'}=[Jean-Claude]}'}";
+        String expected = "LightRequest{id='f5e7e0f5-b9b8-4256-a7d0-4090141b326d', citizenCountryCode='ES', issuer='http://localhost:7001/SP/metadata', levelOfAssurance='http://eidas.europa.eu/LoA/low', providerName='null', nameIdFormat='unspecified', spType='public', relayState='MyRelayState', requestedAttributes='{AttributeDefinition{nameUri='http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName', friendlyName='FamilyName', personType=NaturalPerson, required=true, transliterationMandatory=false, uniqueIdentifier=false, xmlType='{http://eidas.europa.eu/attributes/naturalperson}CurrentFamilyNameType', attributeValueMarshaller='eu.eidas.auth.commons.attribute.impl.StringAttributeValueMarshaller'}=[Juncker], AttributeDefinition{nameUri='http://eidas.europa.eu/attributes/naturalperson/CurrentGivenName', friendlyName='FirstName', personType=NaturalPerson, required=true, transliterationMandatory=false, uniqueIdentifier=false, xmlType='{http://eidas.europa.eu/attributes/naturalperson}CurrentGivenNameType', attributeValueMarshaller='eu.eidas.auth.commons.attribute.impl.StringAttributeValueMarshaller'}=[Jean-Claude]}'}";
         assertEquals(expected, lightRequest.toString());
     }
 }

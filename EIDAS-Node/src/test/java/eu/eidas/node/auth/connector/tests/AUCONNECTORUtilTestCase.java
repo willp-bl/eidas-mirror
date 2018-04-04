@@ -1,29 +1,30 @@
 /*
- * Copyright (c) 2016 by European Commission
+ * Copyright (c) 2017 by European Commission
  *
- * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
- * the European Commission - subsequent versions of the EUPL (the "Licence");
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
  * You may not use this work except in compliance with the Licence.
  * You may obtain a copy of the Licence at:
- * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the Licence is distributed on an "AS IS" basis,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
  * See the Licence for the specific language governing permissions and
  * limitations under the Licence.
- *
- * This product combines work with different licenses. See the "NOTICE" text
- * file for details on the various modules and licenses.
- * The "NOTICE" text file is part of the distribution. Any derivative works
- * that you distribute must include a readable copy of the "NOTICE" text file.
- *
  */
 
 package eu.eidas.node.auth.connector.tests;
 
 import com.hazelcast.core.Hazelcast;
-import eu.eidas.auth.commons.*;
+import com.hazelcast.core.HazelcastInstance;
+import eu.eidas.auth.commons.EIDASValues;
+import eu.eidas.auth.commons.EidasParameterKeys;
+import eu.eidas.auth.commons.RequestState;
+import eu.eidas.auth.commons.WebRequest;
+import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.cache.ConcurrentMapServiceDefaultImpl;
 import eu.eidas.auth.commons.cache.ConcurrentMapServiceDistributedImpl;
@@ -32,11 +33,15 @@ import eu.eidas.auth.commons.exceptions.InvalidParameterEIDASException;
 import eu.eidas.node.auth.connector.AUCONNECTORUtil;
 import eu.eidas.node.auth.util.tests.TestingConstants;
 import org.junit.*;
+import org.owasp.esapi.StringUtilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.FileNotFoundException;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -100,7 +105,7 @@ public class AUCONNECTORUtilTestCase {
         final AUCONNECTORUtil auconnectorutil = new AUCONNECTORUtil();
         auconnectorutil.setConcurrentMapService(new ConcurrentMapServiceDefaultImpl());
         auconnectorutil.setConfigs(CONFIGS);
-        Assert.assertNull(auconnectorutil.loadConfig(EidasParameterKeys.EIDAS_ASK_CONSENT_VALUE
+        Assert.assertNull(auconnectorutil.loadConfig(EidasParameterKeys.QAALEVEL
                 .toString()));
     }
 
@@ -198,75 +203,6 @@ public class AUCONNECTORUtilTestCase {
     }
 
     /**
-     * Test method for
-     * {@link AUCONNECTORUtil# checkContents(String, IPersonalAttributeList)} . Must
-     * return false.
-     */
-    @Test
-    @Ignore
-    public void testCheckContentsNoPermission() {
-        final AUCONNECTORUtil auconnectorutil = new AUCONNECTORUtil();
-        auconnectorutil.setConcurrentMapService(new ConcurrentMapServiceDefaultImpl());
-        CONFIGS.remove(TestingConstants.SPID_CONS.toString());
-        auconnectorutil.setConfigs(CONFIGS);
-        Assert.assertFalse(auconnectorutil.checkContents(
-                TestingConstants.SPID_CONS.toString(), ImmutableAttributeMap.of()));
-    }
-
-    /**
-     * Test method for
-     * {@link AUCONNECTORUtil# checkContents(String, IPersonalAttributeList)} . Must
-     * return true.
-     */
-    @Ignore
-    @Test
-    public void testCheckContentsAll() {
-        final AUCONNECTORUtil auconnectorutil = new AUCONNECTORUtil();
-        auconnectorutil.setConcurrentMapService(new ConcurrentMapServiceDefaultImpl());
-        CONFIGS.put(EIDASValues.DEFAULT.toString(),
-                TestingConstants.ALL_CONS.toString());
-        auconnectorutil.setConfigs(CONFIGS);
-        Assert.assertTrue(auconnectorutil.checkContents(TestingConstants.SPID_CONS.toString(),
-                                                        ImmutableAttributeMap.of()));
-    }
-
-    /**
-     * Test method for
-     * {@link AUCONNECTORUtil# checkContents(String, IPersonalAttributeList)} . Must
-     * return false.
-     */
-    @Test
-    @Ignore
-    public void testCheckContentsNotAllowed() {
-        final AUCONNECTORUtil auconnectorutil = new AUCONNECTORUtil();
-        auconnectorutil.setConcurrentMapService(new ConcurrentMapServiceDefaultImpl());
-        CONFIGS.put(TestingConstants.SPID_CONS.toString(),
-                TestingConstants.EMPTY_CONS.toString());
-
-        auconnectorutil.setConfigs(CONFIGS);
-        Assert.assertFalse(auconnectorutil.checkContents(
-                TestingConstants.SPID_CONS.toString(), ImmutableAttributeMap.of()));
-    }
-
-    /**
-     * Test method for
-     * {@link AUCONNECTORUtil# checkContents(String, IPersonalAttributeList)} . Must
-     * return true.
-     */
-    @Test
-    @Ignore
-    public void testCheckContents() {
-        final AUCONNECTORUtil auconnectorutil = new AUCONNECTORUtil();
-        auconnectorutil.setConcurrentMapService(new ConcurrentMapServiceDefaultImpl());
-        CONFIGS.put(TestingConstants.SPID_CONS.toString(),
-                TestingConstants.ALLOWED_ATTRIBUTES_CONS.toString());
-
-        auconnectorutil.setConfigs(CONFIGS);
-        Assert.assertTrue(auconnectorutil.checkContents(TestingConstants.SPID_CONS.toString(),
-                                                        ImmutableAttributeMap.of()));
-    }
-
-    /**
      * Checks the default antireplay Cache.
      */
     @Test
@@ -288,7 +224,9 @@ public class AUCONNECTORUtilTestCase {
         final AUCONNECTORUtil auconnectorutil = new AUCONNECTORUtil();
         ConcurrentMapServiceDistributedImpl hazelCache = new ConcurrentMapServiceDistributedImpl();
         HazelcastInstanceInitializer initializer = new HazelcastInstanceInitializer();
-        initializer.setHazelcastInstanceName("TEST");
+        final String hazecastInstanceName = "TEST";
+        initializer.setHazelcastInstanceName(hazecastInstanceName);
+        initializer.setHazelcastConfigfileName("src/test/resources/hazelcastTest.xml");
         try {
             initializer.initializeInstance();
         } catch (FileNotFoundException e) {
@@ -303,6 +241,9 @@ public class AUCONNECTORUtilTestCase {
         Assert.assertTrue("FIRST pass of replay attack", auconnectorutil.checkNotPresentInCache(ANTIREPLAY_SAML_ID_A, "EU"));
         // Second submission of same value, replay attack must be detected
         Assert.assertFalse("Second pass of replay attack", auconnectorutil.checkNotPresentInCache(ANTIREPLAY_SAML_ID_A, "EU"));
+
+        final HazelcastInstance hazelcastInstanceByName = Hazelcast.getHazelcastInstanceByName(hazecastInstanceName);
+        hazelcastInstanceByName.getLifecycleService().shutdown();
     }
 
     @Test(expected=InvalidParameterEIDASException.class)
@@ -310,4 +251,5 @@ public class AUCONNECTORUtilTestCase {
         ConcurrentMapServiceDistributedImpl hazelCache = new ConcurrentMapServiceDistributedImpl();
         hazelCache.getConfiguredMapCache();
     }
+
 }

@@ -10,5 +10,5 @@ import javax.annotation.Nonnull;
 public interface ProtocolConfigurationAccessor {
 
     @Nonnull
-    ProtocolEngineConfiguration get() throws SamlEngineConfigurationException;
+    ProtocolEngineConfiguration get() throws ProtocolEngineConfigurationException;
 }

@@ -33,17 +33,6 @@ import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
 public interface ISERVICEService {
 
     /**
-     * Decodes the SAML Token, normalizes data from the request format to specific format, and presents a consent-type
-     * form for the citizen to choose the optional attributes to be requested from the IdP/AP. Alternatively, the user
-     * can cancel the process.
-     *
-     * @param parameters A map of attributes.
-     * @param session    The session to store the incoming authentication request.
-     * @return The newly created authentication request.
-     * @see EidasAuthenticationRequest
-     * @see Map
-     */
-    /**
      * Process the authentication request sent from the connector.
      *
      * @param webRequest the webrequest containing the token
@@ -58,26 +47,13 @@ public interface ISERVICEService {
                                                                 CorrelationMap<StoredAuthenticationRequest> requestCorrelationMap,
                                                         @Nonnull String remoteIpAddress);
 
-    /**
-     * Validates the consent sent by the citizen, then redirects the citizen to the IdP for the login process.
-     *
-     * @param parameters A map of attributes.
-     * @param session The current session.
-     * @param askConsentType Whether The consent-type form was present or not.
-     * @return The Personal Attribute List updated with user consent.
-     * @see Map
-     * @see EidasAuthenticationRequest
-     */
-    IAuthenticationRequest processCitizenConsent(WebRequest webRequest,
-                                                 @Nonnull StoredAuthenticationRequest storedRequest,
-                                                 boolean askConsentType);
 
     /**
-     * Normalizes the attributes to request format (eg eIDAS), generates the SAML Tokens to send to Connector, and if
-     * required displays the consent-value form.
+     * Normalizes the attributes to request format (eg eIDAS), generates the SAML Tokens to send to Connector.
      *
-     * @param parameters A map of attributes.
-     * @param session The current session.
+     * @param webRequest
+     * @param proxyServiceRequest
+     * @param idpResponse
      * @return The new authentication request.
      * @see EidasAuthenticationRequest
      * @see Map

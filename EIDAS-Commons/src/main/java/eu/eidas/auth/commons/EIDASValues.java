@@ -107,10 +107,6 @@ public enum EIDASValues {
      */
     EIDAS_CONNECTOR_PREFIX("eidasconnector"),
     /**
-     * Represents the 'sp.default.parameters' constant value.
-     */
-    DEFAULT("sp.default.parameters"),
-    /**
      * Represents the default saml id constant value.
      */
     DEFAULT_SAML_ID("1"),
@@ -250,7 +246,6 @@ public enum EIDASValues {
     RESPONSE_ENCRYPTION_MANDATORY("response.encryption.mandatory"),
     DISABLE_CHECK_MANDATORY_ATTRIBUTES("disable.check.mandatory.eidas.attributes"),
     DISABLE_CHECK_REPRESENTATIVE_ATTRS("disable.check.representative.attributes"),
-    NODE_SUPPORT_EIDAS_MESSAGE_FORMAT_ONLY("eidasNodeOnly"),
 
     // put the ; on a separate line to make merges easier
     ;

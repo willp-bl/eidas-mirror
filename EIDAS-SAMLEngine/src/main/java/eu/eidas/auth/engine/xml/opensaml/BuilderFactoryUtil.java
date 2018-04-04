@@ -1,40 +1,43 @@
+/*
+ * Copyright (c) 2017 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
+ */
+
 package eu.eidas.auth.engine.xml.opensaml;
 
-import javax.xml.namespace.QName;
-
+import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
-import org.opensaml.Configuration;
-import org.opensaml.common.SAMLVersion;
-import org.opensaml.common.xml.SAMLConstants;
-import org.opensaml.saml2.common.Extensions;
-import org.opensaml.saml2.common.impl.ExtensionsBuilder;
-import org.opensaml.saml2.core.Assertion;
-import org.opensaml.saml2.core.AuthnContext;
-import org.opensaml.saml2.core.AuthnRequest;
-import org.opensaml.saml2.core.AuthnStatement;
-import org.opensaml.saml2.core.Issuer;
-import org.opensaml.saml2.core.NameID;
-import org.opensaml.saml2.core.Response;
-import org.opensaml.saml2.core.Status;
-import org.opensaml.saml2.core.StatusCode;
-import org.opensaml.saml2.core.StatusMessage;
-import org.opensaml.saml2.core.Subject;
-import org.opensaml.saml2.core.SubjectConfirmation;
-import org.opensaml.saml2.core.SubjectConfirmationData;
-import org.opensaml.saml2.core.SubjectLocality;
-import org.opensaml.saml2.core.impl.AssertionBuilder;
-import org.opensaml.xml.XMLObject;
-import org.opensaml.xml.XMLObjectBuilder;
-import org.opensaml.xml.XMLObjectBuilderFactory;
-import org.opensaml.xml.signature.KeyInfo;
+import org.opensaml.core.xml.XMLObject;
+import org.opensaml.core.xml.XMLObjectBuilder;
+import org.opensaml.core.xml.XMLObjectBuilderFactory;
+import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
+import org.opensaml.saml.common.SAMLVersion;
+import org.opensaml.saml.common.xml.SAMLConstants;
+import org.opensaml.saml.saml2.core.*;
+import org.opensaml.saml.saml2.core.impl.AssertionBuilder;
+import org.opensaml.saml.saml2.core.impl.ExtensionsBuilder;
+import org.opensaml.xmlsec.signature.KeyInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
+import javax.xml.namespace.QName;
 
 /**
- * Open SAML {@link org.opensaml.xml.XMLObjectBuilderFactory} utility class.
+ * Open SAML {@link XMLObjectBuilderFactory} utility class.
  *
  * @since 1.1
  */
@@ -52,7 +55,7 @@ public final class BuilderFactoryUtil {
      * @return the XML object
      */
     public static XMLObject buildXmlObject(QName qname) throws EIDASSAMLEngineException {
-        XMLObjectBuilder builder = Configuration.getBuilderFactory().getBuilder(qname);
+        XMLObjectBuilder builder = XMLObjectProviderRegistrySupport.getBuilderFactory().getBuilder(qname);
         if (builder == null) {
             throw new EIDASSAMLEngineException("Unable to instantiate BuilderFactory from qname " + qname);
         }
@@ -60,7 +63,7 @@ public final class BuilderFactoryUtil {
     }
 
     public static <T> T buildXmlObject(Class<T> clazz) throws NoSuchFieldException, IllegalAccessException {
-        XMLObjectBuilderFactory builderFactory = Configuration.getBuilderFactory();
+        XMLObjectBuilderFactory builderFactory = XMLObjectProviderRegistrySupport.getBuilderFactory();
 
         QName defaultElementName = (QName) clazz.getDeclaredField("DEFAULT_ELEMENT_NAME").get(null);
         XMLObjectBuilder builder = builderFactory.getBuilder(defaultElementName);
@@ -77,7 +80,7 @@ public final class BuilderFactoryUtil {
      * @return the xML object
      */
     public static XMLObject buildXmlObject(QName qname, QName qname1) {
-        return Configuration.getBuilderFactory().getBuilder(qname1).buildObject(qname, qname1);
+        return XMLObjectProviderRegistrySupport.getBuilderFactory().getBuilder(qname1).buildObject(qname, qname1);
     }
 
     /**
@@ -152,16 +155,6 @@ public final class BuilderFactoryUtil {
     }
 
     /**
-     * Generate metadata extension.
-     *
-     * @return the extensions
-     */
-    public static Extensions generateMetadataExtension() {
-        ExtensionsBuilder extensionsBuilder = new ExtensionsBuilder();
-        return extensionsBuilder.buildObject(SAMLConstants.SAML20MD_NS, "Extensions", "md");
-    }
-
-    /**
      * Generate issuer.
      *
      * @return the issuer
@@ -198,7 +191,7 @@ public final class BuilderFactoryUtil {
      */
     public static NameID generateNameID(String nameQualifier, String format, String spNameQualifier) {
         // <saml:NameID>
-        NameID nameId = (NameID) Configuration.getBuilderFactory()
+        NameID nameId = (NameID) XMLObjectProviderRegistrySupport.getBuilderFactory()
                 .getBuilder(NameID.DEFAULT_ELEMENT_NAME)
                 .buildObject(NameID.DEFAULT_ELEMENT_NAME);
 
@@ -284,7 +277,7 @@ public final class BuilderFactoryUtil {
      * @return the subject confirmation
      */
     public static SubjectConfirmation generateSubjectConfirmation(String method, SubjectConfirmationData data) {
-        final SubjectConfirmation subjectConf = (SubjectConfirmation) Configuration.getBuilderFactory()
+        final SubjectConfirmation subjectConf = (SubjectConfirmation) XMLObjectProviderRegistrySupport.getBuilderFactory()
                 .getBuilder(SubjectConfirmation.DEFAULT_ELEMENT_NAME)
                 .buildObject(SubjectConfirmation.DEFAULT_ELEMENT_NAME);
 

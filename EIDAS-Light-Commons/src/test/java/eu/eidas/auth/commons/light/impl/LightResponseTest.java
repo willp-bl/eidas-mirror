@@ -25,9 +25,15 @@ public final class LightResponseTest {
 
     private static final String IP_ADDRESS = "127.0.0.1";
 
+    private static final String RELAYSTATE = "GONCZ_ARPAD";
+
     private static final String ID = "f5e7e0f5-b9b8-4256-a7d0-4090141b326d";
 
     private static final String ISSUER = "http://localhost:7001/IdP/metadata";
+
+    private static final String SUBJECT = "ES/FI/0123456";
+
+    private static final String SUBJECT_NAME_ID_FORMAT = "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent";
 
     private static final String IN_RESPONSE_TO_ID = "x4e7e0f5-b9b8-4256-a7d0-4090141b320u";
 
@@ -71,6 +77,8 @@ public final class LightResponseTest {
         LightResponse lightResponse = new LightResponse.Builder().id(ID)
                 .issuer(ISSUER)
                 .ipAddress(IP_ADDRESS)
+                .subject(SUBJECT)
+                .subjectNameIdFormat(SUBJECT_NAME_ID_FORMAT)
                 .status(ResponseStatus.builder().statusCode(STATUS_CODE).build())
                 .inResponseToId(IN_RESPONSE_TO_ID)
                 .levelOfAssurance(LEVEL_OF_ASSURANCE)
@@ -97,6 +105,40 @@ public final class LightResponseTest {
         LightResponse lightResponse = new LightResponse.Builder().id(ID)
                 .issuer(ISSUER)
                 .ipAddress(null)
+                .subject(SUBJECT)
+                .subjectNameIdFormat(SUBJECT_NAME_ID_FORMAT)
+                .status(ResponseStatus.builder().statusCode(STATUS_CODE).build())
+                .inResponseToId(IN_RESPONSE_TO_ID)
+                .levelOfAssurance(LEVEL_OF_ASSURANCE)
+                .build();
+        assertNotNull(lightResponse);
+        assertNull(lightResponse.getIPAddress());
+    }
+
+    @Test
+    public void testValidationOnBuildForMissingSubject() {
+        thrown.expect(IllegalArgumentException.class);
+        thrown.expectMessage("subject cannot be null");
+        LightResponse lightResponse = new LightResponse.Builder().id(ID)
+                .issuer(ISSUER)
+                .ipAddress(IP_ADDRESS)
+                .subjectNameIdFormat(SUBJECT_NAME_ID_FORMAT)
+                .status(ResponseStatus.builder().statusCode(STATUS_CODE).build())
+                .inResponseToId(IN_RESPONSE_TO_ID)
+                .levelOfAssurance(LEVEL_OF_ASSURANCE)
+                .build();
+        assertNotNull(lightResponse);
+        assertNull(lightResponse.getIPAddress());
+    }
+
+    @Test
+    public void testValidationOnBuildForMissingSubjectNameId() {
+        thrown.expect(IllegalArgumentException.class);
+        thrown.expectMessage("subjectNameIdFormat cannot be null");
+        LightResponse lightResponse = new LightResponse.Builder().id(ID)
+                .issuer(ISSUER)
+                .ipAddress(IP_ADDRESS)
+                .subject(SUBJECT)
                 .status(ResponseStatus.builder().statusCode(STATUS_CODE).build())
                 .inResponseToId(IN_RESPONSE_TO_ID)
                 .levelOfAssurance(LEVEL_OF_ASSURANCE)
@@ -108,8 +150,15 @@ public final class LightResponseTest {
     @Test
     public void testValidationOnBuildForMissingStatus() {
         thrown.expect(IllegalArgumentException.class);
-        thrown.expectMessage("status cannot be null");
-        new LightResponse.Builder().id(ID).issuer(ISSUER).ipAddress(IP_ADDRESS).build();
+        thrown.expectMessage("statusCode cannot be null");
+        new LightResponse.Builder().
+                id(ID).
+                issuer(ISSUER).
+                ipAddress(IP_ADDRESS)
+                .subject(SUBJECT)
+                .subjectNameIdFormat(SUBJECT_NAME_ID_FORMAT)
+                .status(ResponseStatus.builder().build())
+                .build();
     }
 
     @Test
@@ -118,6 +167,8 @@ public final class LightResponseTest {
         thrown.expectMessage("statusCode cannot be null");
         new LightResponse.Builder().id(ID)
                 .issuer(ISSUER)
+                .subject(SUBJECT)
+                .subjectNameIdFormat(SUBJECT_NAME_ID_FORMAT)
                 .ipAddress(IP_ADDRESS)
                 .status(ResponseStatus.builder().build())
                 .build();
@@ -130,6 +181,8 @@ public final class LightResponseTest {
         new LightResponse.Builder().id(ID)
                 .issuer(ISSUER)
                 .ipAddress(IP_ADDRESS)
+                .subject(SUBJECT)
+                .subjectNameIdFormat(SUBJECT_NAME_ID_FORMAT)
                 .status(ResponseStatus.builder().statusCode(STATUS_CODE).build())
                 .build();
     }
@@ -139,6 +192,8 @@ public final class LightResponseTest {
         LightResponse lightResponse = new LightResponse.Builder().id(ID)
                 .issuer(ISSUER)
                 .ipAddress(IP_ADDRESS)
+                .subject(SUBJECT)
+                .subjectNameIdFormat(SUBJECT_NAME_ID_FORMAT)
                 .status(ResponseStatus.builder().statusCode(STATUS_CODE).build())
                 .inResponseToId(IN_RESPONSE_TO_ID)
                 .levelOfAssurance(null)
@@ -152,6 +207,8 @@ public final class LightResponseTest {
         LightResponse lightResponse1 = new LightResponse.Builder().id(ID)
                 .issuer(ISSUER)
                 .ipAddress(IP_ADDRESS)
+                .subject(SUBJECT)
+                .subjectNameIdFormat(SUBJECT_NAME_ID_FORMAT)
                 .status(ResponseStatus.builder().statusCode(STATUS_CODE).build())
                 .inResponseToId(IN_RESPONSE_TO_ID)
                 .levelOfAssurance(LEVEL_OF_ASSURANCE)
@@ -167,6 +224,8 @@ public final class LightResponseTest {
         LightResponse lightResponse1 = new LightResponse.Builder().id(ID)
                 .issuer(ISSUER)
                 .ipAddress(IP_ADDRESS)
+                .subject(SUBJECT)
+                .subjectNameIdFormat(SUBJECT_NAME_ID_FORMAT)
                 .status(ResponseStatus.builder().statusCode(STATUS_CODE).build())
                 .inResponseToId(IN_RESPONSE_TO_ID)
                 .levelOfAssurance(LEVEL_OF_ASSURANCE)
@@ -174,6 +233,8 @@ public final class LightResponseTest {
         LightResponse lightResponse2 = new LightResponse.Builder().id(ID)
                 .issuer(ISSUER)
                 .ipAddress(IP_ADDRESS)
+                .subject(SUBJECT)
+                .subjectNameIdFormat(SUBJECT_NAME_ID_FORMAT)
                 .status(ResponseStatus.builder().statusCode(STATUS_CODE).build())
                 .inResponseToId(IN_RESPONSE_TO_ID)
                 .levelOfAssurance(LEVEL_OF_ASSURANCE)
@@ -187,6 +248,8 @@ public final class LightResponseTest {
         LightResponse lightResponse1 = new LightResponse.Builder().id(ID)
                 .issuer(ISSUER)
                 .ipAddress(IP_ADDRESS)
+                .subject(SUBJECT)
+                .subjectNameIdFormat(SUBJECT_NAME_ID_FORMAT)
                 .status(ResponseStatus.builder().statusCode(STATUS_CODE).build())
                 .inResponseToId(IN_RESPONSE_TO_ID)
                 .levelOfAssurance(LEVEL_OF_ASSURANCE)
@@ -194,6 +257,8 @@ public final class LightResponseTest {
         LightResponse lightResponse2 = new LightResponse.Builder().id(ID)
                 .issuer(ISSUER)
                 .ipAddress(IP_ADDRESS)
+                .subject(SUBJECT)
+                .subjectNameIdFormat(SUBJECT_NAME_ID_FORMAT)
                 .status(ResponseStatus.builder().statusCode(STATUS_CODE).subStatusCode(SUB_STATUS_CODE).build())
                 .inResponseToId(IN_RESPONSE_TO_ID)
                 .levelOfAssurance(LEVEL_OF_ASSURANCE)
@@ -207,6 +272,8 @@ public final class LightResponseTest {
         LightResponse lightResponse1 = new LightResponse.Builder().id(ID)
                 .issuer(ISSUER)
                 .ipAddress(IP_ADDRESS)
+                .subject(SUBJECT)
+                .subjectNameIdFormat(SUBJECT_NAME_ID_FORMAT)
                 .status(ResponseStatus.builder().statusCode(STATUS_CODE).build())
                 .inResponseToId(IN_RESPONSE_TO_ID)
                 .levelOfAssurance(LEVEL_OF_ASSURANCE)
@@ -214,6 +281,8 @@ public final class LightResponseTest {
         LightResponse lightResponse2 = new LightResponse.Builder().id(ID)
                 .issuer(ISSUER)
                 .ipAddress(IP_ADDRESS)
+                .subject(SUBJECT)
+                .subjectNameIdFormat(SUBJECT_NAME_ID_FORMAT)
                 .status(ResponseStatus.builder().statusCode(STATUS_CODE).build())
                 .inResponseToId(IN_RESPONSE_TO_ID)
                 .levelOfAssurance(LEVEL_OF_ASSURANCE)
@@ -226,6 +295,8 @@ public final class LightResponseTest {
         LightResponse lightResponse = new LightResponse.Builder().id(ID)
                 .issuer(ISSUER)
                 .ipAddress(IP_ADDRESS)
+                .subject(SUBJECT)
+                .subjectNameIdFormat(SUBJECT_NAME_ID_FORMAT)
                 .status(ResponseStatus.builder().statusCode(STATUS_CODE).build())
                 .inResponseToId(IN_RESPONSE_TO_ID)
                 .levelOfAssurance(LEVEL_OF_ASSURANCE)
@@ -238,6 +309,8 @@ public final class LightResponseTest {
         LightResponse lightResponse = new LightResponse.Builder().id(ID)
                 .issuer(ISSUER)
                 .ipAddress(IP_ADDRESS)
+                .subject(SUBJECT)
+                .subjectNameIdFormat(SUBJECT_NAME_ID_FORMAT)
                 .status(ResponseStatus.builder().statusCode(STATUS_CODE).build())
                 .inResponseToId(IN_RESPONSE_TO_ID)
                 .levelOfAssurance(LEVEL_OF_ASSURANCE)
@@ -250,6 +323,8 @@ public final class LightResponseTest {
         LightResponse lightResponse = new LightResponse.Builder().id(ID)
                 .issuer(ISSUER)
                 .ipAddress(IP_ADDRESS)
+                .subject(SUBJECT)
+                .subjectNameIdFormat(SUBJECT_NAME_ID_FORMAT)
                 .status(ResponseStatus.builder().statusCode(STATUS_CODE).statusMessage(STATUS_MESSAGE).build())
                 .inResponseToId(IN_RESPONSE_TO_ID)
                 .levelOfAssurance(LEVEL_OF_ASSURANCE)
@@ -262,6 +337,8 @@ public final class LightResponseTest {
         LightResponse lightResponse = new LightResponse.Builder().id(ID)
                 .issuer(ISSUER)
                 .ipAddress(IP_ADDRESS)
+                .subject(SUBJECT)
+                .subjectNameIdFormat(SUBJECT_NAME_ID_FORMAT)
                 .status(ResponseStatus.builder().statusCode(STATUS_CODE).failure(true).build())
                 .inResponseToId(IN_RESPONSE_TO_ID)
                 .levelOfAssurance(LEVEL_OF_ASSURANCE)
@@ -274,6 +351,8 @@ public final class LightResponseTest {
         LightResponse lightResponse = new LightResponse.Builder().id(ID)
                 .issuer(ISSUER)
                 .ipAddress(IP_ADDRESS)
+                .subject(SUBJECT)
+                .subjectNameIdFormat(SUBJECT_NAME_ID_FORMAT)
                 .status(ResponseStatus.builder().statusCode(STATUS_CODE).build())
                 .inResponseToId(IN_RESPONSE_TO_ID)
                 .levelOfAssurance(LEVEL_OF_ASSURANCE)
@@ -286,6 +365,8 @@ public final class LightResponseTest {
         LightResponse lightResponse = new LightResponse.Builder().id(ID)
                 .issuer(ISSUER)
                 .ipAddress(IP_ADDRESS)
+                .subject(SUBJECT)
+                .subjectNameIdFormat(SUBJECT_NAME_ID_FORMAT)
                 .status(ResponseStatus.builder().statusCode(STATUS_CODE).build())
                 .inResponseToId(IN_RESPONSE_TO_ID)
                 .levelOfAssurance(LEVEL_OF_ASSURANCE)
@@ -298,6 +379,8 @@ public final class LightResponseTest {
         LightResponse lightResponse = new LightResponse.Builder().id(ID)
                 .issuer(ISSUER)
                 .ipAddress(IP_ADDRESS)
+                .subject(SUBJECT)
+                .subjectNameIdFormat(SUBJECT_NAME_ID_FORMAT)
                 .status(ResponseStatus.builder().statusCode(STATUS_CODE).subStatusCode(SUB_STATUS_CODE).build())
                 .inResponseToId(IN_RESPONSE_TO_ID)
                 .levelOfAssurance(LEVEL_OF_ASSURANCE)
@@ -310,6 +393,8 @@ public final class LightResponseTest {
         LightResponse lightResponse = new LightResponse.Builder().id(ID)
                 .issuer(ISSUER)
                 .ipAddress(IP_ADDRESS)
+                .subject(SUBJECT)
+                .subjectNameIdFormat(SUBJECT_NAME_ID_FORMAT)
                 .status(ResponseStatus.builder().statusCode(STATUS_CODE).build())
                 .inResponseToId(IN_RESPONSE_TO_ID)
                 .levelOfAssurance(LEVEL_OF_ASSURANCE)
@@ -322,6 +407,8 @@ public final class LightResponseTest {
         LightResponse lightResponse = new LightResponse.Builder().id(ID)
                 .issuer(ISSUER)
                 .ipAddress(IP_ADDRESS)
+                .subject(SUBJECT)
+                .subjectNameIdFormat(SUBJECT_NAME_ID_FORMAT)
                 .status(ResponseStatus.builder().statusCode(STATUS_CODE).build())
                 .inResponseToId(IN_RESPONSE_TO_ID)
                 .levelOfAssurance(LEVEL_OF_ASSURANCE)
@@ -334,6 +421,8 @@ public final class LightResponseTest {
         LightResponse lightResponse = new LightResponse.Builder().id(ID)
                 .issuer(ISSUER)
                 .ipAddress(IP_ADDRESS)
+                .subject(SUBJECT)
+                .subjectNameIdFormat(SUBJECT_NAME_ID_FORMAT)
                 .status(ResponseStatus.builder().statusCode(STATUS_CODE).build())
                 .inResponseToId(IN_RESPONSE_TO_ID)
                 .levelOfAssurance(LEVEL_OF_ASSURANCE)
@@ -346,6 +435,7 @@ public final class LightResponseTest {
     public void testToString() throws Exception {
         LightResponse lightResponse = new LightResponse.Builder().id(ID)
                 .issuer(ISSUER)
+                .relayState(RELAYSTATE)
                 .inResponseToId(IN_RESPONSE_TO_ID)
                 .status(ResponseStatus.builder()
                         .statusCode(STATUS_CODE)
@@ -354,10 +444,12 @@ public final class LightResponseTest {
                         .failure(FAILURE)
                         .build())
                 .ipAddress(IP_ADDRESS)
+                .subject(SUBJECT)
+                .subjectNameIdFormat(SUBJECT_NAME_ID_FORMAT)
                 .levelOfAssurance(LEVEL_OF_ASSURANCE)
                 .attributes(ATTRIBUTES)
                 .build();
-        String expected = "LightResponse{id='f5e7e0f5-b9b8-4256-a7d0-4090141b326d', issuer='http://localhost:7001/IdP/metadata', status='ResponseStatus{failure='false', statusCode='urn:oasis:names:tc:SAML:2.0:status:Success_CODE', statusMessage='urn:oasis:names:tc:SAML:2.0:status:Success_MESSAGE', subStatusCode='urn:oasis:names:tc:SAML:2.0:status:Success_SUB_CODE'}', ipAddress='127.0.0.1', inResponseToId='x4e7e0f5-b9b8-4256-a7d0-4090141b320u', levelOfAssurance='http://eidas.europa.eu/LoA/low', attributes='{AttributeDefinition{nameUri='http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName', friendlyName='FamilyName', personType=NaturalPerson, required=true, transliterationMandatory=false, uniqueIdentifier=false, xmlType='{http://eidas.europa.eu/attributes/naturalperson}CurrentFamilyNameType', attributeValueMarshaller='eu.eidas.auth.commons.attribute.impl.StringAttributeValueMarshaller'}=[Juncker], AttributeDefinition{nameUri='http://eidas.europa.eu/attributes/naturalperson/CurrentGivenName', friendlyName='FirstName', personType=NaturalPerson, required=true, transliterationMandatory=false, uniqueIdentifier=false, xmlType='{http://eidas.europa.eu/attributes/naturalperson}CurrentGivenNameType', attributeValueMarshaller='eu.eidas.auth.commons.attribute.impl.StringAttributeValueMarshaller'}=[Jean-Claude]}'}";
+        String expected = "LightResponse{id='f5e7e0f5-b9b8-4256-a7d0-4090141b326d', relayState='GONCZ_ARPAD', issuer='http://localhost:7001/IdP/metadata', subject='ES/FI/0123456', subjectNameIdFormat='urn:oasis:names:tc:SAML:2.0:nameid-format:persistent', status='ResponseStatus{failure='false', statusCode='urn:oasis:names:tc:SAML:2.0:status:Success_CODE', statusMessage='urn:oasis:names:tc:SAML:2.0:status:Success_MESSAGE', subStatusCode='urn:oasis:names:tc:SAML:2.0:status:Success_SUB_CODE'}', ipAddress='127.0.0.1', inResponseToId='x4e7e0f5-b9b8-4256-a7d0-4090141b320u', levelOfAssurance='http://eidas.europa.eu/LoA/low', attributes='{AttributeDefinition{nameUri='http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName', friendlyName='FamilyName', personType=NaturalPerson, required=true, transliterationMandatory=false, uniqueIdentifier=false, xmlType='{http://eidas.europa.eu/attributes/naturalperson}CurrentFamilyNameType', attributeValueMarshaller='eu.eidas.auth.commons.attribute.impl.StringAttributeValueMarshaller'}=[Juncker], AttributeDefinition{nameUri='http://eidas.europa.eu/attributes/naturalperson/CurrentGivenName', friendlyName='FirstName', personType=NaturalPerson, required=true, transliterationMandatory=false, uniqueIdentifier=false, xmlType='{http://eidas.europa.eu/attributes/naturalperson}CurrentGivenNameType', attributeValueMarshaller='eu.eidas.auth.commons.attribute.impl.StringAttributeValueMarshaller'}=[Jean-Claude]}'}";
         assertEquals(expected, lightResponse.toString());
     }
 }

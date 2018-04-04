@@ -1,24 +1,26 @@
 /*
- * This work is Open Source and licensed by the European Commission under the
- * conditions of the European Public License v1.1
+ * Copyright (c) 2017 by European Commission
  *
- * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1);
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
  *
- * any use of this file implies acceptance of the conditions of this license.
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations
- * under the License.
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
  */
 package eu.eidas.node.auth.connector;
 
+import static java.lang.Boolean.parseBoolean;
+
 import javax.annotation.Nonnull;
 
-import com.google.common.collect.ImmutableSet;
-import eu.eidas.auth.commons.attribute.AttributeDefinition;
-import eu.eidas.auth.commons.exceptions.EIDASServiceException;
-import eu.eidas.auth.engine.core.eidas.spec.LegalPersonSpec;
 import org.apache.commons.lang.StringUtils;
 import org.bouncycastle.util.encoders.Base64;
 import org.slf4j.Logger;
@@ -35,17 +37,13 @@ import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.IAuthenticationResponse;
 import eu.eidas.auth.commons.protocol.IRequestMessage;
 import eu.eidas.auth.commons.protocol.eidas.IEidasAuthenticationRequest;
-import eu.eidas.auth.commons.protocol.eidas.SpType;
 import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.impl.BinaryRequestMessage;
 import eu.eidas.auth.commons.tx.AuthenticationExchange;
 import eu.eidas.auth.commons.tx.CorrelationMap;
 import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
 import eu.eidas.auth.commons.tx.StoredLightRequest;
-import eu.eidas.auth.engine.core.eidas.SPType;
 import eu.eidas.node.NodeParameterNames;
-
-import static java.lang.Boolean.parseBoolean;
 
 /**
  * The AUCONNECTOR class serves as the middle-man in the communications between the Service Provider and the eIDAS
@@ -70,26 +68,6 @@ public final class AUCONNECTOR implements ICONNECTORService {
      * Service for SAML related operations.
      */
     private ICONNECTORSAMLService samlService;
-
-    /**
-     * Default SP Application.
-     */
-    private String spApplication;
-
-    /**
-     * Default SP Country.
-     */
-    private String spCountry;
-
-    /**
-     * Default SP Institution.
-     */
-    private String spInstitution;
-
-    /**
-     * Default SP Sector.
-     */
-    private String spSector;
 
     /**
      * Connector configuration.
@@ -125,13 +103,11 @@ public final class AUCONNECTOR implements ICONNECTORService {
         specificSpRequestCorrelationMap.put(connectorRequestSamlId, StoredLightRequest.builder()
                 .request(lightRequest)
                 .remoteIpAddress(citizenIpAddress)
-                .relayState(relayState)
                 .build());
 
         connectorRequestCorrelationMap.put(connectorRequestSamlId, StoredAuthenticationRequest.builder()
                 .request(connectorRequest.getRequest())
                 .remoteIpAddress(citizenIpAddress)
-                .relayState(relayState)
                 .build());
 
         return connectorRequest;
@@ -155,22 +131,6 @@ public final class AUCONNECTOR implements ICONNECTORService {
             throw new EidasNodeException(EidasErrors.get(EidasErrorKey.EIDAS_REPRESENTATIVE_ATTRIBUTES.errorCode()),
                     EidasErrors.get(EidasErrorKey.EIDAS_REPRESENTATIVE_ATTRIBUTES.errorMessage()));
         }
-
-        /* EID-423: wrong attribute name was implemented prior to 1.4, backward compatibility if for the Network only to ensure business continuity, the
-        *  Specific must Request the right ones in the interface*/
-        //TODO START remove check of erroneous attributes after transition period of EID-423
-        ImmutableSet<AttributeDefinition<?>> requestedAttributes = authData.getRequestedAttributes().getDefinitions();
-        if (requestedAttributes != null && requestedAttributes.contains(LegalPersonSpec.Definitions.LEGAL_ADDRESS)) {
-            LOG.error("BUSINESS EXCEPTION : "+LegalPersonSpec.Definitions.LEGAL_ADDRESS.getNameUri().toASCIIString()+" was requested instead of "+LegalPersonSpec.Definitions.LEGAL_PERSON_ADDRESS.getNameUri().toASCIIString());
-            throw new EidasNodeException(EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INVALID_SAML.errorCode()),
-                    EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INVALID_SAML.errorMessage()));
-        }
-        if (requestedAttributes != null && requestedAttributes.contains(LegalPersonSpec.Definitions.VAT_REGISTRATION)) {
-            LOG.error("BUSINESS EXCEPTION : "+LegalPersonSpec.Definitions.VAT_REGISTRATION.getNameUri().toASCIIString()+" was requested instead of "+LegalPersonSpec.Definitions.VAT_REGISTRATION_NUMBER.getNameUri().toASCIIString());
-            throw new EidasNodeException(EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INVALID_SAML.errorCode()),
-                    EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INVALID_SAML.errorMessage()));
-        }
-        //TODO END remove check of erroneous attributes after transition period of EID-423
 
         LOG.trace("do not fill in the assertion url");
 
@@ -303,51 +263,6 @@ public final class AUCONNECTOR implements ICONNECTORService {
         return samlService;
     }
 
-    /**
-     * Getter for spApplication.
-     *
-     * @return The spApplication value.
-     */
-    public String getSpApplication() {
-        return spApplication;
-    }
-
-    /**
-     * Setter for default spApplication.
-     *
-     * @param nSpApplication The new spApplication value.
-     */
-    public void setSpApplication(String nSpApplication) {
-        this.spApplication = nSpApplication;
-    }
-
-    /**
-     * Setter for default spCountry.
-     *
-     * @param nSpCountry The new spCountry value.
-     */
-    public void setSpCountry(String nSpCountry) {
-        this.spCountry = nSpCountry;
-    }
-
-    /**
-     * Setter for default spInstitution.
-     *
-     * @param nSpInstitution The new spInstitution value.
-     */
-    public void setSpInstitution(String nSpInstitution) {
-        this.spInstitution = nSpInstitution;
-    }
-
-    /**
-     * Setter for default spSector.
-     *
-     * @param nSpSector The new spSector value.
-     */
-    public void setSpSector(String nSpSector) {
-        this.spSector = nSpSector;
-    }
-
     public void setConnectorUtil(AUCONNECTORUtil connectorUtil) {
         this.connectorUtil = connectorUtil;
     }
@@ -367,4 +282,6 @@ public final class AUCONNECTOR implements ICONNECTORService {
     public void setConnectorRequestCorrelationMap(CorrelationMap<StoredAuthenticationRequest> connectorRequestCorrelationMap) {
         this.connectorRequestCorrelationMap = connectorRequestCorrelationMap;
     }
+
+
 }

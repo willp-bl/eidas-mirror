@@ -7,6 +7,11 @@ import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
 import javax.annotation.concurrent.NotThreadSafe;
 import javax.annotation.concurrent.ThreadSafe;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlSeeAlso;
+import javax.xml.bind.annotation.XmlType;
 
 import eu.eidas.auth.commons.light.ILightResponse;
 
@@ -20,8 +25,16 @@ import eu.eidas.auth.commons.light.ILightResponse;
 @SuppressWarnings("ConstantConditions")
 @Immutable
 @ThreadSafe
+@XmlRootElement
+@XmlType(factoryMethod="newInstance")
+@XmlAccessorType(XmlAccessType.FIELD)
+@XmlSeeAlso(AbstractLightResponse.class)
 public final class LightResponse extends AbstractLightResponse implements Serializable {
 
+	@SuppressWarnings("unused")
+	private static LightResponse newInstance(){
+		return new LightResponse(builder());
+	}
     /**
      * Builder pattern for the {@link LightResponse} class.
      * <p/>

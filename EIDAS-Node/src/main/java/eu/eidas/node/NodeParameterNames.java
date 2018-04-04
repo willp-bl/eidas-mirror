@@ -35,8 +35,6 @@ public enum NodeParameterNames {
 
     CALLBACK_URL("callbackURL"),
 
-    CITIZEN_CONSENT_URL("citizenConsentUrl"),
-
     EIDAS_ATTRIBUTES_PARAM("eidasAttributes"),
 
     EIDAS_SERVICE_URL("serviceUrl"),
@@ -44,8 +42,6 @@ public enum NodeParameterNames {
     EXCEPTION("exception"),
 
     LOA_VALUE("LoA"),
-
-    PAL("pal"),
 
     QAA_LEVEL("qaaLevel"),
 
@@ -55,8 +51,6 @@ public enum NodeParameterNames {
 
     REQUEST_ID("requestId"),
 
-    COLLEAGUE_REQUEST("colleagueRequest"),
-
     SPECIFIC_RESPONSE("specificResponse"),
 
     SAML_TOKEN("samlToken"),
@@ -64,6 +58,8 @@ public enum NodeParameterNames {
     SAML_TOKEN_FAIL("samlTokenFail"),
 
     STR_ATTR_LIST("strAttrList"),
+
+    LIGHT_RESPONSE("lightResponse"),
 
     // put the ; on a separate line to make merges easier
     ;

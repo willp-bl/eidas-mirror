@@ -14,39 +14,23 @@
  */
 package eu.eidas.auth.engine.core.eidas;
 
-import javax.annotation.Nonnull;
-import javax.xml.namespace.QName;
-
 import com.google.common.collect.ImmutableSortedSet;
-
-import org.opensaml.Configuration;
-import org.opensaml.xml.schema.XSAny;
-import org.opensaml.xml.schema.impl.XSAnyBuilder;
-import org.opensaml.xml.schema.impl.XSAnyMarshaller;
-import org.opensaml.xml.schema.impl.XSAnyUnmarshaller;
-import org.opensaml.xml.util.XMLConstants;
-
-import eu.eidas.auth.commons.EIDASUtil;
 import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.engine.core.ProtocolProcessorI;
-import eu.eidas.auth.engine.core.eidas.impl.DigestMethodBuilder;
-import eu.eidas.auth.engine.core.eidas.impl.DigestMethodMarshaller;
-import eu.eidas.auth.engine.core.eidas.impl.DigestMethodUnmarshaller;
-import eu.eidas.auth.engine.core.eidas.impl.RequestedAttributeBuilder;
-import eu.eidas.auth.engine.core.eidas.impl.RequestedAttributeMarshaller;
-import eu.eidas.auth.engine.core.eidas.impl.RequestedAttributeUnmarshaller;
-import eu.eidas.auth.engine.core.eidas.impl.RequestedAttributesBuilder;
-import eu.eidas.auth.engine.core.eidas.impl.RequestedAttributesMarshaller;
-import eu.eidas.auth.engine.core.eidas.impl.RequestedAttributesUnmarshaller;
-import eu.eidas.auth.engine.core.eidas.impl.SPCountryBuilder;
-import eu.eidas.auth.engine.core.eidas.impl.SPCountryMarshaller;
-import eu.eidas.auth.engine.core.eidas.impl.SPCountryUnmarshaller;
-import eu.eidas.auth.engine.core.eidas.impl.SPTypeBuilder;
-import eu.eidas.auth.engine.core.eidas.impl.SPTypeMarshaller;
-import eu.eidas.auth.engine.core.eidas.impl.SPTypeUnmarshaller;
-import eu.eidas.auth.engine.core.eidas.impl.SigningMethodBuilder;
-import eu.eidas.auth.engine.core.eidas.impl.SigningMethodMarshaller;
-import eu.eidas.auth.engine.core.eidas.impl.SigningMethodUnmarshaller;
+import eu.eidas.auth.engine.core.eidas.impl.*;
+import eu.eidas.auth.engine.metadata.samlobjects.SPType;
+import eu.eidas.auth.engine.metadata.samlobjects.SPTypeBuilder;
+import eu.eidas.auth.engine.metadata.samlobjects.SPTypeMarshaller;
+import eu.eidas.auth.engine.metadata.samlobjects.SPTypeUnmarshaller;
+import net.shibboleth.utilities.java.support.xml.XMLConstants;
+import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
+import org.opensaml.core.xml.schema.XSAny;
+import org.opensaml.core.xml.schema.impl.XSAnyBuilder;
+import org.opensaml.core.xml.schema.impl.XSAnyMarshaller;
+import org.opensaml.core.xml.schema.impl.XSAnyUnmarshaller;
+
+import javax.annotation.Nonnull;
+import javax.xml.namespace.QName;
 
 /**
  * register the configuration for eIDAS format TODO: add unregister method
@@ -54,95 +38,40 @@ import eu.eidas.auth.engine.core.eidas.impl.SigningMethodUnmarshaller;
 public final class EidasExtensionConfiguration {
 
     /**
-     * @deprecated since 1.1
-     */
-    @Deprecated
-    public static void configureExtension(@Nonnull EidasExtensionProcessor extensionProcessor) {
-
-        Configuration.registerObjectProvider(RequestedAttribute.DEF_ELEMENT_NAME, new RequestedAttributeBuilder(),
-                                             new RequestedAttributeMarshaller(), new RequestedAttributeUnmarshaller());
-
-        Configuration.registerObjectProvider(RequestedAttributes.DEF_ELEMENT_NAME, new RequestedAttributesBuilder(),
-                                             new RequestedAttributesMarshaller(),
-                                             new RequestedAttributesUnmarshaller());
-
-        Configuration.registerObjectProvider(SigningMethod.DEF_ELEMENT_NAME, new SigningMethodBuilder(),
-                                             new SigningMethodMarshaller(), new SigningMethodUnmarshaller());
-
-        Configuration.registerObjectProvider(DigestMethod.DEF_ELEMENT_NAME, new DigestMethodBuilder(),
-                                             new DigestMethodMarshaller(), new DigestMethodUnmarshaller());
-
-        Configuration.registerObjectProvider(SPType.DEF_ELEMENT_NAME, new SPTypeBuilder(), new SPTypeMarshaller(),
-                                             new SPTypeUnmarshaller());
-
-        Configuration.registerObjectProvider(SPCountry.DEF_ELEMENT_NAME, new SPCountryBuilder(),
-                                             new SPCountryMarshaller(), new SPCountryUnmarshaller());
-
-        XSAnyBuilder xsAnyBuilder = new XSAnyBuilder();
-        XSAnyMarshaller xsAnyMarshaller = new XSAnyMarshaller();
-        XSAnyUnmarshaller xsAnyUnmarshaller = new XSAnyUnmarshaller();
-
-        Configuration.registerObjectProvider(XSAny.TYPE_NAME, xsAnyBuilder, xsAnyMarshaller, xsAnyUnmarshaller);
-
-        ImmutableSortedSet<AttributeDefinition<?>> attributeDefinitions = extensionProcessor.getAllSupportedAttributes();
-
-        for (final AttributeDefinition<?> attributeDefinition : attributeDefinitions) {
-            QName xmlType = attributeDefinition.getXmlType();
-            // do not overwrite XSD types
-            if (XMLConstants.XSD_NS.equals(xmlType.getNamespaceURI())) {
-                continue;
-            }
-            Configuration.registerObjectProvider(xmlType, xsAnyBuilder, xsAnyMarshaller, xsAnyUnmarshaller);
-        }
-
-//        GenericEidasAttributeTypeBuilder genericBuilder = new GenericEidasAttributeTypeBuilder();
-//        for(String attrName: EIDASAttributes.ATTRIBUTES_TO_TYPESNAMES.values()){
-//            Configuration.registerObjectProvider(genericBuilder.buildObject().getDefElementName(attrName),
-//                    genericBuilder, new GenericEidasAttributeTypeMarshaller(),
-//                    new GenericEidasAttributeTypeUnmarshaller());
-//
-//        }
-    }
-
-    /**
      * @since 1.1
      */
     public static void configureExtension(@Nonnull ProtocolProcessorI protocolProcessor) {
 
-        Configuration.registerObjectProvider(RequestedAttribute.DEF_ELEMENT_NAME, new RequestedAttributeBuilder(),
-                                             new RequestedAttributeMarshaller(), new RequestedAttributeUnmarshaller());
+        XMLObjectProviderRegistrySupport.registerObjectProvider(RequestedAttribute.DEF_ELEMENT_NAME, new RequestedAttributeBuilder(),
+                new RequestedAttributeMarshaller(), new RequestedAttributeUnmarshaller());
 
-        Configuration.registerObjectProvider(RequestedAttributes.DEF_ELEMENT_NAME, new RequestedAttributesBuilder(),
-                                             new RequestedAttributesMarshaller(),
-                                             new RequestedAttributesUnmarshaller());
+        XMLObjectProviderRegistrySupport.registerObjectProvider(RequestedAttributes.DEF_ELEMENT_NAME, new RequestedAttributesBuilder(),
+                new RequestedAttributesMarshaller(),
+                new RequestedAttributesUnmarshaller());
 
-        Configuration.registerObjectProvider(SigningMethod.DEF_ELEMENT_NAME, new SigningMethodBuilder(),
-                                             new SigningMethodMarshaller(), new SigningMethodUnmarshaller());
+        XMLObjectProviderRegistrySupport.registerObjectProvider(SigningMethod.DEF_ELEMENT_NAME, new SigningMethodBuilder(),
+                new SigningMethodMarshaller(), new SigningMethodUnmarshaller());
 
-        Configuration.registerObjectProvider(DigestMethod.DEF_ELEMENT_NAME, new DigestMethodBuilder(),
-                                             new DigestMethodMarshaller(), new DigestMethodUnmarshaller());
+        XMLObjectProviderRegistrySupport.registerObjectProvider(DigestMethod.DEF_ELEMENT_NAME, new DigestMethodBuilder(),
+                new DigestMethodMarshaller(), new DigestMethodUnmarshaller());
 
-        Configuration.registerObjectProvider(SPType.DEF_ELEMENT_NAME, new SPTypeBuilder(), new SPTypeMarshaller(),
-                                             new SPTypeUnmarshaller());
-
-        Configuration.registerObjectProvider(SPCountry.DEF_ELEMENT_NAME, new SPCountryBuilder(),
-                                             new SPCountryMarshaller(), new SPCountryUnmarshaller());
+        XMLObjectProviderRegistrySupport.registerObjectProvider(SPType.DEF_ELEMENT_NAME, new SPTypeBuilder(), new SPTypeMarshaller(),
+                new SPTypeUnmarshaller());
 
         XSAnyBuilder xsAnyBuilder = new XSAnyBuilder();
         XSAnyMarshaller xsAnyMarshaller = new XSAnyMarshaller();
         XSAnyUnmarshaller xsAnyUnmarshaller = new XSAnyUnmarshaller();
 
-        Configuration.registerObjectProvider(XSAny.TYPE_NAME, xsAnyBuilder, xsAnyMarshaller, xsAnyUnmarshaller);
+        XMLObjectProviderRegistrySupport.registerObjectProvider(XSAny.TYPE_NAME, xsAnyBuilder, xsAnyMarshaller, xsAnyUnmarshaller);
 
         ImmutableSortedSet<AttributeDefinition<?>> attributeDefinitions = protocolProcessor.getAllSupportedAttributes();
 
         for (final AttributeDefinition<?> attributeDefinition : attributeDefinitions) {
             QName xmlType = attributeDefinition.getXmlType();
             // do not overwrite XSD types
-            if (XMLConstants.XSD_NS.equals(xmlType.getNamespaceURI())) {
-                continue;
+            if (!XMLConstants.XSD_NS.equals(xmlType.getNamespaceURI())) {
+                XMLObjectProviderRegistrySupport.registerObjectProvider(xmlType, xsAnyBuilder, xsAnyMarshaller, xsAnyUnmarshaller);
             }
-            Configuration.registerObjectProvider(xmlType, xsAnyBuilder, xsAnyMarshaller, xsAnyUnmarshaller);
         }
 
 //        GenericEidasAttributeTypeBuilder genericBuilder = new GenericEidasAttributeTypeBuilder();

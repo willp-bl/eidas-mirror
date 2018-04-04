@@ -33,22 +33,25 @@
  */
 package eu.eidas.auth.commons.protocol.eidas.impl;
 
-import java.io.Serializable;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.annotation.concurrent.Immutable;
-import javax.annotation.concurrent.NotThreadSafe;
-import javax.annotation.concurrent.ThreadSafe;
-
-import org.apache.commons.lang.StringUtils;
-
+import eu.eidas.auth.commons.EidasErrorKey;
+import eu.eidas.auth.commons.EidasErrors;
+import eu.eidas.auth.commons.exceptions.EidasNodeException;
 import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.eidas.IEidasAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.eidas.LevelOfAssurance;
 import eu.eidas.auth.commons.protocol.eidas.LevelOfAssuranceComparison;
 import eu.eidas.auth.commons.protocol.impl.AbstractAuthenticationRequest;
 import eu.eidas.util.Preconditions;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.annotation.concurrent.Immutable;
+import javax.annotation.concurrent.NotThreadSafe;
+import javax.annotation.concurrent.ThreadSafe;
+import java.io.Serializable;
 
 /**
  * Abstract class for implementations of the {@link IAuthenticationRequest} interface which adds support for the eIDAS
@@ -65,7 +68,10 @@ import eu.eidas.util.Preconditions;
 @ThreadSafe
 public abstract class AbstractEidasAuthenticationRequest extends AbstractAuthenticationRequest
         implements IEidasAuthenticationRequest, Serializable {
-
+    /**
+     * Logger object.
+     */
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractEidasAuthenticationRequest.class);
     /**
      * Abstract Builder pattern with self-bounding generics for {@link IEidasAuthenticationRequest} subtypes.
      * <p/>
@@ -168,7 +174,11 @@ public abstract class AbstractEidasAuthenticationRequest extends AbstractAuthent
         if (null != levelOfAssuranceStr) {
             LevelOfAssurance levelOfAssuranceEnum = LevelOfAssurance.fromString(levelOfAssuranceStr);
             if (null == levelOfAssuranceEnum) {
-                throw new IllegalArgumentException("Invalid levelOfAssurance: \"" + levelOfAssuranceStr + "\"");
+                String message = "Node LoA is not set, authentication request has no levelOfAssurance";
+                LOG.error(message);
+                throw new EidasNodeException(
+                        EidasErrors.get(EidasErrorKey.INVALID_LOA_VALUE.errorCode()),
+                        EidasErrors.get(EidasErrorKey.INVALID_LOA_VALUE.errorMessage()));
             }
             this.levelOfAssurance = levelOfAssuranceEnum;
         } else {
@@ -204,10 +214,7 @@ public abstract class AbstractEidasAuthenticationRequest extends AbstractAuthent
 
         AbstractEidasAuthenticationRequest that = (AbstractEidasAuthenticationRequest) o;
 
-        if (levelOfAssuranceComparison != that.levelOfAssuranceComparison) {
-            return false;
-        }
-        return true;
+        return levelOfAssuranceComparison == that.levelOfAssuranceComparison;
     }
 
     @Override

@@ -1,37 +1,37 @@
 /*
- * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
- * the European Commission - subsequent versions of the EUPL (the "Licence");
- * You may not use this work except in compliance with the Licence. You may
- * obtain a copy of the Licence at:
+ * Copyright (c) 2017 by European Commission
  *
- * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the Licence is distributed on an "AS IS" basis, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * Licence for the specific language governing permissions and limitations under
- * the Licence.
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
  */
 
 package eu.eidas.auth.engine.core.impl;
 
-import java.security.KeyStore;
-import java.security.cert.X509Certificate;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import com.google.common.collect.ImmutableSet;
-
-import org.opensaml.saml2.core.Response;
-
-import eu.eidas.auth.engine.configuration.SamlEngineConfigurationException;
+import eu.eidas.auth.engine.configuration.ProtocolEngineConfigurationException;
 import eu.eidas.auth.engine.configuration.dom.EncryptionConfiguration;
 import eu.eidas.auth.engine.core.ProtocolDecrypterI;
 import eu.eidas.auth.engine.core.ProtocolEncrypterI;
 import eu.eidas.encryption.SAMLAuthnResponseDecrypter;
 import eu.eidas.encryption.SAMLAuthnResponseEncrypter;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
+import org.opensaml.saml.saml2.core.Response;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.security.KeyStore;
+import java.security.cert.X509Certificate;
 
 /**
  * The base abstract class for implementations of {@link eu.eidas.auth.engine.core.ProtocolDecrypterI} and {@link
@@ -58,7 +58,7 @@ public abstract class AbstractSamlEngineEncryption implements ProtocolDecrypterI
                               boolean responseEncryptionMandatory,
                               @Nonnull ImmutableSet<KeyStore.PrivateKeyEntry> decryptionKeyAndCertificates,
                               @Nullable String jcaProviderName,
-                              @Nullable String encryptionAlgorithmWhiteList) throws SamlEngineConfigurationException {
+                              @Nullable String encryptionAlgorithmWhiteList) throws ProtocolEngineConfigurationException {
             super(checkedValidityPeriod, disallowedSelfSignedCertificate, responseEncryptionMandatory,
                   decryptionKeyAndCertificates, jcaProviderName, encryptionAlgorithmWhiteList);
         }
@@ -83,7 +83,7 @@ public abstract class AbstractSamlEngineEncryption implements ProtocolDecrypterI
                               @Nullable String dataEncryptionAlgorithm,
                               @Nullable String keyEncryptionAlgorithm,
                               @Nullable String jcaProviderName,
-                              @Nullable String encryptionAlgorithmWhiteList) throws SamlEngineConfigurationException {
+                              @Nullable String encryptionAlgorithmWhiteList) throws ProtocolEngineConfigurationException {
             super(checkedValidityPeriod, disallowedSelfSignedCertificate, responseEncryptionMandatory,
                   encryptionCertificates, dataEncryptionAlgorithm, keyEncryptionAlgorithm, jcaProviderName,
                   encryptionAlgorithmWhiteList);
@@ -107,7 +107,7 @@ public abstract class AbstractSamlEngineEncryption implements ProtocolDecrypterI
     private final BaseProtocolEncrypter encrypter;
 
     protected AbstractSamlEngineEncryption(@Nonnull EncryptionConfiguration encryptionConfiguration)
-            throws SamlEngineConfigurationException {
+            throws ProtocolEngineConfigurationException {
         this(encryptionConfiguration.isCheckedValidityPeriod(),
              encryptionConfiguration.isDisallowedSelfSignedCertificate(),
              encryptionConfiguration.isResponseEncryptionMandatory(),
@@ -143,7 +143,7 @@ public abstract class AbstractSamlEngineEncryption implements ProtocolDecrypterI
                                            @Nullable String keyEncryptionAlgorithm,
                                            @Nullable String jcaProviderName,
                                            @Nullable String encryptionAlgorithmWhiteList)
-            throws SamlEngineConfigurationException {
+            throws ProtocolEngineConfigurationException {
         decrypter = new BaseProtocolDecrypter(checkedValidityPeriod, disallowedSelfSignedCertificate,
                                               responseEncryptionMandatory, decryptionKeyAndCertificates,
                                               jcaProviderName, encryptionAlgorithmWhiteList);

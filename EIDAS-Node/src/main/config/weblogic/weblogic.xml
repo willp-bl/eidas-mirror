@@ -75,6 +75,7 @@
             <resource-name>wstrust-config.xml</resource-name>
             <resource-name>wspolicy-config.xml</resource-name>
             <resource-name>schema/*</resource-name>
+            <resource-name>META-INF/INDEX.LIST</resource-name>
         </prefer-application-resources>
 
     </container-descriptor>

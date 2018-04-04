@@ -43,6 +43,11 @@ import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
 import javax.annotation.concurrent.NotThreadSafe;
 import javax.annotation.concurrent.ThreadSafe;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlSeeAlso;
+import javax.xml.bind.annotation.XmlType;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
@@ -61,9 +66,17 @@ import eu.eidas.util.Preconditions;
 @SuppressWarnings("ConstantConditions")
 @Immutable
 @ThreadSafe
+@XmlType(factoryMethod="newInstance")
+@XmlRootElement
+@XmlAccessorType(XmlAccessType.FIELD)
+@XmlSeeAlso(value= {AttributeDefinition.class})
 public final class ImmutableAttributeMap implements Serializable {
 
-    /**
+    private static ImmutableAttributeMap newInstance(){
+    	return new ImmutableAttributeMap(new Builder());
+    } 
+    
+	/**
      * Effective Java, 2nd Ed. : Item 78: Serialization Proxy pattern.
      * <p>
      * The serialVersionUID of this class is not used because a Serialization Proxy is used instead.

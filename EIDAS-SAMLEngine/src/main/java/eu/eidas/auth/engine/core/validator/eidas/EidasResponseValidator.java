@@ -14,14 +14,14 @@
  */
 package eu.eidas.auth.engine.core.validator.eidas;
 
+import eu.eidas.engine.exceptions.ValidationException;
+import net.shibboleth.utilities.java.support.xml.SerializeSupport;
+import org.opensaml.saml.common.SAMLVersion;
+import org.opensaml.saml.saml2.core.Response;
+import org.opensaml.saml.saml2.core.StatusCode;
+
 import java.nio.charset.Charset;
 
-import org.opensaml.common.SAMLVersion;
-import org.opensaml.saml1.core.StatusCode;
-import org.opensaml.saml2.core.Response;
-import org.opensaml.saml2.core.validator.ResponseSchemaValidator;
-import org.opensaml.xml.util.XMLHelper;
-import org.opensaml.xml.validation.ValidationException;
 
 
 public class EidasResponseValidator extends ResponseSchemaValidator {
@@ -48,7 +48,7 @@ public class EidasResponseValidator extends ResponseSchemaValidator {
      */
     public void validate(Response resp) throws ValidationException {
 
-        if (XMLHelper.prettyPrintXML(resp.getDOM()).getBytes(Charset.forName("UTF-8")).length > MAX_SIZE) {
+        if (SerializeSupport.prettyPrintXML(resp.getDOM()).getBytes(Charset.forName("UTF-8")).length > MAX_SIZE) {
             throw new ValidationException("SAML Response exceeds max size.");
         }
 

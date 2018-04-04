@@ -1,12 +1,12 @@
 /*
  * Copyright (c) 2017 by European Commission
  *
- * Licensed under the EUPL, Version 1.1 or - as soon they will be
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
  * approved by the European Commission - subsequent versions of the
  * EUPL (the "Licence");
  * You may not use this work except in compliance with the Licence.
  * You may obtain a copy of the Licence at:
- * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the Licence is distributed on an "AS IS" basis,
@@ -14,13 +14,8 @@
  * implied.
  * See the Licence for the specific language governing permissions and
  * limitations under the Licence.
- *
- * This product combines work with different licenses. See the
- * "NOTICE" text file for details on the various modules and licenses.
- * The "NOTICE" text file is part of the distribution.
- * Any derivative works that you distribute must include a readable
- * copy of the "NOTICE" text file.
  */
+
 package eu.eidas.auth.engine.xml.opensaml;
 
 import com.google.common.collect.ImmutableSet;
@@ -30,11 +25,12 @@ import eu.eidas.auth.commons.attribute.AttributeValue;
 import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.impl.SamlNameIdFormat;
 import eu.eidas.auth.engine.core.SAMLExtensionFormat;
+import eu.eidas.auth.engine.core.eidas.spec.EidasSAMLFormat;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
-import org.opensaml.common.SAMLVersion;
-import org.opensaml.saml2.core.*;
+import org.opensaml.saml.common.SAMLVersion;
+import org.opensaml.saml.saml2.core.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,48 +56,6 @@ public final class AssertionUtil {
         // empty constructor
     }
 
-
-    /**
-     * Generates the assertion for the response.
-     *
-     * @deprecated since 1.4.
-     * Use {@link AssertionUtil#generateResponseAssertion(boolean, String, IAuthenticationRequest, Issuer, ImmutableAttributeMap, DateTime, String, String, SAMLExtensionFormat, boolean, DateTime)} instead.
-     *
-     * @param isFailure
-     * @param ipAddress    the IP address.
-     * @param request      the request for which the response is prepared
-     * @param responseIssuer
-     * @param attributeMap
-     * @param notOnOrAfter the not on or after
-     * @param formatEntity
-     * @param responder
-     * @param extensionFormat
-     * @param isOneTimeUse
-     * @return the assertion
-     * @throws EIDASSAMLEngineException the EIDASSAML engine exception
-     */
-    @Deprecated
-    public static final Assertion generateResponseAssertion(boolean isFailure,
-                                                            String ipAddress,
-                                                            IAuthenticationRequest request,
-                                                            Issuer responseIssuer,
-                                                            ImmutableAttributeMap attributeMap,
-                                                            DateTime notOnOrAfter,
-                                                            String formatEntity,
-                                                            String responder,
-                                                            SAMLExtensionFormat extensionFormat,
-                                                            boolean isOneTimeUse) throws EIDASSAMLEngineException {
-
-
-        //Solution to allow usage of this method by deprecated classes without changing their related code
-        // and use the method {@link AssertionUtil#generateResponseAssertion(boolean, String, IAuthenticationRequest, Issuer, ImmutableAttributeMap, DateTime, String, String, SAMLExtensionFormat, boolean, SamlEngineClock)}
-        // with the parameter for the rest of the code
-        final DateTime currentTime = new DateTime();
-
-        return generateResponseAssertion(isFailure, ipAddress, request, responseIssuer, attributeMap, notOnOrAfter, formatEntity, responder, extensionFormat, isOneTimeUse, currentTime);
-    }
-
-
     /**
      * Generates the assertion for the response.
      *
@@ -122,6 +76,8 @@ public final class AssertionUtil {
     public static final Assertion generateResponseAssertion(boolean isFailure,
                                                             String ipAddress,
                                                             IAuthenticationRequest request,
+                                                            String subjectNameId,
+                                                            String subjectNameIdFormat,
                                                             Issuer responseIssuer,
                                                             ImmutableAttributeMap attributeMap,
                                                             DateTime notOnOrAfter,
@@ -145,7 +101,7 @@ public final class AssertionUtil {
                         currentTime, issuerAssertion);
 
         // Subject is mandatory in non failure responses, in some cases it is available for failure also
-        addSubjectToAssertion(isFailure, assertion, request, attributeMap, notOnOrAfter, ipAddress, responder, extensionFormat, currentTime);
+        addSubjectToAssertion(isFailure, assertion, request, subjectNameId, subjectNameIdFormat, attributeMap, notOnOrAfter, ipAddress, responder, extensionFormat, currentTime);
 
         // Conditions that MUST be evaluated when assessing the validity of
         // and/or when using the assertion.
@@ -165,6 +121,8 @@ public final class AssertionUtil {
     private static void addSubjectToAssertion(boolean isFailure,
                                               Assertion assertion,
                                               IAuthenticationRequest request,
+                                              String subjectNameId,
+                                              String subjectNameIdFormat,
                                               ImmutableAttributeMap attributeMap,
                                               DateTime notOnOrAfter,
                                               String ipAddress,
@@ -172,7 +130,7 @@ public final class AssertionUtil {
                                               final DateTime currentTime) throws EIDASSAMLEngineException {
         Subject subject = BuilderFactoryUtil.generateSubject();
 
-        NameID nameId = getNameID(isFailure, request.getNameIdFormat(), attributeMap, responder, extensionFormat);
+        NameID nameId = getNameID(isFailure, subjectNameId, request.getNameIdFormat(), subjectNameIdFormat, attributeMap, responder, extensionFormat);
         subject.setNameID(nameId);
 
         // Mandatory if urn:oasis:names:tc:SAML:2.0:cm:bearer.
@@ -190,18 +148,6 @@ public final class AssertionUtil {
                 BuilderFactoryUtil.generateSubjectConfirmation(SubjectConfirmation.METHOD_BEARER, dataBearer);
 
         SubjectConfirmationData subjectConfirmationData = subjectConf.getSubjectConfirmationData();
-        /** STORK?
-        if (SubjectConfirmation.METHOD_BEARER.equals(subjectConf.getMethod())) {
-            // ipAddress Mandatory if method is Bearer.
-
-            if (StringUtils.isBlank(ipAddress)) {
-                LOG.info(AbstractProtocolEngine.SAML_EXCHANGE, "BUSINESS EXCEPTION : ipAddress is null or empty");
-                throw new EIDASSAMLEngineException(EidasErrorKey.INTERNAL_ERROR.errorCode(),
-                        EidasErrorKey.INTERNAL_ERROR.errorCode(),
-                        "ipAddress is null or empty");
-            }
-
-        } */
         if (StringUtils.isNotBlank(ipAddress) && SubjectConfirmation.METHOD_BEARER.equals(subjectConf.getMethod())) {
             subjectConfirmationData.setAddress(ipAddress.trim());
         }
@@ -216,7 +162,7 @@ public final class AssertionUtil {
         assertion.setSubject(subject);
     }
 
-    private static NameID getNameID(boolean isFailure, String requestFormat, ImmutableAttributeMap attributeMap, String responder, SAMLExtensionFormat extensionFormat)
+    private static NameID getNameID(boolean isFailure, String subject, String requestFormat, String responseFormat, ImmutableAttributeMap attributeMap, String responder, SAMLExtensionFormat extensionFormat)
             throws EIDASSAMLEngineException {
         NameID nameId;
         String nameQualifier = responder;
@@ -229,18 +175,19 @@ public final class AssertionUtil {
             format = SamlNameIdFormat.UNSPECIFIED.getNameIdFormat();
             nameIdValue = FAILURE_SUBJECT_NAME_ID;
         } else {
-            // Mandatory to be verified
-            // String format = NameID.UNSPECIFIED
-            // specification: 'SAML:2.0' exist
-            // opensaml: "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
-            // opensaml  "urn:oasis:names:tc:SAML:2.0:nameid-format:unspecified"
-            format = requestFormat;
+            // check if the request is coming with a format policym, and if yes, then the response has the right one
+            if (StringUtils.isNotBlank(requestFormat) && !requestFormat.equals(responseFormat)) {
+                LOG.error("BUSINESS EXCEPTION : Invalid Response NameIDFormat in the Response, expected '"+requestFormat+"', got '"+responseFormat+"'");
+                throw new EIDASSAMLEngineException(EidasErrorKey.IDP_SAML_RESPONSE.errorCode(),
+                        EidasErrorKey.IDP_SAML_RESPONSE.errorCode());
+            }
+            format = responseFormat;
             if (null == format) {
                 format =
-                        SAMLExtensionFormat.EIDAS10 == extensionFormat ? SamlNameIdFormat.PERSISTENT
+                        extensionFormat instanceof EidasSAMLFormat ? SamlNameIdFormat.PERSISTENT
                                 .getNameIdFormat() : SamlNameIdFormat.UNSPECIFIED.getNameIdFormat();
             }
-            nameIdValue = getUniquenessIdentifier(attributeMap);
+            nameIdValue = subject;
         }
 
         nameId = BuilderFactoryUtil.generateNameID(nameQualifier, format, spNameQualifier);
@@ -248,6 +195,14 @@ public final class AssertionUtil {
         return nameId;
     }
 
+    /**
+     *
+     * @param attributeMap
+     * @return
+     * @throws EIDASSAMLEngineException
+     * @till 2.1.0
+     */
+    @Deprecated
     private static String getUniquenessIdentifier(@Nonnull ImmutableAttributeMap attributeMap)
             throws EIDASSAMLEngineException {
         for (final Map.Entry<AttributeDefinition<?>, ImmutableSet<? extends AttributeValue<?>>> entry : attributeMap.getAttributeMap()

@@ -25,7 +25,6 @@ package eu.eidas.auth.commons;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 
 
 /**
@@ -43,13 +42,4 @@ public class EidasErrorsTest {
         assertEquals("invalid.connector.samlrequest",EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INVALID_SAML.errorMessage()));
     }
 
-    /**
-     * Method to test the retrieval of values loaded in {@link EidasErrors}
-     * Expected values are from stork and therefore must fail.
-     */
-    @Test
-    public void testGetFail() {
-        assertNotEquals("201002",EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INVALID_SAML.errorCode()));
-        assertNotEquals("invalid.speps.samlrequest",EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INVALID_SAML.errorCode()));
-    }
 }

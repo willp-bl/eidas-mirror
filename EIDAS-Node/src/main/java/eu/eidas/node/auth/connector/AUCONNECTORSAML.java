@@ -1,55 +1,25 @@
 /*
- * Copyright (c) 2015 by European Commission
+ * Copyright (c) 2017 by European Commission
  *
- * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
- * the European Commission - subsequent versions of the EUPL (the "Licence");
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
  * You may not use this work except in compliance with the Licence.
  * You may obtain a copy of the Licence at:
- * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the Licence is distributed on an "AS IS" basis,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
  * See the Licence for the specific language governing permissions and
  * limitations under the Licence.
- *
- * This product combines work with different licenses. See the "NOTICE" text
- * file for details on the various modules and licenses.
- * The "NOTICE" text file is part of the distribution. Any derivative works
- * that you distribute must include a readable copy of the "NOTICE" text file.
- *
  */
 
 package eu.eidas.node.auth.connector;
 
-import java.util.Locale;
-import java.util.regex.Pattern;
-
-import javax.annotation.Nonnull;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
 import com.google.common.collect.ImmutableSet;
-
-import org.apache.commons.lang.StringUtils;
-import org.opensaml.xml.validation.ValidationException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.context.MessageSource;
-import org.springframework.context.NoSuchMessageException;
-
-import eu.eidas.auth.commons.DateUtil;
-import eu.eidas.auth.commons.EIDASStatusCode;
-import eu.eidas.auth.commons.EIDASUtil;
-import eu.eidas.auth.commons.EIDASValues;
-import eu.eidas.auth.commons.EidasDigestUtil;
-import eu.eidas.auth.commons.EidasErrorKey;
-import eu.eidas.auth.commons.EidasErrors;
-import eu.eidas.auth.commons.EidasParameterKeys;
-import eu.eidas.auth.commons.EidasStringUtil;
-import eu.eidas.auth.commons.IEIDASLogger;
-import eu.eidas.auth.commons.RequestState;
-import eu.eidas.auth.commons.WebRequest;
+import eu.eidas.auth.commons.*;
 import eu.eidas.auth.commons.attribute.AttributeValue;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.exceptions.InternalErrorEIDASException;
@@ -60,14 +30,12 @@ import eu.eidas.auth.commons.light.ILightRequest;
 import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.IAuthenticationResponse;
 import eu.eidas.auth.commons.protocol.IRequestMessage;
-import eu.eidas.auth.commons.protocol.IResponseMessage;
 import eu.eidas.auth.commons.protocol.eidas.IEidasAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.eidas.LevelOfAssurance;
 import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.eidas.spec.EidasSpec;
 import eu.eidas.auth.commons.protocol.impl.AuthenticationResponse;
 import eu.eidas.auth.commons.protocol.impl.EidasSamlBinding;
-import eu.eidas.auth.commons.protocol.impl.SamlBindingUri;
-import eu.eidas.auth.commons.protocol.stork.IStorkAuthenticationRequest;
 import eu.eidas.auth.commons.tx.AuthenticationExchange;
 import eu.eidas.auth.commons.tx.CorrelationMap;
 import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
@@ -76,17 +44,29 @@ import eu.eidas.auth.commons.validation.NormalParameterValidator;
 import eu.eidas.auth.engine.Correlated;
 import eu.eidas.auth.engine.ProtocolEngineFactory;
 import eu.eidas.auth.engine.ProtocolEngineI;
-import eu.eidas.auth.engine.core.eidas.spec.EidasSpec;
+import eu.eidas.auth.engine.metadata.EidasMetadataParametersI;
+import eu.eidas.auth.engine.metadata.MetadataClockI;
 import eu.eidas.auth.engine.metadata.MetadataFetcherI;
 import eu.eidas.auth.engine.metadata.MetadataSignerI;
-import eu.eidas.auth.engine.metadata.MetadataUtil;
 import eu.eidas.auth.engine.xml.opensaml.SAMLEngineUtils;
+import eu.eidas.engine.exceptions.EIDASMetadataException;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import eu.eidas.node.logging.LoggingMarkerMDC;
 import eu.eidas.node.utils.EidasNodeErrorUtil;
 import eu.eidas.node.utils.EidasNodeValidationUtil;
 import eu.eidas.node.utils.PropertiesUtil;
 import eu.eidas.node.utils.SessionHolder;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
+import org.springframework.context.NoSuchMessageException;
+
+import javax.annotation.Nonnull;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import java.util.Locale;
+import java.util.regex.Pattern;
 
 /**
  * This class is used by {@link AUCONNECTOR} to get, process and generate SAML Tokens.
@@ -186,7 +166,7 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
         samlResponseFail.statusCode(statusCode);
         samlResponseFail.subStatusCode(subCode);
         samlResponseFail.statusMessage(message);
-        samlResponseFail.issuer(getConnectorResponderMetadataUrl());
+        samlResponseFail.issuer(getConnectorMetadataUrl());
         samlResponseFail.inResponseTo(request.getId());
         samlResponseFail.id(SAMLEngineUtils.generateNCName());
         IAuthenticationResponse response = samlResponseFail.build();
@@ -282,6 +262,17 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
             String serviceUrl = connectorUtil.loadConfigServiceURL(serviceCode);
 
             LOG.debug("Citizen Country URL " + serviceCode + " URL " + serviceUrl);
+
+            EidasMetadataParametersI eidasMetadataParameters = null;
+            try {
+                eidasMetadataParameters = metadataFetcher.getEidasMetadata(serviceMetadataURL,
+                        (MetadataSignerI) getSamlEngine(samlServiceInstance).getSigner(),
+                        (MetadataClockI) getSamlEngine(samlServiceInstance).getClock());
+            } catch (EIDASMetadataException e) {
+                //TODO
+                throw new EIDASSAMLEngineException(e);
+            }
+
             NormalParameterValidator.paramName(EidasErrorKey.SERVICE_REDIRECT_URL.toString())
                     .paramValue(serviceUrl)
                     .eidasError(EidasErrorKey.SPROVIDER_SELECTOR_INVALID_COUNTRY)
@@ -319,7 +310,14 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
                     .citizenCountryCode(serviceCode)
                     .build();
 
-            validateRequestLoA(authnRequest, connectorUtil.loadConfigServiceMetadataURL(serviceCode));
+            // validate request load
+            String proxyServiceLoA =  eidasMetadataParameters.getAssuranceLevel();
+            if (!StringUtils.isEmpty(proxyServiceLoA) && !EidasNodeValidationUtil.isRequestLoAValid(authnRequest,
+                    proxyServiceLoA)) {
+                throw new InternalErrorEIDASException(
+                        EidasErrors.get(EidasErrorKey.SERVICE_PROVIDER_INVALID_LOA.errorCode()),
+                        EidasErrors.get(EidasErrorKey.SERVICE_PROVIDER_INVALID_LOA.errorMessage()));
+            }
 
             if (SessionHolder.getId() != null) {
                 HttpSession session = SessionHolder.getId();
@@ -361,20 +359,6 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
             throw new InternalErrorEIDASException(
                     EidasErrors.get(EidasErrorKey.SPROVIDER_SELECTOR_INVALID_SAML.errorCode()),
                     EidasErrors.get(EidasErrorKey.SPROVIDER_SELECTOR_INVALID_SAML.errorMessage()), e);
-        }
-    }
-
-    private void validateRequestLoA(IAuthenticationRequest authRequest, String idpUrl) throws EIDASSAMLEngineException {
-        if (null == metadataFetcher) {
-            return;
-        }
-        String colleagueLoA = MetadataUtil.getServiceLevelOfAssurance(metadataFetcher.getEntityDescriptor(idpUrl,
-                                                                                                          (MetadataSignerI) getSamlEngine(samlServiceInstance).getSigner()));
-        if (!StringUtils.isEmpty(colleagueLoA) && !EidasNodeValidationUtil.isRequestLoAValid(authRequest,
-                                                                                             colleagueLoA)) {
-            throw new InternalErrorEIDASException(
-                    EidasErrors.get(EidasErrorKey.SERVICE_PROVIDER_INVALID_LOA.errorCode()),
-                    EidasErrors.get(EidasErrorKey.SERVICE_PROVIDER_INVALID_LOA.errorMessage()));
         }
     }
 
@@ -518,7 +502,7 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
 
             AuthenticationResponse connectorResponse =
                     new AuthenticationResponse.Builder(authnResponse).inResponseTo(serviceProviderRequestSamlId)
-                            .issuer(getConnectorResponderMetadataUrl())
+                            .issuer(getConnectorMetadataUrl())
                             .build();
 
             return new AuthenticationExchange(storedConnectorRequest, connectorResponse);
@@ -533,16 +517,6 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
                     EidasErrors.get(EidasErrorKey.COLLEAGUE_RESP_INVALID_SAML.errorCode()),
                     EidasErrors.get(EidasErrorKey.COLLEAGUE_RESP_INVALID_SAML.errorMessage()), e);
         }
-    }
-
-    private void validateAttributeValueFormat(String value,
-                                              String currentAttrName,
-                                              String attrNameToTest,
-                                              String pattern) throws ValidationException {
-        if (currentAttrName.equals(attrNameToTest) && !Pattern.matches(pattern, value)) {
-            throw new ValidationException(attrNameToTest + " has incorrect format.");
-        }
-
     }
 
     @SuppressWarnings("squid:S2583")
@@ -752,11 +726,6 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
         loggerBean.setDestination(authnRequest.getDestination());
         loggerBean.setProviderName(authnRequest.getProviderName());
         loggerBean.setCountry(authnRequest.getCitizenCountryCode());
-        if (authnRequest instanceof IStorkAuthenticationRequest) {
-            IStorkAuthenticationRequest storkAuthenticationRequest = (IStorkAuthenticationRequest) authnRequest;
-            loggerBean.setSpApplication(storkAuthenticationRequest.getSpApplication());
-            loggerBean.setQaaLevel(storkAuthenticationRequest.getQaa());
-        }
         loggerBean.setSamlHash(tokenHash);
         loggerBean.setSPMsgId(spSamlId);
         loggerBean.setMsgId(authnRequest.getId());
@@ -901,15 +870,11 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
         this.metadataFetcher = metadataFetcher;
     }
 
-    public String getConnectorResponderMetadataUrl() {
-        return metadataResponderUrl;
-    }
-
-    public void setConnectorResponderMetadataUrl(String metadataResponderUrl) {
-        this.metadataResponderUrl = metadataResponderUrl;
-    }
-
     public void setNodeProtocolEngineFactory(ProtocolEngineFactory nodeProtocolEngineFactory) {
         this.nodeProtocolEngineFactory = nodeProtocolEngineFactory;
+    }
+
+    public ProtocolEngineI getSamlEngine() {
+        return getSamlEngine(samlServiceInstance);
     }
 }

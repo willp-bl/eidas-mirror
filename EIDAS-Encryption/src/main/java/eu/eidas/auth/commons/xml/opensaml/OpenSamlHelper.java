@@ -5,19 +5,27 @@ import eu.eidas.auth.commons.xml.DocumentBuilderFactoryUtil;
 import eu.eidas.encryption.exception.MarshallException;
 import eu.eidas.encryption.exception.UnmarshallException;
 import eu.eidas.util.Preconditions;
-import org.opensaml.Configuration;
-import org.opensaml.DefaultBootstrap;
-import org.opensaml.xml.ConfigurationException;
-import org.opensaml.xml.XMLObject;
-import org.opensaml.xml.io.*;
-import org.opensaml.xml.parse.BasicParserPool;
-import org.opensaml.xml.parse.ParserPool;
+import net.shibboleth.utilities.java.support.component.ComponentInitializationException;
+import net.shibboleth.utilities.java.support.xml.BasicParserPool;
+import net.shibboleth.utilities.java.support.xml.ClasspathResolver;
+import net.shibboleth.utilities.java.support.xml.ParserPool;
+import net.shibboleth.utilities.java.support.xml.SchemaBuilder;
+import org.opensaml.core.config.InitializationException;
+import org.opensaml.core.config.InitializationService;
+import org.opensaml.core.xml.XMLObject;
+import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
+import org.opensaml.core.xml.io.*;
+import org.opensaml.saml.common.xml.SAMLSchemaBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.ClassPathResource;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
 import javax.annotation.Nonnull;
+import javax.xml.validation.Schema;
+import java.io.IOException;
 
 /**
  * OpenSAML Helper.
@@ -26,6 +34,9 @@ import javax.annotation.Nonnull;
  */
 public final class OpenSamlHelper {
 
+    //TODO vazrica check if this is still necessary.
+    public static final String SYSPROP_HTTPCLIENT_HTTPS_DISABLE_HOSTNAME_VERIFICATION = "org.opensaml.httpclient.https.disableHostnameVerification";
+
     /**
      * The logger.
      */
@@ -33,28 +44,67 @@ public final class OpenSamlHelper {
 
     private static final ParserPool SECURED_PARSER_POOL;
 
+    private static final Schema SCHEMA;
+
+    private static final Schema METADATA_SCHEMA;
+
     static {
-        LOG.trace("OpenSamlHelper: Initialize OpenSAML");
+        LOG.info("OpenSamlHelper: Initialize OpenSAML");
         try {
-            DefaultBootstrap.bootstrap();
-            SECURED_PARSER_POOL = newBasicSecuredParserPool();
-            Configuration.setParserPool(SECURED_PARSER_POOL);
-        } catch (ConfigurationException ce) {
-            LOG.error("Problem initializing the OpenSAML library: " + ce, ce);
-            throw new IllegalStateException(ce);
+            InitializationService.initialize();
+            SECURED_PARSER_POOL = newSecuredBasicParserPool();
+
+            XMLObjectProviderRegistrySupport.setParserPool(SECURED_PARSER_POOL);
+
+            SAMLSchemaBuilder schemaBuilder = new SAMLSchemaBuilder(SAMLSchemaBuilder.SAML1Version.SAML_11);
+            SchemaBuilder scBuilder = new SchemaBuilder();
+            scBuilder.setResourceResolver(new ClasspathResolver());
+            scBuilder.addSchema(new ClassPathResource("/xmldsig-core-schema.xsd").getInputStream());
+
+            scBuilder.addSchema(new ClassPathResource("/eidas/saml_eidas_extension.xsd").getInputStream());
+
+            scBuilder.addSchema(new ClassPathResource("/eidas/saml_eidas_legal_person.xsd").getInputStream());
+            scBuilder.addSchema(new ClassPathResource("/eidas/saml_eidas_natural_person.xsd").getInputStream());
+            scBuilder.addSchema(new ClassPathResource("/eidas/saml_eidas_representative_legal_person.xsd").getInputStream());
+            scBuilder.addSchema(new ClassPathResource("/eidas/saml_eidas_representative_natural_person.xsd").getInputStream());
+
+            schemaBuilder.setSchemaBuilder(scBuilder);
+            SCHEMA = schemaBuilder.getSAMLSchema();
+
+            //the schema is joint
+            METADATA_SCHEMA = SCHEMA;
+
+        } catch (InitializationException | ComponentInitializationException | SAXException | IOException e) {
+            LOG.error("Problem initializing the OpenSAML library: " + e, e);
+            throw new IllegalStateException(e);
         }
     }
 
     private OpenSamlHelper() {
     }
 
+    public static void initialize() {
+        //this class has a static initializer for now, this call is to make sure JVM does not optimize
+        getSecuredParserPool();
+    }
+
     @Nonnull
     public static ParserPool getSecuredParserPool() {
-        ParserPool parserPool = Configuration.getParserPool();
+        ParserPool parserPool = XMLObjectProviderRegistrySupport.getParserPool();
         if (parserPool != SECURED_PARSER_POOL) {
-            Configuration.setParserPool(SECURED_PARSER_POOL);
+            XMLObjectProviderRegistrySupport.setParserPool(SECURED_PARSER_POOL);
         }
         return SECURED_PARSER_POOL;
+    }
+
+    @Nonnull
+    public static Schema getSchema() {
+        return SCHEMA;
+    }
+
+    @Nonnull
+    public static Schema getMetadataSchema() {
+        return METADATA_SCHEMA;
     }
 
     /**
@@ -119,7 +169,7 @@ public final class OpenSamlHelper {
     public static Element marshallToDom(@Nonnull XMLObject xmlObject) throws MarshallException {
         Preconditions.checkNotNull(xmlObject, "xmlObject");
 
-        MarshallerFactory marshallerFactory = Configuration.getMarshallerFactory();
+        MarshallerFactory marshallerFactory = XMLObjectProviderRegistrySupport.getMarshallerFactory();
         if (null == marshallerFactory) {
             LOG.error("No MarshallerFactory for " + xmlObject);
             throw new MarshallException("No MarshallerFactory for " + xmlObject);
@@ -142,7 +192,7 @@ public final class OpenSamlHelper {
     }
 
     @Nonnull
-    private static BasicParserPool newBasicSecuredParserPool() {
+    private static ParserPool newSecuredBasicParserPool() throws ComponentInitializationException {
         // Get parser pool manager
         BasicParserPool ppMgr = new BasicParserPool();
         // Note: this is necessary due to an unresolved Xerces deferred DOM issue/bug
@@ -151,6 +201,7 @@ public final class OpenSamlHelper {
         ppMgr.setIgnoreComments(true);
         ppMgr.setExpandEntityReferences(false);
         ppMgr.setXincludeAware(false);
+        ppMgr.initialize();
         return ppMgr;
     }
 
@@ -193,7 +244,7 @@ public final class OpenSamlHelper {
             throw new UnmarshallException("Root element is null");
         }
         // Get appropriate unmarshaller
-        UnmarshallerFactory unmarshallerFactory = Configuration.getUnmarshallerFactory();
+        UnmarshallerFactory unmarshallerFactory = XMLObjectProviderRegistrySupport.getUnmarshallerFactory();
         // Unmarshall using the SAML Token root element
         if (null == unmarshallerFactory) {
             LOG.error("No UnmarshallerFactory for " + EidasStringUtil.toString(xmlObjectBytes));
@@ -206,9 +257,9 @@ public final class OpenSamlHelper {
         }
         try {
             return unmarshaller.unmarshall(root);
-        } catch (UnmarshallingException ue) {
-            LOG.error("Unmarshall exception for " + EidasStringUtil.toString(xmlObjectBytes) + ": " + ue, ue);
-            throw new UnmarshallException(ue);
+        } catch (UnmarshallingException e) {
+            LOG.error("Unmarshall exception for " + EidasStringUtil.toString(xmlObjectBytes) + ": " + e, e);
+            throw new UnmarshallException(e);
         }
     }
 
@@ -231,7 +282,7 @@ public final class OpenSamlHelper {
             throw new UnmarshallException("Root element is null");
         }
         // Get appropriate unmarshaller
-        UnmarshallerFactory unmarshallerFactory = Configuration.getUnmarshallerFactory();
+        UnmarshallerFactory unmarshallerFactory = XMLObjectProviderRegistrySupport.getUnmarshallerFactory();
         // Unmarshall using the SAML Token root element
         if (null == unmarshallerFactory) {
             LOG.error("No UnmarshallerFactory for " + document);

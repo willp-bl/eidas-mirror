@@ -17,7 +17,7 @@ package eu.eidas.auth.engine.core.impl;
 
 import java.util.Map;
 
-import eu.eidas.auth.engine.configuration.SamlEngineConfigurationException;
+import eu.eidas.auth.engine.configuration.ProtocolEngineConfigurationException;
 import eu.eidas.auth.engine.configuration.dom.KeyStoreSignatureConfigurator;
 import eu.eidas.auth.engine.core.ProtocolSignerI;
 
@@ -30,7 +30,7 @@ import javax.annotation.Nullable;
  */
 public abstract class KeyStoreProtocolSigner extends AbstractProtocolSigner {
 
-    protected KeyStoreProtocolSigner(Map<String, String> properties, @Nullable String defaultPath) throws SamlEngineConfigurationException {
+    protected KeyStoreProtocolSigner(Map<String, String> properties, @Nullable String defaultPath) throws ProtocolEngineConfigurationException {
         super(new KeyStoreSignatureConfigurator().getSignatureConfiguration(properties, defaultPath));
     }
 }

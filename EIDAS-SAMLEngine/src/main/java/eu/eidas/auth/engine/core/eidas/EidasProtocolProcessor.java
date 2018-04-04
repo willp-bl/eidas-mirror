@@ -1,12 +1,12 @@
 /*
  * Copyright (c) 2017 by European Commission
  *
- * Licensed under the EUPL, Version 1.1 or - as soon they will be
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
  * approved by the European Commission - subsequent versions of the
  * EUPL (the "Licence");
  * You may not use this work except in compliance with the Licence.
  * You may obtain a copy of the Licence at:
- * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the Licence is distributed on an "AS IS" basis,
@@ -14,22 +14,74 @@
  * implied.
  * See the Licence for the specific language governing permissions and
  * limitations under the Licence.
- *
- * This product combines work with different licenses. See the
- * "NOTICE" text file for details on the various modules and licenses.
- * The "NOTICE" text file is part of the distribution.
- * Any derivative works that you distribute must include a readable
- * copy of the "NOTICE" text file.
  */
+
 package eu.eidas.auth.engine.core.eidas;
+
+import java.net.URI;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.xml.namespace.QName;
+import javax.xml.transform.TransformerException;
+
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
+import org.joda.time.DateTime;
+import org.opensaml.core.xml.Namespace;
+import org.opensaml.core.xml.XMLObject;
+import org.opensaml.core.xml.XMLObjectBuilder;
+import org.opensaml.core.xml.XMLObjectBuilderFactory;
+import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
+import org.opensaml.core.xml.schema.XSAny;
+import org.opensaml.core.xml.schema.XSBooleanValue;
+import org.opensaml.core.xml.schema.XSString;
+import org.opensaml.core.xml.schema.impl.XSAnyImpl;
+import org.opensaml.core.xml.schema.impl.XSStringImpl;
+import org.opensaml.saml.common.SAMLVersion;
+import org.opensaml.saml.common.xml.SAMLConstants;
+import org.opensaml.saml.saml2.core.Assertion;
+import org.opensaml.saml.saml2.core.Attribute;
+import org.opensaml.saml.saml2.core.AttributeStatement;
+import org.opensaml.saml.saml2.core.AttributeValue;
+import org.opensaml.saml.saml2.core.AuthnContextClassRef;
+import org.opensaml.saml.saml2.core.AuthnContextComparisonTypeEnumeration;
+import org.opensaml.saml.saml2.core.AuthnRequest;
+import org.opensaml.saml.saml2.core.Extensions;
+import org.opensaml.saml.saml2.core.Issuer;
+import org.opensaml.saml.saml2.core.NameIDPolicy;
+import org.opensaml.saml.saml2.core.RequestedAuthnContext;
+import org.opensaml.saml.saml2.core.Response;
+import org.opensaml.saml.saml2.core.Status;
+import org.opensaml.saml.saml2.core.StatusCode;
+import org.opensaml.saml.saml2.core.StatusMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Ordering;
-import com.google.common.collect.UnmodifiableIterator;
+
 import eu.eidas.auth.commons.EidasErrorKey;
 import eu.eidas.auth.commons.EidasErrors;
-import eu.eidas.auth.commons.attribute.*;
+import eu.eidas.auth.commons.attribute.AttributeDefinition;
+import eu.eidas.auth.commons.attribute.AttributeRegistries;
+import eu.eidas.auth.commons.attribute.AttributeRegistry;
+import eu.eidas.auth.commons.attribute.AttributeValueMarshaller;
+import eu.eidas.auth.commons.attribute.AttributeValueMarshallingException;
+import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
+import eu.eidas.auth.commons.attribute.PersonType;
 import eu.eidas.auth.commons.exceptions.EIDASServiceException;
 import eu.eidas.auth.commons.exceptions.InternalErrorEIDASException;
 import eu.eidas.auth.commons.light.IResponseStatus;
@@ -40,57 +92,31 @@ import eu.eidas.auth.commons.protocol.eidas.LevelOfAssurance;
 import eu.eidas.auth.commons.protocol.eidas.LevelOfAssuranceComparison;
 import eu.eidas.auth.commons.protocol.eidas.SpType;
 import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.eidas.spec.EidasSpec;
 import eu.eidas.auth.commons.protocol.impl.AuthenticationResponse;
-import eu.eidas.auth.commons.protocol.impl.SamlBindingUri;
 import eu.eidas.auth.commons.xml.DocumentBuilderFactoryUtil;
+import eu.eidas.auth.commons.xml.opensaml.OpenSamlHelper;
 import eu.eidas.auth.engine.AbstractProtocolEngine;
 import eu.eidas.auth.engine.ProtocolEngine;
 import eu.eidas.auth.engine.core.ProtocolProcessorI;
 import eu.eidas.auth.engine.core.SAMLCore;
-import eu.eidas.auth.engine.core.SAMLExtensionFormat;
 import eu.eidas.auth.engine.core.SamlEngineCoreProperties;
-import eu.eidas.auth.engine.core.eidas.spec.EidasSpec;
-import eu.eidas.auth.engine.core.eidas.spec.LegalPersonSpec;
-import eu.eidas.auth.engine.core.eidas.spec.RepresentativeLegalPersonSpec;
+import eu.eidas.auth.engine.core.eidas.spec.EidasSAMLFormat;
+import eu.eidas.auth.engine.metadata.EidasMetadataParametersI;
+import eu.eidas.auth.engine.metadata.EidasMetadataRoleParametersI;
+import eu.eidas.auth.engine.metadata.MetadataClockI;
 import eu.eidas.auth.engine.metadata.MetadataFetcherI;
 import eu.eidas.auth.engine.metadata.MetadataSignerI;
 import eu.eidas.auth.engine.metadata.MetadataUtil;
-import eu.eidas.auth.engine.xml.opensaml.*;
+import eu.eidas.auth.engine.metadata.samlobjects.SPType;
+import eu.eidas.auth.engine.xml.opensaml.AssertionUtil;
+import eu.eidas.auth.engine.xml.opensaml.BuilderFactoryUtil;
+import eu.eidas.auth.engine.xml.opensaml.CertificateUtil;
+import eu.eidas.auth.engine.xml.opensaml.ResponseUtil;
+import eu.eidas.auth.engine.xml.opensaml.SAMLEngineUtils;
+import eu.eidas.engine.exceptions.EIDASMetadataException;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import eu.eidas.util.Preconditions;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
-import org.joda.time.DateTime;
-import org.opensaml.Configuration;
-import org.opensaml.common.SAMLVersion;
-import org.opensaml.common.xml.SAMLConstants;
-import org.opensaml.saml2.common.Extensions;
-import org.opensaml.saml2.core.*;
-import org.opensaml.saml2.core.AttributeValue;
-import org.opensaml.saml2.metadata.AssertionConsumerService;
-import org.opensaml.saml2.metadata.EntityDescriptor;
-import org.opensaml.saml2.metadata.IDPSSODescriptor;
-import org.opensaml.saml2.metadata.SPSSODescriptor;
-import org.opensaml.xml.Namespace;
-import org.opensaml.xml.XMLObject;
-import org.opensaml.xml.XMLObjectBuilder;
-import org.opensaml.xml.XMLObjectBuilderFactory;
-import org.opensaml.xml.schema.XSAny;
-import org.opensaml.xml.schema.XSString;
-import org.opensaml.xml.schema.impl.XSAnyImpl;
-import org.opensaml.xml.schema.impl.XSStringImpl;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.Marker;
-import org.slf4j.MarkerFactory;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.xml.namespace.QName;
-import javax.xml.transform.TransformerException;
-import java.net.URI;
-import java.security.cert.X509Certificate;
-import java.util.*;
 
 /**
  * Implements the eIDAS protocol.
@@ -107,16 +133,12 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
     /**
      * The default instance only implements the eIDAS specification without any additional attribute.
      */
-    public static final EidasProtocolProcessor INSTANCE = new EidasProtocolProcessor(null, null);
+    public static final EidasProtocolProcessor INSTANCE = new EidasProtocolProcessor(null, null, null);
 
     /**
      * The LOG.
      */
     private static final Logger LOG = LoggerFactory.getLogger(EidasProtocolProcessor.class);
-
-    private static final String EIDAS_REQUEST_VALIDATOR_SUITE_ID = "eidasRequestValidatorSuiteId";
-
-    private static final String EIDAS_RESPONSE_VALIDATOR_SUITE_ID = "eidasResponseValidatorSuiteId";
 
     static {
         INSTANCE.configure();
@@ -140,6 +162,11 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
     @Nullable
     private final MetadataSignerI metadataSigner;
 
+    @Nullable
+    private final MetadataClockI metadataClock;
+
+    private EidasSAMLFormat formatDescriptor = new EidasSAMLFormat();
+
     public static final AttributeRegistry.AttributeDefinitionFilter MANDATORY_LEGAL_FILTER =
             new AttributeRegistry.AttributeDefinitionFilter() {
 
@@ -162,41 +189,46 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
 
     @SuppressWarnings("squid:S2637")
     public EidasProtocolProcessor(@Nullable MetadataFetcherI metadataFetcher,
-                                  @Nullable MetadataSignerI metadataSigner) {
-        this(EidasSpec.REGISTRY, AttributeRegistries.empty(), metadataFetcher, metadataSigner);
+                                  @Nullable MetadataSignerI metadataSigner,
+                                  @Nullable MetadataClockI metadataClock) {
+        this(EidasSpec.REGISTRY, AttributeRegistries.empty(), metadataFetcher, metadataSigner, metadataClock);
     }
 
     @SuppressWarnings("squid:S2637")
     public EidasProtocolProcessor(@Nonnull AttributeRegistry additionalAttributeRegistry,
                                   @Nullable MetadataFetcherI metadataFetcher,
-                                  @Nullable MetadataSignerI metadataSigner) {
-        this(EidasSpec.REGISTRY, additionalAttributeRegistry, metadataFetcher, metadataSigner);
+                                  @Nullable MetadataSignerI metadataSigner,
+                                  @Nullable MetadataClockI metadataClock) {
+        this(EidasSpec.REGISTRY, additionalAttributeRegistry, metadataFetcher, metadataSigner, metadataClock);
     }
 
     public EidasProtocolProcessor(@Nonnull String eidasAttributesFileNameVal,
                                   @Nonnull String additionalAttributesFileNameVal,
                                   @Nullable String defaultPath,
                                   @Nullable MetadataFetcherI metadataFetcherVal,
-                                  @Nullable MetadataSignerI metadataSignerVal) {
+                                  @Nullable MetadataSignerI metadataSignerVal,
+                                  @Nullable MetadataClockI metadataClockVal) {
         Preconditions.checkNotNull(eidasAttributesFileNameVal, "eidasAttributesFileName");
         Preconditions.checkNotNull(additionalAttributesFileNameVal, "additionalAttributesFileName");
         eidasAttributeRegistry = AttributeRegistries.fromFile(eidasAttributesFileNameVal, defaultPath);
         additionalAttributeRegistry = AttributeRegistries.fromFile(additionalAttributesFileNameVal, defaultPath);
         metadataFetcher = metadataFetcherVal;
         metadataSigner = metadataSignerVal;
-        if (null == metadataFetcher || null == metadataSigner) {
+        metadataClock = metadataClockVal;
+        if (null == metadataFetcher || null == metadataSigner || null == metadataClock) {
             metadataEncryptionHelper = null;
             metadataSignatureHelper = null;
         } else {
-            metadataEncryptionHelper = new MetadataEncryptionHelper(metadataFetcher, metadataSigner);
-            metadataSignatureHelper = new MetadataSignatureHelper(metadataFetcher, metadataSigner);
+            metadataEncryptionHelper = new MetadataEncryptionHelper(metadataFetcher, metadataSigner, metadataClock);
+            metadataSignatureHelper = new MetadataSignatureHelper(metadataFetcher, metadataSigner, metadataClock);
         }
     }
 
     public EidasProtocolProcessor(@Nullable AttributeRegistry eidasAttributeRegistryVal,
                                   @Nullable AttributeRegistry additionalAttributeRegistryVal,
                                   @Nullable MetadataFetcherI metadataFetcherVal,
-                                  @Nullable MetadataSignerI metadataSignerVal) {
+                                  @Nullable MetadataSignerI metadataSignerVal,
+                                  @Nullable MetadataClockI metadataClockVal) {
         if (null == eidasAttributeRegistryVal) {
             eidasAttributeRegistry = EidasSpec.REGISTRY;
         } else {
@@ -209,12 +241,13 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
         }
         this.metadataFetcher = metadataFetcherVal;
         this.metadataSigner = metadataSignerVal;
-        if (null == metadataFetcher || null == metadataSigner) {
+        this.metadataClock = metadataClockVal;
+        if (null == metadataFetcher || null == metadataSigner || null == metadataClock) {
             metadataEncryptionHelper = null;
             metadataSignatureHelper = null;
         } else {
-            metadataEncryptionHelper = new MetadataEncryptionHelper(metadataFetcher, metadataSigner);
-            metadataSignatureHelper = new MetadataSignatureHelper(metadataFetcher, metadataSigner);
+            metadataEncryptionHelper = new MetadataEncryptionHelper(metadataFetcher, metadataSigner, metadataClock);
+            metadataSignatureHelper = new MetadataSignatureHelper(metadataFetcher, metadataSigner, metadataClock);
         }
     }
 
@@ -251,12 +284,10 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
     }
 
     protected void addNameIDPolicy(AuthnRequest request, String selectedNameID) throws EIDASSAMLEngineException {
-        if (StringUtils.isNotEmpty(selectedNameID)) {
-            NameIDPolicy policy = (NameIDPolicy) BuilderFactoryUtil.buildXmlObject(NameIDPolicy.DEFAULT_ELEMENT_NAME);
-            policy.setFormat(selectedNameID);
-            policy.setAllowCreate(true);
-            request.setNameIDPolicy(policy);
-        }
+        NameIDPolicy policy = (NameIDPolicy) BuilderFactoryUtil.buildXmlObject(NameIDPolicy.DEFAULT_ELEMENT_NAME);
+        policy.setFormat(selectedNameID);
+        policy.setAllowCreate(true);
+        request.setNameIDPolicy(policy);
     }
 
     protected void addRequestedAuthnContext(IAuthenticationRequest request, AuthnRequest authnRequestAux)
@@ -344,14 +375,14 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
             return (AttributeDefinition<T>) dataSetDefinition;
         }
 
-        Boolean requestedIsRequired = requestedAttribute.isRequired();
+        XSBooleanValue requestedIsRequired = requestedAttribute.isRequiredXSBoolean();
 
-        if (null == requestedIsRequired || requestedIsRequired.booleanValue() == staticDefinition.isRequired()) {
+        if (null == requestedIsRequired || requestedIsRequired.getValue().booleanValue() == staticDefinition.isRequired()) {
             return staticDefinition;
         }
         // the attribute is an additional attribute, therefore it does not have to comply with a static definition
         // Update the required flag according to the request instead of using the local registry:
-        return AttributeDefinition.builder(staticDefinition).required(requestedIsRequired.booleanValue()).build();
+        return AttributeDefinition.builder(staticDefinition).required(requestedIsRequired.getValue().booleanValue()).build();
     }
 
     private void validateId(@Nonnull IAuthenticationRequest request) throws EIDASSAMLEngineException {
@@ -557,6 +588,7 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
 
     @Override
     public void configure() {
+        OpenSamlHelper.initialize();
         EidasExtensionConfiguration.configureExtension(this);
     }
 
@@ -598,39 +630,20 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
             for (XMLObject xmlObject : values) {
                 try {
                     if (xmlObject instanceof XSStringImpl) {
-                        // Process simple value.
                         setBuilder.add(
                                 attributeValueMarshaller.unmarshal(((XSStringImpl) xmlObject).getValue(), false));
                     } else if (xmlObject instanceof XSAnyImpl) {
                         XSAnyImpl xsAny = (XSAnyImpl) xmlObject;
 
-                        // TODO: move to STORK Extension Processor
-                        if ("http://www.stork.gov.eu/1.0/signedDoc".equals(attributeName)) {
-                            setBuilder.add(attributeValueMarshaller.unmarshal(computeSimpleValue(xsAny), false));
-
-                            // TODO: move to STORK Extension Processor
-                        } else if ("http://www.stork.gov.eu/1.0/canonicalResidenceAddress".equals(attributeName)) {
-                            // Process complex value.
-                            setBuilder.add(
-                                    attributeValueMarshaller.unmarshal(computeComplexValue(xsAny).toString(), false));
-                        } else {
-                            boolean isNonLatinScriptAlternateVersion = false;
-                            String latinScriptAttrValue = xsAny.getUnknownAttributes().get(latinScript);
-                            if (StringUtils.isNotBlank(latinScriptAttrValue) && "false".equals(latinScriptAttrValue)) {
-                                isNonLatinScriptAlternateVersion = true;
-                            }
-
-                            // Process simple value.
-                            setBuilder.add(attributeValueMarshaller.unmarshal(xsAny.getTextContent(),
-                                                                              isNonLatinScriptAlternateVersion));
+                        boolean isNonLatinScriptAlternateVersion = false;
+                        String latinScriptAttrValue = xsAny.getUnknownAttributes().get(latinScript);
+                        if (StringUtils.isNotBlank(latinScriptAttrValue) && "false".equals(latinScriptAttrValue)) {
+                            isNonLatinScriptAlternateVersion = true;
                         }
 
-                        // TODO: remove
-                    } else if (xmlObject instanceof GenericEidasAttributeType) {
-                        // Process simple value.
-                        setBuilder.add(
-                                attributeValueMarshaller.unmarshal(((GenericEidasAttributeType) xmlObject).getValue(),
-                                                                   false));
+                        setBuilder.add(attributeValueMarshaller.unmarshal(xsAny.getTextContent(),
+                                                                              isNonLatinScriptAlternateVersion));
+
                     } else {
                         LOG.info("BUSINESS EXCEPTION : attribute value is unknown in generatePersonalAttributeList.");
                         throw new EIDASSAMLEngineException(EidasErrorKey.INTERNAL_ERROR.errorCode(),
@@ -646,7 +659,7 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
                 }
             }
 
-            mapBuilder.put((AttributeDefinition) attributeDefinition, (ImmutableSet) setBuilder.build());
+            mapBuilder.put(attributeDefinition, (ImmutableSet) setBuilder.build());
         }
 
         return mapBuilder.build();
@@ -655,20 +668,20 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
     private XMLObject createAttributeValue(AttributeDefinition<?> attributeDefinition,
                                            QName attributeValueType,
                                            String value) {
-        XMLObjectBuilderFactory builderFactory = Configuration.getBuilderFactory();
+        XMLObjectBuilderFactory builderFactory = XMLObjectProviderRegistrySupport.getBuilderFactory();
         QName xmlType = attributeDefinition.getXmlType();
 
         if (XSString.TYPE_NAME.equals(xmlType)) {
-            XMLObjectBuilder<XSString> xmlObjectBuilder = builderFactory.getBuilder(XSString.TYPE_NAME);
-            XSString xsString = xmlObjectBuilder.buildObject(attributeValueType, xmlType);
+            XMLObjectBuilder xmlObjectBuilder = builderFactory.getBuilder(XSString.TYPE_NAME);
+            XSString xsString = (XSString) xmlObjectBuilder.buildObject(attributeValueType, xmlType);
             xsString.setValue(value);
             return xsString;
         }
 
-        XMLObjectBuilder<XSAny> xmlObjectBuilder = builderFactory.getBuilder(XSAny.TYPE_NAME);
-        XSAny anyValue = xmlObjectBuilder.buildObject(attributeValueType, xmlType);
+        XMLObjectBuilder xmlObjectBuilder = builderFactory.getBuilder(XSAny.TYPE_NAME);
+        XSAny anyValue = (XSAny) xmlObjectBuilder.buildObject(attributeValueType, xmlType);
 
-        anyValue.getNamespaceManager().registerNamespace(new Namespace(xmlType.getNamespaceURI(), xmlType.getPrefix()));
+        anyValue.getNamespaceManager().registerNamespaceDeclaration(new Namespace(xmlType.getNamespaceURI(), xmlType.getPrefix()));
 
         // Create the attribute statement
         anyValue.setTextContent(value);
@@ -773,27 +786,6 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
         }
     }
 
-    /* This is a temporary function to replace the correct LegalPerson attributes with the old erroneous ones, according to other party's metadata
-    * it is implemented in the Engine, because this is the place where we have Metadata */
-    //TODO remove check of erroneous attributes after transition period of EID-423
-    private boolean requestAlignLegalAttributes(AttributeDefinition<?> attributeDefinition, Set<String> supportedAttributeNames, ImmutableAttributeMap.Builder builder,
-                                                 Map.Entry<AttributeDefinition<?>, ImmutableSet<? extends eu.eidas.auth.commons.attribute.AttributeValue<?>>> entry, String serviceMetadataURL) {
-        boolean modified = false;
-        if (attributeDefinition.equals(LegalPersonSpec.Definitions.LEGAL_PERSON_ADDRESS)
-                && supportedAttributeNames.contains(LegalPersonSpec.Definitions.LEGAL_ADDRESS.getNameUri().toASCIIString())) {
-            builder.put((AttributeDefinition) LegalPersonSpec.Definitions.LEGAL_ADDRESS, (ImmutableSet) entry.getValue());
-            LOG.warn("Switching requested LegalPersonAddress to LegalAddress for " + serviceMetadataURL);
-            modified = true;
-        }
-        if (attributeDefinition.equals(LegalPersonSpec.Definitions.VAT_REGISTRATION_NUMBER)
-                && supportedAttributeNames.contains(LegalPersonSpec.Definitions.VAT_REGISTRATION.getNameUri().toASCIIString())) {
-            builder.put((AttributeDefinition) LegalPersonSpec.Definitions.VAT_REGISTRATION, (ImmutableSet) entry.getValue());
-            LOG.warn("Switching requested VATRegistrationNumber to VATRegistration for " + serviceMetadataURL);
-            modified = true;
-        }
-        return modified;
-    }
-
     /**
      * Copies the attributes contained in an {@link  IAuthenticationRequest} that fullName are supported attribute
      * names
@@ -820,11 +812,7 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
                 if (!validatedDefinition.equals(attributeDefinition)) {
                     modified = true;
                 }
-                builder.put((AttributeDefinition) validatedDefinition, (ImmutableSet) entry.getValue());
-                //TODO remove the below check of erroneous attributes after transition period of EID-423
-            } else if (  (attributeDefinition.equals(LegalPersonSpec.Definitions.LEGAL_PERSON_ADDRESS) && supportedAttributeNames.contains(LegalPersonSpec.Definitions.LEGAL_ADDRESS.getNameUri().toASCIIString())) ||
-                            (attributeDefinition.equals(LegalPersonSpec.Definitions.VAT_REGISTRATION_NUMBER) && supportedAttributeNames.contains(LegalPersonSpec.Definitions.LEGAL_ADDRESS.getNameUri().toASCIIString()))) {
-                modified |= requestAlignLegalAttributes(attributeDefinition, supportedAttributeNames, builder, entry, serviceMetadataURL);
+                builder.put(validatedDefinition, (ImmutableSet) entry.getValue());
             } else if (attributeDefinition.isRequired()) {
                 // TODO use a new error code: the Metadata of the partner does not understand a requested mandatory attribute:
                 // Failfast, refuse this request as it cannot be met
@@ -1034,7 +1022,11 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
         if (null == metadataEncryptionHelper) {
             return null;
         }
-        return metadataEncryptionHelper.getEncryptionCertificate(requestIssuer);
+        try {
+            return metadataEncryptionHelper.getEncryptionCertificate(requestIssuer);
+        } catch (EIDASMetadataException e) {
+            throw new EIDASSAMLEngineException(e);
+        }
     }
 
     public ImmutableSortedSet<AttributeDefinition<?>> getFilteredAttributes(
@@ -1054,11 +1046,6 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
             }
         }
         return builder.build();
-    }
-
-    @Override
-    public SAMLExtensionFormat getFormat() {
-        return SAMLExtensionFormat.EIDAS10;
     }
 
     @Nullable
@@ -1089,12 +1076,11 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
         if (null == metadataSignatureHelper) {
             return null;
         }
-        return metadataSignatureHelper.getRequestSignatureCertificate(issuer);
-    }
-
-    @Override
-    public String getRequestValidatorId() {
-        return EIDAS_REQUEST_VALIDATOR_SUITE_ID;
+        try {
+            return metadataSignatureHelper.getRequestSignatureCertificate(issuer);
+        } catch (EIDASMetadataException e) {
+            throw new EIDASSAMLEngineException(e);
+        }
     }
 
     @Nullable
@@ -1103,28 +1089,11 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
         if (null == metadataSignatureHelper) {
             return null;
         }
-        return metadataSignatureHelper.getResponseSignatureCertificate(issuer);
-    }
-
-    @Override
-    public String getResponseValidatorId() {
-        return EIDAS_RESPONSE_VALIDATOR_SUITE_ID;
-    }
-
-    @Nullable
-    @Override
-    @SuppressWarnings("squid:S2583")
-    public String getServiceUrl(@Nonnull String issuer, @Nonnull SamlBindingUri bindingUri)
-            throws EIDASSAMLEngineException {
-        if (null == metadataFetcher || null == metadataSigner) {
-            return null;
+        try {
+            return metadataSignatureHelper.getResponseSignatureCertificate(issuer);
+        } catch (EIDASMetadataException e) {
+            throw new EIDASSAMLEngineException(e);
         }
-        EntityDescriptor entityDescriptor = metadataFetcher.getEntityDescriptor(issuer, metadataSigner);
-        if (null == entityDescriptor) {
-            return null;
-        }
-        IDPSSODescriptor idpSsoDescriptor = MetadataUtil.getIDPSSODescriptor(entityDescriptor);
-        return MetadataUtil.getSingleSignOnUrl(idpSsoDescriptor, bindingUri);
     }
 
     /**
@@ -1146,18 +1115,23 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
         if (null == metadataFetcher || null == metadataSigner || null == issuer) {
             return Collections.emptySet();
         }
-        EntityDescriptor entityDescriptor = metadataFetcher.getEntityDescriptor(issuer, metadataSigner);
-        if (null == entityDescriptor) {
+        EidasMetadataParametersI metadataParameters = null;
+        try {
+            metadataParameters = metadataFetcher.getEidasMetadata(issuer, metadataSigner, metadataClock);
+        } catch (EIDASMetadataException e) {
+            throw new EIDASSAMLEngineException(e);
+        }
+        if (null == metadataParameters) {
             return Collections.emptySet();
         }
-        IDPSSODescriptor idpSsoDescriptor = MetadataUtil.getIDPSSODescriptor(entityDescriptor);
-        if (null == idpSsoDescriptor || null == idpSsoDescriptor.getAttributes() || idpSsoDescriptor.getAttributes()
+        EidasMetadataRoleParametersI idpRoleDescriptor = MetadataUtil.getIDPRoleDescriptor(metadataParameters);
+        if (null == idpRoleDescriptor || null == idpRoleDescriptor.getSupportedAttributes() || idpRoleDescriptor.getSupportedAttributes()
                 .isEmpty()) {
             return Collections.emptySet();
         }
         Set<String> supportedAttrNames = new HashSet<String>();
-        for (Attribute a : idpSsoDescriptor.getAttributes()) {
-            supportedAttrNames.add(a.getName());
+        for (String a : idpRoleDescriptor.getSupportedAttributes()) {
+            supportedAttrNames.add(a);
         }
         return supportedAttrNames;
     }
@@ -1171,14 +1145,14 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
             }
 
             String issuer = authnRequest.getIssuer();
-            EntityDescriptor entityDescriptor = metadataFetcher.getEntityDescriptor(issuer, metadataSigner);
-            if (null == entityDescriptor) {
+            EidasMetadataParametersI metadataParameters = metadataFetcher.getEidasMetadata(issuer, metadataSigner, metadataClock);
+            if (null == metadataParameters) {
                 return true;
             }
 
-            SPSSODescriptor spDesc = MetadataUtil.getSPSSODescriptor(entityDescriptor);
+            EidasMetadataRoleParametersI spDesc = MetadataUtil.getSPRoleDescriptor(metadataParameters);
 
-            String metadataAssertionUrl = MetadataUtil.getAssertionConsumerUrl(spDesc);
+            String metadataAssertionUrl = spDesc.getDefaultAssertionConsumerUrl();
             if (StringUtils.isEmpty(metadataAssertionUrl) || (authnRequest.getAssertionConsumerServiceURL() != null
                     && !authnRequest.getAssertionConsumerServiceURL().equals(metadataAssertionUrl))) {
                 throw new InternalErrorEIDASException(
@@ -1186,10 +1160,10 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
                         EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INVALID_SAML.errorMessage()));
             }
 
-            if (httpMethod!=null && StringUtils.isNotBlank(httpMethod)) {
+            if (httpMethod != null && StringUtils.isNotBlank(httpMethod)) {
                 boolean isBindingValid = false;
-                for (AssertionConsumerService asc : spDesc.getAssertionConsumerServices()) {
-                    if (httpMethod.equalsIgnoreCase(SAMLEngineUtils.getBindingMethod(asc.getBinding()))) {
+                for (String metadataBindingMethod : spDesc.getProtocolBindings()) {
+                    if (httpMethod.equalsIgnoreCase(metadataBindingMethod)) {
                         isBindingValid = true;
                         break;
                     }
@@ -1206,11 +1180,11 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
             }
 
             //exactly one of requestSpType, metadataSpType should be non empty
-            String metadataSpType = MetadataUtil.getSPTypeFromMetadata(entityDescriptor);
+            String metadataSpType = metadataParameters.getSpType();
             if (authnRequest.getSpType() != null) {
                 SpType requestSpType = SpType.fromString(authnRequest.getSpType());
                 // both Metadata and Request supplies SP type - not allowed
-                if (requestSpType != null && StringUtils.isNotBlank(metadataSpType)) {
+                if ((requestSpType != null) && (metadataSpType != null) && StringUtils.isNotBlank(metadataSpType)) {
                     LOG.error("SPType both in Connector Metadata and Request");
                     throw new EIDASServiceException(
                             EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INCONSISTENT_SPTYPE.errorCode()),
@@ -1226,7 +1200,7 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
                 }
             }
 
-        } catch (EIDASSAMLEngineException e) {
+        } catch (EIDASMetadataException e) {
             throw new InternalErrorEIDASException(EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INVALID_SAML.errorCode()),
                                                   EidasErrors.get(
                                                           EidasErrorKey.COLLEAGUE_REQ_INVALID_SAML.errorMessage()), e);
@@ -1280,7 +1254,6 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
         // - urn:oasis:names:tc:SAML:2.0:status:InvalidAttrNameOrValue
         // - urn:oasis:names:tc:SAML:2.0:status:InvalidNameIDPolicy
         // - urn:oasis:names:tc:SAML:2.0:status:RequestDenied
-        // - http://www.stork.gov.eu/saml20/statusCodes/QAANotSupported
 
         if (StringUtils.isNotBlank(response.getSubStatusCode())) {
             StatusCode newStatusCode = BuilderFactoryUtil.generateStatusCode(response.getSubStatusCode());
@@ -1310,10 +1283,10 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
         notOnOrAfter = notOnOrAfter.plusSeconds(coreProperties.getTimeNotOnOrAfter());
 
         Assertion assertion =
-                AssertionUtil.generateResponseAssertion(true, ipAddress, request, responseFail.getIssuer(),
+                AssertionUtil.generateResponseAssertion(true, ipAddress, request, response.getSubject(), response.getSubjectNameIdFormat(), responseFail.getIssuer(),
                                                         ImmutableAttributeMap.of(), notOnOrAfter,
                                                         coreProperties.getFormatEntity(), coreProperties.getResponder(),
-                                                        getFormat(), coreProperties.isOneTimeUse(), currentTime);
+                                                        formatDescriptor, coreProperties.isOneTimeUse(), currentTime);
         addResponseAuthnContextClassRef(response, assertion);
         responseFail.getAssertions().add(assertion);
 
@@ -1405,8 +1378,11 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
         Extensions formatExtensions = generateExtensions(requestToBeSent);
         // add the extensions to the SAMLAuthnRequest
         samlRequest.setExtensions(formatExtensions);
-        addNameIDPolicy(samlRequest, requestToBeSent.getNameIdFormat());
 
+        // optional name id policy
+        if (StringUtils.isNotBlank(requestToBeSent.getNameIdFormat())) {
+            addNameIDPolicy(samlRequest, requestToBeSent.getNameIdFormat());
+        }
         return samlRequest;
     }
 
@@ -1459,13 +1435,13 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
 
         // Mandatory SAML
         LOG.trace("Generate StatusCode");
-        StatusCode statusCode = BuilderFactoryUtil.generateStatusCode(StatusCode.SUCCESS_URI);
+        StatusCode statusCode = BuilderFactoryUtil.generateStatusCode(StatusCode.SUCCESS);
 
         LOG.trace("Generate Status");
         Status status = BuilderFactoryUtil.generateStatus(statusCode);
 
         LOG.trace("Generate StatusMessage");
-        StatusMessage statusMessage = BuilderFactoryUtil.generateStatusMessage(StatusCode.SUCCESS_URI);
+        StatusMessage statusMessage = BuilderFactoryUtil.generateStatusMessage(StatusCode.SUCCESS);
 
         status.setStatusMessage(statusMessage);
 
@@ -1480,48 +1456,15 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
 
         ImmutableAttributeMap attributes = response.getAttributes();
 
-        //TODO START remove check of erroneous attributes after transition period of EID-423
-        /* correcting the marshaled response in order to contain (erroneous) definitions supported by the other party */
-        ImmutableSet<AttributeDefinition<?>> supportedAttributes = request.getRequestedAttributes().getDefinitions();
-        // cpu consuming fix, restrict it to the special cases
-        if ((attributes.getDefinitions().contains(LegalPersonSpec.Definitions.VAT_REGISTRATION_NUMBER) && !supportedAttributes.contains(LegalPersonSpec.Definitions.VAT_REGISTRATION_NUMBER)) ||
-                (attributes.getDefinitions().contains(LegalPersonSpec.Definitions.LEGAL_PERSON_ADDRESS) && !supportedAttributes.contains(LegalPersonSpec.Definitions.LEGAL_PERSON_ADDRESS))) {
-            ImmutableAttributeMap.Builder correctedAttrs = ImmutableAttributeMap.builder();
-            UnmodifiableIterator<ImmutableAttributeMap.ImmutableAttributeEntry<?>> attrIterator = attributes.entrySet().iterator();
-            while (attrIterator.hasNext()) {
-                ImmutableAttributeMap.ImmutableAttributeEntry<?> attr = attrIterator.next();
-                if (attr.getKey().equals(LegalPersonSpec.Definitions.VAT_REGISTRATION_NUMBER) && !supportedAttributes.contains(LegalPersonSpec.Definitions.VAT_REGISTRATION_NUMBER)) {
-                    LOG.warn("Switching VATRegistrationNumber to VATRegistration for " + request.getIssuer());
-                    ImmutableSet values = attr.getValues();
-                    correctedAttrs.put(LegalPersonSpec.Definitions.VAT_REGISTRATION, values);
-                } else if (attr.getKey().equals(LegalPersonSpec.Definitions.LEGAL_PERSON_ADDRESS) && !supportedAttributes.contains(LegalPersonSpec.Definitions.LEGAL_PERSON_ADDRESS)) {
-                    LOG.warn("Switching LegalPersonAddress to LegalAddress for " + request.getIssuer());
-                    ImmutableSet values = attr.getValues();
-                    correctedAttrs.put(LegalPersonSpec.Definitions.LEGAL_ADDRESS, values);
-                } else if (attr.getKey().equals(RepresentativeLegalPersonSpec.Definitions.VAT_REGISTRATION_NUMBER)) {
-                    LOG.warn("Switching LegalPersonAddress to RepresentativeVATRegistration for " + request.getIssuer());
-                    ImmutableSet values = attr.getValues();
-                    correctedAttrs.put(RepresentativeLegalPersonSpec.Definitions.VAT_REGISTRATION_NUMBER, values);
-                } else if (attr.getKey().equals(RepresentativeLegalPersonSpec.Definitions.LEGAL_PERSON_ADDRESS)) {
-                    LOG.warn("Switching RepresentativeLegalPersonAddress to RepresentativeLegalAddress for " + request.getIssuer());
-                    ImmutableSet values = attr.getValues();
-                    correctedAttrs.put(RepresentativeLegalPersonSpec.Definitions.LEGAL_ADDRESS, values);
-                } else {
-                    ImmutableSet values = attr.getValues();
-                    correctedAttrs.put(attr.getKey(), values);
-                }
-            }
-            attributes = correctedAttrs.build();
-        }
-        //TODO END remove check of erroneous attributes after transition period of EID-423
-
         DateTime notOnOrAfter = currentTime.plusSeconds(coreProperties.getTimeNotOnOrAfter().intValue());
 
         Assertion assertion =
-                AssertionUtil.generateResponseAssertion(false, ipAddress, request, samlResponse.getIssuer(),
-                                                        attributes, notOnOrAfter,
-                                                        coreProperties.getFormatEntity(), coreProperties.getResponder(),
-                                                        getFormat(), coreProperties.isOneTimeUse(), currentTime);
+                AssertionUtil.generateResponseAssertion(false, ipAddress, request,
+                        response.getSubject(), response.getSubjectNameIdFormat(),
+                        samlResponse.getIssuer(),
+                        attributes, notOnOrAfter,
+                        coreProperties.getFormatEntity(), coreProperties.getResponder(),
+                        formatDescriptor, coreProperties.isOneTimeUse(), currentTime);
 
         AttributeStatement attrStatement = generateResponseAttributeStatement(attributes);
 
@@ -1583,15 +1526,10 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
     }
 
     protected void registerRequestNamespace(@Nonnull XMLObject xmlObject) {
-        xmlObject.getNamespaceManager()
-                .registerNamespace(new Namespace(SAMLConstants.SAML20_NS, SAMLConstants.SAML20_PREFIX));
-        xmlObject.getNamespaceManager().registerNamespace(new Namespace("http://www.w3.org/2000/09/xmldsig#", "ds"));
-        xmlObject.getNamespaceManager()
-                .registerNamespace(new Namespace(SAMLConstants.SAML20P_NS, SAMLConstants.SAML20P_PREFIX));
-
-        xmlObject.getNamespaceManager()
-                .registerNamespace(
-                        new Namespace(SAMLCore.EIDAS10_SAML_NS.getValue(), SAMLCore.EIDAS10_SAML_PREFIX.getValue()));
+        xmlObject.getNamespaceManager().registerNamespaceDeclaration(new Namespace(SAMLConstants.SAML20_NS, SAMLConstants.SAML20_PREFIX));
+        xmlObject.getNamespaceManager().registerNamespaceDeclaration(new Namespace("http://www.w3.org/2000/09/xmldsig#", "ds"));
+        xmlObject.getNamespaceManager().registerNamespaceDeclaration(new Namespace(SAMLConstants.SAML20P_NS, SAMLConstants.SAML20P_PREFIX));
+        xmlObject.getNamespaceManager().registerNamespaceDeclaration(new Namespace(SAMLCore.EIDAS10_SAML_NS.getValue(), SAMLCore.EIDAS10_SAML_PREFIX.getValue()));
     }
 
     /**
@@ -1602,13 +1540,13 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
     public void registerResponseNamespace(@Nonnull XMLObject xmlObject) {
         LOG.trace("Set namespaces.");
         xmlObject.getNamespaceManager()
-                .registerNamespace(new Namespace(SAMLConstants.SAML20_NS, SAMLConstants.SAML20_PREFIX));
-        xmlObject.getNamespaceManager().registerNamespace(new Namespace("http://www.w3.org/2000/09/xmldsig#", "ds"));
+                .registerNamespaceDeclaration(new Namespace(SAMLConstants.SAML20_NS, SAMLConstants.SAML20_PREFIX));
+        xmlObject.getNamespaceManager().registerNamespaceDeclaration(new Namespace("http://www.w3.org/2000/09/xmldsig#", "ds"));
         xmlObject.getNamespaceManager()
-                .registerNamespace(new Namespace(SAMLConstants.SAML20P_NS, SAMLConstants.SAML20P_PREFIX));
+                .registerNamespaceDeclaration(new Namespace(SAMLConstants.SAML20P_NS, SAMLConstants.SAML20P_PREFIX));
 
         xmlObject.getNamespaceManager()
-                .registerNamespace(new Namespace(SAMLCore.EIDAS10_RESPONSESAML_NS.getValue(),
+                .registerNamespaceDeclaration(new Namespace(SAMLCore.EIDAS10_RESPONSESAML_NS.getValue(),
                                                  SAMLCore.EIDAS10_SAML_PREFIX.getValue()));
     }
 
@@ -1642,10 +1580,6 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
         List<RequestedAttribute> reqAttrs = requestedAttr.getAttributes();
 
         ImmutableAttributeMap.Builder attributeMapBuilder = new ImmutableAttributeMap.Builder();
-        //TODO START postprocess erroneous attributes of EID-423, remove this one after transition period
-        boolean addressProcessed = false;
-        boolean vatProcessed = false;
-        //TODO END postprocess erroneous attributes of EID-423, remove this one after transition period
         for (RequestedAttribute requestedAttribute : reqAttrs) {
             AttributeDefinition<?> attributeDefinition = getAttributeDefinitionNullable(requestedAttribute.getName());
             checkRequiredAttributeCompiles(attributeDefinition, requestedAttribute);
@@ -1661,46 +1595,6 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
                             EidasErrorKey.INTERNAL_ERROR.errorCode(), "Illegal Attribute friendlyName for " + attributeDefinition.getNameUri().toString() +
                             " expected " +  attributeDefinition.getFriendlyName() + " got " + friendlyName);
                 }*/
-                //TODO START process erroneous attributes of EID-423, remove this one after transition period
-                /* optional fix: replace erroneous attributes at ProtocolProcessor layer, if both of them are requested, just discard the erroneous ones
-                   normally it is done in CitizenConsentServlet in the Node, this code is only for those who are simply reusing the engine
-                if (attributeDefinition.equals(LegalPersonSpec.Definitions.LEGAL_PERSON_ADDRESS)) {
-                    if (addressProcessed) {
-                        LOG.warn("Removing LegalPersonAddress from Requested attributes because it's already added instead of LegalAddress");
-                        continue;
-                    } else {
-                        addressProcessed = true;
-                    }
-                }
-                if (attributeDefinition.equals(LegalPersonSpec.Definitions.LEGAL_ADDRESS)) {
-                    if (addressProcessed) {
-                        LOG.warn("Removing LegalAddress from Requested attributes because LegalPersonAddress is already there");
-                        continue;
-                    } else {
-                        LOG.warn("Replacing LegalAddress with LegalPersonAddress in the Request");
-                        attributeDefinition = LegalPersonSpec.Definitions.LEGAL_PERSON_ADDRESS;
-                        addressProcessed = true;
-                    }
-                }
-                if (attributeDefinition.equals(LegalPersonSpec.Definitions.VAT_REGISTRATION_NUMBER)) {
-                    if (vatProcessed) {
-                        LOG.warn("Removing VATRegistrationNumber from Requested attributes beacuse it's already added instead of VATRegisration");
-                        continue;
-                    } else {
-                        vatProcessed = true;
-                    }
-                }
-                if (attributeDefinition.equals(LegalPersonSpec.Definitions.VAT_REGISTRATION)) {
-                    if (vatProcessed) {
-                        LOG.warn("Removing VATRegistration from Requested attributes because VATRegistrationNumber is already there");
-                        continue;
-                    } else {
-                        LOG.warn("Replacing VATRegistration with VATRegistrationNumber in the Request");
-                        attributeDefinition = LegalPersonSpec.Definitions.VAT_REGISTRATION_NUMBER;
-                        vatProcessed = true;
-                    }
-                }*/
-                //TODO END process erroneous attributes of EID-423, remove this one after transition period
 
                 List<String> stringValues = new ArrayList<>();
                 for (XMLObject xmlObject : requestedAttribute.getOrderedChildren()) {
@@ -1734,7 +1628,7 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
                                 EidasErrors.get(EidasErrorKey.MESSAGE_VALIDATION_ERROR.errorCode()), e);
                     }
                 }
-                attributeMapBuilder.put((AttributeDefinition) attributeDefinition, (ImmutableSet) setBuilder.build());
+                attributeMapBuilder.put(attributeDefinition, (ImmutableSet) setBuilder.build());
             } else {
                 LOG.info(AbstractProtocolEngine.SAML_EXCHANGE,
                          "BUSINESS EXCEPTION : Attribute name: {} was not found. It will be removed from the request object",
@@ -1816,6 +1710,14 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
             LOG.trace("Set ipAddress.");
             String ipAddress = ResponseUtil.extractSubjectConfirmationIPAddress(assertion);
             builder.ipAddress(ipAddress);
+
+            LOG.trace("Set Subject.");
+            String subject = ResponseUtil.extractSubject(assertion);
+            builder.subject(subject);
+
+            LOG.trace("Set SubjectNameIdFormat.");
+            String subjectFormat = ResponseUtil.extractSubjectNameIdFormat(assertion);
+            builder.subjectNameIdFormat(subjectFormat);
         }
 
         // Case no error.

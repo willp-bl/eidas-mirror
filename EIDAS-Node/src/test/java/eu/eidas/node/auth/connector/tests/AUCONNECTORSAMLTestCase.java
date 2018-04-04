@@ -1,23 +1,19 @@
 /*
- * Copyright (c) 2016 by European Commission
+ * Copyright (c) 2017 by European Commission
  *
- * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
- * the European Commission - subsequent versions of the EUPL (the "Licence");
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
  * You may not use this work except in compliance with the Licence.
  * You may obtain a copy of the Licence at:
- * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the Licence is distributed on an "AS IS" basis,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
  * See the Licence for the specific language governing permissions and
  * limitations under the Licence.
- *
- * This product combines work with different licenses. See the "NOTICE" text
- * file for details on the various modules and licenses.
- * The "NOTICE" text file is part of the distribution. Any derivative works
- * that you distribute must include a readable copy of the "NOTICE" text file.
- *
  */
 
 package eu.eidas.node.auth.connector.tests;
@@ -32,18 +28,17 @@ import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.IRequestMessage;
 import eu.eidas.auth.commons.protocol.eidas.LevelOfAssurance;
 import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.eidas.spec.EidasSpec;
 import eu.eidas.auth.commons.protocol.impl.SamlNameIdFormat;
 import eu.eidas.auth.commons.tx.*;
 import eu.eidas.auth.engine.DefaultProtocolEngineFactory;
 import eu.eidas.auth.engine.ProtocolEngineI;
 import eu.eidas.auth.engine.core.ProtocolProcessorI;
-import eu.eidas.auth.engine.core.eidas.EidasConstants;
+import eu.eidas.auth.engine.core.SAMLCore;
 import eu.eidas.auth.engine.core.eidas.EidasProtocolProcessor;
 import eu.eidas.auth.engine.core.eidas.MetadataEncryptionHelper;
 import eu.eidas.auth.engine.core.eidas.MetadataSignatureHelper;
-import eu.eidas.auth.engine.core.eidas.spec.EidasSpec;
-import eu.eidas.auth.engine.metadata.MetadataFetcherI;
-import eu.eidas.auth.engine.metadata.MetadataSignerI;
+import eu.eidas.auth.engine.metadata.*;
 import eu.eidas.node.auth.connector.AUCONNECTORSAML;
 import eu.eidas.node.auth.connector.AUCONNECTORUtil;
 import eu.eidas.node.auth.connector.ICONNECTORSAMLService;
@@ -53,16 +48,16 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Matchers;
-import org.opensaml.saml2.common.Extensions;
-import org.opensaml.saml2.common.impl.ExtensionsBuilder;
-import org.opensaml.saml2.core.Attribute;
-import org.opensaml.saml2.core.impl.AttributeBuilder;
-import org.opensaml.saml2.metadata.EntityDescriptor;
-import org.opensaml.saml2.metadata.impl.EntityDescriptorBuilder;
-import org.opensaml.samlext.saml2mdattr.EntityAttributes;
-import org.opensaml.samlext.saml2mdattr.impl.EntityAttributesBuilder;
-import org.opensaml.xml.schema.XSString;
-import org.opensaml.xml.schema.impl.XSStringBuilder;
+import org.opensaml.core.xml.schema.XSString;
+import org.opensaml.core.xml.schema.impl.XSStringBuilder;
+import org.opensaml.saml.ext.saml2mdattr.EntityAttributes;
+import org.opensaml.saml.ext.saml2mdattr.impl.EntityAttributesBuilder;
+import org.opensaml.saml.saml2.core.Attribute;
+import org.opensaml.saml.saml2.core.impl.AttributeBuilder;
+import org.opensaml.saml.saml2.metadata.EntityDescriptor;
+import org.opensaml.saml.saml2.metadata.Extensions;
+import org.opensaml.saml.saml2.metadata.impl.EntityDescriptorBuilder;
+import org.opensaml.saml.saml2.metadata.impl.ExtensionsBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -155,7 +150,7 @@ public class AUCONNECTORSAMLTestCase {
     //TODO check why this test fails, added Ignore here only to allow build with execution of all tests that do not fail
     public void testGenerateErrorAuthenticationResponseInvalidSamlData() {
         AUCONNECTORSAML auconnectorsaml = new AUCONNECTORSAML();
-        auconnectorsaml.setConnectorResponderMetadataUrl(TestingConstants.CONNECTOR_METADATA_URL_CONS.toString());
+        auconnectorsaml.setConnectorMetadataUrl(TestingConstants.CONNECTOR_METADATA_URL_CONS.toString());
 //        auconnectorsaml.setSamlSpInstance(TestingConstants.SAML_INSTANCE_CONS.toString());
         auconnectorsaml.setNodeProtocolEngineFactory(DefaultProtocolEngineFactory.getInstance());
 
@@ -221,12 +216,12 @@ public class AUCONNECTORSAMLTestCase {
     }
 
     private static WebRequest newEmptyWebRequest() {
-        return new IncomingRequest(IncomingRequest.Method.POST, ImmutableMap.<String, ImmutableList<String>>of(),
+        return new IncomingRequest(BindingMethod.POST, ImmutableMap.<String, ImmutableList<String>>of(),
                                    "127.0.0.1", null);
     }
 
     private static WebRequest newSingleParamWebRequest(String paramName, String paramValue) {
-        return new IncomingRequest(IncomingRequest.Method.POST,
+        return new IncomingRequest(BindingMethod.POST,
                                    ImmutableMap.<String, ImmutableList<String>>of(paramName,
                                                                                   ImmutableList.<String>of(paramValue)),
                                    "127.0.0.1", null);
@@ -351,16 +346,17 @@ public class AUCONNECTORSAMLTestCase {
         Extensions extensions = new ExtensionsBuilder().buildObject();
         EntityAttributes entityAttributes = new EntityAttributesBuilder().buildObject();
         Attribute loa = new AttributeBuilder().buildObject();
-        loa.setName(EidasConstants.LEVEL_OF_ASSURANCE_NAME);
+        loa.setName(MetadataUtil.LEVEL_OF_ASSURANCE_NAME);
         XSString xsString = new XSStringBuilder().buildObject(XSString.TYPE_NAME);
         xsString.setValue(LevelOfAssurance.HIGH.getValue());
         loa.getAttributeValues().add(xsString);
         entityAttributes.getAttributes().add(loa);
         extensions.getUnknownXMLObjects().add(entityAttributes);
         entityDescriptor.setExtensions(extensions);
+        EidasMetadataParametersI metadataParameters = MetadataUtil.convertEntityDescriptor(entityDescriptor);
 
-        when(mockMetadataProcessor.getEntityDescriptor(anyString(), Matchers.<MetadataSignerI>any())).thenReturn(
-                entityDescriptor);
+        when(mockMetadataProcessor.getEidasMetadata(anyString(), Matchers.<MetadataSignerI>any(), Matchers.<MetadataClockI>any() )).thenReturn(
+                metadataParameters);
 
         //ProtocolEngineI spSamlEngine = auconnectorsaml.getSamlEngine(auconnectorsaml.getSamlSpInstance());
         //injectMockMetadataFetcher(mockMetadataProcessor, spSamlEngine);
@@ -408,7 +404,6 @@ public class AUCONNECTORSAMLTestCase {
         configs.setProperty(EIDASValues.EIDAS_SERVICE_PREFIX.name(1), TestingConstants.LOCAL_CONS.toString());
         configs.setProperty(EIDASValues.EIDAS_SERVICE_PREFIX.url(1), TestingConstants.LOCAL_URL_CONS.toString());
         configs.setProperty(TestingConstants.SPID_CONS.getQaaLevel(), TestingConstants.QAALEVEL_CONS.toString());
-        configs.setProperty(EIDASValues.NODE_SUPPORT_EIDAS_MESSAGE_FORMAT_ONLY.toString(), "false");
         auconnectorutil.setConfigs(configs);
 
         auconnectorutil.setMaxQAA(TestingConstants.MAX_QAA_CONS.intValue());
@@ -465,9 +460,6 @@ public class AUCONNECTORSAMLTestCase {
         configs.setProperty(EIDASValues.EIDAS_SERVICE_PREFIX.name(1), TestingConstants.LOCAL_CONS.toString());
         configs.setProperty(EIDASValues.EIDAS_SERVICE_PREFIX.url(1), TestingConstants.LOCAL_URL_CONS.toString());
         configs.setProperty(TestingConstants.SPID_CONS.getQaaLevel(), TestingConstants.QAALEVEL_CONS.toString());
-        configs.setProperty(EIDASValues.DEFAULT.toString(), TestingConstants.ALL_CONS.toString());
-        configs.setProperty(EIDASValues.NODE_SUPPORT_EIDAS_MESSAGE_FORMAT_ONLY.toString(),
-                            TestingConstants.FALSE_CONS.toString());
         auconnectorutil.setConfigs(configs);
 
         auconnectorutil.setMaxQAA(TestingConstants.MAX_QAA_CONS.intValue());
@@ -759,7 +751,6 @@ public class AUCONNECTORSAMLTestCase {
         auconnectorutil.setAntiReplayCache(auconnectorutil.getConcurrentMapService().getConfiguredMapCache());
         auconnectorutil.flushReplayCache();
         Properties configs = new Properties();
-        configs.setProperty(EIDASValues.NODE_SUPPORT_EIDAS_MESSAGE_FORMAT_ONLY.toString(), "false");
         auconnectorutil.setConfigs(configs);
 
         auconnectorsaml.setConnectorUtil(auconnectorutil);
@@ -826,7 +817,6 @@ public class AUCONNECTORSAMLTestCase {
         auconnectorutil.setAntiReplayCache(auconnectorutil.getConcurrentMapService().getConfiguredMapCache());
         auconnectorutil.flushReplayCache();
         Properties configs = new Properties();
-        configs.setProperty(EIDASValues.NODE_SUPPORT_EIDAS_MESSAGE_FORMAT_ONLY.toString(), "false");
         auconnectorutil.setConfigs(configs);
 
         auconnectorsaml.setConnectorUtil(auconnectorutil);
@@ -907,10 +897,7 @@ public class AUCONNECTORSAMLTestCase {
                 .id(TestingConstants.SAML_ID_CONS.toString())
                 .providerName(providerName)
                 .destination(TestingConstants.DESTINATION_CONS.toString())
-                .nameIdFormat("stork1");
-//        eidasAuthenticationRequestBuilder.setTokenSaml(SAML_TOKEN_ARRAY);
-//        eidasAuthenticationRequestBuilder.setQaa(TestingConstants.QAALEVEL_CONS.intValue());
-//        eidasAuthenticationRequestBuilder.setSPID(TestingConstants.SPID_CONS.toString());
+                .nameIdFormat(SAMLCore.EIDAS10_SAML_PREFIX.getValue());
         if (setCountry) {
             eidasAuthenticationRequestBuilder.citizenCountryCode(TestingConstants.LOCAL_CONS.toString());
         }
@@ -923,58 +910,15 @@ public class AUCONNECTORSAMLTestCase {
         IAuthenticationRequest authData = eidasAuthenticationRequestBuilder.build();
 
         Properties configs = new Properties();
-        configs.setProperty(EIDASValues.NODE_SUPPORT_EIDAS_MESSAGE_FORMAT_ONLY.toString(), "false");
         AUCONNECTORUtil auconnectorutil = new AUCONNECTORUtil();
         auconnectorutil.setConfigs(configs);
         auconnectorsaml.setConnectorUtil(auconnectorutil);
         return auconnectorsaml.generateServiceAuthnRequest(null, authData).getMessageBytes();
     }
 
-    /**
-     * test the EIDAS only mode cause an error when trying to generate CPEPS authn request
-     */
-    @Test(expected = InvalidParameterEIDASException.class)
-    @Ignore
-    //TODO check why this test fails, added Ignore here only to allow build with execution of all tests that do not fail
-    public void testGenerateStorkSAMLRequestInEidasOnlyMode() {
-        AUCONNECTORSAML auconnectorsaml = new AUCONNECTORSAML();
-        auconnectorsaml.setSamlServiceInstance(TestingConstants.SAML_INSTANCE_CONS.toString());
-        auconnectorsaml.setNodeProtocolEngineFactory(DefaultProtocolEngineFactory.getInstance());
-
-        setEidasUtil();
-
-        EidasAuthenticationRequest.Builder eidasAuthenticationRequestBuilder = EidasAuthenticationRequest.builder();
-        eidasAuthenticationRequestBuilder.requestedAttributes(REQUEST_IMMUTABLE_ATTR_MAP)
-                .assertionConsumerServiceURL(TestingConstants.ASSERTION_URL_CONS.toString())
-                .issuer(TestingConstants.SAML_ISSUER_CONS.toString())
-                .id(TestingConstants.SAML_ID_CONS.toString())
-                .citizenCountryCode(TestingConstants.CITIZEN_COUNTRY_CODE_CONS.toString())
-                .providerName(TestingConstants.PROVIDERNAME_CERT_CONS.toString());
-//        TODO check if the saml token needs to be set somewhere else in e.g. the eidasAuthenticationRequestBuilder
-//        eidasAuthenticationRequestBuilder.setTokenSaml(SAML_TOKEN_ARRAY);
-//        TODO check if the qaa needs to be set somewhere else in e.g. the eidasAuthenticationRequestBuilder
-//        eidasAuthenticationRequestBuilder.setQaa(TestingConstants.QAALEVEL_CONS.intValue());
-        IAuthenticationRequest authData = eidasAuthenticationRequestBuilder.build();
-
-        IEIDASLogger mockLoggerBean = mock(IEIDASLogger.class);
-        auconnectorsaml.setLoggerBean(mockLoggerBean);
-
-        AUCONNECTORUtil auconnectorutil = new AUCONNECTORUtil();
-        Properties configs = new Properties();
-        // Support to eIDAS message format only
-        configs.setProperty(EIDASValues.NODE_SUPPORT_EIDAS_MESSAGE_FORMAT_ONLY.toString(), "true");
-        auconnectorutil.setConfigs(configs);
-        auconnectorsaml.setConnectorUtil(auconnectorutil);
-
-        IRequestMessage iRequestMessage = auconnectorsaml.generateServiceAuthnRequest(null, authData);
-        IAuthenticationRequest iAuthenticationRequest = iRequestMessage.getRequest();
-        assertNotNull(iAuthenticationRequest);
-    }
-
     private void setPropertyForAllMessageFormatSupport(AUCONNECTORSAML auspepssaml) {
         AUCONNECTORUtil auspepsUtil = new AUCONNECTORUtil();
         Properties configs = new Properties();
-        configs.setProperty(EIDASValues.NODE_SUPPORT_EIDAS_MESSAGE_FORMAT_ONLY.toString(), "false");
         auspepsUtil.setConfigs(configs);
         auspepssaml.setConnectorUtil(auspepsUtil);
     }

@@ -1,3 +1,26 @@
+/*
+ * Copyright (c) 2017 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ *  EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
+ *
+ * This product combines work with different licenses. See the
+ * "NOTICE" text file for details on the various modules and licenses.
+ * The "NOTICE" text file is part of the distribution.
+ * Any derivative works that you distribute must include a readable
+ * copy of the "NOTICE" text file.
+ */
 package eu.eidas.auth.commons.tx;
 
 import java.io.Serializable;
@@ -36,8 +59,6 @@ public abstract class AbstractStoredRequest<R extends Serializable> implements S
     @NotThreadSafe
     public abstract static class AbstractBuilder<B extends AbstractBuilder<B, T, R>, T extends AbstractStoredRequest<R>, R extends Serializable> {
 
-        private String relayState;
-
         private String remoteIpAddress;
 
         private R request;
@@ -47,22 +68,14 @@ public abstract class AbstractStoredRequest<R extends Serializable> implements S
 
         protected AbstractBuilder(@Nonnull AbstractStoredRequest<R> copy) {
             Preconditions.checkNotNull(copy, "copy");
-            relayState = copy.relayState;
             remoteIpAddress = copy.remoteIpAddress;
             request = copy.request;
         }
 
         protected AbstractBuilder(@Nonnull AbstractBuilder<?, ?, R> copy) {
             Preconditions.checkNotNull(copy, "copy");
-            relayState = copy.relayState;
             remoteIpAddress = copy.remoteIpAddress;
             request = copy.request;
-        }
-
-        @Nonnull
-        public final B relayState(final String relayState) {
-            this.relayState = relayState;
-            return (B) this;
         }
 
         @Nonnull
@@ -124,9 +137,6 @@ public abstract class AbstractStoredRequest<R extends Serializable> implements S
         protected abstract T newInstance();
     }
 
-    @Nullable
-    private final String relayState;
-
     @Nonnull
     private final String remoteIpAddress;
 
@@ -134,14 +144,8 @@ public abstract class AbstractStoredRequest<R extends Serializable> implements S
     private final R request;
 
     protected AbstractStoredRequest(@Nonnull AbstractBuilder<?, ?, R> builder) {
-        relayState = builder.relayState;
         remoteIpAddress = builder.remoteIpAddress;
         request = builder.request;
-    }
-
-    @Nullable
-    public final String getRelayState() {
-        return relayState;
     }
 
     @Nonnull
@@ -165,9 +169,6 @@ public abstract class AbstractStoredRequest<R extends Serializable> implements S
 
         AbstractStoredRequest<R> that = (AbstractStoredRequest<R>) o;
 
-        if (relayState != null ? !relayState.equals(that.relayState) : that.relayState != null) {
-            return false;
-        }
         if (!remoteIpAddress.equals(that.remoteIpAddress)) { // remoteIpAddress cannot be null
             return false;
         }
@@ -176,8 +177,7 @@ public abstract class AbstractStoredRequest<R extends Serializable> implements S
 
     @Override
     public int hashCode() {
-        int result = relayState != null ? relayState.hashCode() : 0;
-        result = 31 * result + (remoteIpAddress.hashCode());    // remoteIpAddress cannot be null
+        int result = remoteIpAddress.hashCode();    // remoteIpAddress cannot be null
         result = 31 * result + (request.hashCode());            // request cannot be null
         return result;
     }
@@ -195,10 +195,7 @@ public abstract class AbstractStoredRequest<R extends Serializable> implements S
                                          @Nonnull AbstractStoredRequest<?> request) {
         Preconditions.checkNotNull(stringBuilder, "stringBuilder");
         Preconditions.checkNotNull(request, "request");
-        return stringBuilder.append("relayState='")
-                .append(request.getRelayState())
-                .append('\'')
-                .append(", remoteIpAddress='")
+        return stringBuilder.append("remoteIpAddress='")
                 .append(request.getRemoteIpAddress())
                 .append('\'')
                 .append(", request='")

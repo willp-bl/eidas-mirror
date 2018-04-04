@@ -1,54 +1,44 @@
 /*
- * Copyright (c) 2016 by European Commission
+ * Copyright (c) 2017 by European Commission
  *
- * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
- * the European Commission - subsequent versions of the EUPL (the "Licence");
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
  * You may not use this work except in compliance with the Licence.
  * You may obtain a copy of the Licence at:
- * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the Licence is distributed on an "AS IS" basis,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
  * See the Licence for the specific language governing permissions and
  * limitations under the Licence.
- *
- * This product combines work with different licenses. See the "NOTICE" text
- * file for details on the various modules and licenses.
- * The "NOTICE" text file is part of the distribution. Any derivative works
- * that you distribute must include a readable copy of the "NOTICE" text file.
- *
  */
 
 package eu.eidas.node.auth.service.tests;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import eu.eidas.auth.commons.*;
-import eu.eidas.auth.commons.attribute.AttributeDefinition;
+import eu.eidas.auth.commons.BindingMethod;
+import eu.eidas.auth.commons.IncomingRequest;
+import eu.eidas.auth.commons.WebRequest;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
-import eu.eidas.auth.commons.attribute.PersonType;
-import eu.eidas.auth.commons.attribute.impl.IntegerAttributeValue;
-import eu.eidas.auth.commons.attribute.impl.IntegerAttributeValueMarshaller;
-import eu.eidas.auth.commons.attribute.impl.StringAttributeValueMarshaller;
 import eu.eidas.auth.commons.exceptions.EIDASServiceException;
 import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.eidas.spec.NaturalPersonSpec;
 import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
 import eu.eidas.auth.engine.DefaultProtocolEngineFactory;
 import eu.eidas.node.auth.service.*;
 import eu.eidas.node.auth.util.tests.TestingConstants;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import java.util.Properties;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -73,12 +63,12 @@ public final class AUSERVICECitizenTestCase {
     private static String[] EMPTY_STR_ARRAY = new String[0];
 
     private static WebRequest newEmptyWebRequest() {
-        return new IncomingRequest(IncomingRequest.Method.POST, ImmutableMap.<String, ImmutableList<String>>of(),
+        return new IncomingRequest(BindingMethod.POST, ImmutableMap.<String, ImmutableList<String>>of(),
                                    "127.0.0.1", null);
     }
 
     private static WebRequest newSingleParamWebRequest(String paramName, String paramValue) {
-        return new IncomingRequest(IncomingRequest.Method.POST,
+        return new IncomingRequest(BindingMethod.POST,
                                    ImmutableMap.<String, ImmutableList<String>>of(paramName,
                                                                                   ImmutableList.<String>of(paramValue)),
                                    "127.0.0.1", null);
@@ -88,7 +78,7 @@ public final class AUSERVICECitizenTestCase {
                                             String paramValue1,
                                             String paramName2,
                                             String paramValue2) {
-        return new IncomingRequest(IncomingRequest.Method.POST,
+        return new IncomingRequest(BindingMethod.POST,
                                    ImmutableMap.<String, ImmutableList<String>>of(paramName1,
                                                                                   ImmutableList.<String>of(paramValue1),
                                                                                   paramName2, ImmutableList.<String>of(
@@ -101,11 +91,6 @@ public final class AUSERVICECitizenTestCase {
     private static WebRequest EMPTY_PARAMETERS = newEmptyWebRequest();
 
     /**
-     * Parameters with dummy values.
-     */
-    private static WebRequest PARAMETERS = newWebRequest("http://www.stork.gov.eu/1.0/isAgeOver", "", "age", "");
-
-    /**
      * Empty Personal Attribute List.
      */
     private static ImmutableAttributeMap EMPTY_ATTR_LIST = ImmutableAttributeMap.of();
@@ -115,30 +100,10 @@ public final class AUSERVICECitizenTestCase {
      */
     private static ImmutableAttributeMap EMPTY_IMMUTABLE_ATTR_MAP = new ImmutableAttributeMap.Builder().build();
 
-    private static final AttributeDefinition<Integer> IS_AGE_OVER =
-            new AttributeDefinition.Builder<Integer>().nameUri("http://www.stork.gov.eu/1.0/isAgeOver")
-                    .friendlyName("isAgeOver")
-                    .personType(PersonType.NATURAL_PERSON)
-                    .required(true)
-                    .uniqueIdentifier(false)
-                    .xmlType("http://www.w3.org/2001/XMLSchema", "string", "eidas-natural")
-                    .attributeValueMarshaller(new IntegerAttributeValueMarshaller())
-                    .build();
-
-    private static final AttributeDefinition<String> AGE =
-            new AttributeDefinition.Builder<String>().nameUri("http://www.stork.gov.eu/1.0/age")
-                    .friendlyName("age")
-                    .personType(PersonType.NATURAL_PERSON)
-                    .required(false)
-                    .uniqueIdentifier(false)
-                    .xmlType("http://www.w3.org/2001/XMLSchema", "string", "eidas-natural")
-                    .attributeValueMarshaller(new StringAttributeValueMarshaller())
-                    .build();
-
     /**
      * Personal Attribute List with dummy attributes.
      */
-    private static final ImmutableAttributeMap ATTR_LIST = ImmutableAttributeMap.builder().put(IS_AGE_OVER, new IntegerAttributeValue(15)).put(AGE).build();
+    private static final ImmutableAttributeMap ATTR_LIST = ImmutableAttributeMap.builder().put(NaturalPersonSpec.Definitions.BIRTH_NAME, "FREDERIC").build();
 
     /**
      * EidasAuthenticationRequest object.
@@ -180,173 +145,6 @@ public final class AUSERVICECitizenTestCase {
         EidasAuthenticationRequest.Builder eidasAuthenticationRequestBuilder = EidasAuthenticationRequest.builder();
         eidasAuthenticationRequestBuilder.requestedAttributes(ATTR_LIST);
         return eidasAuthenticationRequestBuilder.build();
-    }
-
-    /**
-     * Test method for {@link AUSERVICECitizen# getCitizenConsent(WebRequest, IPersonalAttributeList)}. Using an empty
-     * parameters.
-     */
-    @Test
-    public void testGetCitizenConsentEmptyParameters() {
-        final CitizenConsent consent = AUSERVICECITIZEN.getCitizenConsent(EMPTY_PARAMETERS, ATTR_LIST);
-        assertArrayEquals(consent.getMandatoryList().toArray(), EMPTY_STR_ARRAY);
-    }
-
-    /**
-     * Test method for {@link AUSERVICECitizen# getCitizenConsent(WebRequest, IPersonalAttributeList)}. Using and empty personal
-     * attribute list.
-     */
-    @Test
-    public void testGetCitizenConsentEmptyAttrList() {
-        final CitizenConsent consent = AUSERVICECITIZEN.getCitizenConsent(PARAMETERS, EMPTY_ATTR_LIST);
-        assertArrayEquals(consent.getMandatoryList().toArray(), EMPTY_STR_ARRAY);
-    }
-
-    /**
-     * Test method for {@link AUSERVICECitizen# getCitizenConsent(WebRequest, IPersonalAttributeList)}.
-     */
-    @Test
-    public void testGetCitizenConsent() {
-        final CitizenConsent consent = AUSERVICECITIZEN.getCitizenConsent(PARAMETERS, ATTR_LIST);
-        assertArrayEquals(new String[] {"http://www.stork.gov.eu/1.0/isAgeOver"}, consent.getMandatoryList().toArray());
-    }
-
-    /**
-     * Test method for {@link AUSERVICECitizen# processCitizenConsent(CitizenConsent, IAuthenticationRequest, String,
-     * ISERVICESAMLService)} . Testing empty EidasAuthenticationRequest and no exception should be thrown.
-     */
-    @Test
-    public void testProcessCitizenConsentEmptyAuthData() {
-        CitizenConsent consent = AUSERVICECITIZEN.getCitizenConsent(PARAMETERS, ATTR_LIST);
-
-        AUSERVICECITIZEN.processCitizenConsent(consent, AUTH_DATA, USER_IP);
-    }
-
-    /**
-     * Test method for {@link AUSERVICECitizen# processCitizenConsent(CitizenConsent, IAuthenticationRequest, String,
-     * ISERVICESAMLService)} . Testing empty Consent and no exception should be thrown.
-     */
-    @Test(expected = ResponseCarryingServiceException.class)
-    public void testProcessCitizenConsentEmptyConsent() {
-        final CitizenConsent consent = AUSERVICECITIZEN.getCitizenConsent(EMPTY_PARAMETERS, EMPTY_ATTR_LIST);
-
-        AUSERVICECITIZEN.processCitizenConsent(consent, AUTH_DATA, USER_IP);
-    }
-
-    /**
-     * Test method for {@link AUSERVICECitizen# processCitizenConsent(CitizenConsent, IAuthenticationRequest, String,
-     * ISERVICESAMLService)} . No exception should be thrown.
-     */
-    @Test (expected = ResponseCarryingServiceException.class)
-    public void testProcessCitizenConsent() {
-        final CitizenConsent consent = AUSERVICECITIZEN.getCitizenConsent(EMPTY_PARAMETERS, EMPTY_ATTR_LIST);
-
-        AUSERVICECITIZEN.processCitizenConsent(consent, AUTH_DATA, USER_IP);
-    }
-
-    /**
-     * Test method for {@link AUSERVICECitizen# processCitizenConsent(CitizenConsent, IAuthenticationRequest, String,
-     * ISERVICESAMLService)} . An ServiceException must be thrown.
-     */
-    @Test(expected = EIDASServiceException.class)
-    @Ignore
-    //TODO check why this test fails, added Ignore here only to allow build with execution of all tests that do not fail
-    public void testProcessCitizenConsentWrongConsent() {
-        final CitizenConsent consent = AUSERVICECITIZEN.getCitizenConsent(EMPTY_PARAMETERS, EMPTY_ATTR_LIST);
-        final Properties configs = new Properties();
-        configs.put(EidasErrorKey.CITIZEN_RESPONSE_MANDATORY.errorCode(), "202007");
-        configs.put(EidasErrorKey.CITIZEN_RESPONSE_MANDATORY.errorMessage(), "no.consent.mand.attr");
-        //EIDASUtil.createInstance(configs);
-
-        AUSERVICECITIZEN.processCitizenConsent(consent, AUTH_DATA, USER_IP);
-    }
-
-    /**
-     * Test method for {@link AUSERVICECitizen# filterConsentedAttributes(CitizenConsent, IPersonalAttributeList)} . Testing
-     * and empty Consent type and a personal attribute list must be returned.
-     */
-    @Test
-    public void testUpdateAttributeListEmptyConsent() {
-        CitizenConsent consent = AUSERVICECITIZEN.getCitizenConsent(EMPTY_PARAMETERS, EMPTY_ATTR_LIST);
-        ImmutableAttributeMap attributeMap = AUSERVICECITIZEN.filterConsentedAttributes(consent, ATTR_LIST);
-        assertEquals(attributeMap.getAttributeMap(), ImmutableMap.of(IS_AGE_OVER, ImmutableSet.of(new IntegerAttributeValue(15))));
-    }
-
-    /**
-     * Test method for {@link AUSERVICECitizen# filterConsentedAttributes(CitizenConsent, IPersonalAttributeList)} . Testing an
-     * empty attribute list and an empty attribute list must be returned.
-     */
-    @Test
-    public void testUpdateAttributeListEmptyAttrList() {
-        CitizenConsent consent = AUSERVICECITIZEN.getCitizenConsent(PARAMETERS, ATTR_LIST);
-        ImmutableAttributeMap attributeMap = AUSERVICECITIZEN.filterConsentedAttributes(consent, EMPTY_ATTR_LIST);
-        assertEquals(attributeMap.getAttributeMap(), ImmutableMap.of());
-    }
-
-    /**
-     * Test method for {@link AUSERVICECitizen# filterConsentedAttributes(CitizenConsent, IPersonalAttributeList)} . Testing an
-     * empty attribute list and a empty consent type: an empty personal attribute list must be returned.
-     */
-    @Test
-    public void testUpdateAttributeListEmpty() {
-        CitizenConsent consent = AUSERVICECITIZEN.getCitizenConsent(PARAMETERS, ATTR_LIST);
-        ImmutableAttributeMap attributeMap = AUSERVICECITIZEN.filterConsentedAttributes(consent, EMPTY_ATTR_LIST);
-        assertEquals(attributeMap.getAttributeMap(), ImmutableMap.of());
-    }
-
-    /**
-     * Test method for {@link AUSERVICECitizen# filterConsentedAttributes(CitizenConsent, IPersonalAttributeList)} . The same
-     * attribute list must be returned.
-     */
-    @Test
-    public void testUpdateAttributeList() {
-        CitizenConsent consent = AUSERVICECITIZEN.getCitizenConsent(PARAMETERS, ATTR_LIST);
-        ImmutableAttributeMap attributeMap = AUSERVICECITIZEN.filterConsentedAttributes(consent, ATTR_LIST);
-        assertEquals(attributeMap.getAttributeMap(), ImmutableMap.of(IS_AGE_OVER, ImmutableSet.of(new IntegerAttributeValue(15))));
-    }
-
-    /**
-     * Test method for {@link AUSERVICECitizen# updateConsentedAttributes(IAuthenticationRequest, IPersonalAttributeList)}. Empty
-     * Session led to a NullPointerException.
-     */
-    @Test(expected = NullPointerException.class)
-    @Ignore
-    //TODO check why this test fails, added Ignore here only to allow build with execution of all tests that do not fail
-    public void testUpdateAttributeListEmptySession() {
-
-        AUSERVICECITIZEN.updateConsentedAttributes((IAuthenticationRequest) null, ATTR_LIST);
-    }
-
-    /**
-     * Test method for Test method for {@link AUSERVICECitizen# updateConsentedAttributes(IAuthenticationRequest, IPersonalAttributeList)}
-     * . Empty personal attribute list will return the EidasAuthenticationRequest with an empty personal
-     * attribute list.
-     */
-    @Test
-    public void testUpdateAttributeListSessionEmptyAttrList() {
-        assertEquals(AUTH_DATA.getRequest(),
-                     AUSERVICECITIZEN.updateConsentedAttributes(AUTH_DATA.getRequest(), EMPTY_ATTR_LIST));
-    }
-
-    /**
-     * Test method for Test method for {@link AUSERVICECitizen# updateConsentedAttributes(IAuthenticationRequest, IPersonalAttributeList)}
-     * . Null personal attribute list will return the EidasAuthenticationRequest with a null personal
-     * attribute list.
-     */
-    @Test
-    @Ignore
-    //TODO check why this test fails, added Ignore here only to allow build with execution of all tests that do not fail
-    public void testUpdateAttributeListSessionNullAttrList() {
-        assertEquals(EMPTY_IMMUTABLE_ATTR_MAP, AUSERVICECITIZEN.updateConsentedAttributes(AUTH_DATA.getRequest(), null).getRequestedAttributes());
-    }
-
-    /**
-     * Test method for {@link AUSERVICECitizen# updateConsentedAttributes(IAuthenticationRequest, IPersonalAttributeList)}
-     * . Must succeed.
-     */
-    @Test
-    public void testUpdateAttributeListSession() {
-        assertEquals(AUTH_DATA.getRequest(), AUSERVICECITIZEN.updateConsentedAttributes(AUTH_DATA.getRequest(), ATTR_LIST));
     }
 
     /**

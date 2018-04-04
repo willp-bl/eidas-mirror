@@ -1,39 +1,26 @@
 /*
- * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
- * the European Commission - subsequent versions of the EUPL (the "Licence");
- * You may not use this work except in compliance with the Licence. You may
- * obtain a copy of the Licence at:
+ * Copyright (c) 2017 by European Commission
  *
- * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the Licence is distributed on an "AS IS" basis, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * Licence for the specific language governing permissions and limitations under
- * the Licence.
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
  */
 
 package eu.eidas.auth.engine.core.impl;
 
-import java.security.KeyStore;
-import java.security.PrivateKey;
-import java.security.cert.X509Certificate;
-import java.util.List;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import com.google.common.collect.ImmutableSet;
-
-import org.opensaml.saml2.core.EncryptedAssertion;
-import org.opensaml.saml2.core.Response;
-import org.opensaml.xml.encryption.EncryptedKey;
-import org.opensaml.xml.security.x509.X509Credential;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import eu.eidas.auth.commons.EidasErrorKey;
-import eu.eidas.auth.engine.configuration.SamlEngineConfigurationException;
+import eu.eidas.auth.engine.configuration.ProtocolEngineConfigurationException;
 import eu.eidas.auth.engine.configuration.dom.EncryptionConfiguration;
 import eu.eidas.auth.engine.core.ProtocolDecrypterI;
 import eu.eidas.auth.engine.xml.opensaml.CertificateUtil;
@@ -41,6 +28,20 @@ import eu.eidas.encryption.SAMLAuthnResponseDecrypter;
 import eu.eidas.encryption.exception.DecryptionException;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import eu.eidas.util.Preconditions;
+import org.opensaml.saml.saml2.core.EncryptedAssertion;
+import org.opensaml.saml.saml2.core.Response;
+import org.opensaml.security.x509.X509Credential;
+import org.opensaml.xmlsec.encryption.EncryptedKey;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.List;
 
 /**
  * The base abstract class for implementations of {@link ProtocolDecrypterI}.
@@ -59,7 +60,7 @@ public abstract class AbstractProtocolDecrypter extends AbstractProtocolCipher i
     private final SAMLAuthnResponseDecrypter samlAuthnResponseDecrypter;
 
     protected AbstractProtocolDecrypter(@Nonnull EncryptionConfiguration encryptionConfiguration)
-            throws SamlEngineConfigurationException {
+            throws ProtocolEngineConfigurationException {
         this(encryptionConfiguration.isCheckedValidityPeriod(),
              encryptionConfiguration.isDisallowedSelfSignedCertificate(),
              encryptionConfiguration.isResponseEncryptionMandatory(),
@@ -89,7 +90,7 @@ public abstract class AbstractProtocolDecrypter extends AbstractProtocolCipher i
                                         @Nonnull ImmutableSet<KeyStore.PrivateKeyEntry> decryptionKeyAndCertificates,
                                         @Nullable String jcaProviderName,
                                         @Nullable String encryptionAlgorithmWhiteList)
-            throws SamlEngineConfigurationException {
+            throws ProtocolEngineConfigurationException {
         super(checkedValidityPeriod, disallowedSelfSignedCertificate, responseEncryptionMandatory,
               encryptionAlgorithmWhiteList);
 
@@ -106,7 +107,7 @@ public abstract class AbstractProtocolDecrypter extends AbstractProtocolCipher i
             LOG.trace("AbstractProtocolDecrypter loaded.");
         } catch (Exception e) {
             LOG.error("AbstractProtocolDecrypter init: " + e, e);
-            throw new SamlEngineConfigurationException(EidasErrorKey.SAML_ENGINE_CONFIGURATION_ERROR.errorCode(),
+            throw new ProtocolEngineConfigurationException(EidasErrorKey.SAML_ENGINE_CONFIGURATION_ERROR.errorCode(),
                                                        EidasErrorKey.SAML_ENGINE_CONFIGURATION_ERROR.errorMessage(), e);
         }
     }
@@ -125,7 +126,7 @@ public abstract class AbstractProtocolDecrypter extends AbstractProtocolCipher i
             List<EncryptedAssertion> encryptedAssertions = authResponse.getEncryptedAssertions();
             if (null == encryptedAssertions || encryptedAssertions.isEmpty()) {
                 LOG.error("Response is not encrypted: " + authResponse);
-                throw new SamlEngineConfigurationException(EidasErrorKey.SAML_ENGINE_UNENCRYPTED_RESPONSE.errorCode(),
+                throw new ProtocolEngineConfigurationException(EidasErrorKey.SAML_ENGINE_UNENCRYPTED_RESPONSE.errorCode(),
                                                            EidasErrorKey.SAML_ENGINE_UNENCRYPTED_RESPONSE.errorMessage());
             }
             EncryptedAssertion encAssertion = encryptedAssertions.get(0);
@@ -138,7 +139,7 @@ public abstract class AbstractProtocolDecrypter extends AbstractProtocolCipher i
 
             LOG.debug("Decryption of SAML Response done.");
             return response;
-        } catch (DecryptionException e) {
+        } catch (CertificateException | DecryptionException e) {
             LOG.error("Error decrypting SAML Response: " + e.getMessage(), e);
             throw new EIDASSAMLEngineException(e);
         }
@@ -160,7 +161,7 @@ public abstract class AbstractProtocolDecrypter extends AbstractProtocolCipher i
     }
 
     private X509Credential retrieveDecryptionCredential(EncryptedAssertion encAssertion)
-            throws EIDASSAMLEngineException {
+            throws EIDASSAMLEngineException, CertificateException {
         EncryptedKey encryptedSymmetricKey = encAssertion.getEncryptedData().getKeyInfo().getEncryptedKeys().get(0);
         X509Certificate keyInfoCert = CertificateUtil.toCertificate(encryptedSymmetricKey.getKeyInfo());
 

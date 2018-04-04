@@ -20,7 +20,7 @@ import java.util.Map;
 
 import javax.annotation.Nonnull;
 
-import eu.eidas.auth.engine.configuration.SamlEngineConfigurationException;
+import eu.eidas.auth.engine.configuration.ProtocolEngineConfigurationException;
 import eu.eidas.auth.engine.configuration.dom.EncryptionKey;
 import eu.eidas.auth.engine.configuration.dom.KeyStoreContent;
 import eu.eidas.auth.engine.configuration.dom.KeyStoreEncryptionConfigurator;
@@ -35,7 +35,7 @@ public abstract class KeyStoreSamlEngineEncryption extends AbstractSamlEngineEnc
 
     private final X509Certificate decryptionCertificate;
 
-    protected KeyStoreSamlEngineEncryption(Map<String, String> properties, String defaultPath) throws SamlEngineConfigurationException {
+    protected KeyStoreSamlEngineEncryption(Map<String, String> properties, String defaultPath) throws ProtocolEngineConfigurationException {
         super(new KeyStoreEncryptionConfigurator().getEncryptionConfiguration(properties, defaultPath));
         String serialNumber = EncryptionKey.SERIAL_NUMBER.getAsString(properties);
         String issuer = EncryptionKey.RESPONSE_DECRYPTION_ISSUER.getAsString(properties);
@@ -46,7 +46,7 @@ public abstract class KeyStoreSamlEngineEncryption extends AbstractSamlEngineEnc
 
     @Nonnull
     @Override
-    public X509Certificate getDecryptionCertificate() throws SamlEngineConfigurationException {
+    public X509Certificate getDecryptionCertificate() throws ProtocolEngineConfigurationException {
         return decryptionCertificate;
     }
 }

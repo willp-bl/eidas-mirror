@@ -36,7 +36,7 @@ import org.xml.sax.SAXException;
 
 import eu.eidas.auth.commons.io.ResourceLocator;
 import eu.eidas.auth.commons.xml.DocumentBuilderFactoryUtil;
-import eu.eidas.auth.engine.configuration.SamlEngineConfigurationException;
+import eu.eidas.auth.engine.configuration.ProtocolEngineConfigurationException;
 import eu.eidas.util.Preconditions;
 
 /**
@@ -106,7 +106,7 @@ public final class DOMConfigurationParser {
      */
     @Nonnull
     public static InstanceMap parseConfiguration(@Nonnull String configurationFileName)
-            throws SamlEngineConfigurationException {
+            throws ProtocolEngineConfigurationException {
         Preconditions.checkNotNull(configurationFileName, "configurationFileName");
         LOG.debug("DOM parsing SAML engine configuration file: \"" + configurationFileName + "\"");
         try {
@@ -115,7 +115,7 @@ public final class DOMConfigurationParser {
             if (null == resource) {
                 String message = "SAML engine configuration file \"" + configurationFileName + "\" cannot be found";
                 LOG.error(message);
-                throw new SamlEngineConfigurationException(message);
+                throw new ProtocolEngineConfigurationException(message);
             } else {
                 LOG.debug("SAML engine configuration file \"" + configurationFileName + "\" found at \""
                                   + resource.toExternalForm() + "\"");
@@ -123,7 +123,7 @@ public final class DOMConfigurationParser {
             return parseConfiguration(configurationFileName, resource.openStream());
         } catch (IOException ex) {
             LOG.error(ex.getMessage(), ex);
-            throw new SamlEngineConfigurationException(ex);
+            throw new ProtocolEngineConfigurationException(ex);
         }
     }
 
@@ -137,7 +137,7 @@ public final class DOMConfigurationParser {
     @SuppressWarnings("squid:S2095")
     public static InstanceMap parseConfiguration(@Nonnull String configurationFileName,
                                                  @Nonnull InputStream inputStream)
-            throws SamlEngineConfigurationException {
+            throws ProtocolEngineConfigurationException {
         Preconditions.checkNotNull(configurationFileName, "configurationFileName");
         Preconditions.checkNotNull(inputStream, "inputStream");
         try {
@@ -161,14 +161,14 @@ public final class DOMConfigurationParser {
                     String message = "Duplicate instance entry names \"" + instanceEntry.getName()
                             + "\" in SAML engine configuration file \"" + configurationFileName + "\"";
                     LOG.error(message);
-                    throw new SamlEngineConfigurationException(message);
+                    throw new ProtocolEngineConfigurationException(message);
                 }
             }
 
             return new InstanceMap(ImmutableMap.copyOf(instanceEntries));
         } catch (IOException | SAXException | ParserConfigurationException ex) {
             LOG.error(ex.getMessage(), ex);
-            throw new SamlEngineConfigurationException(ex);
+            throw new ProtocolEngineConfigurationException(ex);
         }
     }
 
@@ -176,14 +176,14 @@ public final class DOMConfigurationParser {
     private static ConfigurationEntry parseConfigurationEntry(@Nonnull String configurationFileName,
                                                               @Nonnull String instanceName,
                                                               @Nonnull Element configurationTag)
-            throws SamlEngineConfigurationException {
+            throws ProtocolEngineConfigurationException {
         String configurationName = configurationTag.getAttribute(InstanceTag.ConfigurationTag.Attribute.NAME);
 
         if (StringUtils.isBlank(configurationName)) {
             String message = "SAML engine configuration file \"" + configurationFileName
                     + "\" contains a blank configuration name for instance name \"" + instanceName + "\"";
             LOG.error(message);
-            throw new SamlEngineConfigurationException(message);
+            throw new ProtocolEngineConfigurationException(message);
         }
 
         // Set configuration name.
@@ -201,13 +201,13 @@ public final class DOMConfigurationParser {
      * @return the map< string, instance engine>
      * @throws SAMLEngineException the EIDASSAML engine runtime exception
      */
-    public static InstanceMap parseDefaultConfiguration() throws SamlEngineConfigurationException {
+    public static InstanceMap parseDefaultConfiguration() throws ProtocolEngineConfigurationException {
         return parseConfiguration(DEFAULT_CONFIGURATION_FILE);
     }
 
     @Nonnull
     private static InstanceEntry parseInstanceEntry(@Nonnull String configurationFileName, @Nonnull Element instanceTag)
-            throws SamlEngineConfigurationException {
+            throws ProtocolEngineConfigurationException {
         // read every configuration.
         String instanceName = instanceTag.getAttribute(InstanceTag.Attribute.NAME);
 
@@ -215,7 +215,7 @@ public final class DOMConfigurationParser {
             String message =
                     "SAML engine configuration file \"" + configurationFileName + "\" contains a blank instance name";
             LOG.error(message);
-            throw new SamlEngineConfigurationException(message);
+            throw new ProtocolEngineConfigurationException(message);
         }
         instanceName = instanceName.trim();
 
@@ -234,7 +234,7 @@ public final class DOMConfigurationParser {
                 String message = "Duplicate configuration entry names \"" + configurationEntry.getName()
                         + "\" in SAML engine configuration file \"" + configurationFileName + "\"";
                 LOG.error(message);
-                throw new SamlEngineConfigurationException(message);
+                throw new ProtocolEngineConfigurationException(message);
             }
         }
 
@@ -252,7 +252,7 @@ public final class DOMConfigurationParser {
                                                                 @Nonnull String instanceName,
                                                                 @Nonnull String configurationName,
                                                                 @Nonnull Element configurationTag)
-            throws SamlEngineConfigurationException {
+            throws ProtocolEngineConfigurationException {
         Map<String, String> parameters = new LinkedHashMap<String, String>();
 
         NodeList parameterTags =
@@ -271,7 +271,7 @@ public final class DOMConfigurationParser {
                         + "\" contains a blank parameter name for configuration name \"" + configurationName
                         + "\" in instance name \"" + instanceName + "\"";
                 LOG.error(message);
-                throw new SamlEngineConfigurationException(message);
+                throw new ProtocolEngineConfigurationException(message);
             }
             if (StringUtils.isBlank(parameterValue)) {
                 String message =
@@ -279,7 +279,7 @@ public final class DOMConfigurationParser {
                                 + parameterName + "\" with a blank value for configuration name \"" + configurationName
                                 + "\" in instance name \"" + instanceName + "\"";
                 LOG.error(message);
-                throw new SamlEngineConfigurationException(message);
+                throw new ProtocolEngineConfigurationException(message);
             }
             String previous = parameters.put(parameterName.trim(), parameterValue.trim());
             if (null != previous) {
@@ -288,7 +288,7 @@ public final class DOMConfigurationParser {
                                 + configurationFileName + "\" for configuration name \"" + configurationName
                                 + "\" in instance name \"" + instanceName + "\"";
                 LOG.error(message);
-                throw new SamlEngineConfigurationException(message);
+                throw new ProtocolEngineConfigurationException(message);
             }
         }
         return ImmutableMap.copyOf(parameters);
@@ -298,7 +298,7 @@ public final class DOMConfigurationParser {
     static ImmutableMap<String, String> validateParameters(@Nonnull String instanceName,
                                                            @Nonnull String configurationName,
                                                            @Nonnull Map<String, String> values)
-            throws SamlEngineConfigurationException {
+            throws ProtocolEngineConfigurationException {
         Map<String, String> parameters = new LinkedHashMap<String, String>();
 
         for (final Map.Entry<String, String> entry : values.entrySet()) {
@@ -311,14 +311,14 @@ public final class DOMConfigurationParser {
                         "SAML engine configuration file contains a blank parameter name for configuration name \""
                                 + configurationName + "\" in instance name \"" + instanceName + "\"";
                 LOG.error(message);
-                throw new SamlEngineConfigurationException(message);
+                throw new ProtocolEngineConfigurationException(message);
             }
             if (StringUtils.isBlank(parameterValue)) {
                 String message = "SAML engine configuration file contains parameter name \"" + parameterName
                         + "\" with a blank value for configuration name \"" + configurationName
                         + "\" in instance name \"" + instanceName + "\"";
                 LOG.error(message);
-                throw new SamlEngineConfigurationException(message);
+                throw new ProtocolEngineConfigurationException(message);
             }
             parameters.put(parameterName.trim(), parameterValue.trim());
         }

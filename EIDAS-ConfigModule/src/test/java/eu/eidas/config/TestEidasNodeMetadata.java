@@ -1,3 +1,21 @@
+/*
+ * Copyright (c) 2017 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
+ */
+
 package eu.eidas.config;
 
 import org.junit.FixMethodOrder;
@@ -24,7 +42,6 @@ import static org.junit.Assert.assertTrue;
 @ContextConfiguration(locations="/testcontext.xml")
 @FixMethodOrder(MethodSorters.JVM)
 public class TestEidasNodeMetadata {
-    String TEST_LABEL="SP QAA level";
     String TEST_CONTENT="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
     "<NODEMetadata>\n" +
     "    <categories>\n" +
@@ -32,26 +49,6 @@ public class TestEidasNodeMetadata {
     "        <category name=\"connector\">Connector parameters</category>\n" +
     "    </categories>\n" +
     "    <parameters>\n" +
-    "        <parameter name=\"DEMO-SP.qaalevel\">\n" +
-    "                <category>connector</category>\n" +
-    "            <info>information about this parameter</info>\n" +
-    "            <label>"+TEST_LABEL+"</label>\n" +
-    "            <default>3</default>\n" +
-    "            <type>boolean</type>\n" +
-    "        </parameter>\n" +
-    "        <parameter name=\"sp.default.parameters\">\n" +
-    "                <category>connector</category>\n" +
-    "            <info>information about this parameter</info>\n" +
-    "            <label>sp.default.parameters</label>\n" +
-    "            <default>all</default>\n" +
-    "        </parameter>\n" +
-    "        <parameter name=\"connector.spInstitution\">\n" +
-    "                <category>service</category>\n" +
-    "                <category>connector</category>\n" +
-    "            <info>connector.spInstitution information about this parameter</info>\n" +
-    "            <label>connector.spInstitution</label>\n" +
-    "            <default>DEMO-Connector</default>\n" +
-    "        </parameter>\n" +
     "    </parameters>\n" +
     "</NODEMetadata>";
     final static String TEST_CATEGORY="parameter.category.label.administer.service";
@@ -69,17 +66,6 @@ public class TestEidasNodeMetadata {
         assertFalse(categories.getCategories().isEmpty());
         assertTrue(categories.getCategories().size() == 2);
         assertNotNull(metadataList);
-        assertNotNull(metadataList.getNodeParameterMetadaList());
-        assertFalse(metadataList.getNodeParameterMetadaList().isEmpty());
-        assertTrue(metadataList.getNodeParameterMetadaList().size() == 3);
-        boolean checkLabel=false;
-        for(EIDASNodeParameterMeta nodeparammeta:metadataList.getNodeParameterMetadaList()){
-            if(TEST_LABEL.equals(nodeparammeta.getLabel())){
-                checkLabel=true;
-                break;
-            }
-        }
-        assertTrue(checkLabel);
     }
 
     @Test
@@ -88,7 +74,7 @@ public class TestEidasNodeMetadata {
         assertNotNull(provider.getCategories());
         assertFalse(provider.getCategories().isEmpty());
         assertFalse(provider.getCategorizedParameters().isEmpty());
-        assertTrue(provider.getCategoryParameter(TEST_CATEGORY).size() == 9);
+        assertTrue(provider.getCategoryParameter(TEST_CATEGORY).size() == 8);
     }
 
     @Autowired

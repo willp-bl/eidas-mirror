@@ -1,21 +1,52 @@
 /*
- * This work is Open Source and licensed by the European Commission under the
- * conditions of the European Public License v1.1
+ * Copyright (c) 2017 by European Commission
  *
- * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1);
+ * Licensed under the EUPL, Version 1.1 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ *  EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
  *
- * any use of this file implies acceptance of the conditions of this license.
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations
- * under the License.
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
+ *
+ * This product combines work with different licenses. See the
+ * "NOTICE" text file for details on the various modules and licenses.
+ * The "NOTICE" text file is part of the distribution.
+ * Any derivative works that you distribute must include a readable
+ * copy of the "NOTICE" text file.
  */
 package eu.eidas.node.auth.service;
 
+import java.security.InvalidParameterException;
+import java.util.Map;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.collect.ImmutableSet;
-import eu.eidas.auth.commons.*;
-import eu.eidas.auth.commons.attribute.*;
+
+import eu.eidas.auth.commons.EIDASStatusCode;
+import eu.eidas.auth.commons.EIDASSubStatusCode;
+import eu.eidas.auth.commons.EidasErrorKey;
+import eu.eidas.auth.commons.EidasErrors;
+import eu.eidas.auth.commons.EidasParameterKeys;
+import eu.eidas.auth.commons.EidasParameters;
+import eu.eidas.auth.commons.EidasStringUtil;
+import eu.eidas.auth.commons.WebRequest;
+import eu.eidas.auth.commons.attribute.AttributeDefinition;
+import eu.eidas.auth.commons.attribute.AttributeValue;
+import eu.eidas.auth.commons.attribute.AttributeValueMarshaller;
+import eu.eidas.auth.commons.attribute.AttributeValueMarshallingException;
+import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.exceptions.EIDASServiceException;
 import eu.eidas.auth.commons.exceptions.InvalidParameterEIDASException;
 import eu.eidas.auth.commons.light.ILightResponse;
@@ -26,17 +57,8 @@ import eu.eidas.auth.commons.protocol.impl.AuthenticationResponse;
 import eu.eidas.auth.commons.tx.CorrelationMap;
 import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
 import eu.eidas.auth.commons.validation.NormalParameterValidator;
-import eu.eidas.auth.engine.core.eidas.spec.LegalPersonSpec;
-import eu.eidas.auth.engine.core.eidas.spec.RepresentativeLegalPersonSpec;
 import eu.eidas.auth.engine.xml.opensaml.SAMLEngineUtils;
 import eu.eidas.node.utils.EidasNodeValidationUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.security.InvalidParameterException;
-import java.util.Map;
 
 /**
  * The AUSERVICE class deals with the requests coming from the Connector. This class communicates with the IdP and APs
@@ -109,7 +131,6 @@ public final class AUSERVICE implements ISERVICEService {
         String updatedRequestId = authnRequest.getId();
         StoredAuthenticationRequest updatedStoredRequest =
                 new StoredAuthenticationRequest.Builder().remoteIpAddress(webRequest.getRemoteIpAddress())
-                        .relayState(relayState)
                         .request(authnRequest)
                         .build();
         requestCorrelationMap.put(updatedRequestId, updatedStoredRequest);
@@ -118,65 +139,7 @@ public final class AUSERVICE implements ISERVICEService {
 
         citizenService.checkRepresentativeAttributes(authnRequest.getRequestedAttributes());
 
-        //TODO START remove check of erroneous attributes after transition period of EID-423
-        /* check if there is a tricking requesting erroneous and correct attributes also */
-        ImmutableSet<AttributeDefinition<?>> attrDefs = authnRequest.getRequestedAttributes().getDefinitions();
-        if ((attrDefs.contains(LegalPersonSpec.Definitions.LEGAL_ADDRESS) && attrDefs.contains(LegalPersonSpec.Definitions.LEGAL_PERSON_ADDRESS)) ||
-                (attrDefs.contains(LegalPersonSpec.Definitions.VAT_REGISTRATION) && attrDefs.contains(LegalPersonSpec.Definitions.VAT_REGISTRATION_NUMBER))) {
-            LOG.error("BUSINESS EXCEPTION : Both LEGAL_ADDRESS and LEGAL_PERSON_ADDRESS or VAT_REGISTRATION and VAT_REGISTRATION_NUMBER requested");
-            throw new EIDASServiceException(EidasErrors.get(EidasErrorKey.INVALID_ATTRIBUTE_LIST.errorCode()),
-                    EidasErrors.get(EidasErrorKey.INVALID_ATTRIBUTE_LIST.errorMessage()));
-        }
-        //TODO END remove check of erroneous attributes after transition period of EID-423
-
         return authnRequest;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public IAuthenticationRequest processCitizenConsent(WebRequest webRequest,
-                                                        @Nonnull StoredAuthenticationRequest storedRequest,
-                                                        boolean askConsentType) {
-
-        IAuthenticationRequest authnRequest = storedRequest.getRequest();
-        String remoteAddress = storedRequest.getRemoteIpAddress();
-
-        ImmutableAttributeMap consentedAttributes = authnRequest.getRequestedAttributes();
-
-        if (askConsentType) {
-            // construct citizen consent from the request
-            CitizenConsent consent =
-                    citizenService.getCitizenConsent(webRequest, authnRequest.getRequestedAttributes());
-
-            // checks if all mandatory attributes are present in the consent
-            citizenService.processCitizenConsent(consent, storedRequest, webRequest.getRemoteIpAddress());
-            // updates the personalAttributeList, removing the attributes
-            // without consent
-            consentedAttributes =
-                    citizenService.filterConsentedAttributes(consent, authnRequest.getRequestedAttributes());
-            // If the personalAttributeList is empty then we must show a error
-            // message.
-            if (consentedAttributes.isEmpty()) {
-                LOG.info("BUSINESS EXCEPTION : Attribute List is empty!");
-                String errorCode = EidasErrors.get(EidasErrorKey.SERVICE_ATTR_NULL.errorCode());
-                String errorMessage = EidasErrors.get(EidasErrorKey.SERVICE_ATTR_NULL.errorMessage());
-
-                byte[] samlTokenFail = samlService.generateErrorAuthenticationResponse(authnRequest,
-                                                                                       EIDASStatusCode.RESPONDER_URI.toString(),
-                                                                                       errorCode, null, errorMessage,
-                                                                                       remoteAddress, false);
-                throw new ResponseCarryingServiceException(errorCode, errorMessage,
-                                                           EidasStringUtil.encodeToBase64(samlTokenFail),
-                                                           authnRequest.getAssertionConsumerServiceURL(),
-                                                           storedRequest.getRelayState());
-            }
-        }
-
-        citizenService.checkMandatoryAttributes(consentedAttributes);
-
-        return citizenService.updateConsentedAttributes(authnRequest, consentedAttributes);
     }
 
     /**
@@ -230,34 +193,14 @@ public final class AUSERVICE implements ISERVICEService {
         if (!EidasNodeValidationUtil.isLoAValid(LevelOfAssuranceComparison.MINIMUM,
                                                 originalRequest.getLevelOfAssurance(),
                                                 idpResponse.getLevelOfAssurance())) {
-            LOG.info("ERROR : IdP response Level of Assurance is to low: requested="
+            LOG.error("ERROR : IdP response Level of Assurance is to low: requested="
                              + originalRequest.getLevelOfAssurance(),
                      " vs response=" + idpResponse.getLevelOfAssurance());
             return sendFailure(proxyServiceRequest, EidasErrorKey.INVALID_RESPONSE_LOA_VALUE);
+/*            throw new EidasNodeException(
+                    EidasErrors.get(EidasErrorKey.INVALID_RESPONSE_LOA_VALUE.errorCode()),
+                    EidasErrors.get(EidasErrorKey.INVALID_RESPONSE_LOA_VALUE.errorMessage()));*/
         }
-
-       /* EID-423: wrong attribute name was implemented prior to 1.4, backward compatibility if for the Network only to ensure business continuity, the
-        *  Specific must Request the right ones in the interface*/
-        //TODO START remove check of erroneous attributes after transition period of EID-423
-        ImmutableSet<AttributeDefinition<?>> suppliedAttributes = idpResponse.getAttributes().getDefinitions();
-        if (suppliedAttributes != null && suppliedAttributes.contains(LegalPersonSpec.Definitions.LEGAL_ADDRESS)) {
-            LOG.error("BUSINESS EXCEPTION : "+LegalPersonSpec.Definitions.LEGAL_ADDRESS.getNameUri().toASCIIString()+" found in Response instead of "+LegalPersonSpec.Definitions.LEGAL_PERSON_ADDRESS.getNameUri().toASCIIString());
-            sendFailure(proxyServiceRequest, EidasErrorKey.INVALID_ATTRIBUTE_LIST);
-        }
-        if (suppliedAttributes != null && suppliedAttributes.contains(LegalPersonSpec.Definitions.VAT_REGISTRATION)) {
-            LOG.error("BUSINESS EXCEPTION : "+LegalPersonSpec.Definitions.VAT_REGISTRATION.getNameUri().toASCIIString()+" found in Response instead of "+LegalPersonSpec.Definitions.VAT_REGISTRATION_NUMBER.getNameUri().toASCIIString());
-            sendFailure(proxyServiceRequest, EidasErrorKey.INVALID_ATTRIBUTE_LIST);
-        }
-        if (suppliedAttributes != null && suppliedAttributes.contains(RepresentativeLegalPersonSpec.Definitions.LEGAL_ADDRESS)) {
-            LOG.error("BUSINESS EXCEPTION : "+LegalPersonSpec.Definitions.LEGAL_ADDRESS.getNameUri().toASCIIString()+" found in Response instead of "+RepresentativeLegalPersonSpec.Definitions.LEGAL_PERSON_ADDRESS.getNameUri().toASCIIString());
-            sendFailure(proxyServiceRequest, EidasErrorKey.INVALID_ATTRIBUTE_LIST);
-        }
-        if (suppliedAttributes != null && suppliedAttributes.contains(RepresentativeLegalPersonSpec.Definitions.VAT_REGISTRATION)) {
-            LOG.error("BUSINESS EXCEPTION : "+LegalPersonSpec.Definitions.VAT_REGISTRATION.getNameUri().toASCIIString()+" found in Response instead of "+RepresentativeLegalPersonSpec.Definitions.VAT_REGISTRATION_NUMBER.getNameUri().toASCIIString());
-            sendFailure(proxyServiceRequest, EidasErrorKey.INVALID_ATTRIBUTE_LIST);
-        }
-        //TODO END remove check of erroneous attributes after transition period of EID-423
-
 
         // update Response Attributes
 
@@ -270,17 +213,18 @@ public final class AUSERVICE implements ISERVICEService {
         authenticationResponseBuilder.levelOfAssurance(idpResponse.getLevelOfAssurance())
                 .attributes(updatedResponseAttributes)
                 .inResponseTo(originalRequest.getId())
-                .ipAddress(idpResponse.getIPAddress());
-
-        authenticationResponseBuilder.id(SAMLEngineUtils.generateNCName())
+                .ipAddress(idpResponse.getIPAddress())
+                .id(SAMLEngineUtils.generateNCName())
                 .statusCode(EIDASStatusCode.SUCCESS_URI.toString())
-                .issuer(getServiceMetadataUrl());
+                .issuer(getServiceMetadataUrl())
+                .subject(idpResponse.getSubject())
+                .subjectNameIdFormat(idpResponse.getSubjectNameIdFormat());
         serviceUtil.setMetadatUrlToAuthnResponse(getServiceMetadataUrl(), authenticationResponseBuilder);
 
         String currentIpAddress = webRequest.getRemoteIpAddress();
 
         return samlService.processIdpSpecificResponse(originalRequest, authenticationResponseBuilder.build(),
-                                                      currentIpAddress, true);
+                                                      currentIpAddress);
     }
 
     @Nonnull
@@ -344,7 +288,7 @@ public final class AUSERVICE implements ISERVICEService {
                     values = updatedValues.build();
                 }
             }
-            updatedResponseAttributes.put((AttributeDefinition) definition, (ImmutableSet) values);
+            updatedResponseAttributes.put(definition, (ImmutableSet) values);
         }
 
         if (modified) {
@@ -372,7 +316,7 @@ public final class AUSERVICE implements ISERVICEService {
         throw new ResponseCarryingServiceException(errorCode, errorMessage,
                                                    EidasStringUtil.encodeToBase64(samlTokenFail),
                                                    originalRequest.getAssertionConsumerServiceURL(),
-                                                   storedRequest.getRelayState());
+                                                   storedRequest.getRequest().getRelayState());
     }
 
     /**

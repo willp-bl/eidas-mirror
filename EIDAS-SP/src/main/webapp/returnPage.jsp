@@ -43,28 +43,16 @@
 									<th>
 										<s:property value="%{getText('valuesId')}"/>
 									</th>
-									<th>
-										<s:property value="%{getText('complexValuesId')}"/>
-									</th>
-									<th>
-										<s:property value="%{getText('statusId')}"/>
-									</th>
 								</tr>
 							</thead>
 							<tbody>
-								<s:iterator value="attrMap.keySet()" var="definition">
+								<s:iterator value="attrJsonMap.keySet()" var="definition">
 									<tr>
 										<td>
-											<s:property value="#definition.getNameUri()"/>
+											<s:property value="#definition.getFriendlyName()"/>
 										</td>
 										<td>
-											<s:property value="attrMap.get(#definition)"/>
-										</td>
-										<td>
-											<!--s:property value="attrList[#idx.index].complexValue"/-->
-										</td>
-										<td>
-											<!--s:property value="attrList[#idx.index].status"/-->
+											<s:property value="attrJsonMap.get(#definition)"/>
 										</td>
 									</tr>
 								</s:iterator>
