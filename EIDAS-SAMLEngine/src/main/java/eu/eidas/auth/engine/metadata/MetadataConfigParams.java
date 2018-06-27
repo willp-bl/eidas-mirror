@@ -28,12 +28,8 @@ import java.util.Set;
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.NotThreadSafe;
 
-import com.google.common.annotations.Beta;
-
 import eu.eidas.util.Preconditions;
-import org.apache.commons.lang.StringUtils;
 import org.opensaml.common.xml.SAMLConstants;
-import org.opensaml.saml2.metadata.Organization;
 import org.opensaml.xml.security.credential.Credential;
 import org.opensaml.xml.signature.Signature;
 
@@ -72,6 +68,9 @@ public class MetadataConfigParams {
     private final ContactData supportContact;
     private final ContactData technicalContact;
 
+    private final String eidasProtocolVersion;
+    private final String eidasApplicationIdentifier;
+
     @SuppressWarnings("ParameterHidesMemberVariable")
     @NotThreadSafe
     public static final class Builder {
@@ -107,6 +106,8 @@ public class MetadataConfigParams {
         private OrganizationData organization;
         private ContactData supportContact;
         private ContactData technicalContact;
+        private String eidasProtocolVersion;
+        private String eidasApplicationIdentifier;
 
         public Builder() {
         }
@@ -139,6 +140,8 @@ public class MetadataConfigParams {
             this.organization = new OrganizationData(copy.organization);
             this.supportContact = new ContactData(copy.supportContact);
             this.technicalContact  = new ContactData(copy.technicalContact);
+            this.eidasProtocolVersion = copy.eidasProtocolVersion;
+            this.eidasApplicationIdentifier = copy.eidasApplicationIdentifier;
         }
 
         public Builder(@Nonnull MetadataConfigParams copy) {
@@ -168,6 +171,8 @@ public class MetadataConfigParams {
             this.organization = new OrganizationData(copy.organization);
             this.supportContact = new ContactData(copy.supportContact);
             this.technicalContact  = new ContactData(copy.technicalContact);
+            this.eidasProtocolVersion = copy.eidasProtocolVersion;
+            this.eidasApplicationIdentifier = copy.eidasApplicationIdentifier;
         }
 
         public Builder wantAssertionsSigned(final boolean wantAssertionsSigned) {
@@ -314,6 +319,16 @@ public class MetadataConfigParams {
             return this;
         }
 
+        public Builder eidasProtocolVersion(String eidasProtocolVersion) {
+            this.eidasProtocolVersion = eidasProtocolVersion;
+            return this;
+        }
+
+        public Builder eidasApplicationIdentifier(String eidasApplicationIdentifier) {
+            this.eidasApplicationIdentifier = eidasApplicationIdentifier;
+            return this;
+        }
+
         @Nonnull
         public MetadataConfigParams build() {
             validate();
@@ -354,6 +369,8 @@ public class MetadataConfigParams {
         this.organization = new OrganizationData(builder.organization);
         this.supportContact = new ContactData(builder.supportContact);
         this.technicalContact  = new ContactData(builder.technicalContact);
+        this.eidasProtocolVersion = builder.eidasProtocolVersion;
+        this.eidasApplicationIdentifier = builder.eidasApplicationIdentifier;
     }
 
     @Nonnull
@@ -475,5 +492,11 @@ public class MetadataConfigParams {
         return technicalContact;
     }
 
+    public java.lang.String getEidasProtocolVersion() {
+        return eidasProtocolVersion;
+    }
 
+    public String getEidasApplicationIdentifier() {
+        return eidasApplicationIdentifier;
+    }
 }

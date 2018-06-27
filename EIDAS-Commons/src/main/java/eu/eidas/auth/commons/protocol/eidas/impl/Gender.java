@@ -31,7 +31,10 @@ public enum Gender {
 
     FEMALE("Female"),
 
-    UNSPECIFIED("Unspecified");
+    UNSPECIFIED("Unspecified"),
+
+    //TODO "Not Specified" is a temporary allowed value to avoid interoperability issues, it will be removed in future -->
+    NOT_SPECIFIED("Not Specified");
 
     private static final EnumMapper<String, Gender> MAPPER =
             new EnumMapper<String, Gender>(new KeyAccessor<String, Gender>() {

@@ -34,10 +34,17 @@ import eu.eidas.encryption.exception.UnmarshallException;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import org.apache.commons.lang.StringUtils;
 import org.opensaml.saml2.core.Attribute;
-import org.opensaml.saml2.metadata.*;
+import org.opensaml.saml2.metadata.AssertionConsumerService;
+import org.opensaml.saml2.metadata.EntitiesDescriptor;
+import org.opensaml.saml2.metadata.EntityDescriptor;
+import org.opensaml.saml2.metadata.IDPSSODescriptor;
+import org.opensaml.saml2.metadata.RoleDescriptor;
+import org.opensaml.saml2.metadata.SPSSODescriptor;
+import org.opensaml.saml2.metadata.SingleSignOnService;
 import org.opensaml.samlext.saml2mdattr.EntityAttributes;
 import org.opensaml.xml.XMLObject;
 import org.opensaml.xml.schema.XSString;
+import org.opensaml.xml.schema.impl.XSAnyImpl;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -173,8 +180,16 @@ public class MetadataUtil {
                 for (Attribute attr : eas.getAttributes()) {
                     if (EidasConstants.LEVEL_OF_ASSURANCE_NAME.equalsIgnoreCase(attr.getName())
                             && !attr.getAttributeValues().isEmpty()) {
-                        XSString val = (XSString) attr.getAttributeValues().get(0);
-                        retrievedLevelOfAssurance = val.getValue();
+                        XMLObject xmlObject = attr.getAttributeValues().get(0);
+                        if (xmlObject instanceof XSString) {
+                            XSString val = (XSString) xmlObject;
+                            retrievedLevelOfAssurance = val.getValue();
+                            //Quick fix to solve issue missing xsi:type="xs:string" for LOA in DE's metadata
+                        } else if (xmlObject instanceof XSAnyImpl) {
+                            XSAnyImpl val = (XSAnyImpl) xmlObject;
+                            retrievedLevelOfAssurance = val.getTextContent();
+                        }
+
                         break;
                     }
                 }

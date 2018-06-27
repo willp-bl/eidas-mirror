@@ -38,8 +38,11 @@ import org.opensaml.saml2.core.Attribute;
 import org.opensaml.saml2.core.AttributeValue;
 import org.opensaml.saml2.metadata.*;
 import org.opensaml.samlext.saml2mdattr.EntityAttributes;
+import org.opensaml.xml.Namespace;
 import org.opensaml.xml.XMLObjectBuilderFactory;
+import org.opensaml.xml.schema.XSAny;
 import org.opensaml.xml.schema.XSString;
+import org.opensaml.xml.schema.impl.XSAnyBuilder;
 import org.opensaml.xml.schema.impl.XSStringBuilder;
 import org.opensaml.xml.security.SecurityException;
 import org.opensaml.xml.security.credential.Credential;
@@ -68,6 +71,8 @@ import eu.eidas.engine.exceptions.SAMLEngineException;
 
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.NotThreadSafe;
+import javax.xml.XMLConstants;
+import javax.xml.namespace.QName;
 
 /**
  * Metadata generator class
@@ -82,6 +87,9 @@ public class EidasMetadata {
     private static final Set<String> DEFAULT_BINDING = new HashSet<String>() {{
         this.add(SAMLConstants.SAML2_POST_BINDING_URI);
     }};
+
+    private static String PROTOCOL_VERSION_URI = "http://eidas.europa.eu/entity-attributes/protocol-version";
+    private static final String APPLICATION_IDENTIFIER = "http://eidas.europa.eu/entity-attributes/application-identifier";
 
     @NotThreadSafe
     public static final class Generator {
@@ -142,9 +150,28 @@ public class EidasMetadata {
 
         private Extensions generateExtensions() throws EIDASSAMLEngineException {
             Extensions eidasExtensions = BuilderFactoryUtil.generateMetadataExtension();
-            if (params.getAssuranceLevel() != null) {
-                generateLoA(eidasExtensions);
+
+            generateEntityAttributes(eidasExtensions);
+            generateSpType(eidasExtensions);
+            generateDigest(eidasExtensions);
+            generateSigningMethods(eidasExtensions);
+
+            return eidasExtensions;
+        }
+
+        private void generateEntityAttributes(Extensions eidasExtensions) throws EIDASSAMLEngineException {
+            final EntityAttributes entityAttributes = (EntityAttributes) BuilderFactoryUtil.buildXmlObject(EntityAttributes.DEFAULT_ELEMENT_NAME);
+
+            generateEidasProtocolVersionAttributes(entityAttributes);
+            generateLoA(entityAttributes);
+
+            if (!entityAttributes.getAttributes().isEmpty()) {
+                eidasExtensions.getUnknownXMLObjects().add(entityAttributes);
             }
+
+        }
+
+        private void generateSpType(Extensions eidasExtensions) throws EIDASSAMLEngineException {
             if (!StringUtils.isEmpty(params.getSpType())) {
                 final SPType spTypeObj = (SPType) BuilderFactoryUtil.buildXmlObject(SPType.DEF_ELEMENT_NAME);
                 if (spTypeObj != null) {
@@ -154,8 +181,9 @@ public class EidasMetadata {
                     LOGGER.info("BUSINESS EXCEPTION error adding SPType extension");
                 }
             }
-            generateDigest(eidasExtensions);
+        }
 
+        private void generateSigningMethods(Extensions eidasExtensions) throws EIDASSAMLEngineException {
             if (!StringUtils.isEmpty(params.getSigningMethods())) {
                 Set<String> signMethods = EIDASUtil.parseSemicolonSeparatedList(params.getDigestMethods());
                 for (String signMethod : signMethods) {
@@ -169,12 +197,59 @@ public class EidasMetadata {
                     }
                 }
             }
-            return eidasExtensions;
         }
 
-        private void generateLoA(Extensions eidasExtensions) throws EIDASSAMLEngineException {
-            EntityAttributes loa =
-                    (EntityAttributes) BuilderFactoryUtil.buildXmlObject(EntityAttributes.DEFAULT_ELEMENT_NAME);
+        private void generateEidasProtocolVersionAttributes(final EntityAttributes entityAttributes) throws EIDASSAMLEngineException {
+            final Namespace saml = new Namespace(SAMLConstants.SAML20_NS , SAMLConstants.SAML20_PREFIX);
+            entityAttributes.getNamespaceManager().registerNamespaceDeclaration(saml);
+
+            final Attribute eidasProtocolVersionAttribute = buildEidasProtocolVersionAttribute(entityAttributes, PROTOCOL_VERSION_URI, params.getEidasProtocolVersion());
+            if (null == eidasProtocolVersionAttribute) {
+                LOGGER.info("BUSINESS EXCEPTION  eIDAS Protocol Version Attribute is empty");
+            } else {
+                entityAttributes.getAttributes().add(eidasProtocolVersionAttribute);
+            }
+
+            final Attribute eidasApplicationIdentifierAttribute = buildEidasProtocolVersionAttribute(entityAttributes, APPLICATION_IDENTIFIER, params.getEidasApplicationIdentifier());
+            if (null == eidasApplicationIdentifierAttribute) {
+                LOGGER.info("BUSINESS EXCEPTION  eIDAS Application Identifier Attribute is empty");
+            } else {
+                entityAttributes.getAttributes().add(eidasApplicationIdentifierAttribute);
+            }
+        }
+
+        private static Attribute buildEidasProtocolVersionAttribute(EntityAttributes entityAttributes, String name, String value) throws EIDASSAMLEngineException {
+            if (StringUtils.isNotEmpty(value)) {
+                final Attribute attribute = (Attribute) BuilderFactoryUtil.buildXmlObject(Attribute.DEFAULT_ELEMENT_NAME);
+                attribute.setNameFormat(RequestedAttribute.URI_REFERENCE);
+                attribute.setName(name);
+
+                final XSAnyBuilder builder = new XSAnyBuilder();
+                final XSAny attributeValue = builder.buildObject(SAMLConstants.SAML20_NS, AttributeValue.DEFAULT_ELEMENT_LOCAL_NAME, SAMLConstants.SAML20_PREFIX);
+
+                final Namespace namespace = new Namespace(XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI, org.opensaml.xml.util.XMLConstants.XSI_PREFIX);
+                attributeValue.getNamespaceManager().registerNamespaceDeclaration(namespace);
+
+                final QName attribute_type = new QName(XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI, "type", org.opensaml.xml.util.XMLConstants.XSI_PREFIX);
+                attributeValue.getUnknownAttributes().put(attribute_type,  org.opensaml.xml.util.XMLConstants.XSD_PREFIX + ":"+ XSString.TYPE_LOCAL_NAME);
+
+                attributeValue.setTextContent(value);
+
+                attribute.getAttributeValues().add(attributeValue);
+                entityAttributes.getAttributes().add(attribute);
+
+                return attribute;
+
+            } else {
+                return null;
+            }
+        }
+        private void generateLoA(EntityAttributes entityAttributes) throws EIDASSAMLEngineException {
+
+            if (StringUtils.isEmpty(params.getAssuranceLevel())) {
+                return;
+            }
+
             Attribute loaAttrib = (Attribute) BuilderFactoryUtil.buildXmlObject(Attribute.DEFAULT_ELEMENT_NAME);
             loaAttrib.setName(EidasConstants.LEVEL_OF_ASSURANCE_NAME);
             loaAttrib.setNameFormat(Attribute.URI_REFERENCE);
@@ -183,9 +258,7 @@ public class EidasMetadata {
             XSString stringValue = stringBuilder.buildObject(AttributeValue.DEFAULT_ELEMENT_NAME, XSString.TYPE_NAME);
             stringValue.setValue(params.getAssuranceLevel());
             loaAttrib.getAttributeValues().add(stringValue);
-            loa.getAttributes().add(loaAttrib);
-            eidasExtensions.getUnknownXMLObjects().add(loa);
-
+            entityAttributes.getAttributes().add(loaAttrib);
         }
 
         private void addAssertionConsumerService() throws EIDASSAMLEngineException {

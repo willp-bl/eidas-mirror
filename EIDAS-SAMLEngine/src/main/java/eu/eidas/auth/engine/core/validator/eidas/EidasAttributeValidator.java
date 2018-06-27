@@ -39,7 +39,8 @@ import eu.eidas.auth.engine.core.validator.stork.STORKAttributes;
  */
 public final class EidasAttributeValidator extends AttributeSchemaValidator {
 
-    private static final String PATTERN_GENDER_EIDAS = "^(?:Male|Female|Not specified)$";
+    //TODO "Not Specified" is a temporary allowed value to avoid interoperability issues, it will be removed in future
+    private static final String PATTERN_GENDER_EIDAS = "^(?:Male|Female|Unspecified|Not Specified)$";
 
     /**
      * Constructor
@@ -72,8 +73,16 @@ public final class EidasAttributeValidator extends AttributeSchemaValidator {
                 String attrName = attr.getName();
 
                 //validate gender
-                validateAttributeValueFormat(value, attrName, EidasSpec.Definitions.GENDER.getNameUri().toASCIIString(),
-                        PATTERN_GENDER_EIDAS);
+                if (attrName.equals(EidasSpec.Definitions.GENDER.getNameUri().toASCIIString())) {
+                    validateAttributeValueFormat(value, attrName, EidasSpec.Definitions.GENDER.getNameUri().toASCIIString(),
+                            PATTERN_GENDER_EIDAS);
+                }
+
+                if (attrName.equals(EidasSpec.Definitions.REPV_GENDER.getNameUri().toASCIIString())) {
+                    validateAttributeValueFormat(value, attrName, EidasSpec.Definitions.REPV_GENDER.getNameUri().toASCIIString(),
+                            PATTERN_GENDER_EIDAS);
+                }
+
 
                 //validate dateOfBirth
                 if (attrName.equals(EidasSpec.Definitions.DATE_OF_BIRTH.getNameUri().toASCIIString())) {

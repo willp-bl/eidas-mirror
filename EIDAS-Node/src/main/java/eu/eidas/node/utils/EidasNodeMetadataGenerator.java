@@ -181,6 +181,8 @@ public class EidasNodeMetadataGenerator {
                 mcp.technicalContact(technicalContact);
                 mcp.supportContact(supportContact);
                 mcp.organization(organization);
+                mcp.eidasProtocolVersion(nodeProps == null ? null : nodeProps.getProperty(EIDASValues.EIDAS_PROTOCOL_VERSION.toString()));
+                mcp.eidasApplicationIdentifier(nodeProps == null ? null : nodeProps.getProperty(EIDASValues.EIDAS_APPLICATION_IDENTIFIER.toString()));
                 generator.configParams(mcp.build());
                 return generator.build().getMetadata();
             } catch (EIDASSAMLEngineException eidasSamlexc) {

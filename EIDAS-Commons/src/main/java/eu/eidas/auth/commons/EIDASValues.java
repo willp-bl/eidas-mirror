@@ -252,6 +252,9 @@ public enum EIDASValues {
     DISABLE_CHECK_REPRESENTATIVE_ATTRS("disable.check.representative.attributes"),
     NODE_SUPPORT_EIDAS_MESSAGE_FORMAT_ONLY("eidasNodeOnly"),
 
+    EIDAS_PROTOCOL_VERSION("eidas.protocol.version"),
+    EIDAS_APPLICATION_IDENTIFIER("eidas.application.identifier"),
+
     // put the ; on a separate line to make merges easier
     ;
 

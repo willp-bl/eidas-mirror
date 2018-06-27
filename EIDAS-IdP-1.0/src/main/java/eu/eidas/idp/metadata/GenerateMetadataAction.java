@@ -33,6 +33,7 @@ import javax.servlet.http.HttpServletResponse;
 import com.opensymphony.xwork2.Action;
 import com.opensymphony.xwork2.ActionSupport;
 
+import eu.eidas.auth.commons.EIDASValues;
 import eu.eidas.auth.commons.EidasErrorKey;
 import eu.eidas.auth.engine.configuration.dom.EncryptionKey;
 import eu.eidas.auth.engine.configuration.dom.SignatureKey;
@@ -89,6 +90,8 @@ public class GenerateMetadataAction extends ActionSupport implements ServletRequ
             mcp.signingMethods(configs == null ? null : configs.getProperty(SignatureKey.SIGNATURE_ALGORITHM_WHITE_LIST.getKey()));
             mcp.digestMethods(configs == null ? null : configs.getProperty(SignatureKey.SIGNATURE_ALGORITHM_WHITE_LIST.getKey()));
             mcp.encryptionAlgorithms(configs == null ? null : configs.getProperty(EncryptionKey.ENCRYPTION_ALGORITHM_WHITE_LIST.getKey()));
+            mcp.eidasProtocolVersion(configs == null ? null : configs.getProperty(EIDASValues.EIDAS_PROTOCOL_VERSION.toString()));
+            mcp.eidasApplicationIdentifier(configs == null ? null : configs.getProperty(EIDASValues.EIDAS_APPLICATION_IDENTIFIER.toString()));
             generator.configParams(mcp.build());
             EidasMetadata eidasMetadata = generator.build();
 			metadata = eidasMetadata.getMetadata();
