@@ -97,6 +97,8 @@
             <xsd:enumeration value="Male"/>
             <xsd:enumeration value="Female"/>
             <xsd:enumeration value="Unspecified"/>
+            <!--TODO "Not Specified" is a temporary allowed value to avoid interoperability issues, it will be removed in future -->
+            <xsd:enumeration value="Not Specified"/>
         </xsd:restriction>
     </xsd:simpleType>
 

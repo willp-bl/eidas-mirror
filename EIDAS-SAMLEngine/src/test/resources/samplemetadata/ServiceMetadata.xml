@@ -1,4 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?><md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" xmlns:xs="http://www.w3.org/2001/XMLSchema" entityID="http://vs-cis-k2:8080/EidasNode/ServiceMetadata" validUntil="2018-01-23T10:24:26.084Z"><ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#"><ds:SignedInfo><ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/><ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha512"/><ds:Reference URI=""><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"><ec:InclusiveNamespaces xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#" PrefixList="xs"/></ds:Transform></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha512"/><ds:DigestValue>jv7fezfU+zZqXeJpgwpcIgb6RjpxkZRF1rvcEl6DyiQbj9W6RaKWtM8GKZfY/JZjNJrkC/5Ym1vIyuwcHuH/pQ==</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue>Rd8vwo/VVmce1MzfdDu8zKAqLPMoDjiVqu512kXxHA3tnmfD936LRO2F4OzaHA8cigKr5XZUULIwmzgkIZvEpE1RYSJyErXazZ4qK45iWk9jbaokY+lSHkjYFtK05MOl7E3moBpIVhhSWnrV4fVf/do2JHd4+zhs7r8UNuLvLKvd7hvWjtRKaP0hr0K/tI9WWEMCwqGMujHNbFCutdnuWMg8spVOyDooJSqyhfYu1bva1s9Y08a4IwBSfdhiFJJc927zvYc20ICY9xpHb20e95nnfr0Iya7+7nDdRSBu4UeYOKyjLy0EnaAuhsW+RkveOHhnWz3taTe6R56ie4nVLAa0m2B0YPLSiGQAaq3WYyXDdDqnQ2RlyLqNZTAB0rnUgmVk8L6jlJEMlhuKBJx91c5kRPqlVtDe3SQaMQgh+cwOLO5CMeUbqccv+o/h4NZ4YrZuhNdISO4rYb8gQIkPfrpc6bNaZ1t59gP1xld5vwbSPmh4wErlC6wSkZEKVmSIL6bC8l4/2yskIUz7BL+wTS4RBTd5R6uMCYsMrDlD4iRR4YKyKduRc7UiekQ437EXVYby8pavr0hGZz1qNV+ybSMNA1PhEZERcXfhsiiHIAVmspXz75Ltqkahh67XaT4xapzF9FARs5NNjf/RbN1OxbSG4Epwyk6YF44Hko5SAMA=</ds:SignatureValue><ds:KeyInfo><ds:X509Data><ds:X509Certificate>MIIFMTCCAxkCBFYbwMgwDQYJKoZIhvcNAQENBQAwXTELMAkGA1UEBhMCQkUxCzAJBgNVBAgMAkVV
+<!-- 
+#   Copyright (c) 2017 European Commission  
+#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
+#   approved by the European Commission - subsequent versions of the 
+#    EUPL (the "Licence"); 
+#    You may not use this work except in compliance with the Licence. 
+#    You may obtain a copy of the Licence at: 
+#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
+#    *
+#    Unless required by applicable law or agreed to in writing, software 
+#    distributed under the Licence is distributed on an "AS IS" basis, 
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+#    See the Licence for the specific language governing permissions and limitations under the Licence.
+ -->
 MREwDwYDVQQHDAhCcnVzc2VsczELMAkGA1UECgwCRUMxDjAMBgNVBAsMBURJR0lUMREwDwYDVQQD
 DAhtZXRhZGF0YTAeFw0xNTEwMTIxNDE2NDBaFw0xNjEwMTExNDE2NDBaMF0xCzAJBgNVBAYTAkJF
 MQswCQYDVQQIDAJFVTERMA8GA1UEBwwIQnJ1c3NlbHMxCzAJBgNVBAoMAkVDMQ4wDAYDVQQLDAVE

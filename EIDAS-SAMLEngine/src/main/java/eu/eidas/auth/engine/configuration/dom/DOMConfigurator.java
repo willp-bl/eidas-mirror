@@ -1,3 +1,17 @@
+/* 
+#   Copyright (c) 2017 European Commission  
+#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
+#   approved by the European Commission - subsequent versions of the 
+#    EUPL (the "Licence"); 
+#    You may not use this work except in compliance with the Licence. 
+#    You may obtain a copy of the Licence at: 
+#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
+#    *
+#    Unless required by applicable law or agreed to in writing, software 
+#    distributed under the Licence is distributed on an "AS IS" basis, 
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+#    See the Licence for the specific language governing permissions and limitations under the Licence.
+ */
 package eu.eidas.auth.engine.configuration.dom;
 
 import com.google.common.collect.ImmutableMap;
@@ -205,7 +219,8 @@ public final class DOMConfigurator {
             LOG.trace("Configured protocol processor for \"" + instanceName + "\": " + protocolProcessor);
 
             return protocolProcessor;
-        } catch (ClassNotFoundException | ClassCastException /*| NoSuchMethodException */| IllegalAccessException | InstantiationException | InvocationTargetException e) {
+        } catch (NullPointerException|ClassNotFoundException | ClassCastException /*| NoSuchMethodException */
+        		| IllegalAccessException | InstantiationException | InvocationTargetException e) {
             LOG.error("Error creating protocol processor for SAML engine \"" + instanceName + "\" in "
                               + protocolProcessorClassName + " due to " + e, e);
             throw new ProtocolEngineConfigurationException(EidasErrorKey.SAML_ENGINE_CONFIGURATION_ERROR.errorCode(),
@@ -274,6 +289,7 @@ public final class DOMConfigurator {
                 //try to get constructor supporting defaultPath first
                 constructor = signerClass.getConstructor(Map.class, String.class);
             } catch (NoSuchMethodException e) {
+                LOG.info(String.format("No constructor for %s(Map.class, String.class), trying ...(Map.class)", signerClass.getName()));
                 constructor = signerClass.getConstructor(Map.class);
             }
 

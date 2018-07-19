@@ -1,23 +1,16 @@
-/*
- * Copyright (c) 2017 by European Commission
- *
- * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
- * the European Commission - subsequent versions of the EUPL (the "Licence");
- * You may not use this work except in compliance with the Licence.
- * You may obtain a copy of the Licence at:
- * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the Licence is distributed on an "AS IS" basis,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the Licence for the specific language governing permissions and
- * limitations under the Licence.
- *
- * This product combines work with different licenses. See the "NOTICE" text
- * file for details on the various modules and licenses.
- * The "NOTICE" text file is part of the distribution. Any derivative works
- * that you distribute must include a readable copy of the "NOTICE" text file.
- *
+/* 
+#   Copyright (c) 2017 European Commission  
+#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
+#   approved by the European Commission - subsequent versions of the 
+#    EUPL (the "Licence"); 
+#    You may not use this work except in compliance with the Licence. 
+#    You may obtain a copy of the Licence at: 
+#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
+#    *
+#    Unless required by applicable law or agreed to in writing, software 
+#    distributed under the Licence is distributed on an "AS IS" basis, 
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+#    See the Licence for the specific language governing permissions and limitations under the Licence.
  */
 package eu.eidas.auth.engine.xml.opensaml;
 
@@ -26,11 +19,17 @@ import eu.eidas.auth.commons.EidasStringUtil;
 import eu.eidas.auth.engine.CertificateAliasPair;
 import eu.eidas.util.Preconditions;
 import org.apache.commons.lang.StringUtils;
+import org.opensaml.security.SecurityException;
 import org.opensaml.security.credential.Credential;
 import org.opensaml.security.trust.impl.ExplicitKeyTrustEvaluator;
 import org.opensaml.security.x509.BasicX509Credential;
+import org.opensaml.security.x509.PKIXValidationInformation;
 import org.opensaml.security.x509.X509Credential;
+import org.opensaml.security.x509.impl.BasicPKIXValidationInformation;
+import org.opensaml.security.x509.impl.CertPathPKIXTrustEvaluator;
 import org.opensaml.xmlsec.signature.KeyInfo;
+import org.opensaml.xmlsec.signature.Signature;
+import org.opensaml.xmlsec.signature.X509Data;
 import org.opensaml.xmlsec.signature.support.SignatureConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,8 +45,13 @@ import java.security.KeyStoreException;
 import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -66,23 +70,70 @@ public final class CertificateUtil {
     public final static String EX_UNTRUSTED_CERT = "untrusted certificate";
     public final static String EX_INVALID_CERT = "invalid certificate";
 
+    private static final Set<X509CRL> EMPTY_CRLS = new HashSet<>();
+
+    private static final Integer MAX_DEPTH  = 5;//TODO get this value form external configuration
 
     private static final AtomicReference<CertificateFactory> CERTIFICATE_FACTORY_REF = new AtomicReference<>();
 
-    public static void checkTrust(X509Credential entityX509Cred, Iterable<? extends Credential> trustedCredentials)
+    public static void checkChainTrust(X509Credential entityX509Cred, Iterable<? extends Credential> trustedCredentials)
             throws CertificateException {
-        ExplicitKeyTrustEvaluator keyTrustEvaluator = new ExplicitKeyTrustEvaluator();
+
         LOG.debug(entityX509Cred.getEntityId());
         LOG.debug(entityX509Cred.getEntityCertificate().getIssuerDN().getName());
         LOG.debug("" + entityX509Cred.getEntityCertificate().getNotAfter());
         LOG.debug("" + entityX509Cred.getEntityCertificate().getSerialNumber());
-        if (!keyTrustEvaluator.validate(entityX509Cred, (Iterable<Credential>) trustedCredentials)) {
+
+        final CertPathPKIXTrustEvaluator keyTrustEvaluator = new CertPathPKIXTrustEvaluator();
+
+        boolean isTrusted = isTrustValid(entityX509Cred, keyTrustEvaluator, trustedCredentials);
+        if (!isTrusted) {
+            throw new CertificateException(EX_UNTRUSTED_CERT);
+        }
+
+    }
+
+    public static void checkExplicitTrust(X509Credential entityX509Cred, Iterable<? extends Credential> trustedCredentials)
+            throws CertificateException {
+
+        LOG.debug(entityX509Cred.getEntityId());
+        LOG.debug(entityX509Cred.getEntityCertificate().getIssuerDN().getName());
+        LOG.debug("" + entityX509Cred.getEntityCertificate().getNotAfter());
+        LOG.debug("" + entityX509Cred.getEntityCertificate().getSerialNumber());
+
+        final ExplicitKeyTrustEvaluator keyTrustEvaluator = new ExplicitKeyTrustEvaluator();
+
+        keyTrustEvaluator.validate(entityX509Cred, (Iterable<Credential>) trustedCredentials);
+    }
+
+    private static boolean isTrustValid(final X509Credential entityX509Cred,
+                                        final CertPathPKIXTrustEvaluator keyTrustEvaluator,
+                                        final Iterable<? extends Credential> trustedCredentials) throws CertificateException {
+
+        ArrayList<X509Certificate> trustedx509Certificates = new ArrayList<>();
+        for (Credential trustedCredential : trustedCredentials) {
+            X509Certificate entityCertificate = ((BasicX509Credential) trustedCredential).getEntityCertificate();
+            trustedx509Certificates.add(entityCertificate);
+        }
+
+        final PKIXValidationInformation pkixValidationInformation = getPKIXInfoSet(trustedx509Certificates,
+                EMPTY_CRLS,
+                MAX_DEPTH);
+
+        try {
+            return keyTrustEvaluator.validate(pkixValidationInformation, entityX509Cred);
+        } catch (SecurityException e) {
             throw new CertificateException(EX_UNTRUSTED_CERT);
         }
     }
 
-    public static void checkTrust(X509Credential entityX509Cred, KeyStore trustStore) throws CertificateException {
-        checkTrust(entityX509Cred, getListOfCredential(trustStore));
+    private static PKIXValidationInformation getPKIXInfoSet(Collection<X509Certificate> certs,
+                                                     Collection<X509CRL> crls, Integer depth) {
+        return new BasicPKIXValidationInformation(certs, crls, depth);
+    }
+
+    public static void checkChainTrust(X509Credential entityX509Cred, KeyStore trustStore) throws CertificateException {
+        checkExplicitTrust(entityX509Cred, getListOfCredential(trustStore));
     }
 
     @Nonnull
@@ -219,9 +270,41 @@ public final class CertificateUtil {
     @Nonnull
     public static X509Certificate toCertificate(@Nonnull KeyInfo keyInfo) throws CertificateException {
         Preconditions.checkNotNull(keyInfo, "keyInfo");
-        org.opensaml.xmlsec.signature.X509Certificate xmlCert = keyInfo.getX509Datas().get(0).getX509Certificates().get(0);
+        List<org.opensaml.xmlsec.signature.X509Certificate> x509Certificates = keyInfo.getX509Datas().get(0).getX509Certificates();
+
+        final int size = x509Certificates.size();
+        //TODO to allow backward compatibility with eIDAS 1.4.1, use first certificate (assuming 1st to be the metadata signing certificate). Change it when no longer needed an use the last index instead as before.
+//        final int index = size == 0 ? 0 : size - 1;
+        final int index = 0;
+
+        org.opensaml.xmlsec.signature.X509Certificate xmlCert = x509Certificates.get(index);
         X509Certificate cert = toCertificate(xmlCert.getValue());
         return cert;
+    }
+
+
+    /**
+     * Retrieves the certificates contained in the keyinfo parameter.
+     *
+     * @param keyInfo the instance containing the certificates
+     * @return the List of certificates contained in the keyinfo
+     * @throws CertificateException if the one certificate cannot be converted to {@link X509Certificate}
+     */
+    @Nonnull
+    public static List<X509Certificate> getCertificates(@Nonnull final KeyInfo keyInfo) throws CertificateException {
+        Preconditions.checkNotNull(keyInfo,  KeyInfo.DEFAULT_ELEMENT_LOCAL_NAME);
+        final List<X509Certificate> x509CertificatesOut = new ArrayList<>();
+
+        final List<X509Data> x509Datas = keyInfo.getX509Datas();
+        if (!x509Datas.isEmpty()) {
+            final List<org.opensaml.xmlsec.signature.X509Certificate> x509Certificates = x509Datas.get(0).getX509Certificates();
+            for (org.opensaml.xmlsec.signature.X509Certificate x509Certificate : x509Certificates) {
+                X509Certificate cert = toCertificate(x509Certificate.getValue());
+                x509CertificatesOut.add(cert);
+            }
+        }
+
+        return x509CertificatesOut;
     }
 
     @Nonnull
@@ -263,34 +346,7 @@ public final class CertificateUtil {
             org.opensaml.xmlsec.signature.X509Certificate xmlCert =
                     keyInfo.getX509Datas().get(0).getX509Certificates().get(0);
 
-            // Transform the KeyInfo to X509Certificate.
-            X509Certificate cert = toCertificate(xmlCert.getValue());
-
-            String distName = cert.getSubjectDN().toString();
-
-            distName = StringUtils.deleteWhitespace(StringUtils.upperCase(distName));
-
-            String countryCode = "C=";
-            int init = distName.indexOf(countryCode);
-
-            String result = "";
-            if (init > StringUtils.INDEX_NOT_FOUND) {
-                // Exist country code.
-                int end = distName.indexOf(',', init);
-
-                if (end <= StringUtils.INDEX_NOT_FOUND) {
-                    end = distName.length();
-                }
-
-                if (init < end && end > StringUtils.INDEX_NOT_FOUND) {
-                    result = distName.substring(init + countryCode.length(), end);
-                    //It must be a two characters value
-                    if (result.length() > 2) {
-                        result = result.substring(0, 2);
-                    }
-                }
-            }
-            return result.trim();
+            return getCountry(xmlCert);
         } catch (CertificateException e) {
             LOG.error(MarkerFactory.getMarker("SAML_EXCHANGE"),
                       "BUSINESS EXCEPTION : Proccess getCountry from certificate: " + e.getMessage(), e);
@@ -298,4 +354,44 @@ public final class CertificateUtil {
             throw new RuntimeException(e);
         }
     }
+
+	public static String getCountry(org.opensaml.xmlsec.signature.X509Certificate xmlCert) throws CertificateException {
+		// Transform the KeyInfo to X509Certificate.
+		X509Certificate cert = toCertificate(xmlCert.getValue());
+
+		return getCountry(cert);
+	}
+
+	public static String getCountry(X509Certificate cert) {
+		String distName = cert.getSubjectDN().toString();
+
+		distName = StringUtils.deleteWhitespace(StringUtils.upperCase(distName));
+
+		String countryCode = "C=";
+		int init = distName.indexOf(countryCode);
+
+		String result = "";
+		if (init > StringUtils.INDEX_NOT_FOUND) {
+		    // Exist country code.
+		    int end = distName.indexOf(',', init);
+
+		    if (end <= StringUtils.INDEX_NOT_FOUND) {
+		        end = distName.length();
+		    }
+
+		    if (init < end && end > StringUtils.INDEX_NOT_FOUND) {
+		        result = distName.substring(init + countryCode.length(), end);
+		        //It must be a two characters value
+		        if (result.length() > 2) {
+		            result = result.substring(0, 2);
+		        }
+		    }
+		}
+		return result.trim();
+	}
+
+
+	public static boolean isSignatureWithCertificate(Signature signature) {
+		return !signature.getKeyInfo().getX509Datas().isEmpty();
+	}
 }

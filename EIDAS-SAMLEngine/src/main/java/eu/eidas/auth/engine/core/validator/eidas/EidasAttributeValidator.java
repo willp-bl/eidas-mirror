@@ -1,19 +1,16 @@
-/*
- * Copyright (c) 2017 by European Commission
- *
- * Licensed under the EUPL, Version 1.2 or - as soon they will be
- * approved by the European Commission - subsequent versions of the
- * EUPL (the "Licence");
- * You may not use this work except in compliance with the Licence.
- * You may obtain a copy of the Licence at:
- * https://joinup.ec.europa.eu/page/eupl-text-11-12
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the Licence is distributed on an "AS IS" basis,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
- * implied.
- * See the Licence for the specific language governing permissions and
- * limitations under the Licence.
+/* 
+#   Copyright (c) 2017 European Commission  
+#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
+#   approved by the European Commission - subsequent versions of the 
+#    EUPL (the "Licence"); 
+#    You may not use this work except in compliance with the Licence. 
+#    You may obtain a copy of the Licence at: 
+#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
+#    *
+#    Unless required by applicable law or agreed to in writing, software 
+#    distributed under the Licence is distributed on an "AS IS" basis, 
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+#    See the Licence for the specific language governing permissions and limitations under the Licence.
  */
 
 package eu.eidas.auth.engine.core.validator.eidas;
@@ -35,7 +32,8 @@ import java.util.regex.Pattern;
  */
 public final class EidasAttributeValidator extends AttributeSchemaValidator {
 
-    private static final String PATTERN_GENDER_EIDAS = "^(?:Male|Female|Not specified)$";
+    //TODO "Not Specified" is a temporary allowed value to avoid interoperability issues, it will be removed in future
+    private static final String PATTERN_GENDER_EIDAS = "^(?:Male|Female|Unspecified|Not Specified)$";
 
     /**
      * Constructor
@@ -68,15 +66,14 @@ public final class EidasAttributeValidator extends AttributeSchemaValidator {
                 String attrName = attr.getName();
 
                 //validate gender
-                //TODO resolv EID-582 & EID-587
-                /*if (attrName.equals(EidasSpec.Definitions.GENDER.getNameUri().toASCIIString())) {
+                if (attrName.equals(EidasSpec.Definitions.GENDER.getNameUri().toASCIIString())) {
                     validateAttributeValueFormat(value, attrName, EidasSpec.Definitions.GENDER.getNameUri().toASCIIString(),
                             PATTERN_GENDER_EIDAS);
                 }
                 if (attrName.equals(EidasSpec.Definitions.REPV_GENDER.getNameUri().toASCIIString())) {
                     validateAttributeValueFormat(value, attrName, EidasSpec.Definitions.REPV_GENDER.getNameUri().toASCIIString(),
                             PATTERN_GENDER_EIDAS);
-                }*/
+                }
 
 
                 //validate dateOfBirth

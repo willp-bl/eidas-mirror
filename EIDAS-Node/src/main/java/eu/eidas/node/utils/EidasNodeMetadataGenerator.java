@@ -1,19 +1,16 @@
-/*
- * Copyright (c) 2017 by European Commission
- *
- * Licensed under the EUPL, Version 1.2 or - as soon they will be
- * approved by the European Commission - subsequent versions of the
- * EUPL (the "Licence");
- * You may not use this work except in compliance with the Licence.
- * You may obtain a copy of the Licence at:
- * https://joinup.ec.europa.eu/page/eupl-text-11-12
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the Licence is distributed on an "AS IS" basis,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
- * implied.
- * See the Licence for the specific language governing permissions and
- * limitations under the Licence.
+/* 
+#   Copyright (c) 2017 European Commission  
+#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
+#   approved by the European Commission - subsequent versions of the 
+#    EUPL (the "Licence"); 
+#    You may not use this work except in compliance with the Licence. 
+#    You may obtain a copy of the Licence at: 
+#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
+#    *
+#    Unless required by applicable law or agreed to in writing, software 
+#    distributed under the Licence is distributed on an "AS IS" basis, 
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+#    See the Licence for the specific language governing permissions and limitations under the Licence.
  */
 
 package eu.eidas.node.utils;
@@ -65,10 +62,9 @@ public class EidasNodeMetadataGenerator {
     private Properties nodeProps;
     private long validityDuration;
 
-    private String  singleSignOnServiceRedirectLocation;
-    private String  singleSignOnServicePostLocation;
-
-    private static final String INVALID_METADATA="invalid metadata";
+    private static final String INVALID_METADATA = "invalid metadata";
+    private String singleSignOnServiceRedirectLocation;
+    private String singleSignOnServicePostLocation;
 
     private ProtocolEngineFactory nodeProtocolEngineFactory;
 
@@ -96,29 +92,28 @@ public class EidasNodeMetadataGenerator {
         this.nodeProtocolEngineFactory = nodeProtocolEngineFactory;
     }
 
-    public String generateConnectorMetadata(ProtocolEngineI protocolEngine){
+    public String generateConnectorMetadata(ProtocolEngineI protocolEngine) {
         ContactData technicalContact = NodeMetadataUtil.createConnectorTechnicalContact(nodeProps);
         ContactData supportContact = NodeMetadataUtil.createConnectorSupportContact(nodeProps);
         OrganizationData organization = NodeMetadataUtil.createConnectorOrganizationData(nodeProps);
         return generateMetadata(false, connectorMetadataUrl, technicalContact, supportContact, organization, null, (MetadataSignerI) protocolEngine.getSigner());
     }
 
-    public String generateProxyServiceMetadata(ProtocolEngineI protocolEngine){
-        String loA=null;
-        if(getNodeProps()!=null){
-            loA=getNodeProps().getProperty(EIDASValues.EIDAS_SERVICE_LOA.toString());
+    public String generateProxyServiceMetadata(ProtocolEngineI protocolEngine) {
+        String loA = null;
+        if (getNodeProps() != null) {
+            loA = getNodeProps().getProperty(EIDASValues.EIDAS_SERVICE_LOA.toString());
         }
         ContactData technicalContact = NodeMetadataUtil.createServiceTechnicalContact(nodeProps);
         ContactData supportContact = NodeMetadataUtil.createServiceSupportContact(nodeProps);
         OrganizationData organization = NodeMetadataUtil.createServiceOrganization(nodeProps);
         return generateMetadata(true, proxyServiceMetadataUrl, technicalContact, supportContact, organization, loA, (MetadataSignerI) protocolEngine.getSigner());
     }
-
     private String generateMetadata(boolean idpRole, String url, ContactData technicalContact,
-                                    ContactData supportContact, OrganizationData organization, String loA, MetadataSignerI signer){
-        String metadata=INVALID_METADATA;
+                                    ContactData supportContact, OrganizationData organization, String loA, MetadataSignerI signer) {
+        String metadata = INVALID_METADATA;
 
-        if(url!=null && !url.isEmpty()) {
+        if (url != null && !url.isEmpty()) {
             try {
                 EidasMetadataParametersI emp = MetadataConfiguration.newParametersInstance();
                 EidasMetadataRoleParametersI emrp = MetadataConfiguration.newRoleParametersInstance();
@@ -138,9 +133,15 @@ public class EidasNodeMetadataGenerator {
 
                 emp.setSigningMethods(nodeProps == null ? null : nodeProps.getProperty(SignatureKey.SIGNATURE_ALGORITHM_WHITE_LIST.getKey()));
                 emp.setDigestMethods(nodeProps == null ? null : nodeProps.getProperty(SignatureKey.SIGNATURE_ALGORITHM_WHITE_LIST.getKey()));
-
+                /*TODO: remove this attribute after trasition period*/
+                String stringLoaType = (getNodeProps() == null ? null : getNodeProps().getProperty(EIDASValues.EIDAS_METADATA_HIDE_LOA.toString()));
+                //boolean hideLoaType = stringLoaType != null && stringLoaType.equals("true");
+                emp.setHideLoaType(stringLoaType != null && stringLoaType.equals("true"));
                 setValidityUntil(emp, protocolEngine);
                 setContacts(emp, technicalContact, supportContact, organization);
+
+                emp.setEidasProtocolVersion(nodeProps == null ? null : nodeProps.getProperty(EIDASValues.EIDAS_PROTOCOL_VERSION.toString()));
+                emp.setEidasApplicationIdentifier(nodeProps == null ? null : nodeProps.getProperty(EIDASValues.EIDAS_APPLICATION_IDENTIFIER.toString()));
 
                 //TODO decouple here : EidasMetadata.Generator will be used in EIDAS-Metadata
                 EidasMetadata.Generator generator = EidasMetadata.generator(emp);
@@ -261,5 +262,4 @@ public class EidasNodeMetadataGenerator {
     public void setSingleSignOnServicePostLocation(String singleSignOnServicePostLocation) {
         this.singleSignOnServicePostLocation = singleSignOnServicePostLocation;
     }
-
 }

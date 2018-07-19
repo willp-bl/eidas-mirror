@@ -1,19 +1,16 @@
-/*
- * Copyright (c) 2017 by European Commission
- *
- * Licensed under the EUPL, Version 1.2 or - as soon they will be
- * approved by the European Commission - subsequent versions of the
- * EUPL (the "Licence");
- * You may not use this work except in compliance with the Licence.
- * You may obtain a copy of the Licence at:
- * https://joinup.ec.europa.eu/page/eupl-text-11-12
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the Licence is distributed on an "AS IS" basis,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
- * implied.
- * See the Licence for the specific language governing permissions and
- * limitations under the Licence.
+/* 
+#   Copyright (c) 2017 European Commission  
+#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
+#   approved by the European Commission - subsequent versions of the 
+#    EUPL (the "Licence"); 
+#    You may not use this work except in compliance with the Licence. 
+#    You may obtain a copy of the Licence at: 
+#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
+#    *
+#    Unless required by applicable law or agreed to in writing, software 
+#    distributed under the Licence is distributed on an "AS IS" basis, 
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+#    See the Licence for the specific language governing permissions and limitations under the Licence.
  */
 
 package member_country_specific.specific.connector.communication;
@@ -66,8 +63,18 @@ public class SpecificConnector {
     private String issuerName;
 
     private String specificConnectorRequestUrl;
+    
+    private boolean relaystateRandomizeNull;
 
-    //Correlation Map between the light request Id to be send to the connector and the simple protocol request Object to sent by the SP.
+    public boolean getRelaystateRandomizeNull() {
+		return relaystateRandomizeNull;
+	}
+
+	public void setRelaystateRandomizeNull(boolean relaystateRandomizeNull) {
+		this.relaystateRandomizeNull = relaystateRandomizeNull;
+	}
+
+	//Correlation Map between the light request Id to be send to the connector and the simple protocol request Object to sent by the SP.
     private CorrelationMap<AuthenticationRequest> specificMSSpRequestCorrelationMap;
 
     private void validateMandatoryFields(AuthenticationRequest specificRequest) {
@@ -104,12 +111,16 @@ public class SpecificConnector {
         return (AuthenticationRequest) simpleProtocolProcess.convertFromJson(new StringReader(specificRequestJson), AuthenticationRequest.class);
     }
 
+    boolean doesRandomize() {
+    	return getRelaystateRandomizeNull();
+	}
+    
     private LightRequest createLightRequest(@Nonnull final AuthenticationRequest specificRequest) {
         final LightRequest.Builder builder = LightRequest.builder()
                 .id(UUID.randomUUID().toString())
                 .citizenCountryCode(specificRequest.getCitizenCountry())
                 .issuer(getIssuerName())
-                .relayState(createRelayState())
+                .relayState(doesRandomize()? createRelayState():null)
                 .levelOfAssurance(getContextClass(specificRequest))
                 .spType(specificRequest.getSpType());
 
@@ -386,7 +397,6 @@ public class SpecificConnector {
     public void setEidasAttributesFile(String eidasAttributesFile) {
         this.eidasAttributesFile = eidasAttributesFile;
     }
-
 
     public String getAdditionalAttributesFile() {
         return additionalAttributesFile;

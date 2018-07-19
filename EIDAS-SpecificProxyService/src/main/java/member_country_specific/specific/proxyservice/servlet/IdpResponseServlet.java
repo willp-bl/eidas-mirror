@@ -1,19 +1,16 @@
-/*
- * Copyright (c) 2017 by European Commission
- *
- * Licensed under the EUPL, Version 1.2 or - as soon they will be
- * approved by the European Commission - subsequent versions of the
- * EUPL (the "Licence");
- * You may not use this work except in compliance with the Licence.
- * You may obtain a copy of the Licence at:
- * https://joinup.ec.europa.eu/page/eupl-text-11-12
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the Licence is distributed on an "AS IS" basis,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
- * implied.
- * See the Licence for the specific language governing permissions and
- * limitations under the Licence.
+/* 
+#   Copyright (c) 2017 European Commission  
+#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
+#   approved by the European Commission - subsequent versions of the 
+#    EUPL (the "Licence"); 
+#    You may not use this work except in compliance with the Licence. 
+#    You may obtain a copy of the Licence at: 
+#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
+#    *
+#    Unless required by applicable law or agreed to in writing, software 
+#    distributed under the Licence is distributed on an "AS IS" basis, 
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+#    See the Licence for the specific language governing permissions and limitations under the Licence.
  */
 
 package member_country_specific.specific.proxyservice.servlet;
@@ -89,7 +86,7 @@ public final class IdpResponseServlet extends AbstractSpecificProxyServiceServle
             try {
                 TokenRedirectHelper.setTokenRedirectAttributes(httpServletRequest, lightResponse, getApplicationContext(), getSpecificProxyService().getSpecificProxyserviceResponseUrl());
             } catch (SpecificCommunicationException e) {
-                getLogger().error("Error setting a binary light token");
+                getLogger().error("Error setting a binary light token"+e);
                 throw new ServletException(e);
             }
 
@@ -102,8 +99,6 @@ public final class IdpResponseServlet extends AbstractSpecificProxyServiceServle
 
     private void setConsentViewAttributes(@Nonnull HttpServletRequest httpServletRequest, @Nonnull ILightResponse lightResponse) throws ServletException {
         ImmutableMap<AttributeDefinition<?>, ImmutableSet<? extends AttributeValue<?>>> attributes = prepareAttributesToAskConsent(lightResponse);
-        if (attributes.size() == 0)
-            throw new ServletException("Message with no Attributes list");
         httpServletRequest.setAttribute(EidasParameterKeys.ATTRIBUTE_LIST.toString(), attributes);
 
         String levelOfAssurance = lightResponse.getLevelOfAssurance();
@@ -127,7 +122,7 @@ public final class IdpResponseServlet extends AbstractSpecificProxyServiceServle
         try {
             binaryTokenResponseBase64 = getSpecificProxyService().createStoreBinaryLightTokenResponseBase64(lightResponse);
         } catch (SpecificCommunicationException  e) {
-            getLogger().error("Error encoding light token into a binary light token");
+            getLogger().error("Error encoding light token into a binary light token"+e);
             throw new ServletException("Error encoding light token into a binary light token", e);
         }
         httpServletRequest.setAttribute(SpecificProxyServiceParameterNames.BINARY_LIGHT_TOKEN.toString(), binaryTokenResponseBase64);
@@ -168,7 +163,7 @@ public final class IdpResponseServlet extends AbstractSpecificProxyServiceServle
         try {
             lightResponse = getSpecificProxyService().translateSpecificResponse(specificResponse);
         } catch (JAXBException e) {
-            getLogger().error("Error unmarshalling MS Specific Request");
+            getLogger().error("Error unmarshalling MS Specific Request"+e);
             throw new ServletException(e);
         }
 

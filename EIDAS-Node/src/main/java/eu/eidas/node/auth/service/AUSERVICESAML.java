@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 by European Commission
+ * Copyright (c) 2018 by European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be
  * approved by the European Commission - subsequent versions of the
@@ -39,6 +39,7 @@ import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import eu.eidas.node.logging.LoggingMarkerMDC;
 import eu.eidas.node.utils.EidasNodeErrorUtil;
 import eu.eidas.node.utils.EidasNodeValidationUtil;
+import eu.eidas.node.utils.LoggingSanitizer;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -388,7 +389,7 @@ public class AUSERVICESAML implements ISERVICESAMLService {
                 //put spType in the request
                 if (isEmpty(authnRequest.getSpType())) {
                     // retrieve TypeFromMetadata from the metadata
-                    String spTypeFromMetadata = eidasMetadataParameters.getSpType();
+                    String spTypeFromMetadata = eidasMetadataParameters!=null?eidasMetadataParameters.getSpType():null;
                     eIDASAuthnRequestBuilder = EidasAuthenticationRequest.builder((IEidasAuthenticationRequest) authnRequest);
                     eIDASAuthnRequestBuilder.spType(spTypeFromMetadata);
                     if (null != eIDASAuthnRequestBuilder) {
@@ -552,33 +553,50 @@ public class AUSERVICESAML implements ISERVICESAMLService {
     private void prepareReqLoggerBean(byte[] samlObj, IAuthenticationRequest authnRequest) {
         String hashClassName = serviceUtil.getProperty(EidasParameterKeys.HASH_DIGEST_CLASS.toString());
         byte[] tokenHash = EidasDigestUtil.hashPersonalToken(samlObj, hashClassName);
+        loggerBean.setSamlHash(tokenHash);
+
         loggerBean.setTimestamp(DateUtil.currentTimeStamp().toString());
         loggerBean.setOpType(EIDASValues.EIDAS_SERVICE_REQUEST.toString());
-        loggerBean.setOrigin(authnRequest.getAssertionConsumerServiceURL());
-        loggerBean.setDestination(authnRequest.getDestination());
-        loggerBean.setProviderName(authnRequest.getProviderName());
-        loggerBean.setCountry(authnRequest.getServiceProviderCountryCode());
-        loggerBean.setSamlHash(tokenHash);
-        loggerBean.setMsgId(authnRequest.getId());
+
+        final String originWithoutCrlf = LoggingSanitizer.removeCRLFInjection(authnRequest.getAssertionConsumerServiceURL());
+        loggerBean.setOrigin(originWithoutCrlf);
+
+        final String destinationWithoutCrlf = LoggingSanitizer.removeCRLFInjection(authnRequest.getDestination());
+        loggerBean.setDestination(destinationWithoutCrlf);
+
+        final String providerNameWithoutCrlf = LoggingSanitizer.removeCRLFInjection(authnRequest.getProviderName());
+        loggerBean.setProviderName(providerNameWithoutCrlf);
+
+        final String countryWithoutCrlf = LoggingSanitizer.removeCRLFInjection(authnRequest.getServiceProviderCountryCode());
+        loggerBean.setCountry(countryWithoutCrlf);
+
+        final String msgIdWithoutCrlf = LoggingSanitizer.removeCRLFInjection(authnRequest.getId());
+        loggerBean.setMsgId(msgIdWithoutCrlf);
     }
 
     /**
      * Sets all the fields to the audit the response.
      *
-     * @param message The Saml response message.
+     * @param responseMessage The Saml response message.
      * @param message The message.
      * @see EidasAuthenticationRequest
      */
     protected void prepareRespLoggerBean(IResponseMessage responseMessage, String message) {
         String hashClassName = serviceUtil.getProperty(EidasParameterKeys.HASH_DIGEST_CLASS.toString());
         byte[] tokenHash = EidasDigestUtil.hashPersonalToken(responseMessage.getMessageBytes(), hashClassName);
+        loggerBean.setSamlHash(tokenHash);
+
         loggerBean.setTimestamp(DateUtil.currentTimeStamp().toString());
         loggerBean.setOpType(EIDASValues.EIDAS_SERVICE_RESPONSE.toString());
-        IAuthenticationResponse authnResponse = responseMessage.getResponse();
-        loggerBean.setInResponseTo(authnResponse.getInResponseToId());
         loggerBean.setMessage(message);
-        loggerBean.setSamlHash(tokenHash);
-        loggerBean.setMsgId(authnResponse.getId());
+
+        IAuthenticationResponse authnResponse = responseMessage.getResponse();
+
+        final String inResponseToWithoutCrlf = LoggingSanitizer.removeCRLFInjection(authnResponse.getInResponseToId());
+        loggerBean.setInResponseTo(inResponseToWithoutCrlf);
+
+        final String msgIdWithoutCrlf = LoggingSanitizer.removeCRLFInjection(authnResponse.getId());
+        loggerBean.setMsgId(msgIdWithoutCrlf);
     }
 
     /**

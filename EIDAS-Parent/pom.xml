@@ -6,7 +6,7 @@
     <artifactId>eidas-parent</artifactId>
     <packaging>pom</packaging>
     <name>eIDAS Node Parent</name>
-    <version>2.0.0</version>
+    <version>2.1.0</version>
     <description>
         The EIDAS-Parent provides artifacts versions for Eidas Node components.
     </description>
@@ -890,7 +890,8 @@
         </plugins>
     </build>
 
-    <modules>
+    <!-- modules>
+        <module>../EIDAS-Config</module>
         <module>../EIDAS-Light-Commons</module>
         <module>../EIDAS-Commons</module>
         <module>../EIDAS-ConfigModule</module>
@@ -905,6 +906,42 @@
         <module>../EIDAS-SP</module>
         <module>../EIDAS-IdP-1.0</module>
         <module>../EIDAS-SimpleProtocol</module>
-    </modules>
-
+    </modules-->
+<modules>
+   <module>../EIDAS-Light-Commons</module>
+   <module>../EIDAS-Commons</module>
+   <module>../EIDAS-SpecificCommunicationDefinition</module>
+ </modules>
+ <profiles>
+   <profile>
+     <id>NodeOnly</id>
+       <activation><activeByDefault>true</activeByDefault></activation>
+       <modules>
+         <module>../EIDAS-ConfigModule</module>
+         <module>../EIDAS-Encryption</module>
+         <module>../EIDAS-SAMLEngine</module>
+         <module>../EIDAS-Metadata</module>
+         <module>../EIDAS-UPDATER</module>
+         <module>../EIDAS-Node</module>
+       </modules>
+   </profile>
+   <profile>
+     <id>DemoToolsOnly</id>
+       <activation><activeByDefault>false</activeByDefault></activation>
+       <modules>
+         <module>../EIDAS-SimpleProtocol</module>
+         <module>../EIDAS-SpecificProxyService</module>
+         <module>../EIDAS-SpecificConnector</module>
+         <module>../EIDAS-SP</module>
+         <module>../EIDAS-IdP-1.0</module>
+       </modules>
+   </profile>
+   <profile>
+     <id>Config</id>
+       <activation><activeByDefault>false</activeByDefault></activation>
+       <modules>
+         <module>../EIDAS-Config</module>
+       </modules>
+   </profile>
+ </profiles>
 </project>

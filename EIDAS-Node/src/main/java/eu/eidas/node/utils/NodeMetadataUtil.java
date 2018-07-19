@@ -1,19 +1,16 @@
-/*
- * Copyright (c) 2017 by European Commission
- *
- * Licensed under the EUPL, Version 1.2 or - as soon they will be
- * approved by the European Commission - subsequent versions of the
- * EUPL (the "Licence");
- * You may not use this work except in compliance with the Licence.
- * You may obtain a copy of the Licence at:
- * https://joinup.ec.europa.eu/page/eupl-text-11-12
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the Licence is distributed on an "AS IS" basis,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
- * implied.
- * See the Licence for the specific language governing permissions and
- * limitations under the Licence.
+/* 
+#   Copyright (c) 2017 European Commission  
+#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
+#   approved by the European Commission - subsequent versions of the 
+#    EUPL (the "Licence"); 
+#    You may not use this work except in compliance with the Licence. 
+#    You may obtain a copy of the Licence at: 
+#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
+#    *
+#    Unless required by applicable law or agreed to in writing, software 
+#    distributed under the Licence is distributed on an "AS IS" basis, 
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+#    See the Licence for the specific language governing permissions and limitations under the Licence.
  */
 
 package eu.eidas.node.utils;
@@ -30,7 +27,7 @@ public class NodeMetadataUtil {
 
     private NodeMetadataUtil () {}
 
-    public static final String[] CONNECTOR_TECHNICAL_CONTACT_PROPS = {
+    private static final String[] CONNECTOR_TECHNICAL_CONTACT_PROPS = {
             "connector.contact.technical.company",
             "connector.contact.technical.email",
             "connector.contact.technical.givenname",
@@ -38,7 +35,7 @@ public class NodeMetadataUtil {
             "connector.contact.technical.phone"
     };
 
-    public static final String[] CONNECTOR_SUPPORT_CONTACT_PROPS = {
+    private static final String[] CONNECTOR_SUPPORT_CONTACT_PROPS = {
             "connector.contact.support.company",
             "connector.contact.support.email",
             "connector.contact.support.givenname",
@@ -46,7 +43,7 @@ public class NodeMetadataUtil {
             "connector.contact.support.phone"
     };
 
-    public static final String[] SERVICE_TECHNICAL_CONTACT_PROPS = {
+    private static final String[] SERVICE_TECHNICAL_CONTACT_PROPS = {
             "service.contact.technical.company",
             "service.contact.technical.email",
             "service.contact.technical.givenname",
@@ -54,7 +51,7 @@ public class NodeMetadataUtil {
             "service.contact.technical.phone"
     };
 
-    public static final String[] SERVICE_SUPPORT_CONTACT_PROPS = {
+    private static final String[] SERVICE_SUPPORT_CONTACT_PROPS = {
             "service.contact.support.company",
             "service.contact.support.email",
             "service.contact.support.givenname",
@@ -112,11 +109,13 @@ public class NodeMetadataUtil {
 
     private static ContactData createContact(String[] propsNames, Properties configs){
         ContactData.Builder contact = ContactData.builder();
-        contact.company(propsNames != null && propsNames.length > 0 && configs != null ? configs.getProperty(propsNames[0]) : null);
-        contact.email(propsNames != null && propsNames.length > 1 && configs != null ? configs.getProperty(propsNames[1]) : null);
-        contact.givenName(propsNames != null && propsNames.length > 2 && configs != null ? configs.getProperty(propsNames[2]) : null);
-        contact.surName(propsNames != null && propsNames.length > 3 && configs != null ? configs.getProperty(propsNames[3]) : null);
-        contact.phone(propsNames != null && propsNames.length > 4 && configs != null ? configs.getProperty(propsNames[4]) : null);
+        if (propsNames != null && configs != null){
+	        contact.company(propsNames.length > 0? configs.getProperty(propsNames[0]) : null);
+	        contact.email(propsNames.length > 1? configs.getProperty(propsNames[1]) : null);
+	        contact.givenName(propsNames.length > 2? configs.getProperty(propsNames[2]) : null);
+	        contact.surName(propsNames.length > 3? configs.getProperty(propsNames[3]) : null);
+	        contact.phone(propsNames.length > 4? configs.getProperty(propsNames[4]) : null);
+        }
         return contact.build();
     }
 

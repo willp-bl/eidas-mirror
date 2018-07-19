@@ -1,24 +1,42 @@
-/*
- * Copyright (c) 2017 by European Commission
- *
- * Licensed under the EUPL, Version 1.2 or - as soon they will be
- * approved by the European Commission - subsequent versions of the
- * EUPL (the "Licence");
- * You may not use this work except in compliance with the Licence.
- * You may obtain a copy of the Licence at:
- * https://joinup.ec.europa.eu/page/eupl-text-11-12
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the Licence is distributed on an "AS IS" basis,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
- * implied.
- * See the Licence for the specific language governing permissions and
- * limitations under the Licence.
+/* 
+#   Copyright (c) 2017 European Commission  
+#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
+#   approved by the European Commission - subsequent versions of the 
+#    EUPL (the "Licence"); 
+#    You may not use this work except in compliance with the Licence. 
+#    You may obtain a copy of the Licence at: 
+#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
+#    *
+#    Unless required by applicable law or agreed to in writing, software 
+#    distributed under the Licence is distributed on an "AS IS" basis, 
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+#    See the Licence for the specific language governing permissions and limitations under the Licence.
  */
 
 package eu.eidas.auth.engine;
 
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import org.opensaml.saml.saml2.core.Assertion;
+import org.opensaml.saml.saml2.core.Attribute;
+import org.opensaml.saml.saml2.core.AttributeStatement;
+import org.opensaml.saml.saml2.core.AuthnRequest;
+import org.opensaml.saml.saml2.core.AuthnStatement;
+import org.opensaml.saml.saml2.core.Extensions;
+import org.opensaml.saml.saml2.core.Issuer;
+import org.opensaml.saml.saml2.core.Response;
+import org.opensaml.xmlsec.signature.Signature;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Document;
+
 import com.google.common.collect.ImmutableSet;
+
 import eu.eidas.auth.commons.EidasErrorKey;
 import eu.eidas.auth.commons.attribute.AttributeValueTransliterator;
 import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
@@ -30,22 +48,20 @@ import eu.eidas.auth.commons.protocol.impl.BinaryResponseMessage;
 import eu.eidas.auth.engine.configuration.ProtocolConfigurationAccessor;
 import eu.eidas.auth.engine.core.eidas.RequestedAttribute;
 import eu.eidas.auth.engine.core.eidas.RequestedAttributes;
-import eu.eidas.auth.engine.core.validator.eidas.*;
-import eu.eidas.auth.engine.xml.opensaml.CertificateUtil;
+import eu.eidas.auth.engine.core.validator.eidas.EidasAssertionValidator;
+import eu.eidas.auth.engine.core.validator.eidas.EidasAttributeValidator;
+import eu.eidas.auth.engine.core.validator.eidas.EidasAuthnRequestValidator;
+import eu.eidas.auth.engine.core.validator.eidas.EidasAuthnStatementValidator;
+import eu.eidas.auth.engine.core.validator.eidas.EidasConditionsValidator;
+import eu.eidas.auth.engine.core.validator.eidas.EidasIssuerValidator;
+import eu.eidas.auth.engine.core.validator.eidas.EidasRequestedAttributeValidator;
+import eu.eidas.auth.engine.core.validator.eidas.EidasResponseOneAssertionValidator;
+import eu.eidas.auth.engine.core.validator.eidas.EidasResponseValidator;
+import eu.eidas.auth.engine.core.validator.eidas.ExtensionsSchemaValidator;
 import eu.eidas.auth.engine.xml.opensaml.CorrelatedResponse;
 import eu.eidas.auth.engine.xml.opensaml.XmlSchemaUtil;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import eu.eidas.engine.exceptions.ValidationException;
-import org.opensaml.saml.saml2.core.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.w3c.dom.Document;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * The ProtocolEngine is responsible for creating Saml Request and Response from their binary representations and for
@@ -293,9 +309,7 @@ public class ProtocolEngine extends AbstractProtocolEngine implements ProtocolEn
         AuthnRequest originalSamlRequest = unmarshallRequest(requestBytes);
         LOG.trace("Generate EIDASAuthnSamlRequest.");
 
-        String originCountryCode = (originalSamlRequest.getSignature() != null) ? CertificateUtil.getCountry(
-                originalSamlRequest.getSignature().getKeyInfo()) : null;
-
+        String originCountryCode = getProtocolProcessor().getCountryCode(originalSamlRequest);
         IAuthenticationRequest authenticationRequest =
                 getProtocolProcessor().unmarshallRequest(citizenCountryCode, originalSamlRequest, originCountryCode);
 
@@ -484,7 +498,10 @@ public class ProtocolEngine extends AbstractProtocolEngine implements ProtocolEn
                 throw new EIDASSAMLEngineException(EidasErrorKey.MESSAGE_VALIDATION_ERROR.errorCode(), "No signature");
             }
 
-            String country = CertificateUtil.getCountry(validResponse.getSignature().getKeyInfo());
+            Signature signature = validResponse.getSignature();
+    		Issuer issuer = validResponse.getIssuer();
+            String country = getProtocolProcessor().getCountryCode(validResponse);
+
             LOG.debug(SAML_EXCHANGE, "Response received from country: " + country);
             try {
                 validResponse = validateSignatureAndDecrypt(validResponse);

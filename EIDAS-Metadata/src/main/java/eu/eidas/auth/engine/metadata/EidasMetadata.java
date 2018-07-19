@@ -1,19 +1,16 @@
-/*
- * Copyright (c) 2017 by European Commission
- *
- * Licensed under the EUPL, Version 1.2 or - as soon they will be
- * approved by the European Commission - subsequent versions of the
- * EUPL (the "Licence");
- * You may not use this work except in compliance with the Licence.
- * You may obtain a copy of the Licence at:
- * https://joinup.ec.europa.eu/page/eupl-text-11-12
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the Licence is distributed on an "AS IS" basis,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
- * implied.
- * See the Licence for the specific language governing permissions and
- * limitations under the Licence.
+/* 
+#   Copyright (c) 2017 European Commission  
+#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
+#   approved by the European Commission - subsequent versions of the 
+#    EUPL (the "Licence"); 
+#    You may not use this work except in compliance with the Licence. 
+#    You may obtain a copy of the Licence at: 
+#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
+#    *
+#    Unless required by applicable law or agreed to in writing, software 
+#    distributed under the Licence is distributed on an "AS IS" basis, 
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+#    See the Licence for the specific language governing permissions and limitations under the Licence.
  */
 
 package eu.eidas.auth.engine.metadata;
@@ -34,15 +31,38 @@ import eu.eidas.util.Preconditions;
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
 import org.joda.time.DurationFieldType;
+import org.opensaml.core.xml.Namespace;
 import org.opensaml.core.xml.XMLObjectBuilderFactory;
 import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
+import org.opensaml.core.xml.schema.XSAny;
 import org.opensaml.core.xml.schema.XSString;
+import org.opensaml.core.xml.schema.impl.XSAnyBuilder;
 import org.opensaml.core.xml.schema.impl.XSStringBuilder;
 import org.opensaml.saml.common.xml.SAMLConstants;
 import org.opensaml.saml.ext.saml2mdattr.EntityAttributes;
 import org.opensaml.saml.saml2.core.Attribute;
-import org.opensaml.saml.saml2.core.AttributeValue;
-import org.opensaml.saml.saml2.metadata.*;
+import org.opensaml.saml.saml2.metadata.AssertionConsumerService;
+import org.opensaml.saml.saml2.metadata.Company;
+import org.opensaml.saml.saml2.metadata.ContactPerson;
+import org.opensaml.saml.saml2.metadata.ContactPersonTypeEnumeration;
+import org.opensaml.saml.saml2.metadata.EmailAddress;
+import org.opensaml.saml.saml2.metadata.EncryptionMethod;
+import org.opensaml.saml.saml2.metadata.EntityDescriptor;
+import org.opensaml.saml.saml2.metadata.Extensions;
+import org.opensaml.saml.saml2.metadata.GivenName;
+import org.opensaml.saml.saml2.metadata.IDPSSODescriptor;
+import org.opensaml.saml.saml2.metadata.KeyDescriptor;
+import org.opensaml.saml.saml2.metadata.NameIDFormat;
+import org.opensaml.saml.saml2.metadata.Organization;
+import org.opensaml.saml.saml2.metadata.OrganizationDisplayName;
+import org.opensaml.saml.saml2.metadata.OrganizationName;
+import org.opensaml.saml.saml2.metadata.OrganizationURL;
+import org.opensaml.saml.saml2.metadata.RequestedAttribute;
+import org.opensaml.saml.saml2.metadata.SPSSODescriptor;
+import org.opensaml.saml.saml2.metadata.SSODescriptor;
+import org.opensaml.saml.saml2.metadata.SingleSignOnService;
+import org.opensaml.saml.saml2.metadata.SurName;
+import org.opensaml.saml.saml2.metadata.TelephoneNumber;
 import org.opensaml.security.SecurityException;
 import org.opensaml.security.credential.Credential;
 import org.opensaml.security.credential.UsageType;
@@ -55,7 +75,15 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.NotThreadSafe;
-import java.util.*;
+import javax.xml.XMLConstants;
+import javax.xml.namespace.QName;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Representing a full, final Eidas Metadata object built in XML, represented in String to be served over HTTP.
@@ -63,11 +91,16 @@ import java.util.*;
  */
 public class EidasMetadata {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(EidasMetadata.class.getName());
     public static final String ERROR_ERROR_GENERATING_THE_ORGANIZATION_DATA = "ERROR : error generating the OrganizationData: {}";
+    private static final Logger LOGGER = LoggerFactory.getLogger(EidasMetadata.class.getName());
+    private static final Set<String> DEFAULT_BINDING = new HashSet<String>() {{
+        this.add(SAMLConstants.SAML2_POST_BINDING_URI);
+    }};
+
+    private static String PROTOCOL_VERSION_URI = "http://eidas.europa.eu/entity-attributes/protocol-version";
+    private static final String APPLICATION_IDENTIFIER = "http://eidas.europa.eu/entity-attributes/application-identifier";
 
     private final String metadata;
-
     private final boolean idpRole;
     private final boolean spRole;
     private final boolean wantAssertionsSigned;
@@ -81,7 +114,7 @@ public class EidasMetadata {
     private final Credential spEncryptionCredential;
     private final Credential spSigningCredential;
     private final Set<String> protocolBinding;
-    private final HashMap<String,String> protocolBindingLocation;
+    private final HashMap<String, String> protocolBindingLocation;
     //supported protocol: SAML 2
     private final String spSamlProtocol;
     private final String idpSamlProtocol;
@@ -96,32 +129,84 @@ public class EidasMetadata {
     private final ContactData supportContact;
     private final ContactData technicalContact;
     private final ImmutableSortedSet<String> supportedAttributes;
+    private final boolean hideLoaType;
 
-    private static final Set<String> DEFAULT_BINDING = new HashSet<String>() {{
-        this.add(SAMLConstants.SAML2_POST_BINDING_URI);
-    }};
+    private String eidasApplicationIdentifier;
+    private String eidasProtocolVersion;
+    private String eidasReleaseVersion;
+
+    private EidasMetadata(@Nonnull Generator generator) throws EIDASMetadataException {
+        this.metadata = generator.metadata;
+        this.wantAssertionsSigned = generator.wantAssertionsSigned;
+        this.idpRole = generator.idpRole;
+        this.spRole = generator.spRole;
+        this.authnRequestsSigned = generator.authnRequestsSigned;
+        this.assertionConsumerUrl = generator.assertionConsumerUrl;
+        this.entityId = generator.entityId;
+        this.spSignature = generator.spSignature;
+        this.idpSignature = generator.idpSignature;
+        this.idpEncryptionCredential = generator.idpEncryptionCredential;
+        this.idpSigningCredential = generator.idpSigningCredential;
+        this.spEncryptionCredential = generator.spEncryptionCredential;
+        this.spSigningCredential = generator.spSigningCredential;
+        this.protocolBinding = new HashSet<String>(generator.protocolBinding);
+        this.protocolBindingLocation = new HashMap<String, String>(generator.protocolBindingLocation);
+        this.spSamlProtocol = generator.spSamlProtocol;
+        this.idpSamlProtocol = generator.idpSamlProtocol;
+        this.emailAddress = generator.emailAddress;
+        this.assuranceLevel = generator.assuranceLevel;
+        this.spType = generator.spType;
+        this.digestMethods = generator.digestMethods;
+        this.signingMethods = generator.signingMethods;
+        this.encryptionAlgorithms = generator.encryptionAlgorithms;
+        this.validityDuration = generator.validityDuration;
+        this.organization = new OrganizationData(generator.organization);
+        this.supportContact = new ContactData(generator.supportContact);
+        this.technicalContact = new ContactData(generator.technicalContact);
+        this.supportedAttributes = generator.supportedAttributes;
+        this.hideLoaType = generator.hideLoaType;
+
+        this.eidasProtocolVersion = generator.eidasProtocolVersion;
+        this.eidasApplicationIdentifier = generator.eidasApplicationIdentifier;
+    }
+
+    @Nonnull
+    public static Generator generator() {
+        return new Generator();
+    }
+
+    @Nonnull
+    public static Generator generator(@Nonnull Generator copy) {
+        return new Generator(copy);
+    }
+
+    @Nonnull
+    public static Generator generator(@Nonnull EidasMetadataParametersI emp) {
+        return new Generator(emp);
+    }
+
+    public String getMetadata() {
+        return metadata;
+    }
 
     @NotThreadSafe
     @SuppressWarnings("ParameterHidesMemberVariable")
     public static final class Generator {
 
-        private transient XMLObjectBuilderFactory builderFactory = XMLObjectProviderRegistrySupport.getBuilderFactory();
-
-        private transient SPSSODescriptor spSSODescriptor = null;
-        private transient IDPSSODescriptor idpSSODescriptor = null;
-
-        private transient String metadata;
         /**
          * 24 hours in seconds
          */
         public static transient final int ONE_DAY_DURATION = 86400;
-        public static transient final String DEFAULT_LANG="en";
-
+        public static transient final String DEFAULT_LANG = "en";
+        private transient XMLObjectBuilderFactory builderFactory = XMLObjectProviderRegistrySupport.getBuilderFactory();
+        private transient SPSSODescriptor spSSODescriptor = null;
+        private transient IDPSSODescriptor idpSSODescriptor = null;
+        private transient String metadata;
         private transient boolean idpRole = false;
         private transient boolean spRole = false;
         private transient boolean wantAssertionsSigned = true;
         private transient boolean authnRequestsSigned = true;
-        private transient String assertionConsumerUrl="";
+        private transient String assertionConsumerUrl = "";
         private transient String entityId;
         private transient Signature spSignature;
         private transient Signature idpSignature;
@@ -129,11 +214,11 @@ public class EidasMetadata {
         private transient Credential idpSigningCredential;
         private transient Credential spEncryptionCredential;
         private transient Credential spSigningCredential;
-        private transient Set<String> protocolBinding=new HashSet<String>();
-        private transient HashMap<String,String> protocolBindingLocation=new HashMap<String,String>();
+        private transient Set<String> protocolBinding = new HashSet<String>();
+        private transient HashMap<String, String> protocolBindingLocation = new HashMap<String, String>();
         //supported protocol: SAML 2
-        private transient String spSamlProtocol= SAMLConstants.SAML20P_NS;
-        private transient String idpSamlProtocol=SAMLConstants.SAML20P_NS;
+        private transient String spSamlProtocol = SAMLConstants.SAML20P_NS;
+        private transient String idpSamlProtocol = SAMLConstants.SAML20P_NS;
         private transient String emailAddress;
         private transient String assuranceLevel;
         private transient String spType;
@@ -145,6 +230,11 @@ public class EidasMetadata {
         private transient ContactData supportContact;
         private transient ContactData technicalContact;
         private transient ImmutableSortedSet<String> supportedAttributes;
+        /*TODO: remove this attribute after trasition period*/
+        private transient boolean hideLoaType;
+
+        private transient String eidasProtocolVersion;
+        private transient String eidasApplicationIdentifier;
 
         public Generator() {
         }
@@ -179,8 +269,12 @@ public class EidasMetadata {
             this.validityDuration = copy.validityDuration;
             this.organization = new OrganizationData(copy.organization);
             this.supportContact = new ContactData(copy.supportContact);
-            this.technicalContact  = new ContactData(copy.technicalContact);
+            this.technicalContact = new ContactData(copy.technicalContact);
             supportedAttributes = copy.supportedAttributes;
+            this.hideLoaType = copy.hideLoaType;
+
+            this.eidasProtocolVersion = copy.eidasProtocolVersion;
+            this.eidasApplicationIdentifier = copy.eidasApplicationIdentifier;
         }
 
         public Generator(@Nonnull EidasMetadataParametersI emp) {
@@ -212,8 +306,12 @@ public class EidasMetadata {
             this.validityDuration = emp.getValidUntil();
             this.organization = new OrganizationData(emp.getOrganization());
             this.supportContact = new ContactData(emp.getSupportContact());
-            this.technicalContact  = new ContactData(emp.getTechnicalContact());
+            this.technicalContact = new ContactData(emp.getTechnicalContact());
             supportedAttributes = emrp.getSupportedAttributes();
+            this.hideLoaType = emp.isHideLoaType();
+
+            this.eidasProtocolVersion = emp.getEidasProtocolVersion();
+            this.eidasApplicationIdentifier = emp.getEidasApplicationIdentifier();
         }
 
 
@@ -223,7 +321,7 @@ public class EidasMetadata {
             return new EidasMetadata(this);
         }
 
-        private void generateDigest(Extensions eidasExtensions) throws EIDASMetadataException {
+        private void generateDigest(final Extensions eidasExtensions) throws EIDASMetadataException {
             if (!StringUtils.isEmpty(digestMethods)) {
                 Set<String> signatureMethods = EIDASUtil.parseSemicolonSeparatedList(digestMethods);
                 Set<String> digest_Methods = new HashSet<>();
@@ -243,21 +341,17 @@ public class EidasMetadata {
         }
 
         private Extensions generateExtensions() throws EIDASMetadataException {
-            Extensions eidasExtensions = MetadataBuilderFactoryUtil.generateMetadataExtension();
-            if (assuranceLevel != null) {
-                generateLoA(eidasExtensions);
-            }
-            if (!StringUtils.isEmpty(spType)) {
-                final SPType spTypeObj = (SPType) MetadataBuilderFactoryUtil.buildXmlObject(SPType.DEF_ELEMENT_NAME);
-                if (spTypeObj != null) {
-                    spTypeObj.setSPType(spType);
-                    eidasExtensions.getUnknownXMLObjects().add(spTypeObj);
-                } else {
-                    LOGGER.info("BUSINESS EXCEPTION error adding SPType extension");
-                }
-            }
-            generateDigest(eidasExtensions);
+            final Extensions eidasExtensions = MetadataBuilderFactoryUtil.generateMetadataExtension();
 
+            generateEntityAttributes(eidasExtensions);
+            generateSpType(eidasExtensions);
+            generateDigest(eidasExtensions);
+            generateSigningMethods(eidasExtensions);
+
+            return eidasExtensions;
+        }
+
+        private void generateSigningMethods(Extensions eidasExtensions) throws EIDASMetadataException {
             if (!StringUtils.isEmpty(signingMethods)) {
                 Set<String> signMethods = EIDASUtil.parseSemicolonSeparatedList(signingMethods);
                 for (String signMethod : signMethods) {
@@ -271,22 +365,105 @@ public class EidasMetadata {
                     }
                 }
             }
-            return eidasExtensions;
         }
 
-        private void generateLoA(Extensions eidasExtensions) throws EIDASMetadataException {
-            EntityAttributes loa =
+        private void generateSpType(Extensions eidasExtensions) throws EIDASMetadataException {
+            if (!StringUtils.isEmpty(spType)) {
+                final SPType spTypeObj = (SPType) MetadataBuilderFactoryUtil.buildXmlObject(SPType.DEF_ELEMENT_NAME);
+                if (spTypeObj != null) {
+                    spTypeObj.setSPType(spType);
+                    eidasExtensions.getUnknownXMLObjects().add(spTypeObj);
+                } else {
+                    LOGGER.info("BUSINESS EXCEPTION error adding SPType extension");
+                }
+            }
+        }
+
+        private void generateEntityAttributes(final Extensions eidasExtensions) throws EIDASMetadataException {
+            EntityAttributes entityAttributes =
                     (EntityAttributes) MetadataBuilderFactoryUtil.buildXmlObject(EntityAttributes.DEFAULT_ELEMENT_NAME);
+
+            generateEidasProtocolVersionAttributes(entityAttributes);
+            generateLoA(entityAttributes);
+
+            if (!entityAttributes.getAttributes().isEmpty()) {
+                eidasExtensions.getUnknownXMLObjects().add(entityAttributes);
+            }
+
+        }
+
+        private void generateEidasProtocolVersionAttributes(final EntityAttributes entityAttributes) throws EIDASMetadataException {
+            final Namespace saml = new Namespace(SAMLConstants.SAML20_NS , SAMLConstants.SAML20_PREFIX);
+            entityAttributes.getNamespaceManager().registerNamespaceDeclaration(saml);
+
+            final Attribute eidasProtocolVersionAttribute = buildEidasProtocolVersionAttribute(PROTOCOL_VERSION_URI, eidasProtocolVersion);
+            if (null == eidasProtocolVersionAttribute) {
+                LOGGER.info("BUSINESS EXCEPTION  eIDAS Protocol Version Attribute is empty");
+            } else {
+                entityAttributes.getAttributes().add(eidasProtocolVersionAttribute);
+            }
+
+            final Attribute eidasApplicationIdentifierAttribute = buildEidasProtocolVersionAttribute(APPLICATION_IDENTIFIER, this.eidasApplicationIdentifier);
+            if (null == eidasApplicationIdentifierAttribute) {
+                LOGGER.info("BUSINESS EXCEPTION  eIDAS Application Identifier Attribute is empty");
+            } else {
+                entityAttributes.getAttributes().add(eidasApplicationIdentifierAttribute);
+            }
+        }
+
+        private static Attribute buildEidasProtocolVersionAttribute(String name, String value) throws EIDASMetadataException {
+            if (StringUtils.isNotEmpty(value)) {
+                final Attribute attribute = (Attribute) MetadataBuilderFactoryUtil.buildXmlObject(Attribute.DEFAULT_ELEMENT_NAME);
+                attribute.setNameFormat(RequestedAttribute.URI_REFERENCE);
+                attribute.setName(name);
+
+                final XSAny attributeValue = createEidasProtocolVersionAttributeValue(value);
+                attribute.getAttributeValues().add(attributeValue);
+
+                return attribute;
+            } else {
+
+                return null;
+            }
+        }
+
+        private static XSAny createEidasProtocolVersionAttributeValue(String value) {
+            final XSAnyBuilder builder = new XSAnyBuilder();
+            final XSAny attributeValue = builder.buildObject(SAMLConstants.SAML20_NS, org.opensaml.saml.saml2.core.AttributeValue.DEFAULT_ELEMENT_LOCAL_NAME, SAMLConstants.SAML20_PREFIX);
+
+            final Namespace namespace = new Namespace(XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI, net.shibboleth.utilities.java.support.xml.XMLConstants.XSI_PREFIX);
+            attributeValue.getNamespaceManager().registerNamespaceDeclaration(namespace);
+
+            final QName attribute_type = new QName(XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI, "type", net.shibboleth.utilities.java.support.xml.XMLConstants.XSI_PREFIX);
+            attributeValue.getUnknownAttributes().put(attribute_type, net.shibboleth.utilities.java.support.xml.XMLConstants.XSD_PREFIX + ":"+ XSString.TYPE_LOCAL_NAME);
+
+            attributeValue.setTextContent(value);
+            return attributeValue;
+        }
+
+
+        private void generateLoA(EntityAttributes entityAttributes) throws EIDASMetadataException {
+
+            if (StringUtils.isEmpty(assuranceLevel)) {
+                return;
+            }
+
             Attribute loaAttrib = (Attribute) MetadataBuilderFactoryUtil.buildXmlObject(Attribute.DEFAULT_ELEMENT_NAME);
             loaAttrib.setName(MetadataUtil.LEVEL_OF_ASSURANCE_NAME);
             loaAttrib.setNameFormat(Attribute.URI_REFERENCE);
-            XSStringBuilder stringBuilder =
-                    (XSStringBuilder) XMLObjectProviderRegistrySupport.getBuilderFactory().getBuilder(XSString.TYPE_NAME);
-            XSString stringValue = stringBuilder.buildObject(AttributeValue.DEFAULT_ELEMENT_NAME, XSString.TYPE_NAME);
-            stringValue.setValue(assuranceLevel);
-            loaAttrib.getAttributeValues().add(stringValue);
-            loa.getAttributes().add(loaAttrib);
-            eidasExtensions.getUnknownXMLObjects().add(loa);
+            if (hideLoaType) {
+                XSAnyBuilder builder = new XSAnyBuilder();
+                XSAny stringValue = builder.buildObject(SAMLConstants.SAML20_NS, org.opensaml.saml.saml2.core.AttributeValue.DEFAULT_ELEMENT_LOCAL_NAME, SAMLConstants.SAML20_PREFIX);
+                stringValue.setTextContent(assuranceLevel);
+                loaAttrib.getAttributeValues().add(stringValue);
+            } else {
+                XSStringBuilder stringBuilder =
+                        (XSStringBuilder) XMLObjectProviderRegistrySupport.getBuilderFactory().getBuilder(XSString.TYPE_NAME);
+                XSString stringValue = stringBuilder.buildObject(org.opensaml.saml.saml2.core.AttributeValue.DEFAULT_ELEMENT_NAME, XSString.TYPE_NAME);
+                stringValue.setValue(assuranceLevel);
+                loaAttrib.getAttributeValues().add(stringValue);
+            }
+            entityAttributes.getAttributes().add(loaAttrib);
 
         }
 
@@ -541,7 +718,7 @@ public class EidasMetadata {
 
         }
 
-        private String generateMetadata(MetadataSignerI signer) throws EIDASMetadataException {
+        private String generateMetadata(MetadataSignerI signer) {
             EntityDescriptor entityDescriptor;
             try {
                 entityDescriptor = (EntityDescriptor) builderFactory.getBuilder(EntityDescriptor.DEFAULT_ELEMENT_NAME)
@@ -646,8 +823,8 @@ public class EidasMetadata {
             return this;
         }
 
-        public Generator protocolBindingLocation(final HashMap<String,String> protocolBindingLocation) {
-            this.protocolBindingLocation = new HashMap<String,String>(protocolBindingLocation);
+        public Generator protocolBindingLocation(final HashMap<String, String> protocolBindingLocation) {
+            this.protocolBindingLocation = new HashMap<String, String>(protocolBindingLocation);
             return this;
         }
 
@@ -697,9 +874,9 @@ public class EidasMetadata {
         }
 
         public Generator validityDuration(final DateTime validityDuration) {
-            if(validityDuration != null) {
+            if (validityDuration != null) {
                 this.validityDuration = validityDuration;
-            }else{
+            } else {
                 DateTime expiryDate = DateTime.now();
                 this.validityDuration = expiryDate.withFieldAdded(DurationFieldType.seconds(), (int) (Generator.ONE_DAY_DURATION));
             }
@@ -725,56 +902,6 @@ public class EidasMetadata {
             this.supportedAttributes = attributeNames;
             return this;
         }
-    }
-
-    private EidasMetadata(@Nonnull Generator generator) throws EIDASMetadataException {
-        this.metadata = generator.metadata;
-        this.wantAssertionsSigned = generator.wantAssertionsSigned;
-        this.idpRole = generator.idpRole;
-        this.spRole = generator.spRole;
-        this.authnRequestsSigned = generator.authnRequestsSigned;
-        this.assertionConsumerUrl = generator.assertionConsumerUrl;
-        this.entityId = generator.entityId;
-        this.spSignature = generator.spSignature;
-        this.idpSignature = generator.idpSignature;
-        this.idpEncryptionCredential = generator.idpEncryptionCredential;
-        this.idpSigningCredential = generator.idpSigningCredential;
-        this.spEncryptionCredential = generator.spEncryptionCredential;
-        this.spSigningCredential = generator.spSigningCredential;
-        this.protocolBinding = new HashSet<String>(generator.protocolBinding);
-        this.protocolBindingLocation = new HashMap<String,String>(generator.protocolBindingLocation);
-        this.spSamlProtocol = generator.spSamlProtocol;
-        this.idpSamlProtocol = generator.idpSamlProtocol;
-        this.emailAddress = generator.emailAddress;
-        this.assuranceLevel = generator.assuranceLevel;
-        this.spType = generator.spType;
-        this.digestMethods = generator.digestMethods;
-        this.signingMethods = generator.signingMethods;
-        this.encryptionAlgorithms = generator.encryptionAlgorithms;
-        this.validityDuration = generator.validityDuration;
-        this.organization = new OrganizationData(generator.organization);
-        this.supportContact = new ContactData(generator.supportContact);
-        this.technicalContact  = new ContactData(generator.technicalContact);
-        this.supportedAttributes = generator.supportedAttributes;
-    }
-
-    public String getMetadata() {
-        return metadata;
-    }
-
-    @Nonnull
-    public static Generator generator() {
-        return new Generator();
-    }
-
-    @Nonnull
-    public static Generator generator(@Nonnull Generator copy) {
-        return new Generator(copy);
-    }
-
-    @Nonnull
-    public static Generator generator(@Nonnull EidasMetadataParametersI emp) {
-        return new Generator(emp);
     }
 
 

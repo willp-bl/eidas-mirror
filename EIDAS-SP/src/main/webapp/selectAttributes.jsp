@@ -39,7 +39,7 @@
                 </div>
                 <jsp:include page="leftColumn.jsp"/>
                 <div class="col-md-6">
-                    <s:form action="IndexPage" id="formTab2">
+                    <form action="IndexPage" id="formTab2">
                         <h3 class="m-top-0">Detail messages</h3>
                         <div class="form-group" id="spCountryDiv">
                             <label for="eidasconnector"><s:property value="%{getText('spCountryId')}"/></label>
@@ -56,7 +56,7 @@
                         <div class="form-group" id="citizenCountryDivEidas">
                             <label for="citizenEidas"><s:property value="%{getText('citizenCountryId')}"/></label>
                             <select name="citizenEidas" id="citizeneidas" class="form-control">
-                                <option data-description="Choose an option"></option>
+                                <option>Choose an option</option>
                                 <s:iterator value="countries">
                                     <option value="<s:property value="name" />"
                                             data-image="img/flags/<s:property value="name"/>.gif"><s:property
@@ -385,9 +385,10 @@
                             </s:iterator>
                         </div>
                         <input type="hidden" id="spType" name="spType" value="public">
-                        <button id="submit_tab2" type="button" class="btn btn-default btn-lg btn-block">Submit</button>
+                        <%--<button id="submit_tab2" type="button" class="btn btn-default btn-lg btn-block">Submit</button>--%>
+                        <input type="submit" id="submit_tab2" class="btn btn-default btn-lg btn-block" value="Submit"/>
                         <s:fielderror/>
-                    </s:form>
+                    </form>
                 </div>
             </div>
 

@@ -1,19 +1,16 @@
-/*
- * Copyright (c) 2017 by European Commission
- *
- * Licensed under the EUPL, Version 1.2 or - as soon they will be
- * approved by the European Commission - subsequent versions of the
- * EUPL (the "Licence");
- * You may not use this work except in compliance with the Licence.
- * You may obtain a copy of the Licence at:
- * https://joinup.ec.europa.eu/page/eupl-text-11-12
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the Licence is distributed on an "AS IS" basis,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
- * implied.
- * See the Licence for the specific language governing permissions and
- * limitations under the Licence.
+/* 
+#   Copyright (c) 2017 European Commission  
+#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
+#   approved by the European Commission - subsequent versions of the 
+#    EUPL (the "Licence"); 
+#    You may not use this work except in compliance with the Licence. 
+#    You may obtain a copy of the Licence at: 
+#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
+#    *
+#    Unless required by applicable law or agreed to in writing, software 
+#    distributed under the Licence is distributed on an "AS IS" basis, 
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+#    See the Licence for the specific language governing permissions and limitations under the Licence.
  */
 
 package eu.eidas.specificcommunication.protocol.impl;
@@ -22,6 +19,9 @@ import java.util.Collection;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
@@ -45,14 +45,14 @@ import eu.eidas.specificcommunication.tx.CommunicationCache;
  * @since 2.0
  */
 public class SpecificConnectorCommunicationServiceImpl implements SpecificCommunicationService {
-
+	private static final Logger LOG = LoggerFactory.getLogger(SpecificCommunicationService.class);
 	private static LightJAXBCodec codec;
 	static {
 		try {
 			codec = new LightJAXBCodec(JAXBContext.newInstance(LightRequest.class, LightResponse.class,
 					ImmutableAttributeMap.class, AttributeDefinition.class));
 		} catch (JAXBException e) {
-			e.printStackTrace();
+			LOG.error("Unable to instantiate in static initializer ",e);
 		}
 	}
 
@@ -97,8 +97,7 @@ public class SpecificConnectorCommunicationServiceImpl implements SpecificCommun
 		final String binaryLightTokenId = BinaryLightTokenHelper.getBinaryLightTokenId(tokenBase64,
 				getLightTokenRequestSecret(), getLightTokenRequestAlgorithm());
 		final CommunicationCache specificNodeConnectorRequestProviderMap = getRequestCommunicationCache();
-		ILightRequest req = codec.unmarshallRequest(specificNodeConnectorRequestProviderMap.remove(binaryLightTokenId),	registry);
-		return req;
+		return codec.unmarshallRequest(specificNodeConnectorRequestProviderMap.remove(binaryLightTokenId),	registry);
 	}
 
 	private CommunicationCache getRequestCommunicationCache() {
@@ -123,8 +122,7 @@ public class SpecificConnectorCommunicationServiceImpl implements SpecificCommun
 		final String binaryLightTokenId = BinaryLightTokenHelper.getBinaryLightTokenId(tokenBase64,
 				getLightTokenResponseSecret(), getLightTokenResponseAlgorithm());
 		final CommunicationCache nodeSpecificConnectorRequestProviderMap = getResponseCommunicationCache();
-		ILightResponse resp = codec.unmarshallResponse(nodeSpecificConnectorRequestProviderMap.remove(binaryLightTokenId), registry);
-		return resp;
+		return  codec.unmarshallResponse(nodeSpecificConnectorRequestProviderMap.remove(binaryLightTokenId), registry);
 	}
 
 	private CommunicationCache getResponseCommunicationCache() {

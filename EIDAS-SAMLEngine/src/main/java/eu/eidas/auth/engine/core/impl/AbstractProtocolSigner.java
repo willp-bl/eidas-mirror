@@ -1,19 +1,16 @@
-/*
- * Copyright (c) 2017 by European Commission
- *
- * Licensed under the EUPL, Version 1.2 or - as soon they will be
- * approved by the European Commission - subsequent versions of the
- * EUPL (the "Licence");
- * You may not use this work except in compliance with the Licence.
- * You may obtain a copy of the Licence at:
- * https://joinup.ec.europa.eu/page/eupl-text-11-12
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the Licence is distributed on an "AS IS" basis,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
- * implied.
- * See the Licence for the specific language governing permissions and
- * limitations under the Licence.
+/* 
+#   Copyright (c) 2017 European Commission  
+#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
+#   approved by the European Commission - subsequent versions of the 
+#    EUPL (the "Licence"); 
+#    You may not use this work except in compliance with the Licence. 
+#    You may obtain a copy of the Licence at: 
+#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
+#    *
+#    Unless required by applicable law or agreed to in writing, software 
+#    distributed under the Licence is distributed on an "AS IS" basis, 
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+#    See the Licence for the specific language governing permissions and limitations under the Licence.
  */
 
 package eu.eidas.auth.engine.core.impl;
@@ -37,7 +34,9 @@ import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
 import org.opensaml.core.xml.io.MarshallingException;
 import org.opensaml.saml.common.SAMLObjectContentReference;
 import org.opensaml.saml.security.impl.SAMLSignatureProfileValidator;
+import org.opensaml.security.SecurityException;
 import org.opensaml.security.credential.Credential;
+import org.opensaml.security.x509.BasicX509Credential;
 import org.opensaml.security.x509.X509Credential;
 import org.opensaml.xmlsec.SecurityConfigurationSupport;
 import org.opensaml.xmlsec.SignatureSigningConfiguration;
@@ -45,15 +44,22 @@ import org.opensaml.xmlsec.keyinfo.KeyInfoGenerator;
 import org.opensaml.xmlsec.keyinfo.KeyInfoGeneratorFactory;
 import org.opensaml.xmlsec.keyinfo.KeyInfoGeneratorManager;
 import org.opensaml.xmlsec.keyinfo.NamedKeyInfoGeneratorManager;
+import org.opensaml.xmlsec.keyinfo.impl.BasicKeyInfoGeneratorFactory;
 import org.opensaml.xmlsec.signature.KeyInfo;
+import org.opensaml.xmlsec.signature.RSAKeyValue;
 import org.opensaml.xmlsec.signature.SignableXMLObject;
 import org.opensaml.xmlsec.signature.Signature;
-import org.opensaml.xmlsec.signature.support.*;
+import org.opensaml.xmlsec.signature.support.ContentReference;
+import org.opensaml.xmlsec.signature.support.SignatureConstants;
+import org.opensaml.xmlsec.signature.support.SignatureException;
+import org.opensaml.xmlsec.signature.support.SignatureValidator;
+import org.opensaml.xmlsec.signature.support.Signer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.math.BigInteger;
 import java.security.KeyStore;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -132,6 +138,10 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
 
     private final boolean disallowedSelfSignedCertificate;
 
+    private final boolean requestSignWithKey;
+
+    private final boolean responseSignWithKey;
+
     private final boolean responseSignAssertions;
 
     private final ImmutableSet<String> signatureAlgorithmWhiteList;
@@ -148,24 +158,32 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
 
     private final String signatureAlgorithm;
 
+    private final ImmutableSet<X509Certificate> metadataKeystoreCertificates;
+
     protected AbstractProtocolSigner(@Nonnull SignatureConfiguration signatureConfiguration)
             throws ProtocolEngineConfigurationException {
         this(signatureConfiguration.isCheckedValidityPeriod(),
                 signatureConfiguration.isDisallowedSelfSignedCertificate(),
                 signatureConfiguration.isResponseSignAssertions(),
+                signatureConfiguration.isRequestSignWithKey(),
+                signatureConfiguration.isResponseSignWithKey(),
                 signatureConfiguration.getSignatureKeyAndCertificate(), signatureConfiguration.getTrustedCertificates(),
                 signatureConfiguration.getSignatureAlgorithm(), signatureConfiguration.getSignatureAlgorithmWhiteList(),
-                signatureConfiguration.getMetadataSigningKeyAndCertificate());
+                signatureConfiguration.getMetadataSigningKeyAndCertificate(),
+                signatureConfiguration.getMetadataKeystoreCertificates());
     }
 
     protected AbstractProtocolSigner(boolean checkedValidityPeriod,
                                      boolean disallowedSelfSignedCertificate,
                                      boolean responseSignAssertions,
+                                     boolean requestSignWithKey,
+                                     boolean responseSignWithKey,
                                      @Nonnull KeyStore.PrivateKeyEntry signatureKeyAndCertificate,
                                      @Nonnull ImmutableSet<X509Certificate> trustedCertificates,
                                      @Nullable String signatureAlgorithmVal,
                                      @Nullable String signatureAlgorithmWhiteListStr,
-                                     @Nullable KeyStore.PrivateKeyEntry metadataSigningKeyAndCertificate)
+                                     @Nullable KeyStore.PrivateKeyEntry metadataSigningKeyAndCertificate,
+                                     @Nullable ImmutableSet<X509Certificate> metadataKeystoreCertificates)
             throws ProtocolEngineConfigurationException {
         Preconditions.checkNotNull(signatureKeyAndCertificate, "signatureKeyAndCertificate");
         Preconditions.checkNotNull(trustedCertificates, "trustedCertificates");
@@ -183,6 +201,8 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
         this.checkedValidityPeriod = checkedValidityPeriod;
         this.disallowedSelfSignedCertificate = disallowedSelfSignedCertificate;
         this.responseSignAssertions = responseSignAssertions;
+        this.requestSignWithKey = requestSignWithKey;
+        this.responseSignWithKey = responseSignWithKey;
         trustedCredentials = CertificateUtil.getListOfCredential(trustedCertificates);
         this.signatureAlgorithmWhiteList = signatureAlgorithmWhiteSet;
         this.signatureAlgorithm = signatureAlg;
@@ -197,6 +217,25 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
             privateMetadataSigningCredential = null;
             publicMetadataSigningCredential = null;
         }
+
+        if (null != metadataKeystoreCertificates) {
+            this.metadataKeystoreCertificates = metadataKeystoreCertificates;
+        } else {
+            this.metadataKeystoreCertificates = null;
+        }
+
+        if (privateMetadataSigningCredential instanceof BasicX509Credential) {
+            final BasicX509Credential privateMetadataSigningCredential = (BasicX509Credential) this.privateMetadataSigningCredential;
+            //TODO reverted order of certificates in the chain to allow backward compatibility with eIDAS 1.4.1. Change it when this is no longer needed
+            privateMetadataSigningCredential.setEntityCertificateChain(metadataKeystoreCertificates.asList().reverse());
+        }
+
+        if (publicMetadataSigningCredential instanceof BasicX509Credential) {
+            final BasicX509Credential publicMetadataSigningCredential = (BasicX509Credential) this.publicMetadataSigningCredential;
+            //TODO reverted order of certificates in the chain to allow backward compatibility with eIDAS 1.4.1. Change it when this is no longer needed
+            publicMetadataSigningCredential.setEntityCertificateChain(metadataKeystoreCertificates.asList().reverse());
+        }
+
         // setDigestMethodAlgorithm(signatureAlgorithm);
     }
 
@@ -262,36 +301,34 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
         CertificateValidator.checkCertificateValidityPeriod(checkedValidityPeriod, certificate);
     }
 
-    protected Signature createSignature(@Nonnull X509Credential credential) throws EIDASSAMLEngineException {
+    protected Signature createSignature(@Nonnull X509Credential credential, boolean onlyKeyInfoNoCert) throws EIDASSAMLEngineException {
         checkCertificateValidityPeriod(credential.getEntityCertificate());
         checkCertificateIssuer(credential.getEntityCertificate());
 
         Signature signature;
-        try {
-            LOG.debug("Creating an OpenSAML signature object");
+        LOG.debug("Creating an OpenSAML signature object");
 
-            signature = (Signature) XMLObjectProviderRegistrySupport.getBuilderFactory()
-                    .getBuilder(Signature.DEFAULT_ELEMENT_NAME)
-                    .buildObject(Signature.DEFAULT_ELEMENT_NAME);
+        signature = (Signature) XMLObjectProviderRegistrySupport.getBuilderFactory()
+                .getBuilder(Signature.DEFAULT_ELEMENT_NAME)
+                .buildObject(Signature.DEFAULT_ELEMENT_NAME);
 
-            signature.setSigningCredential(credential);
+        signature.setSigningCredential(credential);
 
-            signature.setSignatureAlgorithm(getSignatureAlgorithm());
+        signature.setSignatureAlgorithm(getSignatureAlgorithm());
 
+        KeyInfoGeneratorFactory keyInfoGenFac;
+        if (onlyKeyInfoNoCert){
+        	keyInfoGenFac = createKeyInfoGeneratorFactory(credential);
+        }else{
             SignatureSigningConfiguration secConfiguration = SecurityConfigurationSupport.getGlobalSignatureSigningConfiguration();
             NamedKeyInfoGeneratorManager keyInfoManager = secConfiguration.getKeyInfoGeneratorManager();
             KeyInfoGeneratorManager keyInfoGenManager = keyInfoManager.getDefaultManager();
-            KeyInfoGeneratorFactory keyInfoGenFac = keyInfoGenManager.getFactory(credential);
-            KeyInfoGenerator keyInfoGenerator = keyInfoGenFac.newInstance();
-
-            KeyInfo keyInfo = keyInfoGenerator.generate(credential);
-
-            signature.setKeyInfo(keyInfo);
-            signature.setCanonicalizationAlgorithm(SignatureConstants.ALGO_ID_C14N_EXCL_OMIT_COMMENTS);
-        } catch (org.opensaml.security.SecurityException e) {
-            LOG.error("ERROR : Security exception: " + e, e);
-            throw new EIDASSAMLEngineException(e);
+            keyInfoGenFac = keyInfoGenManager.getFactory(credential);
         }
+        KeyInfo keyInfo = createKeyInfo(keyInfoGenFac, credential);
+
+        signature.setKeyInfo(keyInfo);
+        signature.setCanonicalizationAlgorithm(SignatureConstants.ALGO_ID_C14N_EXCL_OMIT_COMMENTS);
         return signature;
     }
 
@@ -332,19 +369,77 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
     private X509Credential getTrustedCertificate(@Nonnull Signature signature,
                                                  @Nonnull List<? extends Credential> trustedCredentialList)
             throws EIDASSAMLEngineException {
-        X509Certificate cert = getSignatureCertificate(signature);
-        // Exist only one certificate
-        X509Credential entityX509Cred = CertificateUtil.toCredential(cert);
+        X509Credential entityX509Cred;
+        if(CertificateUtil.isSignatureWithCertificate(signature)){
+            X509Certificate cert = getSignatureCertificate(signature);
+            // Exist only one certificate
+            entityX509Cred = CertificateUtil.toCredential(cert);
 
-        try {
-            CertificateUtil.checkTrust(entityX509Cred, trustedCredentialList);
-        } catch (CertificateException ce) {
-            throw new EIDASSAMLEngineException(EidasErrorKey.SAML_ENGINE_UNTRUSTED_CERTIFICATE.errorCode(),
-                    EidasErrorKey.SAML_ENGINE_UNTRUSTED_CERTIFICATE.errorMessage());
+            checkCertificateValidityPeriod(cert);
+            checkCertificateIssuer(cert);
+        }else{
+            try {
+	        	RSAKeyValue signatureRsaKeyValue = signature.getKeyInfo().getKeyValues().get(0).getRSAKeyValue();
+				entityX509Cred = getTrustedCertificateFromRSAKeyValue(signatureRsaKeyValue, trustedCredentialList);
+			} catch (IndexOutOfBoundsException e) {
+				throw new EIDASSAMLEngineException(EidasErrorKey.MESSAGE_VALIDATION_ERROR.errorCode(), e);
+			}
         }
-        checkCertificateValidityPeriod(cert);
-        checkCertificateIssuer(cert);
+
+        checkValidTrust(signature, trustedCredentialList, entityX509Cred);
+
         return entityX509Cred;
+    }
+
+    private void checkValidTrust(@Nonnull Signature signature, @Nonnull List<? extends Credential> trustedCredentialList, X509Credential entityX509Cred) throws EIDASSAMLEngineException {
+        try {
+            final List<X509Certificate> certificateChain = CertificateUtil.getCertificates(signature.getKeyInfo());
+
+            if (certificateChain.size() == 1) {
+                CertificateUtil.checkExplicitTrust(entityX509Cred, trustedCredentialList);
+            } else {
+                if (hasLeaf(entityX509Cred, trustedCredentialList)) {
+                    CertificateUtil.checkExplicitTrust(entityX509Cred, trustedCredentialList);
+                } else {
+                    final X509Certificate issuerCertificate = getIssuerX509Certificate(entityX509Cred, certificateChain);
+                    if (null == issuerCertificate) {
+                        throw new EIDASSAMLEngineException(EidasErrorKey.SAML_ENGINE_UNTRUSTED_CERTIFICATE.errorCode(),
+                                EidasErrorKey.SAML_ENGINE_UNTRUSTED_CERTIFICATE.errorMessage());
+                    } else {
+                        final X509Credential issuerX509Credential = CertificateUtil.toCredential(issuerCertificate);
+                        CertificateUtil.checkChainTrust(issuerX509Credential, trustedCredentialList);
+                    }
+                }
+            }
+        } catch (CertificateException e) {
+            throw new EIDASSAMLEngineException(EidasErrorKey.MESSAGE_VALIDATION_ERROR.errorCode(), e);
+        }
+    }
+
+    private boolean hasLeaf(X509Credential leafX509Cred, List<? extends Credential> trustedCredentialList) {
+        X509Certificate leafCertificate = leafX509Cred.getEntityCertificate();
+        for (Credential trustedCredential : trustedCredentialList) {
+            if (trustedCredential instanceof BasicX509Credential) {
+                X509Certificate trustedCertificate = ((BasicX509Credential) trustedCredential).getEntityCertificate();
+                if(trustedCertificate.equals(leafCertificate)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private X509Certificate getIssuerX509Certificate(X509Credential entityX509Cred, List<X509Certificate> certificateChain) {
+        String issuerDN = entityX509Cred.getEntityCertificate().getIssuerDN().getName();
+
+        X509Certificate issuerCertificate = null;
+        for(X509Certificate certificate : certificateChain){
+            if(StringUtils.equals(certificate.getSubjectDN().getName(),issuerDN)) {
+                issuerCertificate = certificate;
+            }
+        }
+        return issuerCertificate;
     }
 
     protected ImmutableList<X509Credential> getTrustedCredentials() {
@@ -366,15 +461,29 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
     @Override
     @Nonnull
     public <T extends SignableXMLObject> T sign(@Nonnull T signableObject) throws EIDASSAMLEngineException {
-        return sign(signableObject, privateSigningCredential);
+        return sign(signableObject, false);
+    }
+
+    /**
+     * Sign the token SAML.
+     *
+     * @param signableObject the token SAML.
+     * @param onlyKeyInfoNoCert flag to put only the RSAKeyValue instead of the full X509Data in the Signature.
+     * @return the SAML object
+     * @throws EIDASSAMLEngineException the SAML engine exception
+     */
+    @Override
+    @Nonnull
+    public <T extends SignableXMLObject> T sign(@Nonnull T signableObject, boolean onlyKeyInfoNoCert) throws EIDASSAMLEngineException {
+        return sign(signableObject, privateSigningCredential, onlyKeyInfoNoCert);
     }
 
     @Nonnull
-    protected <T extends SignableXMLObject> T sign(@Nonnull T signableObject, @Nonnull X509Credential signingCredential)
+    protected <T extends SignableXMLObject> T sign(@Nonnull T signableObject, @Nonnull X509Credential signingCredential, boolean onlyKeyInfoNoCert)
             throws EIDASSAMLEngineException {
         LOG.trace("Start Sign process.");
         try {
-            Signature signature = createSignature(signingCredential);
+            Signature signature = createSignature(signingCredential, onlyKeyInfoNoCert);
             signableObject.setSignature(signature);
 
             // Reference/DigestMethod algorithm is set by default to SHA-1 in OpenSAML
@@ -416,7 +525,7 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
             throw new EIDASMetadataException("No metadataSigningCredential configured");
         }
         try {
-            return sign(signableObject, privateMetadataSigningCredential);
+            return sign(signableObject, privateMetadataSigningCredential,false);
         } catch (EIDASSAMLEngineException e) {
             //TODO remove this conversion when metadata is physically decoupled
             throw new EIDASMetadataException(e);
@@ -508,4 +617,67 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
     public boolean isResponseSignAssertions() {
         return responseSignAssertions;
     }
+
+    @Override
+    public boolean isRequestSignWithKey() {
+        return requestSignWithKey;
+    }
+
+    @Override
+    public boolean isResponseSignWithKey() {
+        return responseSignWithKey;
+    }
+
+    @Override
+	public X509Credential getTrustedCertificateFromRSAKeyValue(RSAKeyValue signatureRsaKeyValue) throws SecurityException, EIDASSAMLEngineException {
+		return getTrustedCertificateFromRSAKeyValue(signatureRsaKeyValue, getTrustedCredentials());
+	}
+
+    public static X509Credential getTrustedCertificateFromRSAKeyValue(RSAKeyValue signatureRsaKeyValue, 
+			List<? extends Credential> trustedCredentialList)
+			throws EIDASSAMLEngineException {
+		BigInteger signatureExponent = signatureRsaKeyValue.getExponent().getValueBigInt();
+		BigInteger signatureModulus = signatureRsaKeyValue.getModulus().getValueBigInt();
+
+		for (Credential credential:trustedCredentialList){
+			KeyInfoGeneratorFactory keyInfoGenFac = createKeyInfoGeneratorFactory((X509Credential) credential);
+			KeyInfo keyInfo = createKeyInfo(keyInfoGenFac, (X509Credential) credential);
+			
+			RSAKeyValue trustedCredentialRsaKeyValue = keyInfo.getKeyValues().get(0).getRSAKeyValue();
+			BigInteger trustedCredentialExponent = trustedCredentialRsaKeyValue.getExponent().getValueBigInt();
+			BigInteger trustedCredentialModulus = trustedCredentialRsaKeyValue.getModulus().getValueBigInt();
+			
+			if(signatureExponent.equals(trustedCredentialExponent) 
+					&& signatureModulus.equals(trustedCredentialModulus)){
+				 return(X509Credential) credential;
+			}
+		}
+		throw new EIDASSAMLEngineException(EidasErrorKey.SAML_ENGINE_UNTRUSTED_CERTIFICATE.errorCode());
+	}
+
+	private static KeyInfo createKeyInfo(KeyInfoGeneratorFactory keyInfoGenFac, X509Credential credential) throws EIDASSAMLEngineException
+			 {
+		KeyInfoGenerator keyInfoGenerator = keyInfoGenFac.newInstance();
+		KeyInfo keyInfo;
+		try {
+			keyInfo = keyInfoGenerator.generate(credential);
+			return keyInfo;
+		} catch (SecurityException e) {
+			throw new EIDASSAMLEngineException(EidasErrorKey.SAML_ENGINE_UNTRUSTED_CERTIFICATE.errorCode(),e);
+		}
+	}
+
+	private static KeyInfoGeneratorFactory createKeyInfoGeneratorFactory(X509Credential credential) {
+		KeyInfoGeneratorFactory keyInfoGenFac;
+		X509Certificate certificate = credential.getEntityCertificate();
+		BasicX509Credential keyInfoCredential = new BasicX509Credential(certificate);
+		keyInfoCredential.setEntityCertificate(certificate);
+		keyInfoGenFac = new BasicKeyInfoGeneratorFactory();
+		((BasicKeyInfoGeneratorFactory)keyInfoGenFac).setEmitPublicKeyValue(true);
+		((BasicKeyInfoGeneratorFactory)keyInfoGenFac).setEmitEntityIDAsKeyName(true);
+		((BasicKeyInfoGeneratorFactory)keyInfoGenFac).setEmitKeyNames(true);
+		((BasicKeyInfoGeneratorFactory)keyInfoGenFac).setEmitPublicDEREncodedKeyValue(true);
+		return keyInfoGenFac;
+	}
+
 }

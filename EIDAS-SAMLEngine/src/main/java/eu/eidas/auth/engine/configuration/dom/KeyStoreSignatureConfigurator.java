@@ -1,3 +1,17 @@
+/* 
+#   Copyright (c) 2017 European Commission  
+#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
+#   approved by the European Commission - subsequent versions of the 
+#    EUPL (the "Licence"); 
+#    You may not use this work except in compliance with the Licence. 
+#    You may obtain a copy of the Licence at: 
+#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
+#    *
+#    Unless required by applicable law or agreed to in writing, software 
+#    distributed under the Licence is distributed on an "AS IS" basis, 
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+#    See the Licence for the specific language governing permissions and limitations under the Licence.
+ */
 package eu.eidas.auth.engine.configuration.dom;
 
 import java.security.KeyStore;
@@ -41,6 +55,27 @@ public final class KeyStoreSignatureConfigurator {
             issuer = defaultIssuer;
         }
 
+        KeyStoreConfigurator keyStoreConfigurator = getKeyStoreConfigurator(properties, defaultPath, propPrefix);
+
+        return keyStoreConfigurator.loadPrivateKeyEntry(serialNumber, issuer);
+    }
+
+    private ImmutableSet<X509Certificate> getCertificates(Map<String, String> properties,
+                                                          String propertyPrefix,
+                                                          @Nullable String defaultPath)
+            throws ProtocolEngineConfigurationException {
+
+        String propPrefix = PROPERTY_PREFIX_DEFAULT;
+        if (StringUtils.isNotEmpty(propertyPrefix)) {
+            propPrefix = propertyPrefix;
+        }
+
+        KeyStoreConfigurator keyStoreConfigurator = getKeyStoreConfigurator(properties, defaultPath, propPrefix);
+
+        return keyStoreConfigurator.loadKeyStoreContent().getCertificates();
+    }
+
+    private KeyStoreConfigurator getKeyStoreConfigurator(Map<String, String> properties, @Nullable String defaultPath, String propPrefix) throws ProtocolEngineConfigurationException {
         String keyStorePathConfigurationKey = propPrefix + KeyStoreKey.KEYSTORE_PATH.getKey();
         if (!properties.containsKey(keyStorePathConfigurationKey)) {
             keyStorePathConfigurationKey = KeyStoreKey.KEYSTORE_PATH.getKey();
@@ -79,8 +114,7 @@ public final class KeyStoreSignatureConfigurator {
                                                                    keyAliasConfigurationKey,
                                                                    keyPasswordConfigurationKey);
 
-        return new KeyStoreConfigurator(properties, keyStoreConfigurationKeys, defaultPath).loadPrivateKeyEntry(serialNumber,
-                                                                                                   issuer);
+        return new KeyStoreConfigurator(properties, keyStoreConfigurationKeys, defaultPath);
     }
 
     public SignatureConfiguration getSignatureConfiguration(Map<String, String> properties, @Nullable String defaultPath)
@@ -89,6 +123,10 @@ public final class KeyStoreSignatureConfigurator {
         boolean disallowedSelfSignedCertificate = CertificateValidator.isDisallowedSelfSignedCertificate(properties);
         boolean responseSignAssertions = Boolean.parseBoolean(
                 StringUtils.trim(SignatureKey.RESPONSE_SIGN_ASSERTIONS.getAsString(properties)));
+        boolean requestSignWithKey = Boolean.parseBoolean(
+                StringUtils.trim(SignatureKey.REQUEST_SIGN_WITH_KEY_VALUE.getAsString(properties)));
+        boolean responseSignWithKey = Boolean.parseBoolean(
+                StringUtils.trim(SignatureKey.RESPONSE_SIGN_WITH_KEY_VALUE.getAsString(properties)));
 
         String serialNumber = SignatureKey.SERIAL_NUMBER.getAsString(properties);
         String issuer = SignatureKey.ISSUER.getAsString(properties);
@@ -102,8 +140,14 @@ public final class KeyStoreSignatureConfigurator {
                 getPrivateSigningKeyAndCertificate(properties, SignatureKey.METADATA_PREFIX.getKey(), serialNumber,
                                                    issuer, defaultPath);
 
+        ImmutableSet<X509Certificate> metadataKeystoreCertificates =
+                getCertificates(properties, SignatureKey.METADATA_PREFIX.getKey(),
+                        defaultPath);
+
         return new SignatureConfiguration(checkedValidityPeriod, disallowedSelfSignedCertificate, responseSignAssertions,
+        								  requestSignWithKey,responseSignWithKey,
                                           signatureKeyAndCertificate, trustedCertificates, signatureAlgorithm,
-                                          signatureAlgorithmWhiteListStr, metadataSigningKeyAndCertificate);
+                                          signatureAlgorithmWhiteListStr, metadataSigningKeyAndCertificate, metadataKeystoreCertificates);
+
     }
 }

@@ -1,33 +1,65 @@
-/*
- * Copyright (c) 2017 by European Commission
- *
- * Licensed under the EUPL, Version 1.2 or - as soon they will be
- * approved by the European Commission - subsequent versions of the
- * EUPL (the "Licence");
- * You may not use this work except in compliance with the Licence.
- * You may obtain a copy of the Licence at:
- * https://joinup.ec.europa.eu/page/eupl-text-11-12
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the Licence is distributed on an "AS IS" basis,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
- * implied.
- * See the Licence for the specific language governing permissions and
- * limitations under the Licence.
+/* 
+#   Copyright (c) 2017 European Commission  
+#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
+#   approved by the European Commission - subsequent versions of the 
+#    EUPL (the "Licence"); 
+#    You may not use this work except in compliance with the Licence. 
+#    You may obtain a copy of the Licence at: 
+#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
+#    *
+#    Unless required by applicable law or agreed to in writing, software 
+#    distributed under the Licence is distributed on an "AS IS" basis, 
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+#    See the Licence for the specific language governing permissions and limitations under the Licence.
  */
 
 package member_country_specific.specific.proxyservice.communication;
 
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
+
+import javax.annotation.Nonnull;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.xml.bind.JAXBException;
+
+import org.apache.commons.lang.StringUtils;
+import org.joda.time.DateTime;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.PropertyResolver;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import eu.eidas.SimpleProtocol.*;
+
+import eu.eidas.SimpleProtocol.AddressAttribute;
+import eu.eidas.SimpleProtocol.Attribute;
+import eu.eidas.SimpleProtocol.AuthenticationRequest;
+import eu.eidas.SimpleProtocol.ComplexAddressAttribute;
+import eu.eidas.SimpleProtocol.DateAttribute;
+import eu.eidas.SimpleProtocol.RequestedAuthenticationContext;
+import eu.eidas.SimpleProtocol.Response;
+import eu.eidas.SimpleProtocol.ResponseStatus;
+import eu.eidas.SimpleProtocol.StringAttribute;
+import eu.eidas.SimpleProtocol.StringListAttribute;
+import eu.eidas.SimpleProtocol.StringListValue;
 import eu.eidas.SimpleProtocol.utils.ContextClassTranslator;
 import eu.eidas.SimpleProtocol.utils.NameIdPolicyTranslator;
 import eu.eidas.SimpleProtocol.utils.SimpleProtocolProcess;
 import eu.eidas.SimpleProtocol.utils.StatusCodeTranslator;
 import eu.eidas.auth.commons.EidasStringUtil;
-import eu.eidas.auth.commons.attribute.*;
+import eu.eidas.auth.commons.attribute.AttributeDefinition;
+import eu.eidas.auth.commons.attribute.AttributeRegistries;
+import eu.eidas.auth.commons.attribute.AttributeRegistry;
+import eu.eidas.auth.commons.attribute.AttributeValue;
+import eu.eidas.auth.commons.attribute.AttributeValueMarshaller;
+import eu.eidas.auth.commons.attribute.AttributeValueMarshallingException;
+import eu.eidas.auth.commons.attribute.AttributeValueTransliterator;
+import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.attribute.impl.DateTimeAttributeValue;
 import eu.eidas.auth.commons.exceptions.InvalidParameterEIDASException;
 import eu.eidas.auth.commons.light.ILightRequest;
@@ -40,22 +72,9 @@ import eu.eidas.auth.commons.tx.BinaryLightToken;
 import eu.eidas.auth.commons.tx.CorrelationMap;
 import eu.eidas.specificcommunication.BinaryLightTokenHelper;
 import eu.eidas.specificcommunication.exception.SpecificCommunicationException;
+import member_country_specific.specific.proxyservice.SpecificProxyServiceApplicationContextProvider;
 import member_country_specific.specific.proxyservice.SpecificProxyServiceParameterNames;
-import member_country_specific.specific.proxyservice.SpecificProxyServiceViewNames;
 import member_country_specific.specific.proxyservice.utils.CorrelatedRequestsHolder;
-import org.apache.commons.lang.StringUtils;
-import org.joda.time.DateTime;
-import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nonnull;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.xml.bind.JAXBException;
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
 
 /**
  * SpecificProxyService: provides a sample implementation for interacting with the IdP.
@@ -93,8 +112,18 @@ public class SpecificProxyService {
     private boolean askConsentResponseShowAttributeValues;
 
     private String issuerName;
+    
+    boolean relaystateRandomizeNull;
 
-    /**
+    public boolean getRelaystateRandomizeNull() {
+		return relaystateRandomizeNull;
+	}
+
+	public void setRelaystateRandomizeNull(boolean relaystateRandomizeNull) {
+		this.relaystateRandomizeNull = relaystateRandomizeNull;
+	}
+
+	/**
      * Correlation Map between the simple protocol request Id to be send to the IdP and the holder
      * of the light request and correlated simple protocol request sent by the Proxy-service.
      */
@@ -364,8 +393,12 @@ public class SpecificProxyService {
         return lightResponseBuilder.build();
     }
 
-    private String getRelayState(final String relayState) {
-        return (StringUtils.isEmpty(relayState)) ? createRelayState() : relayState;
+    boolean doesRandomize() {
+    	return getRelaystateRandomizeNull();
+	}
+
+	private String getRelayState(final String relayState) {
+        return (StringUtils.isEmpty(relayState) && doesRandomize()) ? createRelayState() : relayState;
     }
 
     private String createRelayState() {

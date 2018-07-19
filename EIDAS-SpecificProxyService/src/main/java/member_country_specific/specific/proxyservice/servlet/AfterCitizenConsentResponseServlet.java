@@ -1,19 +1,16 @@
-/*
- * Copyright (c) 2017 by European Commission
- *
- * Licensed under the EUPL, Version 1.2 or - as soon they will be
- * approved by the European Commission - subsequent versions of the
- * EUPL (the "Licence");
- * You may not use this work except in compliance with the Licence.
- * You may obtain a copy of the Licence at:
- * https://joinup.ec.europa.eu/page/eupl-text-11-12
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the Licence is distributed on an "AS IS" basis,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
- * implied.
- * See the Licence for the specific language governing permissions and
- * limitations under the Licence.
+/* 
+#   Copyright (c) 2017 European Commission  
+#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
+#   approved by the European Commission - subsequent versions of the 
+#    EUPL (the "Licence"); 
+#    You may not use this work except in compliance with the Licence. 
+#    You may obtain a copy of the Licence at: 
+#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
+#    *
+#    Unless required by applicable law or agreed to in writing, software 
+#    distributed under the Licence is distributed on an "AS IS" basis, 
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+#    See the Licence for the specific language governing permissions and limitations under the Licence.
  */
 
 package member_country_specific.specific.proxyservice.servlet;
@@ -82,7 +79,7 @@ public final class AfterCitizenConsentResponseServlet extends AbstractSpecificPr
         try {
             TokenRedirectHelper.setTokenRedirectAttributes(httpServletRequest, iLightResponse, getApplicationContext(), getSpecificProxyService().getSpecificProxyserviceResponseUrl());
         } catch (SpecificCommunicationException e) {
-            getLogger().error("Error setting a binary light token");
+            getLogger().error("Error setting a binary light token"+e);
             throw new ServletException(e);
         }
 
@@ -93,7 +90,7 @@ public final class AfterCitizenConsentResponseServlet extends AbstractSpecificPr
     private ILightResponse prepareILightResponseFailure(@Nonnull final HttpServletRequest httpServletRequest) throws ServletException {
         final ILightResponse iLightResponse = prepareILightResponse(httpServletRequest);
         return LightResponseHelper.createILightResponseFailure(iLightResponse.getInResponseToId(),
-                EIDASStatusCode.RESPONDER_URI, EIDASSubStatusCode.REQUEST_DENIED_URI, "user refused consent at response phase");
+                EIDASStatusCode.RESPONDER_URI, EIDASSubStatusCode.REQUEST_DENIED_URI, "Citizen consent not given.");
     }
 
     private ILightResponse prepareILightResponse(@Nonnull HttpServletRequest httpServletRequest) throws ServletException {
@@ -101,7 +98,7 @@ public final class AfterCitizenConsentResponseServlet extends AbstractSpecificPr
         try {
             iLightResponse = getSpecificProxyService().getIlightResponse(httpServletRequest);
         } catch (SpecificCommunicationException e) {
-            getLogger().error("Error in decoding the Binary Light Token");
+            getLogger().error("Error in decoding the Binary Light Token"+e);
             throw new ServletException("Error in decoding the Binary Light Token", e);
         }
 

@@ -1,19 +1,16 @@
-/*
- * Copyright (c) 2017 by European Commission
- *
- * Licensed under the EUPL, Version 1.2 or - as soon they will be
- * approved by the European Commission - subsequent versions of the
- * EUPL (the "Licence");
- * You may not use this work except in compliance with the Licence.
- * You may obtain a copy of the Licence at:
- * https://joinup.ec.europa.eu/page/eupl-text-11-12
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the Licence is distributed on an "AS IS" basis,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
- * implied.
- * See the Licence for the specific language governing permissions and
- * limitations under the Licence.
+/* 
+#   Copyright (c) 2017 European Commission  
+#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
+#   approved by the European Commission - subsequent versions of the 
+#    EUPL (the "Licence"); 
+#    You may not use this work except in compliance with the Licence. 
+#    You may obtain a copy of the Licence at: 
+#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
+#    *
+#    Unless required by applicable law or agreed to in writing, software 
+#    distributed under the Licence is distributed on an "AS IS" basis, 
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+#    See the Licence for the specific language governing permissions and limitations under the Licence.
  */
 
 package eu.eidas.node.utils;
@@ -28,10 +25,13 @@ import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.eidas.IEidasAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.eidas.LevelOfAssurance;
 import eu.eidas.auth.commons.protocol.eidas.LevelOfAssuranceComparison;
+import eu.eidas.node.auth.connector.AUCONNECTORUtil;
 import eu.eidas.node.auth.service.AUSERVICEUtil;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nonnull;
 
 /**
  * @author vanegdi on 14/08/2015. Remark : moved from eidasUtil
@@ -46,6 +46,55 @@ public class EidasNodeValidationUtil {
      * Logger object.
      */
     private static final Logger LOG = LoggerFactory.getLogger(EidasNodeValidationUtil.class.getName());
+
+    protected static boolean isUrlDestinationValide(String urlDestinationList, @Nonnull String urlDestination) {
+        if (urlDestinationList == null || StringUtils.trim(urlDestinationList).replaceAll("\\r\\n|\\r|\\n", "").equals(""))
+            return true;
+        for (String token : StringUtils.trim(urlDestinationList).split(";")) {
+            if (StringUtils.trim(token).equalsIgnoreCase(urlDestination))
+                return true;
+        }
+        return false;
+    }
+    /**
+     * Validates message destination property against URI accessible from configuration. Now it is using parameters form eidas.xml
+     * same, as for metadata, but later this function to be refactored into samlengine, because destination check is a saml2
+     * standard requirement. Also, TODO do not check web binding, check message binding instead.
+     *
+     * @param authnRequest
+     * @param connectorUtil
+     * @param httpMethod
+     * @param reportedErr
+     */
+    public static void validateConnectorDestination(IAuthenticationRequest authnRequest,
+                                                    AUCONNECTORUtil connectorUtil,
+                                                    String httpMethod,
+                                                    EidasErrorKey reportedErr) {
+        if ("POST".equals(httpMethod) &&
+                !isUrlDestinationValide(connectorUtil.getConfigs().getProperty(EIDASValues.EIDAS_CONNECTOR_POST_URIDEST.toString()), authnRequest.getDestination())) {
+            LOG.info("Expected one of the auth request destination {} but got {}", connectorUtil.getConfigs().getProperty(EIDASValues.EIDAS_CONNECTOR_POST_URIDEST.toString()), authnRequest.getDestination());
+            throw new EidasNodeException(
+                    EidasErrors.get(reportedErr.errorCode()),
+                    EidasErrors.get(reportedErr.errorMessage()),
+                    new InternalErrorEIDASException(
+                            EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INVALID_DEST_URL.errorCode()),
+                            EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INVALID_DEST_URL.errorMessage())
+                    )
+            );
+        } else {
+            if (!isUrlDestinationValide(connectorUtil.getConfigs().getProperty(EIDASValues.EIDAS_CONNECTOR_REDIRECT_URIDEST.toString()), authnRequest.getDestination())) {
+                LOG.info("Expected one of the auth request destination {} but got {}", connectorUtil.getConfigs().getProperty(EIDASValues.EIDAS_CONNECTOR_REDIRECT_URIDEST.toString()), authnRequest.getDestination());
+                throw new InternalErrorEIDASException(
+                        EidasErrors.get(reportedErr.errorCode()),
+                        EidasErrors.get(reportedErr.errorMessage()),
+                        new InternalErrorEIDASException(
+                                EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INVALID_DEST_URL.errorCode()),
+                                EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INVALID_DEST_URL.errorMessage())
+                        )
+                );
+            }
+        }
+    }
 
     /**
      *  Validates message destination property against URI accessible from configuration. Now it is using parameters form eidas.xml
@@ -74,7 +123,7 @@ public class EidasNodeValidationUtil {
             );
         } else {
             if (!serviceUtil.getProperty(EIDASValues.EIDAS_SERVICE_REDIRECT_URIDEST.toString()).equalsIgnoreCase(authnRequest.getDestination())) {
-                LOG.info("Expected auth request destinaion {} but got {}", serviceUtil.getProperty(EIDASValues.EIDAS_SERVICE_REDIRECT_URIDEST.toString()), authnRequest.getDestination());
+                LOG.info("Expected auth request destination {} but got {}", serviceUtil.getProperty(EIDASValues.EIDAS_SERVICE_REDIRECT_URIDEST.toString()), authnRequest.getDestination());
                 throw new InternalErrorEIDASException(
                         EidasErrors.get(reportedErr.errorCode()),
                         EidasErrors.get(reportedErr.errorMessage()),

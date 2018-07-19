@@ -25,13 +25,17 @@
                         <span><fmt:message key="eidas.title" bundle="${i18n_eng}"/></span>
                     </h1>
 
-                    <h2><fmt:message key="colleagueRequestRedirect.text" bundle="${i18n_eng}"/></h2>
+                    <fmt:message var="redirectingValue" key="colleagueRequestRedirect.text" bundle="${i18n_eng}"/>
+                    <input type="hidden" id="dummyField" value="${redirectingValue}"
+                    />
+                    <h2 style="display:none;" id="redirectLabel" class="sub-title"></h2>
 
                     <form name="redirectForm" method="${e:forHtml(binding)}" action="${e:forHtml(serviceUrl)}">
                         <input type="hidden" id="SAMLRequest" name="SAMLRequest" value="${e:forHtml(SAMLRequest)}"/>
                         <input type="hidden" id="relayState" name="RelayState" value="${e:forHtml(RelayState)}"/>
                     </form>
                     <noscript>
+                        <h2 class="sub-title"><fmt:message key="ConnectorRedirect.text" bundle="${i18n_eng}"/></h2>
                         <form id="redirectFormNoJs" name="redirectFormNoJs" method="post" action="${e:forHtml(serviceUrl)}">
                             <input type="hidden" id="noScriptSAMLRequest" name="SAMLRequest" value="${e:forHtml(SAMLRequest)}"/>
                             <input type="hidden" id="noScriptrelayState" name="RelayState" value="${e:forHtml(RelayState)}"/>

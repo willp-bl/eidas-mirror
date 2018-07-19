@@ -1,3 +1,17 @@
+/* 
+#   Copyright (c) 2017 European Commission  
+#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
+#   approved by the European Commission - subsequent versions of the 
+#    EUPL (the "Licence"); 
+#    You may not use this work except in compliance with the Licence. 
+#    You may obtain a copy of the Licence at: 
+#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
+#    *
+#    Unless required by applicable law or agreed to in writing, software 
+#    distributed under the Licence is distributed on an "AS IS" basis, 
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+#    See the Licence for the specific language governing permissions and limitations under the Licence.
+ */
 package eu.eidas.auth.engine.configuration.dom;
 
 import java.security.KeyStore;
@@ -24,6 +38,10 @@ public final class SignatureConfiguration {
 
     private final boolean responseSignAssertions;
 
+    private final boolean requestSignWithKey;
+    
+    private final boolean responseSignWithKey;
+    
     @Nonnull
     private final KeyStore.PrivateKeyEntry signatureKeyAndCertificate;
 
@@ -39,30 +57,44 @@ public final class SignatureConfiguration {
     @Nullable
     private final KeyStore.PrivateKeyEntry metadataSigningKeyAndCertificate;
 
+    @Nullable
+    private final ImmutableSet<X509Certificate> metadataKeystoreCertificates;
+
     public SignatureConfiguration(boolean checkedValidityPeriod,
                                   boolean disallowedSelfSignedCertificate,
                                   boolean responseSignAssertions,
+                                  boolean requestSignWithKey,
+                                  boolean responseSignWithKey,
                                   @Nonnull KeyStore.PrivateKeyEntry signatureKeyAndCertificate,
                                   @Nonnull ImmutableSet<X509Certificate> trustedCertificates,
                                   @Nullable String signatureAlgorithm,
                                   @Nullable String signatureAlgorithmWhiteList,
-                                  @Nullable KeyStore.PrivateKeyEntry metadataSigningKeyAndCertificate) {
+                                  @Nullable KeyStore.PrivateKeyEntry metadataSigningKeyAndCertificate,
+                                  ImmutableSet<X509Certificate> metadataKeystoreCertificates) {
         Preconditions.checkNotNull(signatureKeyAndCertificate, "signatureKeyAndCertificate");
         Preconditions.checkNotNull(trustedCertificates, "trustedCertificates");
 
         this.checkedValidityPeriod = checkedValidityPeriod;
         this.disallowedSelfSignedCertificate = disallowedSelfSignedCertificate;
         this.responseSignAssertions = responseSignAssertions;
+        this.requestSignWithKey=requestSignWithKey;
+        this.responseSignWithKey=responseSignWithKey;
         this.signatureKeyAndCertificate = signatureKeyAndCertificate;
         this.trustedCertificates = trustedCertificates;
         this.signatureAlgorithm = signatureAlgorithm;
         this.signatureAlgorithmWhiteList = signatureAlgorithmWhiteList;
         this.metadataSigningKeyAndCertificate = metadataSigningKeyAndCertificate;
+        this.metadataKeystoreCertificates = metadataKeystoreCertificates;
     }
 
     @Nullable
     public KeyStore.PrivateKeyEntry getMetadataSigningKeyAndCertificate() {
         return metadataSigningKeyAndCertificate;
+    }
+
+    @Nullable
+    public ImmutableSet<X509Certificate> getMetadataKeystoreCertificates() {
+        return metadataKeystoreCertificates;
     }
 
     @Nullable
@@ -95,6 +127,14 @@ public final class SignatureConfiguration {
 
     public boolean isResponseSignAssertions() {
         return responseSignAssertions;
+    }
+
+    public boolean isRequestSignWithKey() {
+        return requestSignWithKey;
+    }
+
+    public boolean isResponseSignWithKey() {
+        return responseSignWithKey;
     }
 
     @Override
@@ -146,8 +186,8 @@ public final class SignatureConfiguration {
         result = 31 * result + (trustedCertificates != null ? trustedCertificates.hashCode() : 0);
         result = 31 * result + (signatureAlgorithm != null ? signatureAlgorithm.hashCode() : 0);
         result = 31 * result + (signatureAlgorithmWhiteList != null ? signatureAlgorithmWhiteList.hashCode() : 0);
-        result = 31 * result + (metadataSigningKeyAndCertificate != null ? metadataSigningKeyAndCertificate.hashCode()
-                                                                         : 0);
+        result = 31 * result + (metadataSigningKeyAndCertificate != null ? metadataSigningKeyAndCertificate.hashCode() : 0);
+        result = 31 * result + (metadataKeystoreCertificates != null ? metadataKeystoreCertificates.hashCode() : 0);
         return result;
     }
 
@@ -162,6 +202,7 @@ public final class SignatureConfiguration {
                 ", signatureAlgorithm='" + signatureAlgorithm + '\'' +
                 ", signatureAlgorithmWhiteList='" + signatureAlgorithmWhiteList + '\'' +
                 ", metadataSigningKeyAndCertificate=" + metadataSigningKeyAndCertificate +
+                ", metadataKeystoreCertificates=" + metadataKeystoreCertificates +
                 '}';
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 by European Commission
+ * Copyright (c) 2018 by European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be
  * approved by the European Commission - subsequent versions of the
@@ -44,18 +44,12 @@ import eu.eidas.auth.commons.validation.NormalParameterValidator;
 import eu.eidas.auth.engine.Correlated;
 import eu.eidas.auth.engine.ProtocolEngineFactory;
 import eu.eidas.auth.engine.ProtocolEngineI;
-import eu.eidas.auth.engine.metadata.EidasMetadataParametersI;
-import eu.eidas.auth.engine.metadata.MetadataClockI;
-import eu.eidas.auth.engine.metadata.MetadataFetcherI;
-import eu.eidas.auth.engine.metadata.MetadataSignerI;
+import eu.eidas.auth.engine.metadata.*;
 import eu.eidas.auth.engine.xml.opensaml.SAMLEngineUtils;
 import eu.eidas.engine.exceptions.EIDASMetadataException;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import eu.eidas.node.logging.LoggingMarkerMDC;
-import eu.eidas.node.utils.EidasNodeErrorUtil;
-import eu.eidas.node.utils.EidasNodeValidationUtil;
-import eu.eidas.node.utils.PropertiesUtil;
-import eu.eidas.node.utils.SessionHolder;
+import eu.eidas.node.utils.*;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,6 +60,7 @@ import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.Locale;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
@@ -259,10 +254,6 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
 
             String serviceMetadataURL = getConnectorUtil().loadConfigServiceMetadataURL(serviceCode);
 
-            String serviceUrl = connectorUtil.loadConfigServiceURL(serviceCode);
-
-            LOG.debug("Citizen Country URL " + serviceCode + " URL " + serviceUrl);
-
             EidasMetadataParametersI eidasMetadataParameters = null;
             try {
                 eidasMetadataParameters = metadataFetcher.getEidasMetadata(serviceMetadataURL,
@@ -273,10 +264,37 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
                 throw new EIDASSAMLEngineException(e);
             }
 
+            EidasMetadataRoleParametersI spDesc = MetadataUtil.getIDPRoleDescriptor(eidasMetadataParameters);
+
+            String httpMethod = webRequest.getMethod().getValue();
+            String metadataBindingMethod = null;
+            String serviceUrl = null;
+            for (Map.Entry<String, String> metadataBinding : spDesc.getProtocolBindingLocations().entrySet()) {
+                metadataBindingMethod = metadataBinding.getKey();
+                serviceUrl = metadataBinding.getValue();
+
+                if (httpMethod.equalsIgnoreCase(metadataBindingMethod)) {
+                    break;
+                }
+            }
+
+            LOG.debug("Citizen Country URL " + serviceCode + " URL " + serviceUrl);
+
             NormalParameterValidator.paramName(EidasErrorKey.SERVICE_REDIRECT_URL.toString())
                     .paramValue(serviceUrl)
                     .eidasError(EidasErrorKey.SPROVIDER_SELECTOR_INVALID_COUNTRY)
                     .validate();
+
+
+            IAuthenticationRequest authnRequest = EidasAuthenticationRequest.builder()
+                    .lightRequest(lightRequest)
+                    .destination(serviceUrl)
+                    .citizenCountryCode(serviceCode)
+                    .build();
+
+            LOG.info("validate destination match");
+            EidasNodeValidationUtil.validateConnectorDestination(authnRequest, connectorUtil, httpMethod,
+                    EidasErrorKey.COLLEAGUE_REQ_INVALID_DEST_URL);
 
             LOG.info(LoggingMarkerMDC.SAML_EXCHANGE, "Connector - Processing LightRequest with ID {}",
                      lightRequest.getId());
@@ -303,12 +321,6 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
                     .validate();
 
             requestState.setProviderName(providerName);
-
-            IAuthenticationRequest authnRequest = EidasAuthenticationRequest.builder()
-                    .lightRequest(lightRequest)
-                    .destination(serviceUrl)
-                    .citizenCountryCode(serviceCode)
-                    .build();
 
             // validate request load
             String proxyServiceLoA =  eidasMetadataParameters.getAssuranceLevel();
@@ -355,10 +367,10 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
         } catch (EIDASSAMLEngineException e) {
             // Special case for propagating the error in case of xxe
             EidasNodeErrorUtil.processSAMLEngineException(e, LOG, getConnectorRedirectError(e,
-                                                                                            EidasErrorKey.SPROVIDER_SELECTOR_INVALID_SAML));
+                    EidasErrorKey.SAML_ENGINE_NO_METADATA));
             throw new InternalErrorEIDASException(
-                    EidasErrors.get(EidasErrorKey.SPROVIDER_SELECTOR_INVALID_SAML.errorCode()),
-                    EidasErrors.get(EidasErrorKey.SPROVIDER_SELECTOR_INVALID_SAML.errorMessage()), e);
+                    EidasErrors.get(EidasErrorKey.SAML_ENGINE_NO_METADATA.errorCode()),
+                    EidasErrors.get(EidasErrorKey.SAML_ENGINE_NO_METADATA.errorMessage()), e);
         }
     }
 
@@ -716,20 +728,32 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
                                       byte[] samlObj,
                                       IAuthenticationRequest authnRequest,
                                       String spSamlId) {
+
         String hashClassName =
                 getConnectorUtil() != null && getConnectorUtil().getConfigs() != null ? getConnectorUtil().getConfigs()
                         .getProperty(EidasParameterKeys.HASH_DIGEST_CLASS.toString()) : null;
         byte[] tokenHash = EidasDigestUtil.hashPersonalToken(samlObj, hashClassName);
         loggerBean.setTimestamp(DateUtil.currentTimeStamp().toString());
         loggerBean.setOpType(opType);
-        loggerBean.setOrigin(authnRequest.getAssertionConsumerServiceURL());
-        loggerBean.setDestination(authnRequest.getDestination());
-        loggerBean.setProviderName(authnRequest.getProviderName());
-        loggerBean.setCountry(authnRequest.getCitizenCountryCode());
         loggerBean.setSamlHash(tokenHash);
         loggerBean.setSPMsgId(spSamlId);
-        loggerBean.setMsgId(authnRequest.getId());
+
+        final String originWithoutCrlf = LoggingSanitizer.removeCRLFInjection(authnRequest.getAssertionConsumerServiceURL());
+        loggerBean.setOrigin(originWithoutCrlf);
+
+        final String destinationWithoutCrlf = LoggingSanitizer.removeCRLFInjection(authnRequest.getDestination());
+        loggerBean.setDestination(destinationWithoutCrlf);
+
+        final String providerNameWithoutCrlf = LoggingSanitizer.removeCRLFInjection(authnRequest.getProviderName());
+        loggerBean.setProviderName(providerNameWithoutCrlf);
+
+        final String countryWithoutCrlf = LoggingSanitizer.removeCRLFInjection(authnRequest.getCitizenCountryCode());
+        loggerBean.setCountry(countryWithoutCrlf);
+
+        final String msgIdWithoutCrlf = LoggingSanitizer.removeCRLFInjection(authnRequest.getId());
+        loggerBean.setMsgId(msgIdWithoutCrlf);
     }
+
 
     /**
      * Sets all the fields to the audit the response.

@@ -36,7 +36,11 @@
                     <div class="col-right-inner">
                         <div class="col-right-content">
                             <jsp:include page="/internal/content-security-header-deactivated.jsp"/>
-                            <h2 class="sub-title"><fmt:message key="msSpecificProxyServiceRedirecting.text" bundle="${i18n_eng}"/></h2>
+                            <fmt:message var="redirectingValue" key="msSpecificProxyServiceRedirecting.text"
+                                         bundle="${i18n_eng}"/>
+                            <input type="hidden" id="dummyField" value="${redirectingValue}"
+                            />
+                            <h2 id="tokenRedirectLabel" class="sub-title"></h2>
                             <form id="redirectForm" name="redirectForm" action="${e:forHtml(redirectUrl)}" method="${e:forHtml(binding)}">
                                 <input type="hidden" name="token" id="token" value="${e:forHtml(token)}"/>
                             </form>

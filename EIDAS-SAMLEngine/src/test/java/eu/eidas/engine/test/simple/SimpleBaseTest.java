@@ -1,3 +1,17 @@
+/* 
+#   Copyright (c) 2017 European Commission  
+#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
+#   approved by the European Commission - subsequent versions of the 
+#    EUPL (the "Licence"); 
+#    You may not use this work except in compliance with the Licence. 
+#    You may obtain a copy of the Licence at: 
+#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
+#    *
+#    Unless required by applicable law or agreed to in writing, software 
+#    distributed under the Licence is distributed on an "AS IS" basis, 
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+#    See the Licence for the specific language governing permissions and limitations under the Licence.
+ */
 /*
  * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
  * the European Commission - subsequent versions of the EUPL (the "Licence");
@@ -25,6 +39,10 @@ import eu.eidas.auth.engine.xml.opensaml.SAMLEngineUtils;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import junit.framework.Assert;
 import junit.framework.TestCase;
+
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
 
 /**
  * The Class SimpleBaseTest. Defines a set of test the initialization of the
@@ -86,5 +104,10 @@ public class SimpleBaseTest extends TestCase {
         Assert.assertFalse(X500PrincipalUtil.principalNotNullEquals(test2, null));
         Assert.assertFalse(X500PrincipalUtil.principalNotNullEquals(null, test2));
         Assert.assertFalse(X500PrincipalUtil.principalNotNullEquals(test1, test2));
+
+       /* X500Name test1 = new X500Name("C=AU,ST=Victoria");
+        X500Name test2 = new X500Name("CN=Thawte Timestamping CA, OU=Thawte Certification, O=Thawte, L=Durbanville, ST=Western Cape, C=ZA");
+        assertThat(test1, is(equalTo(test2)));
+        assertEquals(test1, test2);*/
     }
 }

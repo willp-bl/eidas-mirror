@@ -1,23 +1,16 @@
-/*
- * Copyright (c) 2017 by European Commission
- *
- * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
- * the European Commission - subsequent versions of the EUPL (the "Licence");
- * You may not use this work except in compliance with the Licence.
- * You may obtain a copy of the Licence at:
- * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the Licence is distributed on an "AS IS" basis,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the Licence for the specific language governing permissions and
- * limitations under the Licence.
- *
- * This product combines work with different licenses. See the "NOTICE" text
- * file for details on the various modules and licenses.
- * The "NOTICE" text file is part of the distribution. Any derivative works
- * that you distribute must include a readable copy of the "NOTICE" text file.
- *
+/* 
+#   Copyright (c) 2017 European Commission  
+#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
+#   approved by the European Commission - subsequent versions of the 
+#    EUPL (the "Licence"); 
+#    You may not use this work except in compliance with the Licence. 
+#    You may obtain a copy of the Licence at: 
+#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
+#    *
+#    Unless required by applicable law or agreed to in writing, software 
+#    distributed under the Licence is distributed on an "AS IS" basis, 
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+#    See the Licence for the specific language governing permissions and limitations under the Licence.
  */
 package eu.eidas.auth.engine.metadata.impl;
 
@@ -46,6 +39,11 @@ public class EidasMetadataParameters implements EidasMetadataParametersI {
     protected ContactData supportContact;
     protected ContactData technicalContact;
     private Set<EidasMetadataRoleParametersI> roleDescriptors = new HashSet<>();
+    /*TODO: remove this attribute after trasition period*/
+    protected boolean hideLoaType;
+
+    protected String eidasProtocolVersion;
+    protected String eidasApplicationIdentifier;
 
     public EidasMetadataParameters() {
     }
@@ -61,6 +59,8 @@ public class EidasMetadataParameters implements EidasMetadataParametersI {
         this.supportContact = ContactData.builder(emp.supportContact).build();
         this.technicalContact = ContactData.builder(emp.technicalContact).build();
         this.roleDescriptors = new HashSet<>(emp.roleDescriptors);
+        /*TODO: remove this attribute after trasition period*/
+        this.hideLoaType = emp.hideLoaType;
     }
 
     @Override
@@ -166,6 +166,35 @@ public class EidasMetadataParameters implements EidasMetadataParametersI {
             this.roleDescriptors = new HashSet<>();
         }
         this.roleDescriptors.add(roleDescriptor);
+    }
+
+    public boolean isHideLoaType() {
+        return hideLoaType;
+    }
+
+    /*TODO: remove these methods after trasition period*/
+    public void setHideLoaType(boolean hideLoaType) {
+        this.hideLoaType = hideLoaType;
+    }
+
+    @Override
+    public void setEidasProtocolVersion(String eidasProtocolVersion) {
+        this.eidasProtocolVersion = eidasProtocolVersion;
+    }
+
+    @Override
+    public String getEidasProtocolVersion() {
+        return eidasProtocolVersion;
+    }
+
+    @Override
+    public void setEidasApplicationIdentifier(String eidasApplicationIdentifier) {
+        this.eidasApplicationIdentifier = eidasApplicationIdentifier;
+    }
+
+    @Override
+    public String getEidasApplicationIdentifier() {
+        return eidasApplicationIdentifier;
     }
 
 

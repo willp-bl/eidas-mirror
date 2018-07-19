@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="s" uri="/struts-tags" %>
-
+<%
+    String eidasconnector = request.getParameter("eidasconnector");
+%>
 <html lang="en">
 
 <head>
@@ -35,7 +37,6 @@
                             <input type="hidden" id="SMSSPRequest" name="SMSSPRequest"
                                    value="<s:property value="smsspRequest"/>">
                         </div>
-
                         <div class="form-group">
                             <div class="radio-inline-group">
                                 <div class="radio radio-info radio-inline">
@@ -46,7 +47,8 @@
                             </div>
                         </div>
                         <div class="button-group">
-                            <button id="submit_saml" type="button" class="btn btn-default btn-lg btn-block"
+                            <button style='display:none;' id="submit_saml" type="button"
+                                    class="btn btn-default btn-lg btn-block"
                                     onclick="$('#countrySelector').submit();">Submit
                             </button>
                         </div>
@@ -62,14 +64,30 @@
                             <label for="smsspRequestJSON"><s:property value="%{getText('SMSSPRequestJSONId')}"/></label>
                             <textarea class="form-control" rows="20" id="smsspRequestJSON"
                                       name="smsspRequestJSON"><s:property value="smsspRequestJSON"/></textarea>
-
                         </div>
                     </form>
+                    <noscript>
+                        <form id="noJavaScriptForm" name="noJavaScriptRedirectForm" action="<%=eidasconnector%>"
+                              method="post">
+                            <div class="form-group">
+                                <input type="hidden" name="eidasconnector" id="eidasconnector" class="form-control"
+                                       value="<%=eidasconnector%>"/>
+                                <input type="hidden" name="eidasconnector2"
+                                       value="<s:property value="defaultActionUrl"/>" id="eidasconnector2"
+                                       class="form-control"/>
+
+                                <input type="hidden" id="SMSSPRequestNoJS" name="SMSSPRequest"
+                                       value=${smsspRequest}/>
+                            </div>
+                            <input type="submit" id="submitButton1" class="btn btn-next" value="Submit"/>
+                        </form>
+                    </noscript>
                 </div>
             </div>
         </div>
     </div>
 </div>
 <jsp:include page="footer.jsp"/>
+<script type="text/javascript" src="resources/skin0/js/redirectOnload.js"></script>
 </body>
 </html>

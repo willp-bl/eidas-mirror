@@ -1,4 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?><md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" entityID="http://peps:8888/PEPS/CPEPSMetadata" validUntil="2015-06-28T14:42:43.929Z"><ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#"><ds:SignedInfo><ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/><ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><ds:Reference URI=""><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><ds:DigestValue>aBpraBNX2RYJ2cNkYOeL+7BOpBRje9sqZmTtGzlmk6Y=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue>E5w4R68H1qKVETKvGmcgnsogHQxrlAnI+z5zUTk8uMnJ455TwtfE8L9D4kA23DXukTxx5egwjSeDIHO2rSsuA/K64GIhLB7qe8uBUj8BlGlbT72Pnc+mDZX1fUQz7fgH6FAN3cng0E3KR7Zlpb9LUhFCUB08/hlWOP108Hg7hCE=</ds:SignatureValue><ds:KeyInfo><ds:X509Data><ds:X509Certificate>MIICwDCCAimgAwIBAgIGAU1HBSc6MA0GCSqGSIb3DQEBCwUAMHkxCzAJBgNVBAYTAkJFMRAwDgYD
+<!-- 
+#   Copyright (c) 2017 European Commission  
+#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
+#   approved by the European Commission - subsequent versions of the 
+#    EUPL (the "Licence"); 
+#    You may not use this work except in compliance with the Licence. 
+#    You may obtain a copy of the Licence at: 
+#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
+#    *
+#    Unless required by applicable law or agreed to in writing, software 
+#    distributed under the Licence is distributed on an "AS IS" basis, 
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+#    See the Licence for the specific language governing permissions and limitations under the Licence.
+ -->
 VQQIEwdCZWxnaXVtMREwDwYDVQQHEwhCcnVzc2VsczEbMBkGA1UEChMSRXVyb3BlYW4gQ29taXNz
 aW9uMQ4wDAYDVQQLEwVESUdJVDEYMBYGA1UEAxMPbG9jYWwtZGVtby1jZXJ0MB4XDTE1MDUxMjA3
 MjY1OVoXDTI1MDUwOTA3MjcwOVoweTELMAkGA1UEBhMCQkUxEDAOBgNVBAgTB0JlbGdpdW0xETAP

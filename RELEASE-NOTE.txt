@@ -1,3 +1,82 @@
+CEF eID eIDAS-Node Build 2.1.0 Content
+
+This release is based on version 1.1 of the eIDAS Technical Specifications.
+This release includes stability improvements.. 
+
+
+** Documentation **
+
++ CEF eID technical documentation pertaining to this release can be found on:
+++ CEF Digital Home > eID > All eID services > eIDAS Node integration package > View latest version.
+
+** Distribution **
+
++ EIDAS-2.1.0.zip : Distribution version 2.1.0 of the sample eIDAS-Node
+++  EIDAS-Sources-2.1.0.zip :  Source files (Maven project) of the sample eIDAS-Node including an example of implementation of a Specific Proxy Service module, Specific Connector module , a SP (Service Provider) and IdP (Identity Provider).
+++  EIDAS-Binaries-Glassfish-2.1.0.zip : Deployable war files of a preconfigured eIDAS-Node for a Glassfish server (including SpecificConnector.war, SpecificProxyService.war,IdP.war, EidasNode.war, SP.war)
+++  EIDAS-Binaries-Jboss-2.1.0.zip: Deployable war files of a preconfigured eIDAS-Node for a JBoss server (including SpecificConnector.war, SpecificProxyService.war, IdP.war, EidasNode.war, SP.war)
+++  EIDAS-Binaries-Tomcat-2.1.0.zip: Deployable war files of a preconfigured eIDAS-Node for a Tomcat server (including SpecificConnector.war, SpecificProxyService.war, IdP.war, EidasNode.war, SP.war)
+++  EIDAS-Binaries-Was-2.1.0.zip : Deployable war files of a preconfigured eIDAS-Node for a WebSphere server (including SpecificConnector.war, SpecificProxyService.war, IdP.war, EidasNode.war, SP.war) 
+++  EIDAS-Binaries-Wls-2.1.0.zip : Deployable war files of a preconfigured eIDAS-Node for a WebLogic server (including SpecificConnector.war, SpecificProxyService.war, IdP.war, EidasNode.war, SP.war)
+
+**This release contains the following improvements: (Please note that EIDINT-XXXX references are for internal use only)
+
+** This release contains the following changes to eIDAS-Node
+
++ Change in Gender allowed values : Allow temporarily "Not Specified" (EIDINT-2215)
++ Add protocol versioning elements to metadata (EDINT-2201)
++ Support of Sub-CA for Metadata Signer (EIDINT-2191,EIDINT-1378)
++ Implement usage of simple DSI keys in SAML messages (EIDINT-1860)
++ Use of SingleSignOnService instead of hardcoded URLs (EIDINT-2145)   
++ Build separation between Demo and Node modules (EIDINT-2085)
++ Update copyright headers and remove authorship (EIDINT-669)
+
+**This release contains the following bug fixes:
+
++ Correct of unit tests, Metadata were expired (EIDINT-2183)
++ Correct applicationContext with default values (EIDINT-2149)
++ Update cipher suite from configuration whitelist (EIDINT-2189)
++ Remove xsi:type from LOA's metadata's attribute value (EIDINT-2037)
++ eIDAS flow with JavaScript off (EIDINT-1993)
++ Correct reference key name related to TLS cipher suites (EIDINT-2373) 
++ Change the order of validation when processing the SP request (EIDINT-2127)
++ Replaced the error message "user refused consent at response phase" with "Citizen consent not given." (EIDINT-1872)
++ Replaced the error message "user refused consent at request phase" with "Consent not given for a mandatory attribute." (EIDINT-1873)
++ Throw SAML_ENGINE_NO_METADATA instead of SPROVIDER_SELECTOR_INVALID_SAML when metadata can not be read. (EIDINT-2063)
++ Clean up labels in redirecting jsp pages (EIDINT-1993).
+
+
+**This release contains the following security fixes:
++ Correction of possible arbitrary data injection in audit trail log (EIDINT-1352)
+
+
+** Changes to Demo Tools
++ Correct of Null or absent RelayState is handled incorrectly (EIDINT-2207)
+
+
+** Known Limitations
+The up to date list can be found at https://ec.europa.eu/cefdigital/wiki/x/QZfuAw
+
+
+** Known Vulnerabilities
+Latest vulnerability notifications are found at https://ec.europa.eu/cefdigital/wiki/x/CwB2Ag
+
+
+
+####### IMPORTANT NOTICE #################################################################################################################################################################################
+
+The eIDAS-Node logs may contain person identification data. Hence, these logs should be handled and protected appropriately, following the European privacy regulations [Dir95/46/EC] and [Reg2016/679].
+
+[Reg2016/679] REGULATION (EU) 2016/679 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 27 April 2016 on the protection of natural persons with regard to the processing of personal data and on the free 
+movement of such data, and repealing Directive 95/46/EC.
+
+[Dir95/46/EC] Directive 95/46/EC of the European Parliament and of the Council of 24 October 1995 on the protection of individuals with regard to the processing of personal data and on the free movement
+of such data.
+
+#########################################################################################################################################################################################################
+
+
+####################### previous releases #######################
 CEF eID eIDAS-Node Build 2.0.0 Content
 
 This release is based on version 1.1 of the eIDAS Technical Specifications.
@@ -71,21 +150,6 @@ This release includes major improvements in the architecture by mainly decouplin
 + Key agreement method not supported for encryption of session keys (EID-594)
 + eIDAS Connector and ProxyService should be separate components (EID-599)
 + Using Gender attribute with 3rd value fails to work (EID-582)
-
-####### IMPORTANT NOTICE #################################################################################################################################################################################
-
-The eIDAS-Node logs may contain person identification data. Hence, these logs should be handled and protected appropriately, following the European privacy regulations [Dir95/46/EC] and [Reg2016/679].
-
-[Reg2016/679] REGULATION (EU) 2016/679 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 27 April 2016 on the protection of natural persons with regard to the processing of personal data and on the free 
-movement of such data, and repealing Directive 95/46/EC.
-
-[Dir95/46/EC] Directive 95/46/EC of the European Parliament and of the Council of 24 October 1995 on the protection of individuals with regard to the processing of personal data and on the free movement
-of such data.
-
-#########################################################################################################################################################################################################
-
-
-####################### previous releases #######################
 
 
 eIDAS-Node Build 1.4.0 Content

@@ -4,10 +4,11 @@
 <%@ page import="member_country_specific.idp.ProcessLogin" %>
 <!DOCTYPE html>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ page errorPage="/errorPage.jsp" %>
 <%@ taglib prefix="s" uri="/struts-tags" %>
 <%@taglib prefix="e" uri="https://www.owasp.org/index.php/OWASP_Java_Encoder_Project" %>
-
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jstl/fmt" %>
+<fmt:setBundle basename="member_country_specific.idp.package" var="i18n_eng"/>
+<%@ page errorPage="/errorPage.jsp" %>
 <%
     boolean checkBoxIpAddress = "on".equalsIgnoreCase(request.getParameter("checkBoxIpAddress"));
     String eidasnameid = null;
@@ -50,43 +51,6 @@
         errorMessage = ex.getMessage();
     }
 %>
-<script language="Javascript" type="text/javascript">
-
-    function submitForm() {
-
-        var doNotmodifyTheResponse = document.getElementById('doNotmodifyTheResponse').value;
-        var errorMessage = document.getElementById('errorMessage').value;
-        if ((errorMessage == null)||(errorMessage == undefined)||(errorMessage == "null")||(errorMessage == "")) {
-            var callback = document.getElementById('callback').value;
-            if (doNotmodifyTheResponse == "on") {
-                base64_encode(callback);
-            }
-
-        } else {
-            document.forms[0].action = "Error";
-            document.forms[0].method = "post";
-            document.forms[0].submit();
-        }
-    }
-
-    window.onload = submitForm;
-    window.onload();
-
-    function b64EncodeUnicode(str) {
-        return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function (match, p1) {
-            return String.fromCharCode(parseInt(p1, 16))
-        }))
-    }
-
-    function base64_encode(callback) {
-        var getjSonResponseDecoded = document.getElementById('jSonResponseDecoded').value;
-        var base64_encode = b64EncodeUnicode(getjSonResponseDecoded);
-        document.getElementById('SMSSPResponse').value = base64_encode;
-        document.forms[0].action = callback;
-        document.forms[0].method = "post";
-        document.forms[0].submit();
-    }
-</script>
 <html lang="en">
 
 <head>
@@ -101,51 +65,57 @@
 	</div>
 </header>
 <!--END HEADER-->
+<main>
 <div class="container">
-	<div class="row">
-		<div class="tab-content">
-			<div role="tabpanel" class="tab-pane fade in active" id="tab-02">
-				<div class="col-md-12">
-					<h2>Response
-					</h2>
-				</div>
-				<jsp:include page="leftColumn.jsp"/>
-				<div class="col-md-6">
-					<form id="genericForm" name="genericForm">
-						<input type="hidden" id="SMSSPResponse" name="SMSSPResponse"/>
-						<input type="hidden" id="errorMessage" name="errorMessage" value="<%=errorMessage%>"/>
-						<input type="hidden" id="errorMessageTitle" name="errorMessageTitle" value="<%=errorMessageTitle%>"/>
-					</form>
+    <div class="row">
+        <div class="tab-content">
+            <div role="tabpanel" class="tab-pane fade in active" id="tab-02">
+                <div class="col-md-12">
+                    <h2>Response
+                    </h2>
+                </div>
+                <jsp:include page="leftColumn.jsp"/>
+                <div class="col-md-6">
+                    <form id="genericForm" name="genericForm">
 
-					<form id="redirectForm" name="redirectForm">
-						<div class="form-group">
-							<input type="hidden" id="username" name="username" value="<%=username%>"/>
-							<label for="jSonResponseDecoded">SmsspToken Response</label>
-							<textarea name="jSonResponseDecoded" id="jSonResponseDecoded" class="form-control" rows="10"><%=jSonResponseDecoded%></textarea>
-							<input type="hidden" id="callback" name="callback" value="<%=callback%>"/>
-							<input type="hidden" id="doNotmodifyTheResponse" name="doNotmodifyTheResponse" value="<%=doNotmodifyTheResponse%>"/>
-							<input type="hidden" id="jSonResponseEncoded" name="jSonResponseEncoded" value="<%=jSonResponseEncoded%>"/>
-						</div>
-						<item type="button" id="idpSubmitbutton" class="btn btn-default btn-lg btn-block"
-							  onclick="return base64_encode('<%=callback%>');">Submit
-						</item>
-					</form>
-				</div>
-			</div>
-		</div>
-	</div>
-</div>
+                        <input type="hidden" id="errorMessage" name="errorMessage" value="<%=errorMessage%>"/>
+                        <input type="hidden" id="errorMessageTitle" name="errorMessageTitle"
+                               value="<%=errorMessageTitle%>"/>
+                    </form>
 
-<noscript>
-    <!--START HEADER-->
-    <header class="header">
-        <div class="container">
-            <h1>eIDAS Authentication Service (IdP)</h1>
+                    <form id="redirectForm" name="redirectForm" action="<%=callback%>" method="post">
+                        <div class="form-group">
+                            <label for="jSonResponseDecoded">SmsspToken Response</label>
+                            <textarea name="jSonResponseDecoded" id="jSonResponseDecoded" class="form-control"
+                                      rows="10"><%=jSonResponseDecoded%></textarea>
+                            <input type="hidden" id="doNotmodifyTheResponse" name="doNotmodifyTheResponse"
+                                   value="<%=doNotmodifyTheResponse%>"/>
+
+                            <input type="hidden" id="SMSSPResponse" name="SMSSPResponse"/>
+                            <%--                        <input type="hidden" id="username" name="username" value="<%=username%>"/>
+                                                        <input type="hidden" id="jSonResponseEncoded" name="jSonResponseEncoded" value="<%=jSonResponseEncoded%>"/>
+                                                        <input type="hidden" id="callback" name="callback" value="<%=callback%>"/>--%>
+                        </div>
+                        <item type="button" style='display:none;' id="idpSubmitbutton"
+                              class="btn btn-default btn-lg btn-block" onclick="return base64_encode();">Submit
+                        </item>
+                        <%--<button type="submit">Submit</button>--%>
+                    </form>
+                    <noscript>
+                        <form id="noJavaScriptForm" name="noJavaScriptRedirectForm" action="<%=callback%>"
+                              method="post">
+                            <input type="hidden" id="SMSSPResponseNoJS" name="SMSSPResponse"
+                                   value="<%=jSonResponseEncoded%>"/>
+                            <%--<fmt:message var="btnMsg" key="accept.button" bundle="${i18n_eng}"/>--%>
+                            <input type="submit" id="submitButton1" class="btn btn-next" value="Submit"/>
+                        </form>
+                    </noscript>
+                </div>
+            </div>
         </div>
-    </header>
-    <!--END HEADER-->
-
-    <jsp:include page="footer.jsp"/>
-</noscript>
+    </div>
+</div>
+</main>
+<script type="text/javascript" src="resources/js/redirectCallbackOnload.js"></script>
 </body>
 </html>
