@@ -13,6 +13,9 @@
  */
 package eu.eidas.node.auth.service;
 
+import static org.apache.commons.lang.StringUtils.isEmpty;
+import static org.apache.commons.lang.StringUtils.isNotEmpty;
+
 import java.util.Locale;
 
 import javax.annotation.Nonnull;
@@ -21,6 +24,7 @@ import javax.annotation.Nullable;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
 import org.springframework.context.NoSuchMessageException;
 
@@ -59,10 +63,7 @@ import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import eu.eidas.node.logging.LoggingMarkerMDC;
 import eu.eidas.node.utils.EidasNodeErrorUtil;
 import eu.eidas.node.utils.EidasNodeValidationUtil;
-
-import static org.apache.commons.lang.StringUtils.isEmpty;
-import static org.apache.commons.lang.StringUtils.isNotEmpty;
-import static org.apache.commons.lang.StringUtils.splitByCharacterType;
+import eu.eidas.util.WhitelistUtil;
 
 /**
  * This class is used by {@link AUSERVICE} to get, process and generate SAML Tokens. Also, it checks attribute values
@@ -284,6 +285,9 @@ public class AUSERVICESAML implements ISERVICESAMLService {
         }
     }
 
+    @Value("${connector.metadata.location.whitelist}")
+    String connectorMetadataWhitelist;
+    
     /**
      * {@inheritDoc}
      */
@@ -296,7 +300,8 @@ public class AUSERVICESAML implements ISERVICESAMLService {
             LOGGER.trace("Validating the SAML token");
             // validates SAML Token
             ProtocolEngineI engine = getSamlEngine();
-            IAuthenticationRequest authnRequest = engine.unmarshallRequestAndValidate(samlObj, countryCode);
+            IAuthenticationRequest authnRequest = engine.unmarshallRequestAndValidate(samlObj, countryCode, 
+            		WhitelistUtil.metadataWhitelist(connectorMetadataWhitelist));
 
             EidasAuthenticationRequest.Builder eIDASAuthnRequestBuilder = null;
             // retrieve AssertionConsumerURL from the metadata

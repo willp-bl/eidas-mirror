@@ -1,10 +1,15 @@
 package eu.eidas.node.auth.specific;
 
+import static eu.eidas.auth.engine.xml.opensaml.SAMLEngineUtils.generateNCName;
+import static org.apache.commons.lang.StringUtils.isBlank;
+import static org.apache.commons.lang.StringUtils.isNotBlank;
+
 import java.util.Properties;
 
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 
 import eu.eidas.auth.commons.EIDASValues;
 import eu.eidas.auth.commons.EidasErrorKey;
@@ -38,10 +43,7 @@ import eu.eidas.auth.engine.metadata.MetadataSignerI;
 import eu.eidas.auth.engine.metadata.MetadataUtil;
 import eu.eidas.auth.specific.IAUConnector;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
-
-import static eu.eidas.auth.engine.xml.opensaml.SAMLEngineUtils.generateNCName;
-import static org.apache.commons.lang.StringUtils.isBlank;
-import static org.apache.commons.lang.StringUtils.isNotBlank;
+import eu.eidas.util.WhitelistUtil;
 
 /**
  * This class is specific on the connector side and should be modified by each member state if they want to use any
@@ -146,6 +148,9 @@ public class SpecificEidasConnector implements IAUConnector {
         return id;
     }
 
+    @Value("${sp.metadata.location.whitelist}")
+    String spMetadataWhitelist;
+    
     /**
      * {@inheritDoc}
      */
@@ -160,7 +165,7 @@ public class SpecificEidasConnector implements IAUConnector {
             ProtocolEngineI protocolEngine = protocolEngineFactory.getProtocolEngine(getSamlEngine());
 
             IAuthenticationRequest serviceProviderRequest =
-                    protocolEngine.unmarshallRequestAndValidate(requestFromSP, citizenCountryCode);
+                    protocolEngine.unmarshallRequestAndValidate(requestFromSP, citizenCountryCode,WhitelistUtil.metadataWhitelist(spMetadataWhitelist));
 
             /* uncomment this code if specific action is required for SP type validation, otherwise it will be checked in the Connector Node */
             //validateSPType((EidasAuthenticationRequest) serviceProviderRequest);

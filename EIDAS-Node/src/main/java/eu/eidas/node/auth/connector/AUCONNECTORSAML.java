@@ -22,25 +22,30 @@
 
 package eu.eidas.node.auth.connector;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Locale;
+import java.util.Properties;
 import java.util.regex.Pattern;
 
 import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import com.google.common.collect.ImmutableSet;
-
 import org.apache.commons.lang.StringUtils;
 import org.opensaml.xml.validation.ValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.PropertiesFactoryBean;
 import org.springframework.context.MessageSource;
 import org.springframework.context.NoSuchMessageException;
 
+import com.google.common.collect.ImmutableSet;
+
 import eu.eidas.auth.commons.DateUtil;
 import eu.eidas.auth.commons.EIDASStatusCode;
-import eu.eidas.auth.commons.EIDASUtil;
 import eu.eidas.auth.commons.EIDASValues;
 import eu.eidas.auth.commons.EidasDigestUtil;
 import eu.eidas.auth.commons.EidasErrorKey;
@@ -60,13 +65,11 @@ import eu.eidas.auth.commons.light.ILightRequest;
 import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.IAuthenticationResponse;
 import eu.eidas.auth.commons.protocol.IRequestMessage;
-import eu.eidas.auth.commons.protocol.IResponseMessage;
 import eu.eidas.auth.commons.protocol.eidas.IEidasAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.eidas.LevelOfAssurance;
 import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.impl.AuthenticationResponse;
 import eu.eidas.auth.commons.protocol.impl.EidasSamlBinding;
-import eu.eidas.auth.commons.protocol.impl.SamlBindingUri;
 import eu.eidas.auth.commons.protocol.stork.IStorkAuthenticationRequest;
 import eu.eidas.auth.commons.tx.AuthenticationExchange;
 import eu.eidas.auth.commons.tx.CorrelationMap;
@@ -439,10 +442,8 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
     }
 
     public AuthenticationExchange processProxyServiceResponse(@Nonnull WebRequest webRequest,
-                                                              @Nonnull
-                                                                      CorrelationMap<StoredAuthenticationRequest> connectorRequestCorrelationMap,
-                                                              @Nonnull
-                                                                      CorrelationMap<StoredLightRequest> specificSpRequestCorrelationMap)
+                                                              @Nonnull CorrelationMap<StoredAuthenticationRequest> connectorRequestCorrelationMap,
+                                                              @Nonnull CorrelationMap<StoredLightRequest> specificSpRequestCorrelationMap)
             throws InternalErrorEIDASException {
         try {
 
@@ -452,7 +453,8 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
             // validates SAML Token
             ProtocolEngineI engine = getSamlEngine(samlServiceInstance);
 
-            Correlated proxyServiceSamlResponse = engine.unmarshallResponse(responseFromProxyService);
+            Correlated proxyServiceSamlResponse = engine.unmarshallResponse(responseFromProxyService, 
+            		SERVICE_METADATA_WHITELIST, true);
 
             String connectorRequestId = proxyServiceSamlResponse.getInResponseToId();
 
@@ -545,7 +547,25 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
 
     }
 
-    @SuppressWarnings("squid:S2583")
+	private static final String SERVICE_METADATA_WHITELIST_PATTERN = "service.+\\.metadata\\.url";
+	Collection<String> SERVICE_METADATA_WHITELIST;
+	
+	@Autowired
+	private void setup(PropertiesFactoryBean propertiesFactoryBean)throws EIDASSAMLEngineException{
+        try {
+        	SERVICE_METADATA_WHITELIST=new ArrayList<>();
+        	Properties properties = propertiesFactoryBean.getObject();
+        	for (String propName : properties.stringPropertyNames()){
+        		if (propName.matches(SERVICE_METADATA_WHITELIST_PATTERN)){
+        			SERVICE_METADATA_WHITELIST.add(properties.getProperty(propName).toLowerCase());
+        		}
+        	}
+        }catch(IOException e){
+			throw new EIDASSAMLEngineException(e);
+        }
+    }
+
+	@SuppressWarnings("squid:S2583")
     private void checkIdentifierFormat(IAuthenticationResponse authnResponse) throws InternalErrorEIDASException {
         String patterEidentifier = "^[A-Z]{2}/[A-Z]{2}/.+$";
         if (authnResponse.getAttributes() != null){

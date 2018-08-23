@@ -174,8 +174,9 @@ public class ProcessLogin {
         IAuthenticationRequest authnRequest;
         try {
             ProtocolEngineI engine = getSamlEngineInstance();
-            authnRequest =
-                    engine.unmarshallRequestAndValidate(EidasStringUtil.decodeBytesFromBase64(samlToken), getCountry());
+            byte[] decodedToken = EidasStringUtil.decodeBytesFromBase64(samlToken);
+			authnRequest =
+                    engine.unmarshallRequestAndValidate(decodedToken, getCountry(),null,false);
         } catch (Exception e) {
             logger.error(e);
             throw new InvalidParameterEIDASException(

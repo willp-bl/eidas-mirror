@@ -25,6 +25,7 @@ package eu.eidas.auth.engine;
 
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import javax.annotation.Nonnull;
@@ -36,6 +37,7 @@ import org.opensaml.Configuration;
 import org.opensaml.common.SignableSAMLObject;
 import org.opensaml.saml2.core.Assertion;
 import org.opensaml.saml2.core.AuthnRequest;
+import org.opensaml.saml2.core.Issuer;
 import org.opensaml.saml2.core.Response;
 import org.opensaml.xml.validation.ValidationException;
 import org.opensaml.xml.validation.ValidatorSuite;
@@ -276,7 +278,8 @@ public class ProtocolEngine extends AbstractProtocolEngine implements ProtocolEn
      * @return the SAML request instance
      * @throws EIDASSAMLEngineException the EIDASSAML engine exception
      */
-    public AuthnRequest unmarshallRequest(@Nonnull byte[] requestBytes) throws EIDASSAMLEngineException {
+    public AuthnRequest unmarshallRequest(@Nonnull byte[] requestBytes,
+    		Collection<String> whitelistMetadata, boolean checkWhitelist) throws EIDASSAMLEngineException {
         LOG.trace("Validate request bytes.");
 
         if (null == requestBytes) {
@@ -288,7 +291,7 @@ public class ProtocolEngine extends AbstractProtocolEngine implements ProtocolEn
 
         Document document = XmlSchemaUtil.validateSamlSchema(requestBytes);
         AuthnRequest request = (AuthnRequest) unmarshall(document);
-        request = validateSignature(request);
+        request = validateSignature(request,whitelistMetadata, checkWhitelist);
 
         validateSaml2CoreSchema(request);
 
@@ -307,8 +310,20 @@ public class ProtocolEngine extends AbstractProtocolEngine implements ProtocolEn
     @Override
     @Nonnull
     public IAuthenticationRequest unmarshallRequestAndValidate(@Nonnull byte[] requestBytes,
-                                                               @Nonnull String citizenCountryCode)
-            throws EIDASSAMLEngineException {
+                                                                   @Nonnull String citizenCountryCode,
+                                                                   Collection<String> whitelistMetadata)
+                throws EIDASSAMLEngineException {
+    	return unmarshallRequestAndValidate(requestBytes,
+                citizenCountryCode,
+                whitelistMetadata, true);
+    }
+    	
+	@Override
+    @Nonnull
+    public IAuthenticationRequest unmarshallRequestAndValidate(@Nonnull byte[] requestBytes,
+                                                                   @Nonnull String citizenCountryCode,
+                                                                   Collection<String> whitelistMetadata, boolean checkWhitelist)
+                throws EIDASSAMLEngineException {
         LOG.trace("processValidateRequestToken");
 
         if (null == requestBytes) {
@@ -317,7 +332,7 @@ public class ProtocolEngine extends AbstractProtocolEngine implements ProtocolEn
                                                EidasErrorKey.MESSAGE_VALIDATION_ERROR.errorCode(),
                                                "Saml authentication request is null.");
         }
-        AuthnRequest originalSamlRequest = unmarshallRequest(requestBytes);
+        AuthnRequest originalSamlRequest = unmarshallRequest(requestBytes,whitelistMetadata,checkWhitelist);
         LOG.trace("Generate EIDASAuthnSamlRequest.");
 
         String originCountryCode = (originalSamlRequest.getSignature() != null) ? CertificateUtil.getCountry(
@@ -333,14 +348,14 @@ public class ProtocolEngine extends AbstractProtocolEngine implements ProtocolEn
 
     /**
      * Unmarshalls the given bytes into a SAML Response.
-     *
      * @param tokenSaml the SAML response bytes
+     *
      * @return the SAML response instance
      * @throws EIDASSAMLEngineException the EIDASSAML engine exception
      */
     @Override
     @Nonnull
-    public Correlated unmarshallResponse(@Nonnull byte[] responseBytes) throws EIDASSAMLEngineException {
+    public Correlated unmarshallResponse(@Nonnull byte[] responseBytes,Collection<String> metadataWhitelist, boolean checkWhitelist) throws EIDASSAMLEngineException {
         LOG.trace("Validate response bytes.");
 
         if (null == responseBytes) {
@@ -354,7 +369,7 @@ public class ProtocolEngine extends AbstractProtocolEngine implements ProtocolEn
 
         Document document = XmlSchemaUtil.validateSamlSchema(responseBytes);
         Response response = (Response) unmarshall(document);
-        response = validateSignatureAndDecryptAndValidateAssertionSignatures(response);
+        response = validateSignatureAndDecryptAndValidateAssertionSignatures(response,metadataWhitelist, checkWhitelist);
 
         validateSaml2CoreSchema(response);
 
@@ -377,9 +392,10 @@ public class ProtocolEngine extends AbstractProtocolEngine implements ProtocolEn
                                                                  @Nonnull String userIpAddress,
                                                                  long beforeSkewTimeInMillis,
                                                                  long afterSkewTimeInMillis,
-                                                                 @Nullable String audienceRestriction)
+                                                                 @Nullable String audienceRestriction
+                                                                 ,Collection<String> metadataWhitelist, boolean checkWhitelist)
             throws EIDASSAMLEngineException {
-        Correlated samlResponse = unmarshallResponse(responseBytes);
+        Correlated samlResponse = unmarshallResponse(responseBytes,metadataWhitelist, checkWhitelist);
 
         return validateUnmarshalledResponse(samlResponse, userIpAddress, beforeSkewTimeInMillis, afterSkewTimeInMillis, audienceRestriction);
     }
@@ -449,17 +465,24 @@ public class ProtocolEngine extends AbstractProtocolEngine implements ProtocolEn
         }
     }
 
-    private AuthnRequest validateSignature(AuthnRequest request) throws EIDASSAMLEngineException {
+    private AuthnRequest validateSignature(AuthnRequest request,Collection<String> whitelistMetadata
+    		, boolean checkWhitelist) throws EIDASSAMLEngineException {
         boolean validateSign = getCoreProperties().isValidateSignature();
         if (validateSign) {
             LOG.trace("Validate request Signature.");
             if (!request.isSigned() || null == request.getSignature()) {
                 throw new EIDASSAMLEngineException(EidasErrorKey.MESSAGE_VALIDATION_ERROR.errorCode(), "No signature");
             }
-            if (null == request.getIssuer()) {
-                throw new EIDASSAMLEngineException(EidasErrorKey.MESSAGE_VALIDATION_ERROR.errorCode(),
-                                                   "The issuer cannot be null");
+            
+            Issuer issuer=request.getIssuer();
+            if (null ==  issuer) {
+                throw new EIDASSAMLEngineException(EidasErrorKey.MESSAGE_VALIDATION_ERROR.errorCode(),"Null Issuer.");
             }
+            if (checkWhitelist && !isWhitelisted(issuer.getValue(),whitelistMetadata)) {
+                throw new EIDASSAMLEngineException(EidasErrorKey.MESSAGE_VALIDATION_ERROR.errorCode(),
+                        "Issuer: "+issuer.getValue()+" , not in whitelist: ");
+            }
+            
             try {
                 X509Certificate signatureCertificate =
                         getProtocolProcessor().getRequestSignatureCertificate(request.getIssuer().getValue());
@@ -474,7 +497,7 @@ public class ProtocolEngine extends AbstractProtocolEngine implements ProtocolEn
         return request;
     }
 
-    private Response validateSignatureAndDecryptAndValidateAssertionSignatures(Response response)
+    private Response validateSignatureAndDecryptAndValidateAssertionSignatures(Response response, Collection<String> metadataWhitelist, boolean checkWhitelist)
             throws EIDASSAMLEngineException {
         Response validResponse = response;
         boolean validateSign = getCoreProperties().isValidateSignature();
@@ -484,6 +507,16 @@ public class ProtocolEngine extends AbstractProtocolEngine implements ProtocolEn
                 throw new EIDASSAMLEngineException(EidasErrorKey.MESSAGE_VALIDATION_ERROR.errorCode(), "No signature");
             }
 
+    		Issuer issuer = validResponse.getIssuer();
+            if (null == issuer ) {
+                throw new EIDASSAMLEngineException(EidasErrorKey.MESSAGE_VALIDATION_ERROR.errorCode(),
+                        "Invalid issuer.");
+            }
+            if (checkWhitelist && !isWhitelisted(issuer.getValue(),metadataWhitelist)) {
+                throw new EIDASSAMLEngineException(EidasErrorKey.MESSAGE_VALIDATION_ERROR.errorCode(),
+                        "Issuer not whitelisted.");
+            }
+            
             String country = CertificateUtil.getCountry(validResponse.getSignature().getKeyInfo());
             LOG.debug(SAML_EXCHANGE, "Response received from country: " + country);
             try {
@@ -524,4 +557,11 @@ public class ProtocolEngine extends AbstractProtocolEngine implements ProtocolEn
                 beforeSkewTimeInMillis, afterSkewTimeInMillis, getClock().getCurrentTime(),
                                                          audienceRestriction);
     }
+
+	private boolean isWhitelisted(String issuer,Collection<String> whitelistMetadata) {
+		return whitelistMetadata !=null && 
+				! whitelistMetadata.isEmpty() &&  
+				whitelistMetadata.contains(issuer.toLowerCase());
+	}
+
 }

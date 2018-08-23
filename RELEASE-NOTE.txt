@@ -1,3 +1,40 @@
+eIDAS-Node Build 1.4.2 Content
+
+This release is based on version 1.1 of the eIDAS Technical Specifications.
+This release includes vulnerability improvement.
+
+** Documentation **
+
+CEF eID technical documentation pertaining to this release can be found on:
+CEF Digital Home > eID > All eID services > eIDAS Node integration package > View latest version > View 1.4.2 version.
+
+
++ EIDAS-1.4.2.zip : Distribution version 1.4.2 of the sample eIDAS-Node
+++  EIDAS-Sources-1.4.2.zip :  Source files (Maven project) of the sample eIDAS-Node including an example of implementation of a SP (Service Provider) and IdP (Identity Provider).
+++  EIDAS-Binaries-Glassfish-1.4.2.zip : Deployable war files of a preconfigured eIDAS-Node for a Glassfish server (including IdP.war, EidasNode.war, SP.war)
+++  EIDAS-Binaries-Jboss-1.4.2.zip: Deployable war files of a preconfigured eIDAS-Node for a JBoss server (including IdP.war, EidasNode.war, SP.war)
+++  EIDAS-Binaries-Tomcat-1.4.2.zip: Deployable war files of a preconfigured eIDAS-Node for a Tomcat server (including IdP.war, EidasNode.war, SP.war)
+++  EIDAS-Binaries-Was-1.4.2.zip : Deployable war files of a preconfigured eIDAS-Node for a WebSphere server (including IdP.war, EidasNode.war, SP.war) 
+++  EIDAS-Binaries-Wls-1.4.2.zip : Deployable war files of a preconfigured eIDAS-Node for a WebLogic server (including IdP.war, EidasNode.war, SP.war)
+
+**This release contains the following security fixes: (Please note that EIDINT-nnnn references are for internal use only)
+
++ Issuer URL in SAML AuthnRequest can be manipulated (EID-631, EIDINT-2369)
+
+####### IMPORTANT NOTICE #################################################################################################################################################################################
+
+The eIDAS-Node logs may contain person identification data. Hence, these logs should be handled and protected appropriately, following the European privacy regulations [Dir95/46/EC] and [Reg2016/679].
+
+[Reg2016/679] REGULATION (EU) 2016/679 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 27 April 2016 on the protection of natural persons with regard to the processing of personal data and on the free 
+movement of such data, and repealing Directive 95/46/EC.
+
+[Dir95/46/EC] Directive 95/46/EC of the European Parliament and of the Council of 24 October 1995 on the protection of individuals with regard to the processing of personal data and on the free movement
+of such data.
+
+#########################################################################################################################################################################################################
+
+
+####################### previous releases #######################
 eIDAS-Node Build 1.4.1 Content
 
 This release is based on version 1.1 of the eIDAS Technical Specifications.
@@ -24,22 +61,6 @@ CEF Digital Home > eID > All eID services > eIDAS Node integration package > Vie
 + Correction of Junit test for which metadata were expired (EIDINT-2183)
 + Correction of Gender allowed values : Add temporarily "Not Specified" in Gender values validation (EIDINT-2214)
 
-
-
-####### IMPORTANT NOTICE #################################################################################################################################################################################
-
-The eIDAS-Node logs may contain person identification data. Hence, these logs should be handled and protected appropriately, following the European privacy regulations [Dir95/46/EC] and [Reg2016/679].
-
-[Reg2016/679] REGULATION (EU) 2016/679 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 27 April 2016 on the protection of natural persons with regard to the processing of personal data and on the free 
-movement of such data, and repealing Directive 95/46/EC.
-
-[Dir95/46/EC] Directive 95/46/EC of the European Parliament and of the Council of 24 October 1995 on the protection of individuals with regard to the processing of personal data and on the free movement
-of such data.
-
-#########################################################################################################################################################################################################
-
-
-####################### previous releases #######################
 
 eIDAS-Node Build 1.4.0 Content
 

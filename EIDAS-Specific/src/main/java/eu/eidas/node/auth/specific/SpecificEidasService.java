@@ -20,6 +20,7 @@ import eu.eidas.auth.commons.attribute.PersonType;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 
 import eu.eidas.auth.commons.EIDASValues;
 import eu.eidas.auth.commons.EidasErrorKey;
@@ -50,6 +51,7 @@ import eu.eidas.auth.engine.ProtocolEngineI;
 import eu.eidas.auth.engine.xml.opensaml.SAMLEngineUtils;
 import eu.eidas.auth.specific.IAUService;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
+import eu.eidas.util.WhitelistUtil;
 
 /**
  * This class is specific and should be modified by each member state if they want to use any different settings.
@@ -206,6 +208,9 @@ public final class SpecificEidasService implements IAUService {
                 serviceProviderName, serviceProviderType);
     }
 
+    @Value("${idp.metadata.location.whitelist}")
+    String idpMetadataWhitelist;
+
     /**
      * {@inheritDoc}
      */
@@ -215,7 +220,7 @@ public final class SpecificEidasService implements IAUService {
         try {
 
             ProtocolEngineI protocolEngine = getProtocolEngine();
-            Correlated idpSamlResponse = protocolEngine.unmarshallResponse(responseFromIdp);
+            Correlated idpSamlResponse = protocolEngine.unmarshallResponse(responseFromIdp,WhitelistUtil.metadataWhitelist(idpMetadataWhitelist), true);
 
             String specificRequestId = idpSamlResponse.getInResponseToId();
 
