@@ -13,14 +13,14 @@ import org.slf4j.LoggerFactory;
   * Node Metadata whitelist related utilities.
   */
 public final class WhitelistUtil    {
-    protected static final Logger LOGGER = LoggerFactory.getLogger(WhitelistUtil.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(WhitelistUtil.class);
 
     public static Collection<String> metadataWhitelist(String in){
     	List<String> result = new ArrayList<>();
-    	if (in==null){
+    	if (in == null){
     		return result;
     	}
-    	for(String urlString:in.trim().replaceAll("\t", "").replaceAll("\n", "").toLowerCase().split(";")){
+    	for(String urlString : in.replaceAll("\t", "").replaceAll("\n", "").split(";")){
 			try {
 				URL url = new URL(urlString);
 				result.add(urlString.trim());
@@ -30,4 +30,11 @@ public final class WhitelistUtil    {
     	}
     	return result;
     }
+    
+    public static boolean isWhitelisted(String issuer, Collection<String> whitelistMetadata) {
+		return whitelistMetadata != null && 
+				!whitelistMetadata.isEmpty() &&  
+				whitelistMetadata.contains(issuer);
+	}
+
  }

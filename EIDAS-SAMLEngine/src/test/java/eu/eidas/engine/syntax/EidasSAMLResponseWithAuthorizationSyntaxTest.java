@@ -97,7 +97,7 @@ public class EidasSAMLResponseWithAuthorizationSyntaxTest {
     @Test
     public void testNormalValidationOnSAMLrequest() throws Exception {
         assertNotNull(samlResponseToken);
-        IAuthenticationResponse response = SyntaxTestUtil.getEngine(SyntaxTestUtil.SAMLENGINE_CONF).unmarshallResponseAndValidate(samlResponseToken, null, 0, 0, null,Arrays.asList(SyntaxTestUtil.ISSUER_RESPONSE),true);
+        IAuthenticationResponse response = SyntaxTestUtil.getEngine(SyntaxTestUtil.SAMLENGINE_CONF).unmarshallResponseAndValidate(samlResponseToken, null, 0, 0, null,Arrays.asList(SyntaxTestUtil.ISSUER_RESPONSE),false);
         assertNotNull(response);
     }
 

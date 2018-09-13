@@ -4,8 +4,10 @@ import static eu.eidas.auth.engine.xml.opensaml.SAMLEngineUtils.generateNCName;
 import static org.apache.commons.lang.StringUtils.isBlank;
 import static org.apache.commons.lang.StringUtils.isNotBlank;
 
+import java.util.List;
 import java.util.Properties;
 
+import eu.eidas.auth.commons.EidasStringUtil;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,7 +79,17 @@ public class SpecificEidasConnector implements IAUConnector {
 
     private MetadataFetcherI metadataFetcher;
 
-    public ProtocolEngineFactory getProtocolEngineFactory() {
+    private String spMetadataWhitelist;
+    
+    public String getSpMetadataWhitelist() {
+		return spMetadataWhitelist;
+	}
+
+	public void setSpMetadataWhitelist(String spMetadataWhitelist) {
+		this.spMetadataWhitelist = spMetadataWhitelist;
+	}
+
+	public ProtocolEngineFactory getProtocolEngineFactory() {
         return protocolEngineFactory;
     }
 
@@ -148,9 +160,6 @@ public class SpecificEidasConnector implements IAUConnector {
         return id;
     }
 
-    @Value("${sp.metadata.location.whitelist}")
-    String spMetadataWhitelist;
-    
     /**
      * {@inheritDoc}
      */
@@ -279,8 +288,7 @@ public class SpecificEidasConnector implements IAUConnector {
 
             ProtocolEngineI protocolEngine = protocolEngineFactory.getProtocolEngine(getSamlEngine());
 
-            IResponseMessage responseMessage =
-                    protocolEngine.generateResponseErrorMessage(request, samlResponseFail.build(), ipUserAddress);
+            IResponseMessage responseMessage = generateResponseErrorMessage(request, ipUserAddress, protocolEngine, samlResponseFail);
 
             LOG.info("Generating ERROR SAML Response to request with ID {}, error is {} {}", inResponseTo,
                      response.getSubStatusCode(), message);
@@ -293,6 +301,16 @@ public class SpecificEidasConnector implements IAUConnector {
                     EidasErrors.get(EidasErrorKey.SPROVIDER_SELECTOR_ERROR_CREATE_SAML.errorCode()),
                     EidasErrors.get(EidasErrorKey.SPROVIDER_SELECTOR_ERROR_CREATE_SAML.errorMessage()), e);
         }
+    }
+
+    private IResponseMessage generateResponseErrorMessage(IAuthenticationRequest authData, String ipUserAddress, ProtocolEngineI engine, AuthenticationResponse.Builder eidasAuthnResponseError) throws EIDASSAMLEngineException {
+        final List<String> includeAssertionApplicationIdentifiers = getIncludeAssertionApplicationIdentifiers();
+        return  engine.generateResponseErrorMessage(authData, eidasAuthnResponseError.build(), ipUserAddress, includeAssertionApplicationIdentifiers);
+    }
+
+    private List<String> getIncludeAssertionApplicationIdentifiers() {
+        String property = configs.getProperty(EidasParameterKeys.INCLUDE_ASSERTION_FAIL_RESPONSE_APPLICATION_IDENTIFIERS.toString());
+        return EidasStringUtil.getTokens(property);
     }
 
     private StoredAuthenticationRequest getStoredAuthenticationRequest(ILightResponse lightResponse) {

@@ -16,11 +16,14 @@ package eu.eidas.node.auth.service;
 import static org.apache.commons.lang.StringUtils.isEmpty;
 import static org.apache.commons.lang.StringUtils.isNotEmpty;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import eu.eidas.node.utils.PropertiesUtil;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -138,7 +141,17 @@ public class AUSERVICESAML implements ISERVICESAMLService {
 
     private MetadataFetcherI metadataFetcher;
 
-    @Override
+    private String connectorMetadataWhitelist;
+    
+    public String getConnectorMetadataWhitelist() {
+		return connectorMetadataWhitelist;
+	}
+
+	public void setConnectorMetadataWhitelist(String connectorMetadataWhitelist) {
+		this.connectorMetadataWhitelist = connectorMetadataWhitelist;
+	}
+
+	@Override
     public String getSamlEngineInstanceName() {
         return samlInstance;
     }
@@ -266,8 +279,7 @@ public class AUSERVICESAML implements ISERVICESAMLService {
             eidasAuthnResponseError.id(SAMLEngineUtils.generateNCName());
             eidasAuthnResponseError.inResponseTo(authData.getId());
 
-            IResponseMessage responseMessage =
-                    engine.generateResponseErrorMessage(authData, eidasAuthnResponseError.build(), ipUserAddress);
+            final IResponseMessage responseMessage = generateResponseErrorMessage(authData, ipUserAddress, engine, eidasAuthnResponseError);
 
             if (isAuditable) {
                 prepareRespLoggerBean(responseMessage, errorMessage);
@@ -285,9 +297,16 @@ public class AUSERVICESAML implements ISERVICESAMLService {
         }
     }
 
-    @Value("${connector.metadata.location.whitelist}")
-    String connectorMetadataWhitelist;
-    
+    private IResponseMessage generateResponseErrorMessage(IAuthenticationRequest authData, String ipUserAddress, ProtocolEngineI engine, AuthenticationResponse.Builder eidasAuthnResponseError) throws EIDASSAMLEngineException {
+        final List<String> includeAssertionApplicationIdentifiers = getIncludeAssertionApplicationIdentifiers();
+        return  engine.generateResponseErrorMessage(authData, eidasAuthnResponseError.build(), ipUserAddress, includeAssertionApplicationIdentifiers);
+    }
+
+    private List<String> getIncludeAssertionApplicationIdentifiers() {
+        String property = PropertiesUtil.getProperty(EidasParameterKeys.INCLUDE_ASSERTION_FAIL_RESPONSE_APPLICATION_IDENTIFIERS.toString());
+        return EidasStringUtil.getTokens(property);
+    }
+
     /**
      * {@inheritDoc}
      */

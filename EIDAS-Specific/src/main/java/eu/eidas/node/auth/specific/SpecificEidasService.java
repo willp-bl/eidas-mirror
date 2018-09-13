@@ -13,9 +13,11 @@
 package eu.eidas.node.auth.specific;
 
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import eu.eidas.auth.commons.EidasStringUtil;
 import eu.eidas.auth.commons.attribute.PersonType;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -89,7 +91,17 @@ public final class SpecificEidasService implements IAUService {
 
     private String idpMetadataUrl;
 
-    public ProtocolEngineFactory getProtocolEngineFactory() {
+    private String idpMetadataWhitelist;
+
+    public String getIdpMetadataWhitelist() {
+		return idpMetadataWhitelist;
+	}
+
+	public void setIdpMetadataWhitelist(String idpMetadataWhitelist) {
+		this.idpMetadataWhitelist = idpMetadataWhitelist;
+	}
+
+	public ProtocolEngineFactory getProtocolEngineFactory() {
         return protocolEngineFactory;
     }
 
@@ -208,9 +220,6 @@ public final class SpecificEidasService implements IAUService {
                 serviceProviderName, serviceProviderType);
     }
 
-    @Value("${idp.metadata.location.whitelist}")
-    String idpMetadataWhitelist;
-
     /**
      * {@inheritDoc}
      */
@@ -291,8 +300,9 @@ public final class SpecificEidasService implements IAUService {
             error.statusCode(code);
             error.subStatusCode(subcode);
             error.statusMessage(message);
-            IResponseMessage responseMessage =
-                    getProtocolEngine().generateResponseErrorMessage(request.build(), error.build(), ipUserAddress);
+
+            IResponseMessage responseMessage = generateResponseErrorMessage(request.build(), ipUserAddress, getProtocolEngine(), error);
+
             responseBytes = responseMessage.getMessageBytes();
         } catch (EIDASSAMLEngineException e) {
             LOG.info("ERROR : Error generating SAMLToken", e.getMessage());
@@ -300,6 +310,16 @@ public final class SpecificEidasService implements IAUService {
             throw new InternalErrorEIDASException("0", "Error generating SAMLToken", e);
         }
         return responseBytes;
+    }
+
+    private IResponseMessage generateResponseErrorMessage(IAuthenticationRequest authData, String ipUserAddress, ProtocolEngineI engine, AuthenticationResponse.Builder eidasAuthnResponseError) throws EIDASSAMLEngineException {
+        final List<String> includeAssertionApplicationIdentifiers = getIncludeAssertionApplicationIdentifiers();
+        return  engine.generateResponseErrorMessage(authData, eidasAuthnResponseError.build(), ipUserAddress, includeAssertionApplicationIdentifiers);
+    }
+
+    private List<String> getIncludeAssertionApplicationIdentifiers() {
+        String property = serviceProperties.getProperty(EidasParameterKeys.INCLUDE_ASSERTION_FAIL_RESPONSE_APPLICATION_IDENTIFIERS.toString());
+        return EidasStringUtil.getTokens(property);
     }
 
     private boolean haveExpectedName(ImmutableAttributeMap original, URI nameUri, int arraySize) {
@@ -417,7 +437,7 @@ public final class SpecificEidasService implements IAUService {
         String issuer = specificRequest.getRequest().getIssuer();
         String audienceRestriction = specificResponse.getAudienceRestriction();
 
-        if (!audienceRestriction.equals(issuer)) {
+        if (audienceRestriction != null && !audienceRestriction.equals(issuer)) {
             LOG.error("Mismatch in response AudienceRestriction=\"" + audienceRestriction + "\" vs request issuer=\""
                     + issuer + "\"");
             throw new InvalidSessionEIDASException(EidasErrors.get(EidasErrorKey.SESSION.errorCode()),

@@ -22,28 +22,7 @@
 
 package eu.eidas.node.auth.connector;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Locale;
-import java.util.Properties;
-import java.util.regex.Pattern;
-
-import javax.annotation.Nonnull;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
-import org.apache.commons.lang.StringUtils;
-import org.opensaml.xml.validation.ValidationException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.config.PropertiesFactoryBean;
-import org.springframework.context.MessageSource;
-import org.springframework.context.NoSuchMessageException;
-
 import com.google.common.collect.ImmutableSet;
-
 import eu.eidas.auth.commons.DateUtil;
 import eu.eidas.auth.commons.EIDASStatusCode;
 import eu.eidas.auth.commons.EIDASValues;
@@ -90,6 +69,24 @@ import eu.eidas.node.utils.EidasNodeErrorUtil;
 import eu.eidas.node.utils.EidasNodeValidationUtil;
 import eu.eidas.node.utils.PropertiesUtil;
 import eu.eidas.node.utils.SessionHolder;
+import org.apache.commons.lang.StringUtils;
+import org.opensaml.xml.validation.ValidationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.PropertiesFactoryBean;
+import org.springframework.context.MessageSource;
+import org.springframework.context.NoSuchMessageException;
+
+import javax.annotation.Nonnull;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Locale;
+import java.util.Properties;
+import java.util.regex.Pattern;
 
 /**
  * This class is used by {@link AUCONNECTOR} to get, process and generate SAML Tokens.
@@ -151,7 +148,10 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
 
     private ProtocolEngineFactory nodeProtocolEngineFactory;
 
-    public void setCheckCitizenCertificateServiceCertificate(boolean checkCitizenCertificateServiceCertificate) {
+	private static final Pattern SERVICE_METADATA_WHITELIST_PATTERN = Pattern.compile("service.+\\.metadata\\.url");
+	private Collection<String> serviceMetadataWhitelist;
+
+	public void setCheckCitizenCertificateServiceCertificate(boolean checkCitizenCertificateServiceCertificate) {
         this.checkCitizenCertificateServiceCertificate = checkCitizenCertificateServiceCertificate;
     }
 
@@ -454,7 +454,7 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
             ProtocolEngineI engine = getSamlEngine(samlServiceInstance);
 
             Correlated proxyServiceSamlResponse = engine.unmarshallResponse(responseFromProxyService, 
-            		SERVICE_METADATA_WHITELIST, true);
+            		serviceMetadataWhitelist, true);
 
             String connectorRequestId = proxyServiceSamlResponse.getInResponseToId();
 
@@ -515,8 +515,10 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
                 authnResponse = AuthenticationResponse.builder(authnResponse).statusMessage(errorMessage).build();
             }
 
-            LOG.trace("Checking audience...");
-            checkAudienceRestriction(connectorAuthnRequest.getIssuer(), authnResponse.getAudienceRestriction());
+            if (authnResponse.getAudienceRestriction() != null) {
+                LOG.trace("Checking audience...");
+                checkAudienceRestriction(connectorAuthnRequest.getIssuer(), authnResponse.getAudienceRestriction());
+            }
 
             AuthenticationResponse connectorResponse =
                     new AuthenticationResponse.Builder(authnResponse).inResponseTo(serviceProviderRequestSamlId)
@@ -547,17 +549,14 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
 
     }
 
-	private static final String SERVICE_METADATA_WHITELIST_PATTERN = "service.+\\.metadata\\.url";
-	Collection<String> SERVICE_METADATA_WHITELIST;
-	
 	@Autowired
 	private void setup(PropertiesFactoryBean propertiesFactoryBean)throws EIDASSAMLEngineException{
         try {
-        	SERVICE_METADATA_WHITELIST=new ArrayList<>();
+        	serviceMetadataWhitelist=new ArrayList<>();
         	Properties properties = propertiesFactoryBean.getObject();
         	for (String propName : properties.stringPropertyNames()){
-        		if (propName.matches(SERVICE_METADATA_WHITELIST_PATTERN)){
-        			SERVICE_METADATA_WHITELIST.add(properties.getProperty(propName).toLowerCase());
+        		if (SERVICE_METADATA_WHITELIST_PATTERN.matcher(propName).find()){
+        			serviceMetadataWhitelist.add(properties.getProperty(propName));
         		}
         	}
         }catch(IOException e){

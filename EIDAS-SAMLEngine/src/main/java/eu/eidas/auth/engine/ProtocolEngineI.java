@@ -2,6 +2,7 @@ package eu.eidas.auth.engine;
 
 import java.security.cert.X509Certificate;
 import java.util.Collection;
+import java.util.List;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -42,10 +43,38 @@ public interface ProtocolEngineI {
                                              boolean signAssertion,
                                              @Nonnull String ipAddress) throws EIDASSAMLEngineException;
 
+    /**
+     * Generates the Response error message.
+     *
+     * @param request the IAuthenticationRequest
+     * @param response the IAuthenticationResponse
+     * @param ipAddress the ipAddress
+     * @return the response error message
+     *
+     *
+     * @throws EIDASSAMLEngineException
+     */
     @Nonnull
     IResponseMessage generateResponseErrorMessage(@Nonnull IAuthenticationRequest request,
                                                   @Nonnull IAuthenticationResponse response,
                                                   @Nonnull String ipAddress) throws EIDASSAMLEngineException;
+
+    /**
+     * Generates the Response error message.
+     *
+     * @param request the IAuthenticationRequest
+     * @param response the IAuthenticationResponse
+     * @param ipAddress the ipAddress
+     * @param applicationIdentifiers the list of protocol versioning's application identifiers
+     * @since 1.4.3
+     * @return the response error message
+     * @throws EIDASSAMLEngineException
+     */
+    @Nonnull
+    IResponseMessage generateResponseErrorMessage(@Nonnull IAuthenticationRequest request,
+                                                  @Nonnull IAuthenticationResponse response,
+                                                  @Nonnull String ipAddress,
+                                                  List<String> applicationIdentifiers) throws EIDASSAMLEngineException;
 
     @Nullable
     ProtocolCipherI getCipher();

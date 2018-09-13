@@ -59,6 +59,7 @@ import eu.eidas.auth.engine.xml.opensaml.CertificateUtil;
 import eu.eidas.auth.engine.xml.opensaml.CorrelatedResponse;
 import eu.eidas.auth.engine.xml.opensaml.XmlSchemaUtil;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
+import eu.eidas.util.WhitelistUtil;
 
 /**
  * The ProtocolEngine is responsible for creating Saml Request and Response from their binary representations and for
@@ -263,6 +264,30 @@ public class ProtocolEngine extends AbstractProtocolEngine implements ProtocolEn
 
         Response responseFail =
                 getProtocolProcessor().marshallErrorResponse(request, response, ipAddress, getCoreProperties(), getClock().getCurrentTime());
+
+        IAuthenticationResponse authenticationResponse =
+                getProtocolProcessor().unmarshallErrorResponse(response, responseFail, ipAddress, getCoreProperties());
+
+        LOG.trace("Sign and Marshall ResponseFail.");
+        return encryptAndSignAndMarshallResponse(request, authenticationResponse, responseFail);
+    }
+
+    /**
+     * Generates an authentication response error message.
+     *
+     * @return {@link IResponseMessage} that contains or not one assertion if the application identifier of the {@param request} matches or not one of {@param applicationIdentifiers}.
+     *
+     * @throws EIDASSAMLEngineException the EIDASSAML engine exception
+     */
+    @Override
+    @Nonnull
+    public IResponseMessage generateResponseErrorMessage(@Nonnull IAuthenticationRequest request,
+                                                         @Nonnull IAuthenticationResponse response,
+                                                         @Nonnull String ipAddress,
+                                                         List<String> applicationIdentifiers) throws EIDASSAMLEngineException {
+
+        Response responseFail =
+                getProtocolProcessor().marshallErrorResponse(request, response, ipAddress, getCoreProperties(), getClock().getCurrentTime(), applicationIdentifiers);
 
         IAuthenticationResponse authenticationResponse =
                 getProtocolProcessor().unmarshallErrorResponse(response, responseFail, ipAddress, getCoreProperties());
@@ -559,9 +584,6 @@ public class ProtocolEngine extends AbstractProtocolEngine implements ProtocolEn
     }
 
 	private boolean isWhitelisted(String issuer,Collection<String> whitelistMetadata) {
-		return whitelistMetadata !=null && 
-				! whitelistMetadata.isEmpty() &&  
-				whitelistMetadata.contains(issuer.toLowerCase());
+		return WhitelistUtil.isWhitelisted(issuer, whitelistMetadata);
 	}
-
 }

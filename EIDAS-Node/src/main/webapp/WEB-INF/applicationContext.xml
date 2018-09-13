@@ -275,6 +275,7 @@
 		<property name="serviceRequesterMetadataUrl" value="${service.requester.metadata.url}"/>
 		<property name="metadataFetcher" ref="nodeMetadataFetcher"/>
 		<property name="nodeProtocolEngineFactory" ref="NodeProtocolEngineFactory"/>
+		<property name="connectorMetadataWhitelist" value="${connector.metadata.location.whitelist}"/>
 	</bean>
 	<!-- Connector Classes -->
 	<bean id="springManagedAUCONNECTOR" class="eu.eidas.node.auth.connector.AUCONNECTOR"
