@@ -8,8 +8,6 @@
             <package-name>org.apache.commons.*</package-name>
             <package-name>org.apache.log4j.*</package-name>
             <package-name>org.joda.time.*</package-name>
-            <package-name>org.apache.xalan.*</package-name>
-            <package-name>org.apache.xerces.*</package-name>
             <package-name>org.apache.xml.*</package-name>
             <package-name>org.apache.xmlcommons.*</package-name>
             <!-- guava -->

@@ -14,7 +14,6 @@
  */
 package eu.eidas.node.security;
 
-import eu.eidas.node.ApplicationContextProvider;
 import eu.eidas.node.NodeBeanNames;
 import eu.eidas.node.logging.LoggingMarkerMDC;
 
@@ -22,7 +21,6 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
-import org.springframework.context.ApplicationContext;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
@@ -35,6 +33,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
+
+import static eu.eidas.node.BeanProvider.getBean;
 
 /**
  * This filter set CSP policies using all HTTP headers defined into W3C specification.<br/>
@@ -140,8 +140,8 @@ public class SecurityResponseHeaderHelper {
             LOGGER.error("Error in filter helper init {}", e);
         }
 
-        ApplicationContext context = ApplicationContextProvider.getApplicationContext();
-        configurationSecurityBean = (ConfigurationSecurityBean) context.getBean(NodeBeanNames.SECURITY_CONFIG.toString());
+        String beanName = NodeBeanNames.SECURITY_CONFIG.toString();
+        configurationSecurityBean = getBean(ConfigurationSecurityBean.class, beanName);
 
       // Define list of CSP HTTP Headers : used for reverse compatibility
         this.cspHeaders.add(CONTENT_SECURITY_POLICY_HEADER);
@@ -210,7 +210,7 @@ public class SecurityResponseHeaderHelper {
         // --Get its digest
         MessageDigest sha;
         try {
-            sha = MessageDigest.getInstance("SHA-1");
+            sha = MessageDigest.getInstance("SHA-256");
         } catch (NoSuchAlgorithmException e) {
             throw new ServletException(e);
         }

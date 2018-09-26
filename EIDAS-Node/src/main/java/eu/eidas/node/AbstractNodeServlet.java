@@ -16,11 +16,11 @@
 package eu.eidas.node;
 
 import eu.eidas.auth.commons.EidasParameterKeys;
+import eu.eidas.node.auth.service.AUSERVICEUtil;
 import eu.eidas.node.logging.LoggingMarkerMDC;
 import eu.eidas.node.logging.LoggingUtil;
 import org.slf4j.Logger;
 import org.slf4j.MDC;
-import org.springframework.context.ApplicationContext;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
@@ -47,9 +47,9 @@ public abstract class AbstractNodeServlet extends HttpServlet {
      * Obtaining the application context
      * @return Node applicationContext
      */
-    protected final ApplicationContext getApplicationContext() {
-        return ApplicationContextProvider.getApplicationContext();
-    }
+//    protected final ApplicationContext getApplicationContext() {
+//        return BeanProvider.getApplicationContext();
+//    }
 
     /**
      * Method used to renew the http session in traditional web application.
@@ -187,8 +187,16 @@ response.addCookie(cookie);
     }
 
 
+//    protected final boolean acceptsHttpRedirect(){
+//        Boolean acceptGet = BeanProvider.getNodeParameterBool(EidasParameterKeys.ALLOW_REDIRECT_BINDING.toString());
+//        return acceptGet!=null && acceptGet;
+//    }
+
     protected final boolean acceptsHttpRedirect(){
-        Boolean acceptGet = ApplicationContextProvider.getNodeParameterBool(EidasParameterKeys.ALLOW_REDIRECT_BINDING.toString());
+//        AUSERVICEUtil util= getApplicationContext().getBean(AUSERVICEUtil.class);
+        AUSERVICEUtil util= BeanProvider.getBean(AUSERVICEUtil.class);
+        Boolean acceptGet = Boolean.parseBoolean(util.getConfigs().getProperty(EidasParameterKeys.ALLOW_REDIRECT_BINDING.toString()));
+
         return acceptGet!=null && acceptGet;
     }
 }

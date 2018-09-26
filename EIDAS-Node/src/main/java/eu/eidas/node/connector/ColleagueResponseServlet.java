@@ -23,6 +23,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import eu.eidas.node.*;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,16 +38,14 @@ import eu.eidas.auth.commons.light.impl.LightResponse;
 import eu.eidas.auth.commons.tx.AuthenticationExchange;
 import eu.eidas.auth.commons.tx.BinaryLightToken;
 import eu.eidas.auth.commons.validation.NormalParameterValidator;
-import eu.eidas.node.AbstractNodeServlet;
-import eu.eidas.node.NodeBeanNames;
-import eu.eidas.node.NodeParameterNames;
-import eu.eidas.node.NodeSpecificViewNames;
 import eu.eidas.node.utils.PropertiesUtil;
 import eu.eidas.node.utils.SessionHolder;
 import eu.eidas.specificcommunication.BinaryLightTokenHelper;
 import eu.eidas.specificcommunication.SpecificCommunicationDefinitionBeanNames;
 import eu.eidas.specificcommunication.exception.SpecificCommunicationException;
 import eu.eidas.specificcommunication.protocol.impl.SpecificConnectorCommunicationServiceImpl;
+
+import static eu.eidas.node.BeanProvider.getBean;
 
 /**
  * Is invoked when ProxyService wants to pass control to the Connector.
@@ -110,8 +109,8 @@ public final class ColleagueResponseServlet extends AbstractNodeServlet {
                     .setAttribute(EidasParameterKeys.SAML_PHASE.toString(), EIDASValues.EIDAS_CONNECTOR_RESPONSE);
 
             // Obtaining the assertion consumer url from SPRING context
-            ConnectorControllerService controllerService = (ConnectorControllerService) getApplicationContext().getBean(
-                    NodeBeanNames.EIDAS_CONNECTOR_CONTROLLER.toString());
+            String beanName = NodeBeanNames.EIDAS_CONNECTOR_CONTROLLER.toString();
+            ConnectorControllerService controllerService = getBean(ConnectorControllerService.class, beanName);
             LOG.trace("ConnectorControllerService {}", controllerService);
             LOG.debug("doPost to SP");
             // Obtains the parameters from httpRequest
@@ -162,8 +161,9 @@ public final class ColleagueResponseServlet extends AbstractNodeServlet {
     }
 
     private BinaryLightToken putResponseInCommunicationCache(final ILightResponse lightResponse) throws ServletException {
-        final SpecificConnectorCommunicationServiceImpl specificConnectorCommunicationService =
-                (SpecificConnectorCommunicationServiceImpl) getApplicationContext().getBean(SpecificCommunicationDefinitionBeanNames.SPECIFIC_CONNECTOR_COMMUNICATION_SERVICE.toString());
+        String beanName = SpecificCommunicationDefinitionBeanNames.SPECIFIC_CONNECTOR_COMMUNICATION_SERVICE.toString();
+        final SpecificConnectorCommunicationServiceImpl specificConnectorCommunicationService =  getBean(
+                                                            SpecificConnectorCommunicationServiceImpl.class, beanName);
         try {
             return specificConnectorCommunicationService.putResponse(lightResponse);
         } catch (SpecificCommunicationException e) {
@@ -179,7 +179,8 @@ public final class ColleagueResponseServlet extends AbstractNodeServlet {
     }
 
     private String getRedirectUrl() {
-        final boolean isSpecificConnectorJar = (Boolean) getApplicationContext().getBean(NodeBeanNames.SPECIFIC_CONNECTOR_DEPLOYED_JAR.toString());
+        String beanName = NodeBeanNames.SPECIFIC_CONNECTOR_DEPLOYED_JAR.toString();
+        final boolean isSpecificConnectorJar = getBean(Boolean.class, beanName);
         if (isSpecificConnectorJar) {
             return NodeSpecificViewNames.SPECIFIC_SP_RESPONSE.toString();
         } else {

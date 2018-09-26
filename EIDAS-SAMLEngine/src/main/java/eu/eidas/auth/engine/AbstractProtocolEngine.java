@@ -278,7 +278,8 @@ public abstract class AbstractProtocolEngine {
 
             if (null != destinationCertificate) {
                 LOG.debug("Encryption Executing...");
-                responseToSign = getProtocolEncrypter().encryptSamlResponse(responseToSign, destinationCertificate);
+                responseToSign = getProtocolEncrypter().encryptSamlResponse(responseToSign, destinationCertificate,
+                		getProtocolEncrypter().isAssertionEncryptWithKey());
                 LOG.debug("Encryption finished: " + responseToSign);
             } else if (getProtocolEncrypter().isEncryptionEnabled(request.getOriginCountryCode())) {
                 LOG.error(SAML_EXCHANGE, "BUSINESS EXCEPTION : encryption cannot be performed, no matching certificate for issuer="+ request.getIssuer()

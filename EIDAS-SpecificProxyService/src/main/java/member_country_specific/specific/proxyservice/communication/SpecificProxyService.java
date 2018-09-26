@@ -15,51 +15,16 @@
 
 package member_country_specific.specific.proxyservice.communication;
 
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
-
-import javax.annotation.Nonnull;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.xml.bind.JAXBException;
-
-import org.apache.commons.lang.StringUtils;
-import org.joda.time.DateTime;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.env.PropertyResolver;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-
-import eu.eidas.SimpleProtocol.AddressAttribute;
-import eu.eidas.SimpleProtocol.Attribute;
-import eu.eidas.SimpleProtocol.AuthenticationRequest;
-import eu.eidas.SimpleProtocol.ComplexAddressAttribute;
-import eu.eidas.SimpleProtocol.DateAttribute;
-import eu.eidas.SimpleProtocol.RequestedAuthenticationContext;
-import eu.eidas.SimpleProtocol.Response;
-import eu.eidas.SimpleProtocol.ResponseStatus;
-import eu.eidas.SimpleProtocol.StringAttribute;
-import eu.eidas.SimpleProtocol.StringListAttribute;
-import eu.eidas.SimpleProtocol.StringListValue;
+import eu.eidas.SimpleProtocol.*;
 import eu.eidas.SimpleProtocol.utils.ContextClassTranslator;
 import eu.eidas.SimpleProtocol.utils.NameIdPolicyTranslator;
 import eu.eidas.SimpleProtocol.utils.SimpleProtocolProcess;
 import eu.eidas.SimpleProtocol.utils.StatusCodeTranslator;
 import eu.eidas.auth.commons.EidasStringUtil;
-import eu.eidas.auth.commons.attribute.AttributeDefinition;
-import eu.eidas.auth.commons.attribute.AttributeRegistries;
-import eu.eidas.auth.commons.attribute.AttributeRegistry;
-import eu.eidas.auth.commons.attribute.AttributeValue;
-import eu.eidas.auth.commons.attribute.AttributeValueMarshaller;
-import eu.eidas.auth.commons.attribute.AttributeValueMarshallingException;
-import eu.eidas.auth.commons.attribute.AttributeValueTransliterator;
-import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
+import eu.eidas.auth.commons.attribute.*;
 import eu.eidas.auth.commons.attribute.impl.DateTimeAttributeValue;
 import eu.eidas.auth.commons.exceptions.InvalidParameterEIDASException;
 import eu.eidas.auth.commons.light.ILightRequest;
@@ -72,9 +37,21 @@ import eu.eidas.auth.commons.tx.BinaryLightToken;
 import eu.eidas.auth.commons.tx.CorrelationMap;
 import eu.eidas.specificcommunication.BinaryLightTokenHelper;
 import eu.eidas.specificcommunication.exception.SpecificCommunicationException;
-import member_country_specific.specific.proxyservice.SpecificProxyServiceApplicationContextProvider;
 import member_country_specific.specific.proxyservice.SpecificProxyServiceParameterNames;
 import member_country_specific.specific.proxyservice.utils.CorrelatedRequestsHolder;
+import org.apache.commons.lang.StringUtils;
+import org.joda.time.DateTime;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nonnull;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.xml.bind.JAXBException;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * SpecificProxyService: provides a sample implementation for interacting with the IdP.
@@ -323,13 +300,11 @@ public class SpecificProxyService {
             complexAddressAttribute.setAdminUnitFirstLine(postalAddress.getAdminUnitFirstLine());
             complexAddressAttribute.setAdminUnitSecondLine(postalAddress.getAdminUnitSecondLine());
             complexAddressAttribute.setPostName(postalAddress.getPostName());
-            complexAddressAttribute.setFullCVAddress(postalAddress.getFullCvaddress());
             complexAddressAttribute.setLocatorDesignator(postalAddress.getLocatorDesignator());
             complexAddressAttribute.setLocatorName(postalAddress.getLocatorName());
             complexAddressAttribute.setPoBox(postalAddress.getPoBox());
             complexAddressAttribute.setPostCode(postalAddress.getPostCode());
             complexAddressAttribute.setThoroughFare(postalAddress.getThoroughfare());
-            complexAddressAttribute.setAddressId(postalAddress.getAddressId());
             complexAddressAttribute.setAddressArea(postalAddress.getCvAddressArea());
             addressAttribute.setValue(complexAddressAttribute);
         }
@@ -409,7 +384,7 @@ public class SpecificProxyService {
         final eu.eidas.auth.commons.light.impl.ResponseStatus.Builder responseStatusBuilder = eu.eidas.auth.commons.light.impl.ResponseStatus.builder();
         responseStatusBuilder.statusCode(statusCodeTranslator.stringEidasStatusCode());
 
-        if (statusCodeTranslator == StatusCodeTranslator.FAILURE) {
+        if (statusCodeTranslator == StatusCodeTranslator.RESPONDER_FAILURE || statusCodeTranslator == StatusCodeTranslator.REQUESTER_FAILURE) {
             responseStatusBuilder
                     .subStatusCode(StatusCodeTranslator.SAML_STATUS_PREFIX + specificResponseStatus.getSubStatusCode())
                     .statusMessage(specificResponseStatus.getStatusMessage())
@@ -503,13 +478,11 @@ public class SpecificProxyService {
                 .adminUnitFirstLine(complexAddressAttribute.getAdminUnitFirstLine())
                 .adminUnitSecondLine(complexAddressAttribute.getAdminUnitSecondLine())
                 .postName(complexAddressAttribute.getPostName())
-                .fullCvaddress(complexAddressAttribute.getFullCVAddress())
                 .locatorDesignator(complexAddressAttribute.getLocatorDesignator())
                 .locatorName(complexAddressAttribute.getLocatorName())
                 .poBox(complexAddressAttribute.getPoBox())
                 .postCode(complexAddressAttribute.getPostCode())
                 .thoroughfare(complexAddressAttribute.getThoroughFare())
-                .addressId(complexAddressAttribute.getAddressId())
                 .cvAddressArea(complexAddressAttribute.getAddressArea());
 
         return postalAddressBuilder.build();
@@ -524,12 +497,20 @@ public class SpecificProxyService {
      */
     public ILightResponse translateSpecificResponse(@Nonnull final String specificResponse) throws JAXBException, ServletException {
         final Response response = unmarshallSpecificResponse(specificResponse);
-        if ((response.getStatus() != null) && (response.getStatus().getStatusCode() != null) && (StatusCodeTranslator.fromSmsspStatusCodeString(response.getStatus().getStatusCode()) != null)
-                && (!StatusCodeTranslator.FAILURE.equals(StatusCodeTranslator.fromSmsspStatusCodeString(response.getStatus().getStatusCode()))))
+        if (isValidateMandatoryFields(response)) {
             validateMandatoryFields(response);
+        }
         final String inResponseToId = response.getInResponseTo();
         final ILightRequest iLightRequest = getRemoveCorrelatediLightRequest(inResponseToId);
         return createLightResponse(response, iLightRequest.getId(), iLightRequest.getRelayState());
+    }
+
+    private boolean isValidateMandatoryFields(Response response) {
+        return (response.getStatus() != null) &&
+                (response.getStatus().getStatusCode() != null) &&
+                (StatusCodeTranslator.fromSmsspStatusCodeString(response.getStatus().getStatusCode()) != null) &&
+                (!StatusCodeTranslator.RESPONDER_FAILURE.equals(StatusCodeTranslator.fromSmsspStatusCodeString(response.getStatus().getStatusCode()))) &&
+                (!StatusCodeTranslator.REQUESTER_FAILURE.equals(StatusCodeTranslator.fromSmsspStatusCodeString(response.getStatus().getStatusCode())));
     }
 
     private Response unmarshallSpecificResponse(@Nonnull final String specificResponseBase64) throws JAXBException {

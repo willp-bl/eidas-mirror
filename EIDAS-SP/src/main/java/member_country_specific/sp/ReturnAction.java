@@ -20,6 +20,7 @@ import com.opensymphony.xwork2.ActionSupport;
 import eu.eidas.SimpleProtocol.*;
 import eu.eidas.SimpleProtocol.adapter.DateAdapter;
 import eu.eidas.SimpleProtocol.utils.SimpleProtocolProcess;
+import eu.eidas.SimpleProtocol.utils.StatusCodeTranslator;
 import eu.eidas.auth.commons.EidasStringUtil;
 import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.attribute.AttributeRegistries;
@@ -105,12 +106,16 @@ public class ReturnAction extends ActionSupport implements ServletRequestAware, 
 
         jsonAttributes = mapAttributesSimpleResponseToLightResponse(jsonResponse);
 
-        if ((jsonResponseStatus != null && "failure".equals(jsonResponseStatus))) {
+        if ((jsonResponseStatus != null && isStatusFailure(jsonResponseStatus))) {
             throw new ApplicationSpecificServiceException("Smssp Response is fail", jsonResponse.getStatus().getStatusMessage());
         } else {
             attrJsonMap = (jsonAttributes);
             return ACTION_POPULATE;
         }
+    }
+
+    private boolean isStatusFailure(String jsonResponseStatus) {
+        return StatusCodeTranslator.RESPONDER_FAILURE.stringSmsspStatusCode().equals(jsonResponseStatus) || StatusCodeTranslator.REQUESTER_FAILURE.stringSmsspStatusCode().equals(jsonResponseStatus);
     }
 
     public Map<AttributeDefinition<?>, Set<String>> mapAttributesSimpleResponseToLightResponse(Response smsspResponse) {
@@ -158,7 +163,6 @@ public class ReturnAction extends ActionSupport implements ServletRequestAware, 
             } else if (attribute instanceof AddressAttribute) {
                 final ComplexAddressAttribute value = ((AddressAttribute) attribute).getValue();
                 Set<String> values = new LinkedHashSet<>();
-                values.add(value.getAddressId());
                 values.add(value.getPoBox());
                 values.add(value.getLocatorDesignator());
                 values.add(value.getAddressArea());
@@ -167,7 +171,6 @@ public class ReturnAction extends ActionSupport implements ServletRequestAware, 
                 values.add(value.getAdminUnitFirstLine());
                 values.add(value.getAdminUnitSecondLine());
                 values.add(value.getPostCode());
-                values.add(value.getFullCVAddress());
                 values.add(value.getLocatorName());
                 immutableAttributeMapBuilder.put(attributeDefinitionOut, values);
             }

@@ -14,10 +14,10 @@
  */
 package eu.eidas.auth.commons.protocol.eidas.impl;
 
-import javax.annotation.Nonnull;
-
 import eu.eidas.auth.commons.EidasStringUtil;
 import eu.eidas.auth.commons.attribute.AttributeValue;
+
+import javax.annotation.Nonnull;
 
 import static org.junit.Assert.assertEquals;
 
@@ -30,7 +30,6 @@ abstract class PostalAddressAttributeValueMarshallerTest {
 
     static PostalAddress newPostalAddress() {
         return PostalAddress.builder().
-                addressId("http://address.example/id/be/eh11aa").
                 cvAddressArea("addressAreaContentTest").
                 poBox("1000").
                 locatorDesignator("locatorDesignatorTest").
@@ -44,10 +43,6 @@ abstract class PostalAddressAttributeValueMarshallerTest {
 
     static String toBase64Address(@Nonnull String prefix) {
         StringBuilder builder = new StringBuilder(150);
-
-        builder.append("<").append(prefix).append(":AddressID>");
-        builder.append("http://address.example/id/be/eh11aa");
-        builder.append("</").append(prefix).append(":AddressID>\n");
 
         builder.append("<").append(prefix).append(":PoBox>");
         builder.append("1000");

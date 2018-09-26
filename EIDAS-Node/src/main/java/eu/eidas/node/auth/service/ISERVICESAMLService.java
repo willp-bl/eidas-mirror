@@ -34,6 +34,8 @@ import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.impl.AuthenticationResponse;
 import eu.eidas.auth.engine.ProtocolEngineI;
 
+import java.util.Collection;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -130,4 +132,8 @@ public interface ISERVICESAMLService {
 
     @Nonnull
     String getCountryCode();
+
+    @Nonnull
+    Collection<String> whitelist(String name);
+
 }

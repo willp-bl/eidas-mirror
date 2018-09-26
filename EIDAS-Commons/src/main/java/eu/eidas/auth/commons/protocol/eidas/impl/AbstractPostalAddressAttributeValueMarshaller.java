@@ -14,14 +14,6 @@
  */
 package eu.eidas.auth.commons.protocol.eidas.impl;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
-import org.apache.commons.lang.StringUtils;
-
 import eu.eidas.auth.commons.EidasStringUtil;
 import eu.eidas.auth.commons.attribute.AttributeValue;
 import eu.eidas.auth.commons.attribute.AttributeValueMarshaller;
@@ -30,6 +22,12 @@ import eu.eidas.auth.commons.lang.Canonicalizers;
 import eu.eidas.auth.commons.lang.EnumMapper;
 import eu.eidas.auth.commons.lang.KeyAccessor;
 import eu.eidas.util.Preconditions;
+import org.apache.commons.lang.StringUtils;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Base AttributeValueMarshaller implementation for PostalAddress values.
@@ -39,16 +37,6 @@ import eu.eidas.util.Preconditions;
 public abstract class AbstractPostalAddressAttributeValueMarshaller implements AttributeValueMarshaller<PostalAddress> {
 
     public enum Tag {
-
-        ADDRESS_ID("AddressID") {
-            @Override
-            public String getTagValue(@Nonnull PostalAddress postalAddress) { return postalAddress.getAddressId(); }
-
-            @Override
-            public void setTagValue(@Nonnull PostalAddress.Builder builder, @Nonnull String xmlAddress) {
-                builder.addressId(getTagValue(xmlAddress));
-            }
-        },
 
         PO_BOX("PoBox") {
             @Override
@@ -155,18 +143,6 @@ public abstract class AbstractPostalAddressAttributeValueMarshaller implements A
             @Override
             public void setTagValue(@Nonnull PostalAddress.Builder builder, @Nonnull String xmlAddress) {
                 builder.postCode(getTagValue(xmlAddress));
-            }
-        },
-
-        FULL_CV_ADDRESS("FullCvaddress") {
-            @Override
-            public String getTagValue(@Nonnull PostalAddress postalAddress) {
-                return postalAddress.getFullCvaddress();
-            }
-
-            @Override
-            public void setTagValue(@Nonnull PostalAddress.Builder builder, @Nonnull String xmlAddress) {
-                builder.fullCvaddress(getTagValue(xmlAddress));
             }
         },
 
@@ -293,7 +269,6 @@ public abstract class AbstractPostalAddressAttributeValueMarshaller implements A
          */
 
         StringBuilder result = new StringBuilder(200);
-        Tag.ADDRESS_ID.addTag(result, prefix, postalAddress);
         Tag.PO_BOX.addTag(result, prefix, postalAddress);
         Tag.LOCATOR_DESIGNATOR.addTag(result, prefix, postalAddress);
         Tag.LOCATOR_NAME.addTag(result, prefix, postalAddress);
@@ -303,7 +278,6 @@ public abstract class AbstractPostalAddressAttributeValueMarshaller implements A
         Tag.ADMIN_UNIT_FIRST_LINE.addTag(result, prefix, postalAddress);
         Tag.ADMIN_UNIT_SECOND_LINE.addTag(result, prefix, postalAddress);
         Tag.POST_CODE.addTag(result, prefix, postalAddress);
-        Tag.FULL_CV_ADDRESS.addTag(result, prefix, postalAddress);
 
         if (result.length() == 0) {
             return StringUtils.EMPTY;
@@ -323,7 +297,6 @@ public abstract class AbstractPostalAddressAttributeValueMarshaller implements A
 
         PostalAddress.Builder builder = PostalAddress.builder();
 
-        Tag.ADDRESS_ID.setTagValue(builder, xmlAddress);
         Tag.PO_BOX.setTagValue(builder, xmlAddress);
         Tag.LOCATOR_DESIGNATOR.setTagValue(builder, xmlAddress);
         Tag.LOCATOR_NAME.setTagValue(builder, xmlAddress);
@@ -333,7 +306,6 @@ public abstract class AbstractPostalAddressAttributeValueMarshaller implements A
         Tag.ADMIN_UNIT_FIRST_LINE.setTagValue(builder, xmlAddress);
         Tag.ADMIN_UNIT_SECOND_LINE.setTagValue(builder, xmlAddress);
         Tag.POST_CODE.setTagValue(builder, xmlAddress);
-        Tag.FULL_CV_ADDRESS.setTagValue(builder, xmlAddress);
 
         // Result must be the base64 decoding of the Java-XML binding of the PostalAddress
         return new PostalAddressAttributeValue(builder.build());

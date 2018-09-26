@@ -14,7 +14,25 @@
  */
 package eu.eidas.engine.test.simple.eidas;
 
+import static eu.eidas.engine.EidasAttributeTestUtil.newEidasAttributeDefinition;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Map;
+
+import org.junit.Ignore;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.collect.ImmutableSet;
+
 import eu.eidas.auth.commons.EIDASStatusCode;
 import eu.eidas.auth.commons.EIDASSubStatusCode;
 import eu.eidas.auth.commons.EidasStringUtil;
@@ -22,6 +40,7 @@ import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.attribute.AttributeValue;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.attribute.PersonType;
+import eu.eidas.auth.commons.attribute.impl.StringAttributeValue;
 import eu.eidas.auth.commons.attribute.impl.StringAttributeValueMarshaller;
 import eu.eidas.auth.commons.protocol.IAuthenticationResponse;
 import eu.eidas.auth.commons.protocol.IResponseMessage;
@@ -37,17 +56,6 @@ import eu.eidas.auth.engine.ProtocolEngineI;
 import eu.eidas.auth.engine.core.eidas.EidasProtocolProcessor;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import eu.eidas.engine.test.simple.SSETestUtils;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.Map;
-
-import static eu.eidas.engine.EidasAttributeTestUtil.newEidasAttributeDefinition;
-import static org.junit.Assert.*;
 
 /**
  * The Class EidasResponseTest.
@@ -55,6 +63,7 @@ import static org.junit.Assert.*;
 public class EidasAuthResponseTest {
 
     private static final String EIDAS_ADDRESS = getEidasAddress();
+    final static String RESPONSE_ISSUER = "http://Responder".toLowerCase();
 
     /**
      * The engine.
@@ -303,9 +312,10 @@ public class EidasAuthResponseTest {
 
         spId = "EDU001-APP001-APP001";
 
-        IEidasAuthenticationRequest request = new EidasAuthenticationRequest.Builder().destination(destination)
+        final String REQUEST_ISSUER = "http://localhost:7001/SP/metadata".toLowerCase();
+		IEidasAuthenticationRequest request = new EidasAuthenticationRequest.Builder().destination(destination)
                 .id("f5e7e0f5-b9b8-4256-a7d0-4090141b326d")
-                .issuer("http://localhost:7001/SP/metadata")
+                .issuer(REQUEST_ISSUER)
                 .providerName(spName)
                 .assertionConsumerServiceURL(assertConsumerUrl)
                 .serviceProviderCountryCode(spCountry)
@@ -319,7 +329,7 @@ public class EidasAuthResponseTest {
         try {
             authRequest = getEngine().generateRequestMessage(request, null).getMessageBytes();
 
-            authenRequest = (IEidasAuthenticationRequest) getEngine().unmarshallRequestAndValidate(authRequest, "EN");
+            authenRequest = (IEidasAuthenticationRequest) getEngine().unmarshallRequestAndValidate(authRequest, "EN",Arrays.asList(REQUEST_ISSUER));
 
         } catch (EIDASSAMLEngineException e) {
             e.printStackTrace();
@@ -346,7 +356,7 @@ public class EidasAuthResponseTest {
         AuthenticationResponse response = new AuthenticationResponse.Builder().attributes(attributeMap)
                 .id("963158")
                 .inResponseTo(authenRequest.getId())
-                .issuer("http://Responder")
+                .issuer(RESPONSE_ISSUER)
                 .statusCode(EIDASStatusCode.SUCCESS_URI.toString())
                 .failure(false)
                 .subject("UK/UK/Banksy")
@@ -478,7 +488,7 @@ public class EidasAuthResponseTest {
     @Test
     public final void testResponseInvalidParametersToken() {
         try {
-            getEngine().unmarshallResponseAndValidate(null, ipAddress, 0, 0, null);
+            getEngine().unmarshallResponseAndValidate(null, ipAddress, 0L, 0L, null,null, false);
             fail(ERROR_TXT);
         } catch (EIDASSAMLEngineException e) {
             LOG.error("Error: " + e, e);
@@ -502,7 +512,7 @@ public class EidasAuthResponseTest {
             authResponse =
                     getEngine().generateResponseMessage(authenRequest, response, false, ipAddress).getMessageBytes();
             // In Conf1 ipValidate is false
-            getEngine().unmarshallResponseAndValidate(authResponse, null, 0, 0, null);
+            getEngine().unmarshallResponseAndValidate(authResponse, null, 0L, 0L, null, null, false);
         } catch (EIDASSAMLEngineException e) {
             LOG.error("Error: " + e, e);
         }
@@ -535,7 +545,7 @@ public class EidasAuthResponseTest {
             authResponse =
                     getEngine().generateResponseMessage(authenRequest, response, false, ipAddress).getMessageBytes();
             // In Conf1 ipValidate is false
-            getEngine().unmarshallResponseAndValidate(authResponse, null, 0, 0, null);
+            getEngine().unmarshallResponseAndValidate(authResponse, null, 0L, 0L, null, null, false);
             fail("generateResponseMessage(...) should've thrown an EIDASSAMLEngineException!");
         } catch (EIDASSAMLEngineException expected) {
             // expected
@@ -553,7 +563,7 @@ public class EidasAuthResponseTest {
             response.attributes(attributeMap);
             response.id("963158");
             response.inResponseTo(authenRequest.getId());
-            response.issuer("http://Responder");
+            response.issuer(RESPONSE_ISSUER);
             response.statusCode(EIDASStatusCode.SUCCESS_URI.toString());
             response.subject("UK/UK/Banksy");
             response.subjectNameIdFormat("urn:oasis:names:tc:SAML:2.0:nameid-format:transient");
@@ -562,7 +572,7 @@ public class EidasAuthResponseTest {
                     getEngine().generateResponseMessage(authenRequest, response.build(), false, ipAddress);
 
             authResponse = responseMessage.getMessageBytes();
-            getEngine().unmarshallResponseAndValidate(authResponse, "127.0.0.1", 0, 0, null);
+            getEngine().unmarshallResponseAndValidate(authResponse, "127.0.0.1", 0, 0, null,Arrays.asList(RESPONSE_ISSUER), false);
         } catch (EIDASSAMLEngineException e) {
             LOG.error("Error: " + e, e);
             fail("validateAuthenticationResponse(...) should not have thrown an EIDASSAMLEngineException due to the Ip validation (because IP validation disabled in the conf)!: "
@@ -578,7 +588,7 @@ public class EidasAuthResponseTest {
         try {
             // ipAddress origin "111.222.333.444"
             // Subject Confirmation Bearer.
-            getEngine().unmarshallResponseAndValidate(EidasStringUtil.getBytes("errorMessage"), ipAddress, 0, 0, null);
+            getEngine().unmarshallResponseAndValidate(EidasStringUtil.getBytes("errorMessage"), ipAddress, 0, 0, null,null, false);
             fail("validateAuthenticationResponse(...) should've thrown an EIDASSAMLEngineException!");
         } catch (EIDASSAMLEngineException e) {
             LOG.error("Error: " + e, e);
@@ -593,7 +603,7 @@ public class EidasAuthResponseTest {
     @Test
     public final void testValidateAuthenticationResponseIsFail() throws EIDASSAMLEngineException {
         testGenerateAuthnResponse();//prepare valid authnResponse
-        authnResponse = getEngine().unmarshallResponseAndValidate(authResponse, ipAddress, 0, 0, null);
+        authnResponse = getEngine().unmarshallResponseAndValidate(authResponse, ipAddress, 0, 0, null,Arrays.asList(RESPONSE_ISSUER), false);
         assertFalse("Generate incorrect response: ", authnResponse.isFailure());
     }
 
@@ -604,7 +614,7 @@ public class EidasAuthResponseTest {
      */
     @Test
     public final void testValidateAuthenticationResponseDestination() throws EIDASSAMLEngineException {
-        authnResponse = getEngine().unmarshallResponseAndValidate(authResponse, ipAddress, 0, 0, null);
+        authnResponse = getEngine().unmarshallResponseAndValidate(authResponse, ipAddress, 0, 0, null,Arrays.asList(RESPONSE_ISSUER), false);
 
         assertEquals("Destination incorrect: ", authnResponse.getInResponseToId(), authenRequest.getId());
     }
@@ -615,7 +625,7 @@ public class EidasAuthResponseTest {
      * @throws EIDASSAMLEngineException the EIDASSAML engine exception
      */
     public final void testValidateAuthenticationResponseValuesComplex() throws EIDASSAMLEngineException {
-        authnResponse = getEngine().unmarshallResponseAndValidate(authResponse, ipAddress, 0, 0, null);
+        authnResponse = getEngine().unmarshallResponseAndValidate(authResponse, ipAddress, 0, 0, null,Arrays.asList(RESPONSE_ISSUER), false);
 
         assertEquals("Country incorrect:", authnResponse.getCountry(), "EN");
 
@@ -742,7 +752,7 @@ public class EidasAuthResponseTest {
 
         LOG.info("RESPONSE: " + SSETestUtils.encodeSAMLToken(authResponse));
 
-        authnResponse = getEngine().unmarshallResponseAndValidate(authResponse, ipAddress, 0, 0, null);
+        authnResponse = getEngine().unmarshallResponseAndValidate(authResponse, ipAddress, 0, 0, null,Arrays.asList(RESPONSE_ISSUER), false);
 
         LOG.info("RESPONSE ID: " + authnResponse.getId());
         LOG.info("RESPONSE IN_RESPONSE_TO: " + authnResponse.getInResponseToId());
@@ -764,7 +774,7 @@ public class EidasAuthResponseTest {
         response.statusMessage("message");
         response.id("963158");
         response.inResponseTo(authenRequest.getId());
-        response.issuer("http://Responder");
+        response.issuer(RESPONSE_ISSUER);
         response.failure(true);
 
         authResponse =
@@ -772,7 +782,7 @@ public class EidasAuthResponseTest {
 
         LOG.error("ERROR_FAIL: " + EidasStringUtil.encodeToBase64(authResponse));
 
-        authnResponse = getEngine().unmarshallResponseAndValidate(authResponse, ipAddress, 0, 0, null);
+        authnResponse = getEngine().unmarshallResponseAndValidate(authResponse, ipAddress, 0, 0, null,Arrays.asList(RESPONSE_ISSUER), false);
 
         LOG.info("COUNTRY: " + authnResponse.getCountry());
         assertTrue("Generate incorrect response: ", authnResponse.isFailure());

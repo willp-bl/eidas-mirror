@@ -38,6 +38,7 @@ public enum EncryptionKey {
     ENCRYPTION_ALGORITHM_WHITE_LIST("encryption.algorithm.whitelist"),
 
     RESPONSE_ENCRYPTION_MANDATORY("response.encryption.mandatory"),
+    ASSERTION_ENCRYPTION_WITH_KEY("assertion.encrypt.with.key.value"),
 
     CHECK_VALIDITY_PERIOD_PROPERTY(CertificateValidator.CHECK_VALIDITY_PERIOD_PROPERTY),
 

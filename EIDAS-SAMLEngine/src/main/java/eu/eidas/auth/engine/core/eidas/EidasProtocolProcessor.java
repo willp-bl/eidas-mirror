@@ -1263,6 +1263,57 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
                                           @Nonnull SamlEngineCoreProperties coreProperties,
                                           @Nonnull final DateTime currentTime)
             throws EIDASSAMLEngineException {
+        Response responseFail = getResponseWithoutAssertion(request, response, coreProperties, currentTime);
+
+        String responseIssuer = response.getIssuer();
+        if (responseIssuer != null && !responseIssuer.isEmpty()) {
+            responseFail.getIssuer().setValue(responseIssuer);
+        }
+        DateTime notOnOrAfter = currentTime;
+
+        notOnOrAfter = notOnOrAfter.plusSeconds(coreProperties.getTimeNotOnOrAfter());
+
+        Assertion assertion =
+                AssertionUtil.generateResponseAssertion(true, ipAddress, request, response.getSubject(), response.getSubjectNameIdFormat(), responseFail.getIssuer(),
+                                                        ImmutableAttributeMap.of(), notOnOrAfter,
+                                                        coreProperties.getFormatEntity(), coreProperties.getResponder(),
+                                                        formatDescriptor, coreProperties.isOneTimeUse(), currentTime);
+        addResponseAuthnContextClassRef(response, assertion);
+        responseFail.getAssertions().add(assertion);
+
+        return responseFail;
+    }
+
+
+    /**
+     * {@inheritDoc}
+     *
+     * The returned {@link Response} contains or not one assertion if the application identifier of the {@param request} matches or not one of {@param applicationIdentifiers}.
+     */
+    @Nonnull
+    @Override
+    @SuppressWarnings("squid:S2583")
+    public Response marshallErrorResponse(@Nonnull IAuthenticationRequest request,
+                                          @Nonnull IAuthenticationResponse response,
+                                          @Nonnull String ipAddress,
+                                          @Nonnull SamlEngineCoreProperties coreProperties,
+                                          @Nonnull final DateTime currentTime,
+                                          List<String> applicationIdentifiers)
+            throws EIDASSAMLEngineException {
+
+        Response responseFail = getResponseWithoutAssertion(request, response, coreProperties, currentTime);
+
+        String responseIssuer = response.getIssuer();
+        if (responseIssuer != null && !responseIssuer.isEmpty()) {
+            responseFail.getIssuer().setValue(responseIssuer);
+        }
+
+        addAssertionToResponseIfRequesterNeedsOne(request, response, ipAddress, coreProperties, currentTime, applicationIdentifiers, responseFail);
+
+        return responseFail;
+    }
+
+    private Response getResponseWithoutAssertion(@Nonnull IAuthenticationRequest request, @Nonnull IAuthenticationResponse response, @Nonnull SamlEngineCoreProperties coreProperties, @Nonnull DateTime currentTime) throws EIDASSAMLEngineException {
         LOG.trace("generateResponseMessageFail");
         validateParamResponseFail(request, response);
 
@@ -1293,26 +1344,43 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
 
         LOG.trace("Generate Response.");
         // RESPONSE
-        Response responseFail =
-                newResponse(status, request.getAssertionConsumerServiceURL(), request.getId(), coreProperties, currentTime);
+        return newResponse(status, request.getAssertionConsumerServiceURL(), request.getId(), coreProperties, currentTime);
+    }
 
-        String responseIssuer = response.getIssuer();
-        if (responseIssuer != null && !responseIssuer.isEmpty()) {
-            responseFail.getIssuer().setValue(responseIssuer);
+    private void addAssertionToResponseIfRequesterNeedsOne(@Nonnull IAuthenticationRequest request, @Nonnull IAuthenticationResponse response, @Nonnull String ipAddress, @Nonnull SamlEngineCoreProperties coreProperties, @Nonnull DateTime currentTime, List<String> includeAssertionApplicationIdentifiers, Response responseFail) throws EIDASSAMLEngineException {
+        final String requestApplicationIdentifier;
+        try {
+            requestApplicationIdentifier = metadataFetcher.getEidasMetadata(request.getIssuer(), metadataSigner, metadataClock).getEidasApplicationIdentifier();
+            if (includeAssertionApplicationIdentifiers != null) {
+                final boolean isAddAssertionToResponse = includeAssertionApplicationIdentifiers.contains(requestApplicationIdentifier);
+                if (isAddAssertionToResponse) {
+                    addAssertionToResponse(request, response, ipAddress, coreProperties, currentTime, responseFail);
+                }
+            }
+        } catch (EIDASMetadataException e) {
+            LOG.debug("Metadata could not be retrieved");
+            throw new EIDASSAMLEngineException(e);
         }
+    }
+
+    private void addAssertionToResponse(@Nonnull IAuthenticationRequest request,
+                                        @Nonnull IAuthenticationResponse response,
+                                        @Nonnull String ipAddress,
+                                        @Nonnull SamlEngineCoreProperties coreProperties,
+                                        @Nonnull DateTime currentTime,
+                                        Response responseFail) throws EIDASSAMLEngineException {
+
         DateTime notOnOrAfter = currentTime;
 
         notOnOrAfter = notOnOrAfter.plusSeconds(coreProperties.getTimeNotOnOrAfter());
 
         Assertion assertion =
                 AssertionUtil.generateResponseAssertion(true, ipAddress, request, response.getSubject(), response.getSubjectNameIdFormat(), responseFail.getIssuer(),
-                                                        ImmutableAttributeMap.of(), notOnOrAfter,
-                                                        coreProperties.getFormatEntity(), coreProperties.getResponder(),
-                                                        formatDescriptor, coreProperties.isOneTimeUse(), currentTime);
+                        ImmutableAttributeMap.of(), notOnOrAfter,
+                        coreProperties.getFormatEntity(), coreProperties.getResponder(),
+                        formatDescriptor, coreProperties.isOneTimeUse(), currentTime);
         addResponseAuthnContextClassRef(response, assertion);
         responseFail.getAssertions().add(assertion);
-
-        return responseFail;
     }
 
     @Nonnull

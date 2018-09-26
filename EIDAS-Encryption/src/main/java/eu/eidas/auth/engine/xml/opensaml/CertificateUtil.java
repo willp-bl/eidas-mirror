@@ -76,35 +76,52 @@ public final class CertificateUtil {
 
     private static final AtomicReference<CertificateFactory> CERTIFICATE_FACTORY_REF = new AtomicReference<>();
 
-    public static void checkChainTrust(X509Credential entityX509Cred, Iterable<? extends Credential> trustedCredentials)
+    /**
+     * Performs an certification path key evaluation between the {@param x509Credential} and all the credential contained in {@param trustedCredentials}.
+     *
+     * @param x509Credential the {@link X509Credential} to be evaluated
+     * @param trustedCredentials the list of credentials that the {@param x509Credential} will be evaluated against.
+     * @throws CertificateException if the credential is not trusted
+     */
+    public static void checkChainTrust(X509Credential x509Credential, Iterable<? extends Credential> trustedCredentials)
             throws CertificateException {
 
-        LOG.debug(entityX509Cred.getEntityId());
-        LOG.debug(entityX509Cred.getEntityCertificate().getIssuerDN().getName());
-        LOG.debug("" + entityX509Cred.getEntityCertificate().getNotAfter());
-        LOG.debug("" + entityX509Cred.getEntityCertificate().getSerialNumber());
+        LOG.debug(x509Credential.getEntityId());
+        LOG.debug(x509Credential.getEntityCertificate().getIssuerDN().getName());
+        LOG.debug("" + x509Credential.getEntityCertificate().getNotAfter());
+        LOG.debug("" + x509Credential.getEntityCertificate().getSerialNumber());
 
         final CertPathPKIXTrustEvaluator keyTrustEvaluator = new CertPathPKIXTrustEvaluator();
 
-        boolean isTrusted = isTrustValid(entityX509Cred, keyTrustEvaluator, trustedCredentials);
+        final boolean isTrusted = isTrustValid(x509Credential, keyTrustEvaluator, trustedCredentials);
         if (!isTrusted) {
             throw new CertificateException(EX_UNTRUSTED_CERT);
         }
 
     }
 
-    public static void checkExplicitTrust(X509Credential entityX509Cred, Iterable<? extends Credential> trustedCredentials)
-            throws CertificateException {
+    /**
+     * Performs an explicit key evaluation between the {@param x509Credential} and all the credential contained in {@param trustedCredentials}.
+     *
+     * @param x509Credential the {@link X509Credential} to be evaluated
+     * @param trustedCredentials the list of credentials that the {@param x509Credential} will be evaluated against.
+     * @throws CertificateException if the credential is not trusted
+     */
+    public static void checkExplicitTrust(X509Credential x509Credential, Iterable<? extends Credential> trustedCredentials) throws CertificateException {
 
-        LOG.debug(entityX509Cred.getEntityId());
-        LOG.debug(entityX509Cred.getEntityCertificate().getIssuerDN().getName());
-        LOG.debug("" + entityX509Cred.getEntityCertificate().getNotAfter());
-        LOG.debug("" + entityX509Cred.getEntityCertificate().getSerialNumber());
+        LOG.debug(x509Credential.getEntityId());
+        LOG.debug(x509Credential.getEntityCertificate().getIssuerDN().getName());
+        LOG.debug("" + x509Credential.getEntityCertificate().getNotAfter());
+        LOG.debug("" + x509Credential.getEntityCertificate().getSerialNumber());
 
         final ExplicitKeyTrustEvaluator keyTrustEvaluator = new ExplicitKeyTrustEvaluator();
 
-        keyTrustEvaluator.validate(entityX509Cred, (Iterable<Credential>) trustedCredentials);
+        final boolean isTrusted = keyTrustEvaluator.validate(x509Credential, (Iterable<Credential>) trustedCredentials);
+        if (!isTrusted) {
+            throw new CertificateException(EX_UNTRUSTED_CERT);
+        }
     }
+
 
     private static boolean isTrustValid(final X509Credential entityX509Cred,
                                         final CertPathPKIXTrustEvaluator keyTrustEvaluator,
@@ -130,10 +147,6 @@ public final class CertificateUtil {
     private static PKIXValidationInformation getPKIXInfoSet(Collection<X509Certificate> certs,
                                                      Collection<X509CRL> crls, Integer depth) {
         return new BasicPKIXValidationInformation(certs, crls, depth);
-    }
-
-    public static void checkChainTrust(X509Credential entityX509Cred, KeyStore trustStore) throws CertificateException {
-        checkExplicitTrust(entityX509Cred, getListOfCredential(trustStore));
     }
 
     @Nonnull
@@ -259,6 +272,24 @@ public final class CertificateUtil {
                         unencodedCertificateIssuerPrincipal));
     }
 
+    /**
+     * Retrieves the {@link X509Certificate} which is the issuer of {@param entityX509Cred} from a {@link List<X509Certificate>}
+     *
+     * @param x509Credential the credential which holds the issuer information
+     * @param x509Certificates the list of {@link X509Certificate} where the issuer will be looked up and if present retrieved from
+     * @return the {@link X509Certificate} that is the issuer of {@param entityX509Cred} or null if not found in the {@param  x509Certificates}
+     */
+    public static X509Certificate getIssuerX509Certificate(X509Credential x509Credential, List<X509Certificate> x509Certificates) {
+        String issuerDN = x509Credential.getEntityCertificate().getIssuerDN().getName();
+
+        for(X509Certificate certificate : x509Certificates){
+            if(StringUtils.equals(certificate.getSubjectDN().getName(),issuerDN)) {
+                return certificate;
+            }
+        }
+        return null;
+    }
+
     @Nonnull
     public static X509Certificate toCertificate(@Nonnull String base64Certificate) throws CertificateException {
         Preconditions.checkNotNull(base64Certificate, "base64Certificate");
@@ -305,6 +336,26 @@ public final class CertificateUtil {
         }
 
         return x509CertificatesOut;
+    }
+
+
+    /**
+     * Retrieves the certificates contained in the credentials parameter.
+     *
+     * @param credentials the list of credentials
+     * @return the List of certificates for each one of the credential in credentials
+     */
+    @Nonnull
+    public static List<X509Certificate> getCertificates(List<? extends Credential> credentials) {
+        Preconditions.checkNotNull(credentials,  KeyInfo.DEFAULT_ELEMENT_LOCAL_NAME);
+
+        final List<X509Certificate> certificates = new ArrayList<>();
+        for (Credential credential : credentials){
+            X509Certificate entityCertificate = ((BasicX509Credential) credential).getEntityCertificate();
+            certificates.add(entityCertificate);
+        }
+
+        return certificates;
     }
 
     @Nonnull

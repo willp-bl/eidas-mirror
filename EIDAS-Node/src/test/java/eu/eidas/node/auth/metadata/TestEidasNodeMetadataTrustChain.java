@@ -248,6 +248,49 @@ public class TestEidasNodeMetadataTrustChain {
     /**
      * Test method for
      * {@link eu.eidas.auth.engine.core.impl.AbstractProtocolSigner#validateMetadataSignature(SignableXMLObject)}
+     * when the certificates published in the metadata are not the entire trust chain (metadatanode, rootcametadata), intermediatecametadata is not published, and
+     * when the trusted certificate is the intermediate ca (intermediatecametadata),
+     * <p/>
+     * Must succeed.
+     *
+     */
+    @Test
+    public void testValidMetadataSignatureWithoutIntermediateCaPublishedTrustingIntermediateCA() throws Exception {
+        EntityDescriptorContainer entityDescriptorContainer = MetadataUtil.deserializeEntityDescriptor(metadataTcWithoutIntermediateCA);
+        EntitiesDescriptor entitiesDescriptor = entityDescriptorContainer.getEntitiesDescriptor();
+
+        //there should be only two certificates: metadatanode, intermediatecametadata
+        assertNumberCertificates(entitiesDescriptor, 2);
+
+        MetadataSignerI checker = (MetadataSignerI) getEngine("METADATA_INTERMEDIATE_CA_TRUST").getSigner();
+        checker.validateMetadataSignature(entityDescriptorContainer.getEntitiesDescriptor());
+    }
+
+    /**
+     * Test method for
+     * {@link eu.eidas.auth.engine.core.impl.AbstractProtocolSigner#validateMetadataSignature(SignableXMLObject)}
+     * when the certificates published in the metadata are not the entire trust chain (metadatanode, rootcametadata), intermediatecametadata is not published, and
+     * when the trusted certificate is the intermediate ca and root (intermediatecametadata, rootcametadata),
+     * <p/>
+     * Must succeed.
+     *
+     */
+    @Test
+    public void testValidMetadataSignatureWithoutIntermediateCaPublishedTrustingIntermediateCARootCA() throws Exception {
+        EntityDescriptorContainer entityDescriptorContainer = MetadataUtil.deserializeEntityDescriptor(metadataTcWithoutIntermediateCA);
+        EntitiesDescriptor entitiesDescriptor = entityDescriptorContainer.getEntitiesDescriptor();
+
+        //there should be only two certificates: metadatanode, intermediatecametadata
+        assertNumberCertificates(entitiesDescriptor, 2);
+
+
+        MetadataSignerI checker = (MetadataSignerI) getEngine("METADATA_INTERMEDIATE_CA_ROOT_CA_TRUST").getSigner();
+        checker.validateMetadataSignature(entityDescriptorContainer.getEntitiesDescriptor());
+    }
+
+    /**
+     * Test method for
+     * {@link eu.eidas.auth.engine.core.impl.AbstractProtocolSigner#validateMetadataSignature(SignableXMLObject)}
      * when the certificates published in the metadata are the entire trust chain (metadatanode, intermediatecametadata, rootcametadata)
      * when the trusted certificate is the intermediate issued by the root (intermediatecametadata),
      * <p/>

@@ -37,6 +37,7 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -76,7 +77,7 @@ public class SAMLEngineTimeSkewTest {
         LOG.info("testValidateResponseWithNoTimeSkew");
         clock.setDelta(0);
         byte[] samlResponse = generateTestSamlResponse();
-        engine.unmarshallResponseAndValidate(samlResponse, "", 0, 0, null);
+        engine.unmarshallResponseAndValidate(samlResponse, "", 0, 0, null, Arrays.asList(RESPONSE_ISSUER),true);
     }
 
     /**
@@ -89,7 +90,7 @@ public class SAMLEngineTimeSkewTest {
         LOG.info("testValidateResponseWithTestClockOneHourLaterAndNoTimeSkew");
         byte[] samlResponse = generateTestSamlResponse();
         clock.setDelta(600000);              // clock is now one hour later
-        engine.unmarshallResponseAndValidate(samlResponse, "", 0, 0, null);
+        engine.unmarshallResponseAndValidate(samlResponse, "", 0, 0, null,Arrays.asList(RESPONSE_ISSUER),true);
     }
 
     /**
@@ -102,7 +103,7 @@ public class SAMLEngineTimeSkewTest {
         LOG.info("testValidateResponseWithTestClockOneHourBeforeAndNoTimeSkew");
         byte[] samlResponse = generateTestSamlResponse();
         clock.setDelta(-600000);              // clock is now one hour before
-        engine.unmarshallResponseAndValidate(samlResponse, "", 0, 0, null);
+        engine.unmarshallResponseAndValidate(samlResponse, "", 0, 0, null,Arrays.asList(RESPONSE_ISSUER),true);
     }
 
     /**
@@ -115,7 +116,7 @@ public class SAMLEngineTimeSkewTest {
         LOG.info("testValidateResponseWithTestClockOneHourLaterAndTimeSkew");
         clock.setDelta(600000);              // clock is now one hour later
         byte[] samlResponse = generateTestSamlResponse();
-        engine.unmarshallResponseAndValidate(samlResponse, "", -600000, 600000, null);
+        engine.unmarshallResponseAndValidate(samlResponse, "", -600000, 600000, null,Arrays.asList(RESPONSE_ISSUER),true);
     }
 
     /**
@@ -176,6 +177,8 @@ public class SAMLEngineTimeSkewTest {
         return builder.build();
     }
 
+    final static String REQUEST_ISSUER = "https://testIssuer".toLowerCase();
+    static final String RESPONSE_ISSUER = "http://Responder".toLowerCase();
     private byte[] generateTestSamlResponse() throws EIDASSAMLEngineException {
 
         String destination = "http://proxyservice.gov.xx/EidasNode/ColleagueRequest";
@@ -190,11 +193,11 @@ public class SAMLEngineTimeSkewTest {
         String spId = "EDU001-APP001-APP001";
         int QAAL = 3;
 
-        EidasAuthenticationRequest request = EidasAuthenticationRequest.builder()
+		EidasAuthenticationRequest request = EidasAuthenticationRequest.builder()
                 .id("QDS2QFD") // Common part
                 .assertionConsumerServiceURL(assertConsumerUrl)
                 .destination(destination)
-                .issuer("https://testIssuer")
+                .issuer(REQUEST_ISSUER)
                 .providerName(spName)
                 .serviceProviderCountryCode(spCountry)
                 .citizenCountryCode("ES")
@@ -208,7 +211,7 @@ public class SAMLEngineTimeSkewTest {
         try {
             authRequest = engine.generateRequestMessage(request, null).getMessageBytes();
 
-            authenRequest = engine.unmarshallRequestAndValidate(authRequest, "ES");
+            authenRequest = engine.unmarshallRequestAndValidate(authRequest, "ES",Arrays.asList(REQUEST_ISSUER));
 
         } catch (EIDASSAMLEngineException e) {
             fail("Error create EidasAuthenticationRequest");
@@ -233,9 +236,9 @@ public class SAMLEngineTimeSkewTest {
         attributeMapBuilder.put(NaturalPersonSpec.Definitions.DATE_OF_BIRTH,
                 new DateTimeAttributeValue(birthDate));
 
-        AuthenticationResponse response = new AuthenticationResponse.Builder().id("RESPONSE_ID_TO_QDS2QFD")
+		AuthenticationResponse response = new AuthenticationResponse.Builder().id("RESPONSE_ID_TO_QDS2QFD")
                 .inResponseTo("QDS2QFD")
-                .issuer("http://Responder")
+                .issuer(RESPONSE_ISSUER)
                 .statusCode(EIDASStatusCode.SUCCESS_URI.toString())
                 .subject("UK/UK/Banksy")
                 .subjectNameIdFormat("urn:oasis:names:tc:SAML:2.0:nameid-format:transient")

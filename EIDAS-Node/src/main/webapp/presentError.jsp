@@ -1,5 +1,5 @@
-<%@ page import="eu.eidas.node.security.SecurityResponseHeaderHelper" %>
 <%@ page import="eu.eidas.node.security.ExtendedServletResponseWrapper" %>
+<%@ page import="eu.eidas.node.security.SecurityResponseHeaderHelper" %>
 <!DOCTYPE html>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
@@ -40,7 +40,7 @@
                         <span class="text-error"><fmt:message key="Service.error.title" bundle="${i18n_eng}"/></span>
                     </h1>
                     <c:if test="${!empty exception}">
-                        <p class="text-center">${exception.errorMessage}</p>
+                        <p class="text-center">${e:forHtml(exception.errorMessage)}</p>
                     </c:if>
                     <c:if test="${(!empty exception.samlTokenFail)}">
                         <form action="${e:forHtml(errorRedirectUrl)}" name="redirectForm" id="redirectForm" method="post">

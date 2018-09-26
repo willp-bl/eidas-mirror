@@ -17,7 +17,6 @@ package eu.eidas.node.utils;
 
 import eu.eidas.auth.commons.*;
 import eu.eidas.auth.commons.exceptions.EidasNodeException;
-import eu.eidas.node.ApplicationContextProvider;
 import eu.eidas.node.auth.connector.AUCONNECTORUtil;
 import eu.eidas.node.logging.LoggingMarkerMDC;
 
@@ -31,6 +30,8 @@ import org.springframework.core.io.Resource;
 import java.io.IOException;
 import java.util.*;
 
+import static eu.eidas.node.BeanProvider.getBean;
+
 /**
  * Util to retrieve a property value. Contains the properties loaded by the placeholderConfig
  * bean on spring initialization
@@ -40,8 +41,7 @@ public class PropertiesUtil extends PropertyPlaceholderConfigurer implements IEI
      * Logger object.
      */
     private static final Logger LOG = LoggerFactory.getLogger(PropertiesUtil.class.getName());
-    private static Map propertiesMap;
-    private List<Resource> locations;
+    private static Map<String, String> propertiesMap;
     private static String eidasXmlLocation=null;
     private static final String MASTER_CONF_FILE="eidas.xml";
     private static final String MASTER_CONF_FILE_PARAM="eidas.engine.repo";
@@ -49,9 +49,9 @@ public class PropertiesUtil extends PropertyPlaceholderConfigurer implements IEI
     @Override
     public void setLocations(Resource... locations) {
         super.setLocations(locations);
-        this.locations=new ArrayList<Resource>();
+        List<Resource> locations1 = new ArrayList<>();
         for(Resource location:locations){
-            this.locations.add(location);
+            locations1.add(location);
             try {
                 if (location.getURL() != null && location.getFilename()!=null && MASTER_CONF_FILE.equalsIgnoreCase(location.getFilename())) {
                     PropertiesUtil.setEidasXmlLocation(location.getURL().toString());
@@ -64,13 +64,10 @@ public class PropertiesUtil extends PropertyPlaceholderConfigurer implements IEI
     private static void setEidasXmlLocation(String location){
         eidasXmlLocation = location;
     }
-    public List<Resource> getPropertyLocations(){
-        return locations;
-    }
 
     private static void initProps(Properties props){
         LOG.info(LoggingMarkerMDC.SYSTEM_EVENT, "Loading properties");
-        propertiesMap = new HashMap<String, String>();
+        propertiesMap = new HashMap<>();
         for (Object key : props.keySet()) {
             String keyStr = key.toString();
             propertiesMap.put(keyStr, props.getProperty(keyStr));
@@ -91,7 +88,7 @@ public class PropertiesUtil extends PropertyPlaceholderConfigurer implements IEI
     }
 
   public static String getProperty(String name) {
-    return (String) propertiesMap.get(name);
+    return propertiesMap.get(name);
   }
     public String getEidasParameterValue(String parameterName){
         return PropertiesUtil.getProperty(parameterName);
@@ -99,7 +96,7 @@ public class PropertiesUtil extends PropertyPlaceholderConfigurer implements IEI
 
 
     private static String getConfigParameter(String parameterName){
-        AUCONNECTORUtil util= ApplicationContextProvider.getApplicationContext()==null?null:ApplicationContextProvider.getApplicationContext().getBean(AUCONNECTORUtil.class);
+        AUCONNECTORUtil util= getBean(AUCONNECTORUtil.class);
         String value=null;
         if(util!=null && util.getConfigs()!=null) {
             value = util.getConfigs().getProperty(parameterName);
@@ -129,22 +126,14 @@ public class PropertiesUtil extends PropertyPlaceholderConfigurer implements IEI
     }
     private static boolean isMetadataEnabled(String paramName){
         String active = getConfigParameter(paramName);
-        if (active != null && Boolean.parseBoolean(active)==false) {
-            return false;
-        }
-        return true;
+        return Boolean.parseBoolean(active);
     }
 
     public static String getEidasXmlLocation(){
         if(propertiesMap.containsKey(MASTER_CONF_FILE_PARAM)){
-            return propertiesMap.get(MASTER_CONF_FILE_PARAM).toString();
+            return propertiesMap.get(MASTER_CONF_FILE_PARAM);
         }
         return null;
     }
-    
-    public static boolean hasPropertyMap(){
-        return propertiesMap != null;
-    }
-
 }
 

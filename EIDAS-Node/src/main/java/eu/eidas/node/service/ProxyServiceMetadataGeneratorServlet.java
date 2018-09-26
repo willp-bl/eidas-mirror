@@ -15,19 +15,20 @@
 
 package eu.eidas.node.service;
 
+import eu.eidas.auth.engine.ProtocolEngineI;
 import eu.eidas.node.AbstractNodeServlet;
 import eu.eidas.node.NodeBeanNames;
 import eu.eidas.node.utils.EidasNodeMetadataGenerator;
 import eu.eidas.node.utils.PropertiesUtil;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import java.io.IOException;
+
+import static eu.eidas.node.BeanProvider.getBean;
 
 /**
  * generates metadata used to communicate with the ProxyService.
@@ -47,12 +48,15 @@ public class ProxyServiceMetadataGeneratorServlet extends AbstractNodeServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String generatorName = NodeBeanNames.SERVICE_METADATA_GENERATOR.toString();
-        EidasNodeMetadataGenerator generator = (EidasNodeMetadataGenerator)getApplicationContext().getBean(generatorName);
+        EidasNodeMetadataGenerator generator = getBean(EidasNodeMetadataGenerator.class, generatorName);
         PropertiesUtil.checkProxyServiceActive();
         if(PropertiesUtil.isMetadataEnabled()) {
-            ServiceControllerService controllerService = (ServiceControllerService) getApplicationContext().getBean(
-                    NodeBeanNames.EIDAS_SERVICE_CONTROLLER.toString());
-            response.getOutputStream().print(generator.generateProxyServiceMetadata(controllerService.getProxyService().getSamlService().getSamlEngine()));
+            String beanName = NodeBeanNames.EIDAS_SERVICE_CONTROLLER.toString();
+            ServiceControllerService controllerService = getBean(ServiceControllerService.class,beanName);
+            ProtocolEngineI samlEngine = controllerService.getProxyService().getSamlService().getSamlEngine();
+            response.setContentType("text/xml");
+            response.setCharacterEncoding("UTF-8");
+            response.getWriter().print(generator.generateProxyServiceMetadata(samlEngine));
         }else{
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
         }

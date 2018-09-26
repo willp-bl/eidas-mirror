@@ -25,13 +25,10 @@
 
 	ProcessLogin processLogin = new ProcessLogin();
 	String username = request.getParameter("username");
-	String password = request.getParameter("password");
 
 	String callback = processLogin.getServiceUrl(processLogin.convertJsonRequest(smsspToken));
 
 	String jSonRequestDecoded = new String(EidasStringUtil.decodeBytesFromBase64(smsspToken));
-	String signAssertion = request.getParameter("signAssertion");
-	String encryptAssertion = request.getParameter("encryptAssertion");
 %>
 
 <script language="Javascript" type="text/javascript">
@@ -124,8 +121,6 @@
 								<input class="form-horizontal" id="doNotmodifyTheResponse" type="checkbox" name="doNotmodifyTheResponse" checked/>&nbsp;
 								<label for="doNotmodifyTheResponse">Do Not Modify The Response</label>
 							</span>
-						<input type="hidden" name="signAssertion" value="<%=signAssertion%>"/>
-						<input type="hidden" name="encryptAssertion" value="<%=encryptAssertion%>"/>
 						<button type="submit" id="idpSubmitbutton" class="btn btn-default btn-lg btn-block">Submit</button>
 					</form>
 

@@ -15,7 +15,23 @@
 
 package eu.eidas.auth.engine.core.impl;
 
+import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.List;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import org.opensaml.saml.saml2.core.EncryptedAssertion;
+import org.opensaml.saml.saml2.core.Response;
+import org.opensaml.security.x509.X509Credential;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.collect.ImmutableSet;
+
 import eu.eidas.auth.commons.EidasErrorKey;
 import eu.eidas.auth.engine.configuration.ProtocolEngineConfigurationException;
 import eu.eidas.auth.engine.configuration.dom.EncryptionConfiguration;
@@ -25,20 +41,6 @@ import eu.eidas.encryption.SAMLAuthnResponseDecrypter;
 import eu.eidas.encryption.exception.DecryptionException;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import eu.eidas.util.Preconditions;
-import org.opensaml.saml.saml2.core.EncryptedAssertion;
-import org.opensaml.saml.saml2.core.Response;
-import org.opensaml.security.x509.X509Credential;
-import org.opensaml.xmlsec.encryption.EncryptedKey;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.security.KeyStore;
-import java.security.PrivateKey;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.util.List;
 
 /**
  * The base abstract class for implementations of {@link ProtocolDecrypterI}.
@@ -61,6 +63,7 @@ public abstract class AbstractProtocolDecrypter extends AbstractProtocolCipher i
         this(encryptionConfiguration.isCheckedValidityPeriod(),
              encryptionConfiguration.isDisallowedSelfSignedCertificate(),
              encryptionConfiguration.isResponseEncryptionMandatory(),
+             encryptionConfiguration.isAssertionEncryptWithKey(),
              encryptionConfiguration.getDecryptionKeyAndCertificates(), encryptionConfiguration.getJcaProviderName(),
              encryptionConfiguration.getEncryptionAlgorithmWhiteList());
     }
@@ -68,10 +71,11 @@ public abstract class AbstractProtocolDecrypter extends AbstractProtocolCipher i
     protected AbstractProtocolDecrypter(boolean checkedValidityPeriod,
                                         boolean disallowedSelfSignedCertificate,
                                         boolean responseEncryptionMandatory,
+                                        boolean isAssertionEncryptWithKey,
                                         @Nonnull ImmutableSet<KeyStore.PrivateKeyEntry> decryptionKeyAndCertificates,
                                         @Nonnull SAMLAuthnResponseDecrypter samlAuthnResponseDecrypter,
                                         @Nonnull ImmutableSet<String> encryptionAlgorithmWhiteList) {
-        super(checkedValidityPeriod, disallowedSelfSignedCertificate, responseEncryptionMandatory,
+        super(checkedValidityPeriod, disallowedSelfSignedCertificate, responseEncryptionMandatory,isAssertionEncryptWithKey,
               encryptionAlgorithmWhiteList);
 
         Preconditions.checkNotEmpty(decryptionKeyAndCertificates, "decryptionKeyAndCertificates");
@@ -84,11 +88,13 @@ public abstract class AbstractProtocolDecrypter extends AbstractProtocolCipher i
     protected AbstractProtocolDecrypter(boolean checkedValidityPeriod,
                                         boolean disallowedSelfSignedCertificate,
                                         boolean responseEncryptionMandatory,
+                                        boolean isAssertionEncryptWithKey,
                                         @Nonnull ImmutableSet<KeyStore.PrivateKeyEntry> decryptionKeyAndCertificates,
                                         @Nullable String jcaProviderName,
                                         @Nullable String encryptionAlgorithmWhiteList)
             throws ProtocolEngineConfigurationException {
         super(checkedValidityPeriod, disallowedSelfSignedCertificate, responseEncryptionMandatory,
+        		isAssertionEncryptWithKey,
               encryptionAlgorithmWhiteList);
 
         Preconditions.checkNotEmpty(decryptionKeyAndCertificates, "decryptionKeyAndCertificates");
@@ -159,16 +165,13 @@ public abstract class AbstractProtocolDecrypter extends AbstractProtocolCipher i
 
     private X509Credential retrieveDecryptionCredential(EncryptedAssertion encAssertion)
             throws EIDASSAMLEngineException, CertificateException {
-        EncryptedKey encryptedSymmetricKey = encAssertion.getEncryptedData().getKeyInfo().getEncryptedKeys().get(0);
-        X509Certificate keyInfoCert = CertificateUtil.toCertificate(encryptedSymmetricKey.getKeyInfo());
-
+        X509Certificate keyInfoCert=null;
+        
         PrivateKey privateKey = null;
         for (final KeyStore.PrivateKeyEntry privateKeyEntry : decryptionKeyAndCertificates) {
-            X509Certificate certificate = (X509Certificate) privateKeyEntry.getCertificate();
-            if (certificate.equals(keyInfoCert)) {
-                privateKey = privateKeyEntry.getPrivateKey();
-                break;
-            }
+            keyInfoCert = (X509Certificate) privateKeyEntry.getCertificate();
+            privateKey = privateKeyEntry.getPrivateKey();
+            break;
         }
 
         if (null == privateKey) {

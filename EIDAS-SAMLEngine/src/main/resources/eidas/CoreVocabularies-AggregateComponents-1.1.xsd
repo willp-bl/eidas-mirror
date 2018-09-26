@@ -6,7 +6,6 @@
   Generated on:      2015-02-03 07:46z
 -->
 <xsd:schema xmlns="http://www.w3.org/ns/corevocabulary/AggregateComponents"
-            xmlns:cva="http://www.w3.org/ns/corevocabulary/AggregateComponents"
             xmlns:cvb="http://www.w3.org/ns/corevocabulary/BasicComponents"
             xmlns:xsd="http://www.w3.org/2001/XMLSchema"
             xmlns:ccts="urn:un:unece:uncefact:documentation:2"
@@ -170,23 +169,6 @@
          </xsd:documentation>
       </xsd:annotation>
       <xsd:sequence>
-         <xsd:element ref="cvb:AddressFullAddress" minOccurs="0" maxOccurs="unbounded">
-            <xsd:annotation>
-               <xsd:documentation>
-                  <ccts:Component>
-                     <ccts:ComponentType>BBIE</ccts:ComponentType>
-                     <ccts:DictionaryEntryName>Core Address. Address_ Full Address. Text</ccts:DictionaryEntryName>
-                     <ccts:Definition>The complete address with or without formatting.</ccts:Definition>
-                     <ccts:Cardinality>0..n</ccts:Cardinality>
-                     <ccts:ObjectClass>Core Address</ccts:ObjectClass>
-                     <ccts:PropertyTermQualifier>Address</ccts:PropertyTermQualifier>
-                     <ccts:PropertyTerm>Full Address</ccts:PropertyTerm>
-                     <ccts:RepresentationTerm>Text</ccts:RepresentationTerm>
-                     <ccts:DataType>Text. Type</ccts:DataType>
-                  </ccts:Component>
-               </xsd:documentation>
-            </xsd:annotation>
-         </xsd:element>
          <xsd:element ref="cvb:AddressPostOfficeBox" minOccurs="0" maxOccurs="unbounded">
             <xsd:annotation>
                <xsd:documentation>
@@ -342,23 +324,6 @@
                      <ccts:PropertyTerm>Post Code</ccts:PropertyTerm>
                      <ccts:RepresentationTerm>Text</ccts:RepresentationTerm>
                      <ccts:DataType>Text. Type</ccts:DataType>
-                  </ccts:Component>
-               </xsd:documentation>
-            </xsd:annotation>
-         </xsd:element>
-         <xsd:element ref="cvb:AddressID" minOccurs="0" maxOccurs="unbounded">
-            <xsd:annotation>
-               <xsd:documentation>
-                  <ccts:Component>
-                     <ccts:ComponentType>BBIE</ccts:ComponentType>
-                     <ccts:DictionaryEntryName>Core Address. Address_ Identifier. Identifier</ccts:DictionaryEntryName>
-                     <ccts:Definition>A globally unique identifier for this instance of the address.</ccts:Definition>
-                     <ccts:Cardinality>0..n</ccts:Cardinality>
-                     <ccts:ObjectClass>Core Address</ccts:ObjectClass>
-                     <ccts:PropertyTermQualifier>Address</ccts:PropertyTermQualifier>
-                     <ccts:PropertyTerm>Identifier</ccts:PropertyTerm>
-                     <ccts:RepresentationTerm>Identifier</ccts:RepresentationTerm>
-                     <ccts:DataType>Identifier. Type</ccts:DataType>
                   </ccts:Component>
                </xsd:documentation>
             </xsd:annotation>

@@ -15,6 +15,7 @@
 
 package eu.eidas.specificcommunication;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -28,6 +29,11 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
  */
 public class SpecificCommunicationApplicationContextProviderTest {
 
+    private final static ApplicationContext SAVED_APPLICATION_CONTEXT;
+    static {
+        SAVED_APPLICATION_CONTEXT = SpecificCommunicationApplicationContextProvider.getApplicationContext();
+    }
+
     @Rule
     public ExpectedException thrown = ExpectedException.none();
 
@@ -39,7 +45,7 @@ public class SpecificCommunicationApplicationContextProviderTest {
      * Must succeed.
      */
     @Test
-    public void testGetApplicationContext() throws Exception {
+    public void testGetApplicationContext() {
         final ApplicationContext applicationContext = SpecificCommunicationApplicationContextProvider.getApplicationContext();
         Assert.assertNotNull(applicationContext);
     }
@@ -51,7 +57,7 @@ public class SpecificCommunicationApplicationContextProviderTest {
      * Must succeed.
      */
     @Test
-    public void testSetApplicationContext() throws Exception {
+    public void testSetApplicationContext() {
         final ClassPathXmlApplicationContext classPathXmlApplicationContext = new ClassPathXmlApplicationContext("testApplicationContext.xml");
         new SpecificCommunicationApplicationContextProvider().setApplicationContext(classPathXmlApplicationContext);
         final ApplicationContext applicationContext = SpecificCommunicationApplicationContextProvider.getApplicationContext();
@@ -67,15 +73,20 @@ public class SpecificCommunicationApplicationContextProviderTest {
      * Must fail.
      */
     @Test
-    public void testSetApplicationContextNonExistingBean() throws Exception {
+    public void testSetApplicationContextNonExistingBean() {
         thrown.expect(NoSuchBeanDefinitionException.class);
         thrown.expectMessage("No bean named 'specificCommunicationDefinitionConnectorConfigFile' is defined");
 
         final ClassPathXmlApplicationContext classPathXmlApplicationContext = new ClassPathXmlApplicationContext("testApplicationContext.xml");
         new SpecificCommunicationApplicationContextProvider().setApplicationContext(classPathXmlApplicationContext);
         final ApplicationContext applicationContext = SpecificCommunicationApplicationContextProvider.getApplicationContext();
-        final String nonExistingbean = (String) applicationContext.getBean("specificCommunicationDefinitionConnectorConfigFile");
+        final String nonExistingBean = (String) applicationContext.getBean("specificCommunicationDefinitionConnectorConfigFile");
 
-        Assert.assertNull(nonExistingbean);
+        Assert.assertNull(nonExistingBean);
+    }
+
+    @After
+    public void tearDown () {
+        new SpecificCommunicationApplicationContextProvider().setApplicationContext(SAVED_APPLICATION_CONTEXT);
     }
 }

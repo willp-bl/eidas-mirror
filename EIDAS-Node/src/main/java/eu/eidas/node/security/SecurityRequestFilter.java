@@ -14,19 +14,16 @@
  */
 package eu.eidas.node.security;
 
-import eu.eidas.auth.commons.EidasErrorKey;
 import eu.eidas.auth.commons.EIDASValues;
+import eu.eidas.auth.commons.EidasErrorKey;
 import eu.eidas.auth.commons.EidasErrors;
 import eu.eidas.auth.commons.exceptions.SecurityEIDASException;
-import eu.eidas.node.ApplicationContextProvider;
 import eu.eidas.node.NodeBeanNames;
 import eu.eidas.node.logging.LoggingMarkerMDC;
 import eu.eidas.node.utils.SessionHolder;
 import org.apache.commons.lang.StringUtils;
-import org.owasp.esapi.StringUtilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.ApplicationContext;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -34,10 +31,12 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+import static eu.eidas.node.BeanProvider.getBean;
+
 /**
  * @author vanegdi
  */
-public class SecurityRequestFilter  extends AbstractSecurityRequest implements Filter {
+public class SecurityRequestFilter extends AbstractSecurityRequest implements Filter {
 
     /**
      * Logger object.
@@ -59,13 +58,15 @@ public class SecurityRequestFilter  extends AbstractSecurityRequest implements F
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
         LOG.trace("Execution Of filter");
-        servletRequest.setCharacterEncoding("UTF-8");
-        final HttpServletRequest request = (HttpServletRequest) servletRequest;
-        ApplicationContext context = ApplicationContextProvider.getApplicationContext();
-        this.setConfigurationSecurityBean((ConfigurationSecurityBean) context.getBean(NodeBeanNames.SECURITY_CONFIG.toString()));
+
+        String beanName = NodeBeanNames.SECURITY_CONFIG.toString();
+        ConfigurationSecurityBean securityBean = getBean(ConfigurationSecurityBean.class, beanName);
+        this.setConfigurationSecurityBean(securityBean);
 
         // Class Name of the Action being invoked
-        final String pathInvoked = StringUtils.remove(request.getServletPath(),"/");
+        servletRequest.setCharacterEncoding("UTF-8");
+        final HttpServletRequest request = (HttpServletRequest) servletRequest;
+        final String pathInvoked = StringUtils.remove(request.getServletPath(), "/");
 
         if (!matchIncludedServlets(pathInvoked)) {
             LOG.debug("Not filtered");
@@ -78,7 +79,7 @@ public class SecurityRequestFilter  extends AbstractSecurityRequest implements F
 
         boolean performDomainCheck = !getConfigurationSecurityBean().getBypassValidation();
 
-        if("cspReportHandler".equals(pathInvoked)) {
+        if ("cspReportHandler".equals(pathInvoked)) {
             performDomainCheck = false;
         }
 
@@ -120,11 +121,9 @@ public class SecurityRequestFilter  extends AbstractSecurityRequest implements F
     }
 
     private boolean matchIncludedServlets(String url) {
-        if(!StringUtilities.isEmpty(url) && !StringUtilities.isEmpty(this.includedServlets)){
+        if (!StringUtils.isEmpty(url) && !StringUtils.isEmpty(this.includedServlets)) {
             List<String> servlets = Arrays.asList(this.includedServlets.split("\\s*,\\s*"));
-            if(servlets.contains(url)){
-                return true;
-            }
+            return servlets.contains(url);
         }
         return false;
     }

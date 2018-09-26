@@ -14,14 +14,13 @@
  */
 package eu.eidas.auth.commons.protocol.eidas.impl;
 
-import java.io.ObjectStreamException;
-import java.io.Serializable;
+import eu.eidas.util.Preconditions;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
-
-import eu.eidas.util.Preconditions;
+import java.io.ObjectStreamException;
+import java.io.Serializable;
 
 /**
  * PostalAddress as per CORA ISA Vocabulary v0.3
@@ -39,8 +38,6 @@ public final class PostalAddress implements Serializable {
     @SuppressWarnings("ParameterHidesMemberVariable")
     @NotThreadSafe
     public static final class Builder {
-
-        private String addressId;
 
         private String poBox;
 
@@ -60,14 +57,11 @@ public final class PostalAddress implements Serializable {
 
         private String postCode;
 
-        private String fullCvaddress;
-
         public Builder() {
         }
 
         public Builder(@Nonnull Builder copy) {
             Preconditions.checkNotNull(copy, "copy");
-            addressId = copy.addressId;
             poBox = copy.poBox;
             locatorDesignator = copy.locatorDesignator;
             locatorName = copy.locatorName;
@@ -77,13 +71,11 @@ public final class PostalAddress implements Serializable {
             adminUnitFirstLine = copy.adminUnitFirstLine;
             adminUnitSecondLine = copy.adminUnitSecondLine;
             postCode = copy.postCode;
-            fullCvaddress = copy.fullCvaddress;
 
         }
 
         public Builder(@Nonnull PostalAddress copy) {
             Preconditions.checkNotNull(copy, "copy");
-            addressId = copy.addressId;
             poBox = copy.poBox;
             locatorDesignator = copy.locatorDesignator;
             locatorName = copy.locatorName;
@@ -93,12 +85,6 @@ public final class PostalAddress implements Serializable {
             adminUnitFirstLine = copy.adminUnitFirstLine;
             adminUnitSecondLine = copy.adminUnitSecondLine;
             postCode = copy.postCode;
-            fullCvaddress = copy.fullCvaddress;
-        }
-
-        public Builder addressId(final String addressId) {
-            this.addressId = addressId;
-            return this;
         }
 
         public Builder poBox(final String poBox) {
@@ -146,11 +132,6 @@ public final class PostalAddress implements Serializable {
             return this;
         }
 
-        public Builder fullCvaddress(final String fullCvaddress) {
-            this.fullCvaddress = fullCvaddress;
-            return this;
-        }
-
         private void validate() throws IllegalArgumentException {
             //TODO with validator
         }
@@ -180,9 +161,6 @@ public final class PostalAddress implements Serializable {
     private static final long serialVersionUID = 7410409986167152563L;
 
     @Nullable
-    private final String addressId;
-
-    @Nullable
     private final String poBox;
 
     @Nullable
@@ -209,12 +187,8 @@ public final class PostalAddress implements Serializable {
     @Nullable
     private final String postCode;
 
-    @Nullable
-    private final String fullCvaddress;
-
 
     private PostalAddress(@Nonnull Builder builder) {
-        addressId = builder.addressId;
         poBox = builder.poBox;
         locatorDesignator = builder.locatorDesignator;
         locatorName = builder.locatorName;
@@ -224,12 +198,6 @@ public final class PostalAddress implements Serializable {
         adminUnitFirstLine = builder.adminUnitFirstLine;
         adminUnitSecondLine = builder.adminUnitSecondLine;
         postCode = builder.postCode;
-        fullCvaddress = builder.fullCvaddress;
-    }
-
-    @Nullable
-    public String getAddressId() {
-        return addressId;
     }
 
     @Nullable
@@ -277,11 +245,6 @@ public final class PostalAddress implements Serializable {
         return postCode;
     }
 
-    @Nullable
-    public String getFullCvaddress() {
-        return fullCvaddress;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -293,9 +256,6 @@ public final class PostalAddress implements Serializable {
 
         PostalAddress that = (PostalAddress) o;
 
-        if (addressId != null ? !addressId.equals(that.addressId) : that.addressId != null) {
-            return false;
-        }
         if (poBox != null ? !poBox.equals(that.poBox) : that.poBox != null) {
             return false;
         }
@@ -323,10 +283,6 @@ public final class PostalAddress implements Serializable {
                                         : that.adminUnitSecondLine != null) {
             return false;
         }
-        if (fullCvaddress != null ? !fullCvaddress.equals(that.fullCvaddress)
-                : that.fullCvaddress != null) {
-            return false;
-        }
         return postCode != null ? postCode.equals(that.postCode) : that.postCode == null;
 
     }
@@ -334,7 +290,6 @@ public final class PostalAddress implements Serializable {
     @Override
     public int hashCode() {
         int result = poBox != null ? poBox.hashCode() : 0;
-        result = 31 * result + (addressId != null ? addressId.hashCode() : 0);
         result = 31 * result + (locatorDesignator != null ? locatorDesignator.hashCode() : 0);
         result = 31 * result + (locatorName != null ? locatorName.hashCode() : 0);
         result = 31 * result + (cvAddressArea != null ? cvAddressArea.hashCode() : 0);
@@ -343,15 +298,12 @@ public final class PostalAddress implements Serializable {
         result = 31 * result + (adminUnitFirstLine != null ? adminUnitFirstLine.hashCode() : 0);
         result = 31 * result + (adminUnitSecondLine != null ? adminUnitSecondLine.hashCode() : 0);
         result = 31 * result + (postCode != null ? postCode.hashCode() : 0);
-        result = 31 * result + (fullCvaddress != null ? fullCvaddress.hashCode() : 0);
         return result;
     }
 
     @Override
     public String toString() {
         StringBuffer ret = new StringBuffer();
-        if (addressId != null)
-            ret.append("addressId: "+addressId+"\n");
         if (poBox != null)
             ret.append("poBox: "+poBox+"\n");
         if (locatorDesignator != null)
@@ -370,8 +322,6 @@ public final class PostalAddress implements Serializable {
             ret.append("adminUnitSecondLine: "+adminUnitSecondLine+"\n");
         if (postCode != null)
             ret.append("postCode: "+postCode+"\n");
-        if (fullCvaddress != null)
-            ret.append("fullCvaddress: "+fullCvaddress+"\n");
         return ret.toString();
     }
 

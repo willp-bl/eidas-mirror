@@ -24,6 +24,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import eu.eidas.node.*;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,15 +49,13 @@ import eu.eidas.auth.commons.protocol.IResponseMessage;
 import eu.eidas.auth.commons.protocol.eidas.spec.EidasSpec;
 import eu.eidas.auth.commons.tx.CorrelationMap;
 import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
-import eu.eidas.node.AbstractNodeServlet;
-import eu.eidas.node.NodeBeanNames;
-import eu.eidas.node.NodeParameterNames;
-import eu.eidas.node.NodeViewNames;
 import eu.eidas.node.utils.EidasAttributesUtil;
 import eu.eidas.node.utils.SessionHolder;
 import eu.eidas.specificcommunication.SpecificCommunicationDefinitionBeanNames;
 import eu.eidas.specificcommunication.exception.SpecificCommunicationException;
 import eu.eidas.specificcommunication.protocol.impl.SpecificProxyserviceCommunicationServiceImpl;
+
+import static eu.eidas.node.BeanProvider.getBean;
 
 /**
  * Handles the incoming response from the MS Specific Proxy Service.
@@ -82,8 +81,8 @@ public final class SpecificProxyServiceResponse extends AbstractNodeServlet {
     private static final Logger LOG = LoggerFactory.getLogger(SpecificProxyServiceResponse.class.getName());
 
 	private Collection<AttributeDefinition<?>> retrieveAttributes() {
-		ServiceControllerService controllerService = (ServiceControllerService) getApplicationContext().getBean(
-                NodeBeanNames.EIDAS_SERVICE_CONTROLLER.toString());
+        String beanName = NodeBeanNames.EIDAS_SERVICE_CONTROLLER.toString();
+        ServiceControllerService controllerService = getBean(ServiceControllerService.class, beanName);
 
     	return ImmutableSortedSet.copyOf(controllerService.getProxyService()
         		.getSamlService()
@@ -117,10 +116,11 @@ public final class SpecificProxyServiceResponse extends AbstractNodeServlet {
     private void execute(HttpServletRequest request, HttpServletResponse response)
             throws IOException, ServletException {
         try {
+            String beanName = SpecificCommunicationDefinitionBeanNames.SPECIFIC_PROXYSERVICE_COMMUNICATION_SERVICE.toString();
+            final SpecificProxyserviceCommunicationServiceImpl specificProxyserviceCommunicationService = getBean(
+                                                          SpecificProxyserviceCommunicationServiceImpl.class, beanName);
+
             final String token = request.getParameter(EidasParameterKeys.TOKEN.toString());
-            final SpecificProxyserviceCommunicationServiceImpl specificProxyserviceCommunicationService
-                    = (SpecificProxyserviceCommunicationServiceImpl) getApplicationContext()
-                    .getBean(SpecificCommunicationDefinitionBeanNames.SPECIFIC_PROXYSERVICE_COMMUNICATION_SERVICE.toString());
             final ILightResponse iLightResponse = specificProxyserviceCommunicationService.getAndRemoveResponse(token, retrieveAttributes());
 
             final String url = handleExecute(request, response, iLightResponse);
@@ -148,8 +148,8 @@ public final class SpecificProxyServiceResponse extends AbstractNodeServlet {
 
     private String handleExecute(HttpServletRequest request, HttpServletResponse response, final ILightResponse lightResponse) throws ServletException {
 
-        ServiceControllerService controllerService = (ServiceControllerService) getApplicationContext().getBean(
-                NodeBeanNames.EIDAS_SERVICE_CONTROLLER.toString());
+        String beanName = NodeBeanNames.EIDAS_SERVICE_CONTROLLER.toString();
+        ServiceControllerService controllerService = getBean(ServiceControllerService.class, beanName);
 
         HttpSession session = request.getSession();
         SessionHolder.setId(session);

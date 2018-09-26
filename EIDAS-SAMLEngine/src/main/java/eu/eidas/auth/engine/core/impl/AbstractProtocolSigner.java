@@ -316,16 +316,7 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
 
         signature.setSignatureAlgorithm(getSignatureAlgorithm());
 
-        KeyInfoGeneratorFactory keyInfoGenFac;
-        if (onlyKeyInfoNoCert){
-        	keyInfoGenFac = createKeyInfoGeneratorFactory(credential);
-        }else{
-            SignatureSigningConfiguration secConfiguration = SecurityConfigurationSupport.getGlobalSignatureSigningConfiguration();
-            NamedKeyInfoGeneratorManager keyInfoManager = secConfiguration.getKeyInfoGeneratorManager();
-            KeyInfoGeneratorManager keyInfoGenManager = keyInfoManager.getDefaultManager();
-            keyInfoGenFac = keyInfoGenManager.getFactory(credential);
-        }
-        KeyInfo keyInfo = createKeyInfo(keyInfoGenFac, credential);
+        KeyInfo keyInfo = createKeyInfo(credential, onlyKeyInfoNoCert);
 
         signature.setKeyInfo(keyInfo);
         signature.setCanonicalizationAlgorithm(SignatureConstants.ALGO_ID_C14N_EXCL_OMIT_COMMENTS);
@@ -391,36 +382,62 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
         return entityX509Cred;
     }
 
+    /**
+     * Checks the validity of trust related to certificate(s) present in the signature.
+     *
+     * If the signature has only one certificate, explicit certificate validation is performed.
+     * Otherwise, validation of the certification path is performed.
+     *
+     * @param signature the {@link Signature} to be validated
+     * @param trustedCredentialList that contains the trusted credentials
+     * @param entityX509Cred the credential related to the key that signs
+     * @throws EIDASSAMLEngineException if the either the explicit or the certification path validation fails.
+     */
     private void checkValidTrust(@Nonnull Signature signature, @Nonnull List<? extends Credential> trustedCredentialList, X509Credential entityX509Cred) throws EIDASSAMLEngineException {
         try {
-            final List<X509Certificate> certificateChain = CertificateUtil.getCertificates(signature.getKeyInfo());
+            final List<X509Certificate> trustedCertificatesSignature = CertificateUtil.getCertificates(signature.getKeyInfo());
+            final List<X509Certificate> trustedCertificates = CertificateUtil.getCertificates(trustedCredentialList);
+            final boolean hasLeafInTrusted = hasCredential(entityX509Cred, trustedCredentialList);
 
-            if (certificateChain.size() == 1) {
-                CertificateUtil.checkExplicitTrust(entityX509Cred, trustedCredentialList);
+            if (hasLeafInTrusted) {
+                CertificateUtil.checkChainTrust(entityX509Cred, trustedCredentialList);
             } else {
-                if (hasLeaf(entityX509Cred, trustedCredentialList)) {
-                    CertificateUtil.checkExplicitTrust(entityX509Cred, trustedCredentialList);
-                } else {
-                    final X509Certificate issuerCertificate = getIssuerX509Certificate(entityX509Cred, certificateChain);
-                    if (null == issuerCertificate) {
+                final X509Certificate issuerCertificate = getIssuerCertificate(entityX509Cred, trustedCertificatesSignature, trustedCertificates);
+
+                if (null == issuerCertificate) {
                         throw new EIDASSAMLEngineException(EidasErrorKey.SAML_ENGINE_UNTRUSTED_CERTIFICATE.errorCode(),
                                 EidasErrorKey.SAML_ENGINE_UNTRUSTED_CERTIFICATE.errorMessage());
-                    } else {
-                        final X509Credential issuerX509Credential = CertificateUtil.toCredential(issuerCertificate);
-                        CertificateUtil.checkChainTrust(issuerX509Credential, trustedCredentialList);
-                    }
+                } else {
+                    final X509Credential issuerX509Credential = CertificateUtil.toCredential(issuerCertificate);
+                    CertificateUtil.checkChainTrust(issuerX509Credential, trustedCredentialList);
                 }
             }
+
         } catch (CertificateException e) {
             throw new EIDASSAMLEngineException(EidasErrorKey.MESSAGE_VALIDATION_ERROR.errorCode(), e);
         }
     }
 
-    private boolean hasLeaf(X509Credential leafX509Cred, List<? extends Credential> trustedCredentialList) {
-        X509Certificate leafCertificate = leafX509Cred.getEntityCertificate();
-        for (Credential trustedCredential : trustedCredentialList) {
-            if (trustedCredential instanceof BasicX509Credential) {
-                X509Certificate trustedCertificate = ((BasicX509Credential) trustedCredential).getEntityCertificate();
+    private X509Certificate getIssuerCertificate(X509Credential entityX509Cred, List<X509Certificate> signatureCertificates, List<X509Certificate> trustedCertificates) {
+        X509Certificate issuerCertificate = CertificateUtil.getIssuerX509Certificate(entityX509Cred, trustedCertificates);
+        if (null == issuerCertificate) {
+            issuerCertificate = CertificateUtil.getIssuerX509Certificate(entityX509Cred, signatureCertificates);
+        }
+        return issuerCertificate;
+    }
+
+    /**
+     * Looks up for {@param credentialToLookUp} in {@param credentialToLookUp}
+     *
+     * @param credentialToLookUp
+     * @param credentials the list of credentials where the {@param credentialToLookUp} will be looked up
+     * @return true if credential is in {@param credentials}
+     */
+    private boolean hasCredential(X509Credential credentialToLookUp, List<? extends Credential> credentials) {
+        X509Certificate leafCertificate = credentialToLookUp.getEntityCertificate();
+        for (Credential credential : credentials) {
+            if (credential instanceof BasicX509Credential) {
+                X509Certificate trustedCertificate = ((BasicX509Credential) credential).getEntityCertificate();
                 if(trustedCertificate.equals(leafCertificate)) {
                     return true;
                 }
@@ -428,18 +445,6 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
         }
 
         return false;
-    }
-
-    private X509Certificate getIssuerX509Certificate(X509Credential entityX509Cred, List<X509Certificate> certificateChain) {
-        String issuerDN = entityX509Cred.getEntityCertificate().getIssuerDN().getName();
-
-        X509Certificate issuerCertificate = null;
-        for(X509Certificate certificate : certificateChain){
-            if(StringUtils.equals(certificate.getSubjectDN().getName(),issuerDN)) {
-                issuerCertificate = certificate;
-            }
-        }
-        return issuerCertificate;
     }
 
     protected ImmutableList<X509Credential> getTrustedCredentials() {
@@ -655,7 +660,22 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
 		throw new EIDASSAMLEngineException(EidasErrorKey.SAML_ENGINE_UNTRUSTED_CERTIFICATE.errorCode());
 	}
 
-	private static KeyInfo createKeyInfo(KeyInfoGeneratorFactory keyInfoGenFac, X509Credential credential) throws EIDASSAMLEngineException
+    public static KeyInfo createKeyInfo(X509Credential credential, boolean onlyKeyInfoNoCert)
+			throws EIDASSAMLEngineException {
+		KeyInfoGeneratorFactory keyInfoGenFac;
+        if (onlyKeyInfoNoCert){
+        	keyInfoGenFac = createKeyInfoGeneratorFactory(credential);
+        }else{
+            SignatureSigningConfiguration secConfiguration = SecurityConfigurationSupport.getGlobalSignatureSigningConfiguration();
+            NamedKeyInfoGeneratorManager keyInfoManager = secConfiguration.getKeyInfoGeneratorManager();
+            KeyInfoGeneratorManager keyInfoGenManager = keyInfoManager.getDefaultManager();
+            keyInfoGenFac = keyInfoGenManager.getFactory(credential);
+        }
+        KeyInfo keyInfo = createKeyInfo(keyInfoGenFac, credential);
+		return keyInfo;
+	}
+
+	public static KeyInfo createKeyInfo(KeyInfoGeneratorFactory keyInfoGenFac, X509Credential credential) throws EIDASSAMLEngineException
 			 {
 		KeyInfoGenerator keyInfoGenerator = keyInfoGenFac.newInstance();
 		KeyInfo keyInfo;
@@ -667,7 +687,7 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
 		}
 	}
 
-	private static KeyInfoGeneratorFactory createKeyInfoGeneratorFactory(X509Credential credential) {
+	public static KeyInfoGeneratorFactory createKeyInfoGeneratorFactory(X509Credential credential) {
 		KeyInfoGeneratorFactory keyInfoGenFac;
 		X509Certificate certificate = credential.getEntityCertificate();
 		BasicX509Credential keyInfoCredential = new BasicX509Credential(certificate);

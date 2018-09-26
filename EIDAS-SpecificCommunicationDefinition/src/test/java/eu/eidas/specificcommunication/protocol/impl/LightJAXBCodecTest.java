@@ -14,19 +14,7 @@
  */
 package eu.eidas.specificcommunication.protocol.impl;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-
-import java.util.AbstractCollection;
-
-import javax.xml.bind.JAXBException;
-
-import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.google.common.collect.ImmutableSet;
-
 import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.attribute.impl.DateTimeAttributeValue;
@@ -40,6 +28,15 @@ import eu.eidas.auth.commons.protocol.eidas.impl.PostalAddress;
 import eu.eidas.auth.commons.protocol.eidas.impl.PostalAddressAttributeValue;
 import eu.eidas.auth.commons.protocol.eidas.spec.EidasSpec;
 import eu.eidas.specificcommunication.exception.SpecificCommunicationException;
+import org.joda.time.DateTime;
+import org.junit.Before;
+import org.junit.Test;
+
+import javax.xml.bind.JAXBException;
+import java.util.AbstractCollection;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class LightJAXBCodecTest {
 
@@ -51,10 +48,10 @@ public class LightJAXBCodecTest {
 	private static final String RELAYSTATE = "MyRelayState";
 	private static final String PROVIDERNAME = "ProviderName";
 
-	private static final PostalAddress pa = new PostalAddress.Builder().addressId("addressId")
-			.adminUnitFirstLine("adminUnitFirstLine").adminUnitSecondLine("adminUnitSecondLine")
-			.cvAddressArea("cvAddressArea").fullCvaddress("fullCvaddress").locatorDesignator("locatorDesignator")
-			.locatorName("locatorName").poBox("poBox").postCode("postCode").postName("postName")
+    private static final PostalAddress pa = new PostalAddress.Builder()
+            .adminUnitFirstLine("adminUnitFirstLine").adminUnitSecondLine("adminUnitSecondLine")
+            .cvAddressArea("cvAddressArea").locatorDesignator("locatorDesignator")
+            .locatorName("locatorName").poBox("poBox").postCode("postCode").postName("postName")
 			.thoroughfare("thoroughfare")
 			.build();
 

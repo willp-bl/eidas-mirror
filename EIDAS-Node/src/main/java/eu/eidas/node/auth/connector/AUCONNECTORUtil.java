@@ -27,25 +27,18 @@
  */
 package eu.eidas.node.auth.connector;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-
+import eu.eidas.auth.commons.EIDASValues;
+import eu.eidas.auth.commons.EidasParameterKeys;
+import eu.eidas.auth.commons.WebRequest;
 import eu.eidas.auth.commons.cache.ConcurrentMapService;
+import eu.eidas.auth.commons.protocol.eidas.LevelOfAssurance;
+import eu.eidas.node.auth.AUNODEUtil;
 import org.apache.commons.lang.StringUtils;
-import org.owasp.esapi.StringUtilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.eidas.auth.commons.EidasParameterKeys;
-import eu.eidas.auth.commons.EIDASValues;
-import eu.eidas.auth.commons.WebRequest;
-import eu.eidas.auth.commons.attribute.AttributeDefinition;
-import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
-import eu.eidas.auth.commons.protocol.eidas.LevelOfAssurance;
-import eu.eidas.node.auth.AUNODEUtil;
+import java.util.Map;
+import java.util.Properties;
 
 /**
  * This Util class is used by {@link AUCONNECTORSAML} and {@link AUCONNECTORCountrySelector} to get a configuration from
@@ -178,7 +171,7 @@ public final class AUCONNECTORUtil extends AUNODEUtil {
     /**
      * Checks if a specific Service Provider has the required access level and if it is a known Service Provider.
      *
-     * @param parameters A map of attributes.
+     * @param webRequest A map of attributes.
      * @return true is SP is valid; false otherwise.
      * @see Map
      * @see ICONNECTORSAMLService

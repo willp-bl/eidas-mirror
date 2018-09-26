@@ -4,10 +4,6 @@
 <%@ page import="member_country_specific.idp.ProcessLogin" %>
 <!DOCTYPE html>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ taglib prefix="s" uri="/struts-tags" %>
-<%@taglib prefix="e" uri="https://www.owasp.org/index.php/OWASP_Java_Encoder_Project" %>
-<%@ taglib prefix="fmt" uri="http://java.sun.com/jstl/fmt" %>
-<fmt:setBundle basename="member_country_specific.idp.package" var="i18n_eng"/>
 <%@ page errorPage="/errorPage.jsp" %>
 <%
     boolean checkBoxIpAddress = "on".equalsIgnoreCase(request.getParameter("checkBoxIpAddress"));
@@ -92,21 +88,16 @@
                                    value="<%=doNotmodifyTheResponse%>"/>
 
                             <input type="hidden" id="SMSSPResponse" name="SMSSPResponse"/>
-                            <%--                        <input type="hidden" id="username" name="username" value="<%=username%>"/>
-                                                        <input type="hidden" id="jSonResponseEncoded" name="jSonResponseEncoded" value="<%=jSonResponseEncoded%>"/>
-                                                        <input type="hidden" id="callback" name="callback" value="<%=callback%>"/>--%>
                         </div>
                         <item type="button" style='display:none;' id="idpSubmitbutton"
                               class="btn btn-default btn-lg btn-block" onclick="return base64_encode();">Submit
                         </item>
-                        <%--<button type="submit">Submit</button>--%>
                     </form>
                     <noscript>
                         <form id="noJavaScriptForm" name="noJavaScriptRedirectForm" action="<%=callback%>"
                               method="post">
                             <input type="hidden" id="SMSSPResponseNoJS" name="SMSSPResponse"
                                    value="<%=jSonResponseEncoded%>"/>
-                            <%--<fmt:message var="btnMsg" key="accept.button" bundle="${i18n_eng}"/>--%>
                             <input type="submit" id="submitButton1" class="btn btn-next" value="Submit"/>
                         </form>
                     </noscript>

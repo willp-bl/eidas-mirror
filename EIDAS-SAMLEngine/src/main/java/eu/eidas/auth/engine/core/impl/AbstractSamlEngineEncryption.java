@@ -43,20 +43,24 @@ public abstract class AbstractSamlEngineEncryption implements ProtocolDecrypterI
         BaseProtocolDecrypter(boolean checkedValidityPeriod,
                               boolean disallowedSelfSignedCertificate,
                               boolean responseEncryptionMandatory,
+                              boolean isAssertionEncryptWithKey,
                               @Nonnull ImmutableSet<KeyStore.PrivateKeyEntry> decryptionKeyAndCertificates,
                               @Nonnull SAMLAuthnResponseDecrypter samlAuthnResponseDecrypter,
                               @Nonnull ImmutableSet<String> encryptionAlgorithmWhiteList) {
             super(checkedValidityPeriod, disallowedSelfSignedCertificate, responseEncryptionMandatory,
+            		isAssertionEncryptWithKey,
                   decryptionKeyAndCertificates, samlAuthnResponseDecrypter, encryptionAlgorithmWhiteList);
         }
 
         BaseProtocolDecrypter(boolean checkedValidityPeriod,
                               boolean disallowedSelfSignedCertificate,
                               boolean responseEncryptionMandatory,
+                              boolean isAssertionEncryptWithKey,
                               @Nonnull ImmutableSet<KeyStore.PrivateKeyEntry> decryptionKeyAndCertificates,
                               @Nullable String jcaProviderName,
                               @Nullable String encryptionAlgorithmWhiteList) throws ProtocolEngineConfigurationException {
             super(checkedValidityPeriod, disallowedSelfSignedCertificate, responseEncryptionMandatory,
+            		isAssertionEncryptWithKey,
                   decryptionKeyAndCertificates, jcaProviderName, encryptionAlgorithmWhiteList);
         }
     }
@@ -66,22 +70,26 @@ public abstract class AbstractSamlEngineEncryption implements ProtocolDecrypterI
         BaseProtocolEncrypter(boolean checkedValidityPeriod,
                               boolean disallowedSelfSignedCertificate,
                               boolean responseEncryptionMandatory,
+                              boolean isAssertionEncryptWithKey,
                               @Nonnull ImmutableSet<X509Certificate> encryptionCertificates,
                               @Nonnull SAMLAuthnResponseEncrypter samlAuthnResponseEncrypter,
                               @Nonnull ImmutableSet<String> encryptionAlgorithmWhiteList) {
             super(checkedValidityPeriod, disallowedSelfSignedCertificate, responseEncryptionMandatory,
+            		isAssertionEncryptWithKey,
                   encryptionCertificates, samlAuthnResponseEncrypter, encryptionAlgorithmWhiteList);
         }
 
         BaseProtocolEncrypter(boolean checkedValidityPeriod,
                               boolean disallowedSelfSignedCertificate,
                               boolean responseEncryptionMandatory,
+                              boolean isAssertionEncryptWithKey,
                               @Nonnull ImmutableSet<X509Certificate> encryptionCertificates,
                               @Nullable String dataEncryptionAlgorithm,
                               @Nullable String keyEncryptionAlgorithm,
                               @Nullable String jcaProviderName,
                               @Nullable String encryptionAlgorithmWhiteList) throws ProtocolEngineConfigurationException {
             super(checkedValidityPeriod, disallowedSelfSignedCertificate, responseEncryptionMandatory,
+            			isAssertionEncryptWithKey,
                   encryptionCertificates, dataEncryptionAlgorithm, keyEncryptionAlgorithm, jcaProviderName,
                   encryptionAlgorithmWhiteList);
         }
@@ -108,6 +116,7 @@ public abstract class AbstractSamlEngineEncryption implements ProtocolDecrypterI
         this(encryptionConfiguration.isCheckedValidityPeriod(),
              encryptionConfiguration.isDisallowedSelfSignedCertificate(),
              encryptionConfiguration.isResponseEncryptionMandatory(),
+             encryptionConfiguration.isAssertionEncryptWithKey(),
              encryptionConfiguration.getDecryptionKeyAndCertificates(),
              encryptionConfiguration.getEncryptionCertificates(), encryptionConfiguration.getDataEncryptionAlgorithm(),
              encryptionConfiguration.getKeyEncryptionAlgorithm(), encryptionConfiguration.getJcaProviderName(),
@@ -117,23 +126,29 @@ public abstract class AbstractSamlEngineEncryption implements ProtocolDecrypterI
     protected AbstractSamlEngineEncryption(boolean checkedValidityPeriod,
                                            boolean disallowedSelfSignedCertificate,
                                            boolean responseEncryptionMandatory,
+                                           boolean isAssertionEncryptWithKey,
                                            @Nonnull ImmutableSet<KeyStore.PrivateKeyEntry> decryptionKeyAndCertificates,
                                            @Nonnull ImmutableSet<X509Certificate> encryptionCertificates,
                                            @Nonnull SAMLAuthnResponseEncrypter samlAuthnResponseEncrypter,
                                            @Nonnull SAMLAuthnResponseDecrypter samlAuthnResponseDecrypter,
                                            @Nonnull ImmutableSet<String> encryptionAlgorithmWhiteList) {
         decrypter = new BaseProtocolDecrypter(checkedValidityPeriod, disallowedSelfSignedCertificate,
-                                              responseEncryptionMandatory, decryptionKeyAndCertificates,
+                                              responseEncryptionMandatory, 
+                                              isAssertionEncryptWithKey,
+                                              decryptionKeyAndCertificates,
                                               samlAuthnResponseDecrypter, encryptionAlgorithmWhiteList);
 
         encrypter = new BaseProtocolEncrypter(checkedValidityPeriod, disallowedSelfSignedCertificate,
-                                              responseEncryptionMandatory, encryptionCertificates,
+                                              responseEncryptionMandatory, 
+                                              isAssertionEncryptWithKey,
+                                              encryptionCertificates,
                                               samlAuthnResponseEncrypter, encryptionAlgorithmWhiteList);
     }
 
     protected AbstractSamlEngineEncryption(boolean checkedValidityPeriod,
                                            boolean disallowedSelfSignedCertificate,
                                            boolean responseEncryptionMandatory,
+                                           boolean isAssertionEncryptWithKey,
                                            @Nonnull ImmutableSet<KeyStore.PrivateKeyEntry> decryptionKeyAndCertificates,
                                            @Nonnull ImmutableSet<X509Certificate> encryptionCertificates,
                                            @Nullable String dataEncryptionAlgorithm,
@@ -142,11 +157,15 @@ public abstract class AbstractSamlEngineEncryption implements ProtocolDecrypterI
                                            @Nullable String encryptionAlgorithmWhiteList)
             throws ProtocolEngineConfigurationException {
         decrypter = new BaseProtocolDecrypter(checkedValidityPeriod, disallowedSelfSignedCertificate,
-                                              responseEncryptionMandatory, decryptionKeyAndCertificates,
+                                              responseEncryptionMandatory, 
+                                              isAssertionEncryptWithKey,
+                                              decryptionKeyAndCertificates,
                                               jcaProviderName, encryptionAlgorithmWhiteList);
 
         encrypter = new BaseProtocolEncrypter(checkedValidityPeriod, disallowedSelfSignedCertificate,
-                                              responseEncryptionMandatory, encryptionCertificates,
+                                              responseEncryptionMandatory, 
+                                              isAssertionEncryptWithKey,
+                                              encryptionCertificates,
                                               dataEncryptionAlgorithm, keyEncryptionAlgorithm, jcaProviderName,
                                               encryptionAlgorithmWhiteList);
     }
@@ -159,9 +178,10 @@ public abstract class AbstractSamlEngineEncryption implements ProtocolDecrypterI
 
     @Override
     @Nonnull
-    public Response encryptSamlResponse(@Nonnull Response authResponse, @Nonnull X509Certificate destinationCertificate)
+    public Response encryptSamlResponse(@Nonnull Response authResponse, @Nonnull X509Certificate destinationCertificate, boolean encryptAssertionWithKey)
             throws EIDASSAMLEngineException {
-        return encrypter.encryptSamlResponse(authResponse, destinationCertificate);
+        return encrypter.encryptSamlResponse(authResponse, destinationCertificate, 
+        		encryptAssertionWithKey);
     }
 
     @Override
@@ -204,5 +224,10 @@ public abstract class AbstractSamlEngineEncryption implements ProtocolDecrypterI
     @Override
     public boolean isResponseEncryptionMandatory() {
         return decrypter.isResponseEncryptionMandatory();
+    }
+    
+    @Override
+    public boolean isAssertionEncryptWithKey() {
+        return encrypter.isAssertionEncryptWithKey();
     }
 }

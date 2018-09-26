@@ -24,6 +24,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import eu.eidas.node.*;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,15 +43,13 @@ import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.IRequestMessage;
 import eu.eidas.auth.commons.protocol.impl.EidasSamlBinding;
 import eu.eidas.auth.commons.validation.NormalParameterValidator;
-import eu.eidas.node.AbstractNodeServlet;
-import eu.eidas.node.NodeBeanNames;
-import eu.eidas.node.NodeParameterNames;
-import eu.eidas.node.NodeViewNames;
 import eu.eidas.node.utils.PropertiesUtil;
 import eu.eidas.node.utils.SessionHolder;
 import eu.eidas.specificcommunication.SpecificCommunicationDefinitionBeanNames;
 import eu.eidas.specificcommunication.exception.SpecificCommunicationException;
 import eu.eidas.specificcommunication.protocol.impl.SpecificConnectorCommunicationServiceImpl;
+
+import static eu.eidas.node.BeanProvider.getBean;
 
 @SuppressWarnings("squid:S1989") // due to the code uses correlation maps, not http sessions
 public class SpecificConnectorRequestServlet extends AbstractNodeServlet {
@@ -65,8 +64,8 @@ public class SpecificConnectorRequestServlet extends AbstractNodeServlet {
     }
 
 	private Collection<AttributeDefinition<?>> retrieveAttributes() {
-		ConnectorControllerService connectorController = (ConnectorControllerService) getApplicationContext().getBean(
-                NodeBeanNames.EIDAS_CONNECTOR_CONTROLLER.toString());
+        String beanName = NodeBeanNames.EIDAS_CONNECTOR_CONTROLLER.toString();
+        ConnectorControllerService connectorController = getBean(ConnectorControllerService.class, beanName);
 		return ImmutableSortedSet.copyOf(connectorController
         		.getConnectorService()
         		.getSamlService()
@@ -106,8 +105,9 @@ public class SpecificConnectorRequestServlet extends AbstractNodeServlet {
         session.setAttribute(EidasParameterKeys.EIDAS_CONNECTOR_SESSION.toString(), Boolean.TRUE);
 
         // Obtaining the assertion consumer url from SPRING context
-        ConnectorControllerService connectorController = (ConnectorControllerService) getApplicationContext().getBean(
-                NodeBeanNames.EIDAS_CONNECTOR_CONTROLLER.toString());
+        String beanName = NodeBeanNames.EIDAS_CONNECTOR_CONTROLLER.toString();
+        ConnectorControllerService connectorController = getBean(ConnectorControllerService.class,
+                beanName);
         LOG.trace(connectorController.toString());
 
         //maintain the same binding of the initial request
@@ -177,8 +177,7 @@ public class SpecificConnectorRequestServlet extends AbstractNodeServlet {
     		final Collection<AttributeDefinition<?>> registry) throws ServletException, IOException {
         final String tokenBase64 = httpServletRequest.getParameter(EidasParameterKeys.TOKEN.toString());
 
-        final SpecificConnectorCommunicationServiceImpl springManagedSpecificConnectorCommunicationService = (SpecificConnectorCommunicationServiceImpl) getApplicationContext()
-                .getBean(SpecificCommunicationDefinitionBeanNames.SPECIFIC_CONNECTOR_COMMUNICATION_SERVICE.toString());
+        final SpecificConnectorCommunicationServiceImpl springManagedSpecificConnectorCommunicationService =getBean(SpecificConnectorCommunicationServiceImpl.class, SpecificCommunicationDefinitionBeanNames.SPECIFIC_CONNECTOR_COMMUNICATION_SERVICE.toString());
 
         try {
             return springManagedSpecificConnectorCommunicationService.getAndRemoveRequest(tokenBase64,registry);

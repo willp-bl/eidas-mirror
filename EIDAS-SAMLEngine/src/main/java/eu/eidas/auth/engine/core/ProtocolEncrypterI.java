@@ -41,7 +41,7 @@ public interface ProtocolEncrypterI extends ProtocolCipherI {
      * @throws EIDASSAMLEngineException if any error occurs
      */
     @Nonnull
-    Response encryptSamlResponse(@Nonnull Response authResponse, @Nonnull X509Certificate destinationCertificate)
+    Response encryptSamlResponse(@Nonnull Response authResponse, @Nonnull X509Certificate destinationCertificate, boolean encryptAssertionWithKey)
             throws EIDASSAMLEngineException;
 
     /**
@@ -61,4 +61,5 @@ public interface ProtocolEncrypterI extends ProtocolCipherI {
      * @see ProtocolEncrypterI#isResponseEncryptionMandatory()
      */
     boolean isEncryptionEnabled(@Nonnull String countryCode);
+    boolean isAssertionEncryptWithKey();
 }

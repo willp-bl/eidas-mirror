@@ -20,7 +20,6 @@ import eu.eidas.auth.commons.exceptions.*;
 import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import eu.eidas.engine.exceptions.SAMLEngineException;
-import eu.eidas.node.ApplicationContextProvider;
 import eu.eidas.node.NodeBeanNames;
 import eu.eidas.node.auth.connector.ICONNECTORSAMLService;
 import eu.eidas.node.auth.service.ISERVICESAMLService;
@@ -34,6 +33,8 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.Locale;
 
+import static eu.eidas.node.BeanProvider.getBean;
+
 /**
  * Utility class for preparing error saml response
  */
@@ -41,7 +42,7 @@ public class EidasNodeErrorUtil {
 
     public enum ErrorSource {
         CONNECTOR,
-        PROXYSERVICE;
+        PROXYSERVICE
     }
 
     /**
@@ -132,13 +133,11 @@ public class EidasNodeErrorUtil {
         } else if (EidasErrorKey.isErrorCode(errorCode)) {
             EidasErrorKey err = EidasErrorKey.fromCode(errorCode);
             String message = EidasErrors.get(err.errorMessage());
-            if (ApplicationContextProvider.getApplicationContext() != null) {
-                ResourceBundleMessageSource msgResource = (ResourceBundleMessageSource) ApplicationContextProvider.getApplicationContext().
-                        getBean(NodeBeanNames.SYSADMIN_MESSAGE_RESOURCES.toString());
-                final String errorMessage = msgResource.getMessage(message, new Object[]{
-                        EidasErrors.get(err.errorCode())}, Locale.getDefault());
-                destLog.info(errorMessage);
-            }
+            String beanName = NodeBeanNames.SYSADMIN_MESSAGE_RESOURCES.toString();
+            ResourceBundleMessageSource msgResource = getBean(ResourceBundleMessageSource.class, beanName);
+            final String errorMessage = msgResource.getMessage(message, new Object[]{
+                    EidasErrors.get(err.errorCode())}, Locale.getDefault());
+            destLog.info(errorMessage);
             throw new EidasNodeException(
                     EidasErrors.get(redirectError.errorCode()),
                     EidasErrors.get(redirectError.errorMessage()), e);
@@ -188,7 +187,7 @@ public class EidasNodeErrorUtil {
             return;
         }
 
-        ICONNECTORSAMLService connectorSamlService = ApplicationContextProvider.getApplicationContext().getBean(ICONNECTORSAMLService.class);
+        ICONNECTORSAMLService connectorSamlService = getBean(ICONNECTORSAMLService.class);
         if (connectorSamlService == null) {
             return;
         }
@@ -213,7 +212,7 @@ public class EidasNodeErrorUtil {
     }
 
     private static void generateSamlResponse(final HttpServletRequest request, AbstractEIDASException exc, String spUrl){
-        ISERVICESAMLService serviceSamlService = ApplicationContextProvider.getApplicationContext().getBean(ISERVICESAMLService.class);
+        ISERVICESAMLService serviceSamlService = getBean(ISERVICESAMLService.class);
         if (serviceSamlService == null) {
             return;
         }
@@ -300,10 +299,7 @@ public class EidasNodeErrorUtil {
         if(isErrorCodeAllowedForSamlGeneration(errorCode)){
             return true;
         }
-        if (exc instanceof InvalidParameterEIDASException || exc instanceof InvalidParameterEIDASServiceException) {
-            return true;
-        }
-        return false;
+        return exc instanceof InvalidParameterEIDASException || exc instanceof InvalidParameterEIDASServiceException;
 
     }
 
@@ -352,8 +348,8 @@ public class EidasNodeErrorUtil {
 
     private static String prepareErrorMessage(String message, Object[] parameters, Locale locale){
         try {
-            ResourceBundleMessageSource msgResource = (ResourceBundleMessageSource) ApplicationContextProvider.getApplicationContext().
-                    getBean(NodeBeanNames.SYSADMIN_MESSAGE_RESOURCES.toString());
+            String beanName = NodeBeanNames.SYSADMIN_MESSAGE_RESOURCES.toString();
+            ResourceBundleMessageSource msgResource = getBean(ResourceBundleMessageSource.class, beanName);
             final String errorMessage = msgResource.getMessage(message, parameters, locale);
             return errorMessage;
         }catch(NoSuchMessageException e){

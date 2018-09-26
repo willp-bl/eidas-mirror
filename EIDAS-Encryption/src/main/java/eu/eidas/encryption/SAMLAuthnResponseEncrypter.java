@@ -15,13 +15,18 @@
 
 package eu.eidas.encryption;
 
-import eu.eidas.auth.commons.EidasStringUtil;
-import eu.eidas.auth.commons.xml.DocumentBuilderFactoryUtil;
-import eu.eidas.auth.commons.xml.opensaml.OpenSamlHelper;
-import eu.eidas.encryption.exception.EncryptionException;
-import eu.eidas.encryption.exception.MarshallException;
-import eu.eidas.encryption.exception.UnmarshallException;
-import eu.eidas.util.Preconditions;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.annotation.concurrent.Immutable;
+import javax.annotation.concurrent.NotThreadSafe;
+import javax.annotation.concurrent.ThreadSafe;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerException;
+
 import org.apache.commons.lang.StringUtils;
 import org.opensaml.core.xml.Namespace;
 import org.opensaml.saml.common.xml.SAMLConstants;
@@ -31,10 +36,12 @@ import org.opensaml.saml.saml2.core.Response;
 import org.opensaml.saml.saml2.encryption.Encrypter;
 import org.opensaml.security.credential.Credential;
 import org.opensaml.security.x509.BasicX509Credential;
+import org.opensaml.security.x509.X509Credential;
 import org.opensaml.xmlsec.SecurityConfigurationSupport;
 import org.opensaml.xmlsec.encryption.support.DataEncryptionParameters;
 import org.opensaml.xmlsec.encryption.support.KeyEncryptionParameters;
 import org.opensaml.xmlsec.keyinfo.KeyInfoGeneratorFactory;
+import org.opensaml.xmlsec.keyinfo.impl.BasicKeyInfoGeneratorFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -42,15 +49,13 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.annotation.concurrent.Immutable;
-import javax.annotation.concurrent.NotThreadSafe;
-import javax.annotation.concurrent.ThreadSafe;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerException;
-import java.util.ArrayList;
-import java.util.List;
+import eu.eidas.auth.commons.EidasStringUtil;
+import eu.eidas.auth.commons.xml.DocumentBuilderFactoryUtil;
+import eu.eidas.auth.commons.xml.opensaml.OpenSamlHelper;
+import eu.eidas.encryption.exception.EncryptionException;
+import eu.eidas.encryption.exception.MarshallException;
+import eu.eidas.encryption.exception.UnmarshallException;
+import eu.eidas.util.Preconditions;
 
 /**
  * Low-level implementation of the OpenSAML encryption process.
@@ -159,7 +164,8 @@ public final class SAMLAuthnResponseEncrypter {
         keyEncryptionAlgorithm = builder.keyEncryptionAlgorithm;
     }
 
-    public Response encryptSAMLResponse(final Response samlResponse, final Credential credential)
+    public Response encryptSAMLResponse(final Response samlResponse, final Credential credential
+    		, boolean encryptAssertionWithKey)
             throws EncryptionException {
 
         if (LOGGER.isDebugEnabled()) {
@@ -171,7 +177,7 @@ public final class SAMLAuthnResponseEncrypter {
                 LOGGER.trace("SAML Response XMLObject to encrypt: " + EidasStringUtil.toString(
                         OpenSamlHelper.marshall(samlResponse)));
             }
-            Response encryptedResponse = performEncryption(samlResponse, credential);
+            Response encryptedResponse = performEncryption(samlResponse, credential, encryptAssertionWithKey);
 
             if (LOGGER.isTraceEnabled()) {
                 byte[] samlResponseEncrypted = OpenSamlHelper.marshall(encryptedResponse);
@@ -184,9 +190,11 @@ public final class SAMLAuthnResponseEncrypter {
         }
     }
 
+    //TODO: apparently not used; should be removed soon; deprecate now
+    @Deprecated
     public byte[] encryptSAMLResponseAndMarshall(final Response samlResponse, final BasicX509Credential credential)
             throws EncryptionException {
-        Response samlResponseEncryptee = encryptSAMLResponse(samlResponse, credential);
+        Response samlResponseEncryptee = encryptSAMLResponse(samlResponse, credential,false);
         byte[] samlResponseEncrypted;
         try {
             samlResponseEncrypted = OpenSamlHelper.marshall(samlResponseEncryptee);
@@ -224,7 +232,8 @@ public final class SAMLAuthnResponseEncrypter {
     }
 
     @Nonnull
-    private Response performEncryption(@Nonnull Response samlResponseEncryptee, @Nonnull Credential credential)
+    private Response performEncryption(@Nonnull Response samlResponseEncryptee, @Nonnull Credential credential,
+    		boolean encryptAssertionWithKey)
             throws EncryptionException {
         try {
             // Set Data Encryption parameters
@@ -238,6 +247,9 @@ public final class SAMLAuthnResponseEncrypter {
                     .getDataKeyInfoGeneratorManager()
                     .getDefaultManager()
                     .getFactory(credential);
+            if (encryptAssertionWithKey){
+            	kigf = createKeyInfoGeneratorFactory((X509Credential) credential);
+            }
             kekParams.setKeyInfoGenerator(kigf.newInstance());
             // Setup Open SAML Encrypter
             Encrypter encrypter = new Encrypter(encParams, kekParams);
@@ -311,4 +323,17 @@ public final class SAMLAuthnResponseEncrypter {
             throw new EncryptionException(e);
         }
     }
+    
+	private static KeyInfoGeneratorFactory createKeyInfoGeneratorFactory(X509Credential credential) {
+		KeyInfoGeneratorFactory keyInfoGenFac;
+		X509Certificate certificate = credential.getEntityCertificate();
+		BasicX509Credential keyInfoCredential = new BasicX509Credential(certificate);
+		keyInfoCredential.setEntityCertificate(certificate);
+		keyInfoGenFac = new BasicKeyInfoGeneratorFactory();
+		((BasicKeyInfoGeneratorFactory)keyInfoGenFac).setEmitPublicKeyValue(true);
+		((BasicKeyInfoGeneratorFactory)keyInfoGenFac).setEmitEntityIDAsKeyName(true);
+		((BasicKeyInfoGeneratorFactory)keyInfoGenFac).setEmitKeyNames(true);
+		((BasicKeyInfoGeneratorFactory)keyInfoGenFac).setEmitPublicDEREncodedKeyValue(true);
+		return keyInfoGenFac;
+	}
 }

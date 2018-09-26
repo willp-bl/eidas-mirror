@@ -22,8 +22,6 @@ public class ComplexAddressAttribute implements Serializable {
 
 	private static final long serialVersionUID = 2454905207294622352L;
 
-	protected String addressId;
-
 	protected String poBox;
 
 	protected String locatorDesignator;
@@ -41,17 +39,6 @@ public class ComplexAddressAttribute implements Serializable {
 	protected String adminUnitSecondLine;
 
 	protected String postCode;
-
-	protected String fullCVAddress;
-
-	@XmlElement(name="address_id")
-	public String getAddressId() {
-		return addressId;
-	}
-
-	public void setAddressId(String addressId) {
-		this.addressId = addressId;
-	}
 
 	@XmlElement(name="po_box")
 	public String getPoBox() {
@@ -132,15 +119,6 @@ public class ComplexAddressAttribute implements Serializable {
 
 	public void setPostCode(String postCode) {
 		this.postCode = postCode;
-	}
-
-	@XmlElement(name="full_cvaddress")
-	public String getFullCVAddress() {
-		return fullCVAddress;
-	}
-
-	public void setFullCVAddress(String fullCVAddress) {
-		this.fullCVAddress = fullCVAddress;
 	}
 	
 }

@@ -20,6 +20,7 @@ import com.opensymphony.xwork2.ActionSupport;
 import eu.eidas.SimpleProtocol.*;
 import eu.eidas.SimpleProtocol.adapter.DateAdapter;
 import eu.eidas.SimpleProtocol.utils.SimpleProtocolProcess;
+import eu.eidas.SimpleProtocol.utils.StatusCodeTranslator;
 import eu.eidas.auth.commons.EidasStringUtil;
 import eu.eidas.auth.commons.attribute.*;
 import eu.eidas.auth.commons.exceptions.InternalErrorEIDASException;
@@ -304,15 +305,14 @@ public class ProcessLogin extends ActionSupport implements ServletRequestAware, 
 
 
             Iterator<Map.Entry<String, String>> it = complexAddressAttributeMap.entrySet().iterator();
-            String[] addressFields = new String[]{"address_id", "po_box", "locator_designator", "locator_name", "thoroughfare", "post_name", "admin_unit_first_line", "admin_unit_second_line", "post_code", "full_cvaddress", "cv_address_area"};
+            String[] addressFields = new String[]{"po_box", "locator_designator", "locator_name", "thoroughfare", "post_name", "admin_unit_first_line", "admin_unit_second_line", "post_code", "cv_address_area"};
 
             while (it.hasNext()) {
                 Map.Entry<String, String> pair = it.next();
                 if (!Arrays.asList(addressFields).contains(pair.getKey()))
-                    throw new ApplicationSpecificIDPException("Invalid Address Value", "Invalid address field :" + pair.getKey() + ". It should be one of this list: address_id, po_box, locator_designator, locator_name, thoroughfare, post_name, admin_unit_first_line, admin_unit_second_line, post_code, full_cvaddress, cv_address_area");
+                    throw new ApplicationSpecificIDPException("Invalid Address Value", "Invalid address field :" + pair.getKey() + ". It should be one of this list: po_box, locator_designator, locator_name, thoroughfare, post_name, admin_unit_first_line, admin_unit_second_line, post_code, cv_address_area");
             }
             ComplexAddressAttribute addressId = new ComplexAddressAttribute();
-            addressId.setAddressId(complexAddressAttributeMap.get("address_id"));
             addressId.setPoBox(complexAddressAttributeMap.get("po_box"));
             addressId.setLocatorDesignator(complexAddressAttributeMap.get("locator_designator"));
             addressId.setLocatorName(complexAddressAttributeMap.get("locator_name"));
@@ -321,7 +321,6 @@ public class ProcessLogin extends ActionSupport implements ServletRequestAware, 
             addressId.setAdminUnitFirstLine(complexAddressAttributeMap.get("admin_unit_first_line"));
             addressId.setAdminUnitSecondLine(complexAddressAttributeMap.get("admin_unit_second_line"));
             addressId.setPostCode(complexAddressAttributeMap.get("post_code"));
-            addressId.setFullCVAddress(complexAddressAttributeMap.get("full_cvaddress"));
             addressId.setAddressArea(complexAddressAttributeMap.get("cv_address_area"));
             addressAttribute.setValue(addressId);
         }
@@ -366,7 +365,7 @@ public class ProcessLogin extends ActionSupport implements ServletRequestAware, 
             responseObj.setInResponseTo(requestId);
             responseObj.setIssuer(getIssuer());
             ResponseStatus responseStatus = new ResponseStatus();
-            responseStatus.setStatusCode("failure");
+            responseStatus.setStatusCode(StatusCodeTranslator.RESPONDER_FAILURE.stringSmsspStatusCode());
             responseStatus.setSubStatusCode(subStatusCode);
             responseStatus.setStatusMessage(message);
             responseObj.setStatus(responseStatus);

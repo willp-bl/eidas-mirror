@@ -18,8 +18,17 @@ import org.apache.commons.lang.StringUtils;
 
 import javax.annotation.Nonnull;
 import javax.xml.bind.DatatypeConverter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.regex.Pattern;
 
 public final class EidasStringUtil {
+
+    /**
+     * Contains the possible values of delimiters for strings with tokens.
+     */
+    private static final Pattern STRING_SPLITTER = Pattern.compile("[,;]");
 
     /**
      * Decodes the given {@link DatatypeConverter} String into a byte array.
@@ -88,6 +97,20 @@ public final class EidasStringUtil {
     @Nonnull
     public static String toString(@Nonnull byte[] bytes) {
         return new String(bytes, Constants.UTF8);
+    }
+
+    /**
+     * Splits a string that contains several tokens separated by a delimiter defined in {@link EidasStringUtil#STRING_SPLITTER}
+     *
+     * @param tokens the string containing tokens
+     * @return the {@link List <String>} containing the tokens or an empty list if no token is found.
+     */
+    public static List<String> getTokens (String tokens) {
+        if (StringUtils.isNotEmpty(tokens)) {
+            return Arrays.asList(STRING_SPLITTER.split(tokens));
+        } else {
+            return new ArrayList<>();
+        }
     }
 
     private EidasStringUtil() {

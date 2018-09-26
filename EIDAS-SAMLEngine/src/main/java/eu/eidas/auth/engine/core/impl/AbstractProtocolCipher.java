@@ -69,6 +69,8 @@ public abstract class AbstractProtocolCipher implements ProtocolCipherI {
 
     private final boolean responseEncryptionMandatory;
 
+    private final boolean isAssertionEncryptWithKey;
+    
     @Nonnull
     private final ImmutableSet<String> encryptionAlgorithmWhiteList;
 
@@ -77,30 +79,35 @@ public abstract class AbstractProtocolCipher implements ProtocolCipherI {
         this(encryptionConfiguration.isCheckedValidityPeriod(),
              encryptionConfiguration.isDisallowedSelfSignedCertificate(),
              encryptionConfiguration.isResponseEncryptionMandatory(),
+             encryptionConfiguration.isAssertionEncryptWithKey(),
              encryptionConfiguration.getEncryptionAlgorithmWhiteList());
     }
 
     protected AbstractProtocolCipher(boolean checkedValidityPeriod,
                                      boolean disallowedSelfSignedCertificate,
                                      boolean responseEncryptionMandatory,
+                                     boolean isAssertionEncryptWithKey,
                                      @Nonnull ImmutableSet<String> encryptionAlgorithmWhiteList) {
         Preconditions.checkNotNull(encryptionAlgorithmWhiteList, "encryptionAlgorithmWhiteList");
 
         this.checkedValidityPeriod = checkedValidityPeriod;
         this.disallowedSelfSignedCertificate = disallowedSelfSignedCertificate;
         this.responseEncryptionMandatory = responseEncryptionMandatory;
+        this.isAssertionEncryptWithKey=isAssertionEncryptWithKey;
         this.encryptionAlgorithmWhiteList = encryptionAlgorithmWhiteList;
     }
 
     protected AbstractProtocolCipher(boolean checkedValidityPeriod,
                                      boolean disallowedSelfSignedCertificate,
                                      boolean responseEncryptionMandatory,
+                                     boolean isAssertionEncryptWithKey,
                                      @Nullable String encryptionAlgorithmWhiteList)
             throws ProtocolEngineConfigurationException {
         try {
             this.checkedValidityPeriod = checkedValidityPeriod;
             this.disallowedSelfSignedCertificate = disallowedSelfSignedCertificate;
             this.responseEncryptionMandatory = responseEncryptionMandatory;
+            this.isAssertionEncryptWithKey=isAssertionEncryptWithKey;
 
             this.encryptionAlgorithmWhiteList =
                     WhiteListConfigurator.getAllowedAlgorithms(DEFAULT_ALLOWED_ALGORITHMS, encryptionAlgorithmWhiteList);
@@ -142,6 +149,11 @@ public abstract class AbstractProtocolCipher implements ProtocolCipherI {
     @Override
     public boolean isResponseEncryptionMandatory() {
         return responseEncryptionMandatory;
+    }
+
+    @Override
+    public boolean isAssertionEncryptWithKey() {
+        return isAssertionEncryptWithKey;
     }
 
     protected void reInstallSecurityProvider() {

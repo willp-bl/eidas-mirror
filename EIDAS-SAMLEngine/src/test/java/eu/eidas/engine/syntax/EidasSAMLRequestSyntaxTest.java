@@ -25,6 +25,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.Arrays;
+
 /**
  * EidasSAMLRequestSyntaxTest
  *
@@ -47,7 +49,7 @@ public class EidasSAMLRequestSyntaxTest {
     @Test
     public void testNormalValidationOnSAMLrequest() throws Exception {
         IAuthenticationRequest parsedRequest = SyntaxTestUtil.getEngine(SyntaxTestUtil.SAMLENGINE_CONF).unmarshallRequestAndValidate(
-                samlToken, "BE");
+                samlToken, "BE",Arrays.asList(SyntaxTestUtil.ISSUER_REQUEST));
         assertNotNull(parsedRequest);
         assertFalse(parsedRequest.getRequestedAttributes().isEmpty());
     }

@@ -157,10 +157,21 @@ public class MetadataUtil {
                                 XSAnyImpl val = (XSAnyImpl) xmlObject;
                                 params.setAssuranceLevel(val.getTextContent());
                             }
-                            break;
+                        } else if (EidasMetadata.PROTOCOL_VERSION_URI.equalsIgnoreCase(attr.getName())
+                                && !attr.getAttributeValues().isEmpty()) {
+
+                            final String firstAttributeValue = getFirstAttributeValue(attr);
+                            params.setEidasProtocolVersion(firstAttributeValue);
+
+                        } else if (EidasMetadata.APPLICATION_IDENTIFIER.equalsIgnoreCase(attr.getName())
+                                && !attr.getAttributeValues().isEmpty()) {
+
+                            final String firstAttributeValue = getFirstAttributeValue(attr);
+                            params.setEidasApplicationIdentifier(firstAttributeValue);
                         }
                     }
                 }
+
                 if (extension instanceof DigestMethod) {
                     if (digestMethods.length() > 0) {
                         digestMethods.append(";");
@@ -181,6 +192,18 @@ public class MetadataUtil {
             params.setDigestMethods(digestMethods.toString());
             params.setSigningMethods(signingMethods.toString());
         }
+    }
+
+    private static String getFirstAttributeValue(Attribute attr) {
+        final List<XMLObject> attributeValues = attr.getAttributeValues();
+        if (!attributeValues.isEmpty()) {
+            XMLObject xmlObject = attributeValues.get(0);
+            if (xmlObject instanceof XSAnyImpl) {
+                return ((XSAnyImpl) xmlObject).getTextContent();
+            }
+        }
+
+        return null;
     }
 
     private static void convertRoleDescriptors(@Nonnull final  EntityDescriptor ed, @Nonnull final EidasMetadataParametersI params) throws EIDASMetadataException {

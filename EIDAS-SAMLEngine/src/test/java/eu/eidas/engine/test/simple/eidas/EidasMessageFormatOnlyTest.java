@@ -30,6 +30,8 @@ import org.slf4j.LoggerFactory;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
+import java.util.Arrays;
+
 public class EidasMessageFormatOnlyTest {
 
     /**
@@ -127,17 +129,19 @@ public class EidasMessageFormatOnlyTest {
             fail("error during the generation of eidas request: " + ee);
         }
         try {
-            getEngine("CONF2").unmarshallRequestAndValidate(request, "EN");
+            getEngine("CONF2").unmarshallRequestAndValidate(request, "EN",Arrays.asList(REQUEST_ISSUER));
         } catch (EIDASSAMLEngineException ee1) {
             fail("cannot validate eidas request on multi processor engine");
         }
     }
 
+    final static String REQUEST_ISSUER = "http://localhost:7001/SP/metadata".toLowerCase();
     private byte[] generateEidasRequest() throws EIDASSAMLEngineException {
 
         IEidasAuthenticationRequest request = EidasAuthenticationRequest.builder()
+
                 .id("f5e7e0f5-b9b8-4256-a7d0-4090141b326d")
-                .issuer("http://localhost:7001/SP/metadata")
+                .issuer(REQUEST_ISSUER)
                 .destination(destination)
                 .providerName(spName)
                 .requestedAttributes(immutableAttributeMap)

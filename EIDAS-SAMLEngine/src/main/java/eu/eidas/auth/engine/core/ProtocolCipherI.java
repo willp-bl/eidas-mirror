@@ -47,4 +47,6 @@ public interface ProtocolCipherI {
      * @return whether encryption is mandatory regardless of the country.
      */
     boolean isResponseEncryptionMandatory();
+
+	boolean isAssertionEncryptWithKey();
 }

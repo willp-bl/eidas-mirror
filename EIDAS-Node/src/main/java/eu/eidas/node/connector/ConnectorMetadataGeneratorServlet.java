@@ -27,6 +27,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
+import static eu.eidas.node.BeanProvider.getBean;
+
 /**
  * generates metadata used to communicate with the Connector.
  */
@@ -45,12 +47,14 @@ public class ConnectorMetadataGeneratorServlet extends AbstractNodeServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String generatorName = NodeBeanNames.CONNECTOR_METADATA_GENERATOR.toString();
-        EidasNodeMetadataGenerator generator = (EidasNodeMetadataGenerator)getApplicationContext().getBean(generatorName);
+        EidasNodeMetadataGenerator generator = getBean(EidasNodeMetadataGenerator.class, generatorName);
         PropertiesUtil.checkConnectorActive();
         if(PropertiesUtil.isMetadataEnabled()) {
-            ConnectorControllerService controllerService = (ConnectorControllerService) getApplicationContext().getBean(
-                    NodeBeanNames.EIDAS_CONNECTOR_CONTROLLER.toString());
-            response.getOutputStream().print(generator.generateConnectorMetadata(controllerService.getConnectorService().getSamlService().getSamlEngine()));
+            response.setContentType("text/xml");
+            response.setCharacterEncoding("UTF-8");
+            String beanName = NodeBeanNames.EIDAS_CONNECTOR_CONTROLLER.toString();
+            ConnectorControllerService controllerService = getBean( ConnectorControllerService.class, beanName );
+            response.getWriter().print(generator.generateConnectorMetadata(controllerService.getConnectorService().getSamlService().getSamlEngine()));
         }else{
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
         }

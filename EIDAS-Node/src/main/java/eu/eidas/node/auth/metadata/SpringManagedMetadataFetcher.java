@@ -19,9 +19,10 @@ import eu.eidas.auth.engine.metadata.MetadataClockI;
 import eu.eidas.auth.engine.metadata.MetadataFetcherI;
 import eu.eidas.auth.engine.metadata.MetadataSignerI;
 import eu.eidas.engine.exceptions.EIDASMetadataException;
-import eu.eidas.node.ApplicationContextProvider;
 
 import javax.annotation.Nonnull;
+
+import static eu.eidas.node.BeanProvider.getBean;
 
 /**
  * Spring-Managed MetadataFetcher
@@ -30,8 +31,8 @@ import javax.annotation.Nonnull;
  */
 public final class SpringManagedMetadataFetcher implements MetadataFetcherI {
 
-    public MetadataFetcherI getMetadataFetcher() {
-        return ApplicationContextProvider.getApplicationContext().getBean(MetadataFetcherI.class);
+    private MetadataFetcherI getMetadataFetcher() {
+        return getBean(MetadataFetcherI.class);
     }
 
     @Override

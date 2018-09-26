@@ -34,6 +34,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import eu.eidas.node.*;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,12 +42,10 @@ import org.springframework.context.support.ResourceBundleMessageSource;
 
 import eu.eidas.auth.commons.EidasParameterKeys;
 import eu.eidas.auth.commons.exceptions.AbstractEIDASException;
-import eu.eidas.node.AbstractNodeServlet;
-import eu.eidas.node.NodeBeanNames;
-import eu.eidas.node.NodeParameterNames;
-import eu.eidas.node.NodeViewNames;
 import eu.eidas.node.auth.connector.ResponseCarryingConnectorException;
 import eu.eidas.node.utils.EidasNodeErrorUtil;
+
+import static eu.eidas.node.BeanProvider.getBean;
 
 /**
  * Handles the exceptions thrown by Connector.
@@ -134,8 +133,8 @@ public final class ConnectorExceptionHandlerServlet extends AbstractNodeServlet 
             LOG.info("BUSINESS EXCEPTION : An error occurred on EidasNode! Couldn't get Exception message.");
         } else {
             if (StringUtils.isBlank(exception.getSamlTokenFail())) {
-                ResourceBundleMessageSource msgResource = (ResourceBundleMessageSource) getApplicationContext().
-                        getBean(NodeBeanNames.SYSADMIN_MESSAGE_RESOURCES.toString());
+                String beanName = NodeBeanNames.SYSADMIN_MESSAGE_RESOURCES.toString();
+                ResourceBundleMessageSource msgResource = getBean(ResourceBundleMessageSource.class, beanName);
                 final String errorMessage = msgResource.getMessage(exception.getErrorMessage(), new Object[] {
                         exception.getErrorCode()}, request.getLocale());
                 exception.setErrorMessage(errorMessage);

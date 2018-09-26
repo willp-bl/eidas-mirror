@@ -21,24 +21,21 @@ import eu.eidas.auth.commons.EIDASValues;
 import eu.eidas.auth.commons.EidasParameterKeys;
 import eu.eidas.auth.commons.RequestState;
 import eu.eidas.auth.commons.WebRequest;
-import eu.eidas.auth.commons.attribute.AttributeDefinition;
-import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.cache.ConcurrentMapServiceDefaultImpl;
 import eu.eidas.auth.commons.cache.ConcurrentMapServiceDistributedImpl;
 import eu.eidas.auth.commons.cache.HazelcastInstanceInitializer;
 import eu.eidas.auth.commons.exceptions.InvalidParameterEIDASException;
 import eu.eidas.node.auth.connector.AUCONNECTORUtil;
 import eu.eidas.node.auth.util.tests.TestingConstants;
-import org.junit.*;
-import org.owasp.esapi.StringUtilities;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.FileNotFoundException;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Properties;
-import java.util.Set;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -62,7 +59,6 @@ public class AUCONNECTORUtilTestCase {
     /**
      * Properties values for EIDASUtil testing proposes.
      */
-    private static Properties EIDASUTILS_CONFIGS = new Properties();
 
     private static final String ANTIREPLAY_SAML_ID_A = "SAML_ID_A";
 

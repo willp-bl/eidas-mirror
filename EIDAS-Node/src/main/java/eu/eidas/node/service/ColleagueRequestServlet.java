@@ -15,23 +15,14 @@
 
 package eu.eidas.node.service;
 
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.UnmodifiableIterator;
 import eu.eidas.auth.commons.*;
-import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.exceptions.AbstractEIDASException;
 import eu.eidas.auth.commons.light.impl.LightRequest;
 import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
-import eu.eidas.auth.commons.protocol.eidas.IEidasAuthenticationRequest;
-import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
-import eu.eidas.auth.commons.protocol.eidas.spec.LegalPersonSpec;
 import eu.eidas.auth.commons.tx.BinaryLightToken;
 import eu.eidas.auth.commons.tx.CorrelationMap;
 import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
-import eu.eidas.node.AbstractNodeServlet;
-import eu.eidas.node.NodeBeanNames;
-import eu.eidas.node.NodeParameterNames;
-import eu.eidas.node.NodeSpecificViewNames;
+import eu.eidas.node.*;
 import eu.eidas.node.service.validation.NodeParameterValidator;
 import eu.eidas.node.utils.PropertiesUtil;
 import eu.eidas.node.utils.SessionHolder;
@@ -48,6 +39,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+
+import static eu.eidas.node.BeanProvider.*;
 
 @SuppressWarnings("squid:S1989") // due to the code uses correlation maps, not http sessions
 public class ColleagueRequestServlet extends AbstractNodeServlet {
@@ -82,7 +75,7 @@ public class ColleagueRequestServlet extends AbstractNodeServlet {
             throws ServletException, IOException {
         PropertiesUtil.checkProxyServiceActive();
         // Obtaining the assertion consumer url from SPRING context
-        ServiceControllerService controllerService = (ServiceControllerService) getApplicationContext().getBean(
+        ServiceControllerService controllerService = getBean(ServiceControllerService.class,
                 NodeBeanNames.EIDAS_SERVICE_CONTROLLER.toString());
 
         CorrelationMap<StoredAuthenticationRequest> requestCorrelationMap = controllerService.getProxyServiceRequestCorrelationMap();
@@ -138,9 +131,10 @@ public class ColleagueRequestServlet extends AbstractNodeServlet {
     }
 
     private String putRequestInCommunicationCache(LightRequest lightRequest) throws ServletException {
-        final SpecificProxyserviceCommunicationServiceImpl specificProxyserviceCommunicationService
-                = (SpecificProxyserviceCommunicationServiceImpl) getApplicationContext()
-                .getBean(SpecificCommunicationDefinitionBeanNames.SPECIFIC_PROXYSERVICE_COMMUNICATION_SERVICE.toString());
+        String beanName = SpecificCommunicationDefinitionBeanNames.SPECIFIC_PROXYSERVICE_COMMUNICATION_SERVICE.toString();
+        final SpecificProxyserviceCommunicationServiceImpl specificProxyserviceCommunicationService = getBean(
+                                            SpecificProxyserviceCommunicationServiceImpl.class,
+                                            beanName);
 
         final BinaryLightToken binaryLightToken;
         try {
@@ -160,7 +154,8 @@ public class ColleagueRequestServlet extends AbstractNodeServlet {
     }
 
     private String getRedirectUrl() {
-        final boolean isSpecificProxyServiceJar = (Boolean) getApplicationContext().getBean(NodeBeanNames.SPECIFIC_PROXYSERVICE_DEPLOYED_JAR.toString());
+        String beanName = NodeBeanNames.SPECIFIC_PROXYSERVICE_DEPLOYED_JAR.toString();
+        final boolean isSpecificProxyServiceJar = getBean(Boolean.class, beanName);
         if (isSpecificProxyServiceJar){
             return NodeSpecificViewNames.IDP_REQUEST.toString();
         } else {

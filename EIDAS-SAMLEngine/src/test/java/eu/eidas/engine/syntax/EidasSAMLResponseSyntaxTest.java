@@ -24,6 +24,8 @@ import eu.eidas.auth.commons.protocol.IAuthenticationResponse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.Arrays;
+
 /**
  * EidasSAMLResponseSyntaxTest
  *
@@ -49,7 +51,7 @@ public class EidasSAMLResponseSyntaxTest {
     @Test
     public void testNormalValidationOnSAMLrequest() throws Exception {
         assertNotNull(samlResponseToken);
-        IAuthenticationResponse response = SyntaxTestUtil.getEngine(SyntaxTestUtil.SAMLENGINE_CONF).unmarshallResponseAndValidate(samlResponseToken, null, 0, 0, null);
+        IAuthenticationResponse response = SyntaxTestUtil.getEngine(SyntaxTestUtil.SAMLENGINE_CONF).unmarshallResponseAndValidate(samlResponseToken, null, 0, 0, null, Arrays.asList(SyntaxTestUtil.ISSUER_RESPONSE),true);
         assertNotNull(response);
     }
 
@@ -65,7 +67,7 @@ public class EidasSAMLResponseSyntaxTest {
 
         assertTrue("Response header consent obtained failed", samlResponseTokenString.contains("Consent=\"urn:oasis:names:tc:SAML:2.0:consent:obtained\""));
 
-        assertTrue("Response header issuer info failed: " + samlResponseTokenString, samlResponseTokenString.contains("<saml2:Issuer Format=\"urn:oasis:names:tc:SAML:2.0:nameid-format:entity\">http://C-PEPS.gov.xx</saml2:Issuer>"));
+        assertTrue("Response header issuer info failed: " + samlResponseTokenString, samlResponseTokenString.contains("<saml2:Issuer Format=\"urn:oasis:names:tc:SAML:2.0:nameid-format:entity\">http://c-peps.gov.xx</saml2:Issuer>"));
     }
 
     @Test
@@ -86,7 +88,7 @@ public class EidasSAMLResponseSyntaxTest {
 
     @Test
     public void checkIssuer() throws Exception {
-        assertTrue("Response Issuer valid: " + samlResponseTokenString, samlResponseTokenString.contains("<saml2:Issuer Format=\"urn:oasis:names:tc:SAML:2.0:nameid-format:entity\">http://C-PEPS.gov.xx</saml2:Issuer>"));
+        assertTrue("Response Issuer valid: " + samlResponseTokenString, samlResponseTokenString.contains("<saml2:Issuer Format=\"urn:oasis:names:tc:SAML:2.0:nameid-format:entity\">http://c-peps.gov.xx</saml2:Issuer>"));
     }
 
     @Test
@@ -109,7 +111,7 @@ public class EidasSAMLResponseSyntaxTest {
     public void checkConditions() throws Exception {
         assertTrue("Response Conditions present", samlResponseTokenString.matches(".*<saml2:Conditions NotBefore=\".*" +
                 "\" NotOnOrAfter=\".*\">.*" +
-                "<saml2:AudienceRestriction>.*<saml2:Audience>http://localhost:7001/SP/metadata</saml2:Audience>.*" +
+                "<saml2:AudienceRestriction>.*<saml2:Audience>http://localhost:7001/sp/metadata</saml2:Audience>.*" +
                 "</saml2:AudienceRestriction>.*</saml2:Conditions>.*"));
     }
 

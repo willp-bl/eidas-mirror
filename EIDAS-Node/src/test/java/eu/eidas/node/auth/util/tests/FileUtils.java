@@ -15,11 +15,12 @@
 
 package eu.eidas.node.auth.util.tests;
 
+import org.junit.Assert;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import org.junit.Assert;
 
 
 public class FileUtils {
@@ -42,18 +43,13 @@ public class FileUtils {
         }
     }
     private static void copyOneFile(File fSource, File fDest) throws IOException {
-        FileInputStream fis = new FileInputStream(fSource);
-        FileOutputStream fos = new FileOutputStream(fDest);
-        byte[] buffer = new byte[4*1024];
-        int iBytesReads;
-        while ((iBytesReads = fis.read(buffer)) >= 0) {
-            fos.write(buffer, 0, iBytesReads);
-        }
-        if (fis != null) {
-            fis.close();
-        }
-        if (fos != null) {
-            fos.close();
+
+        try (FileInputStream fis = new FileInputStream(fSource);
+             FileOutputStream fos = new FileOutputStream(fDest)) {
+            byte[] buffer = new byte[4 * 1024];
+            int iBytesReads;
+            while ((iBytesReads = fis.read(buffer)) >= 0)
+                fos.write(buffer, 0, iBytesReads);
         }
     }
 

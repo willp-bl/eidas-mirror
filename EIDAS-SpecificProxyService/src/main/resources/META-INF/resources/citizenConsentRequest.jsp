@@ -58,7 +58,7 @@
                                 <div class="col-sm-6"><% /** Natural person */ %>
                                     <c:set var="categoryIsDisplayed" value="false"/>
                                     <c:forEach items="${attrList}" var="attrItem">
-                                    <c:if test="${attrItem.getKey().isRequired() && attrItem.getKey().getPersonType().getValue().equals('NaturalPerson')}">
+                                    <c:if test="${attrItem.key.required && attrItem.key.personType.value=='NaturalPerson'}">
                                     <c:if test="${categoryIsDisplayed=='false'}">
                                     <h3><fmt:message key="presentConsent.natural" bundle="${i18n_eng}"/>
                                         <span><fmt:message key="presentConsent.person" bundle="${i18n_eng}"/></span>
@@ -68,29 +68,29 @@
                                         </c:if>
                                         <li>
                                             <fmt:message var="displayAttr"
-                                                         key="${attrItem.getKey().getNameUri()}.display"
+                                                         key="${attrItem.key.nameUri}.display"
                                                          bundle="${i18n_eng}"/>
                                             <c:if test="${!fn:startsWith(fn:toLowerCase(displayAttr), 'false')}">
-                                                <fmt:message key="${attrItem.getKey().getFriendlyName()}"
+                                                <fmt:message key="${attrItem.key.friendlyName}"
                                                              bundle="${i18n_eng}"/>
-                                                <fmt:message key="${attrItem.getKey().getFriendlyName()}.Description"
+                                                <fmt:message key="${attrItem.key.friendlyName}.Description"
                                                              bundle="${i18n_eng}" var="tmpDesc"/>
                                                 <c:set var="tmpEmptyValue"
-                                                       value="???${attrItem.getKey().getFriendlyName()}.Description???"/>
+                                                       value="???${attrItem.key.friendlyName}.Description???"/>
                                                 <c:if test="${tmpEmptyValue ne tmpDesc}">
                                                             <span>
                                                                 <button type="button" class="btn btn-info"
                                                                         data-toggle="modal"
                                                                         data-target="#attributeModal"
-                                                                        data-attribute-name="<fmt:message key="${attrItem.getKey().getFriendlyName()}" bundle="${i18n_eng}"/>"
+                                                                        data-attribute-name="<fmt:message key="${attrItem.key.friendlyName}" bundle="${i18n_eng}"/>"
                                                                         data-attribute-desc="${tmpDesc}">?
                                                                 </button>
                                                             </span>
                                                 </c:if>
                                             </c:if>
-                                            <input id="consentSelector_${attrItem.getKey().getFriendlyName()}"
-                                                   type="hidden" name="${attrItem.getKey().getNameUri()}"
-                                                   value="${attrItem.getKey().getNameUri()}"/>
+                                            <input id="consentSelector_${attrItem.key.friendlyName}"
+                                                   type="hidden" name="${attrItem.key.nameUri}"
+                                                   value="${attrItem.key.nameUri}"/>
                                         </li>
                                         </c:if>
                                         </c:forEach>
@@ -100,7 +100,7 @@
                                 <div class="col-sm-6"><% /** Legal person */ %>
                                     <c:set var="categoryIsDisplayed" value="false"/>
                                     <c:forEach items="${attrList}" var="attrItem">
-                                    <c:if test="${attrItem.getKey().isRequired() && attrItem.getKey().getPersonType().getValue().equals('LegalPerson')}">
+                                    <c:if test="${attrItem.key.required && attrItem.key.personType.value == 'LegalPerson'}">
                                     <c:if test="${categoryIsDisplayed=='false'}">
                                     <h3><fmt:message key="presentConsent.legal" bundle="${i18n_eng}"/>
                                         <span><fmt:message key="presentConsent.person" bundle="${i18n_eng}"/></span>
@@ -110,25 +110,25 @@
                                         </c:if>
                                         <li>
                                             <fmt:message var="displayAttr"
-                                                         key="${attrItem.getKey().getNameUri()}.display"
+                                                         key="${attrItem.key.nameUri}.display"
                                                          bundle="${i18n_eng}"/>
                                             <c:if test="${!fn:startsWith(fn:toLowerCase(displayAttr), 'false')}">
-                                                <fmt:message key="${attrItem.getKey().getFriendlyName()}"
+                                                <fmt:message key="${attrItem.key.friendlyName}"
                                                              bundle="${i18n_eng}"/>
-                                                <%--<label class="checkboxLabel" for="consentSelector_${attrItem.getKey().getNameUri()}"><fmt:message key="${attrItem.getKey().getNameUri()}" bundle="${i18n_eng}"/></label>--%>
-                                                <input id="consentSelector_${attrItem.getKey().getFriendlyName()}"
-                                                       type="hidden" name="${attrItem.getKey().getNameUri()}"
-                                                       value="${attrItem.getKey().getNameUri()}"/>
-                                                <fmt:message key="${attrItem.getKey().getFriendlyName()}.Description"
+                                                <%--<label class="checkboxLabel" for="consentSelector_${attrItem.key.nameUri}"><fmt:message key="${attrItem.key.nameUri}" bundle="${i18n_eng}"/></label>--%>
+                                                <input id="consentSelector_${attrItem.key.friendlyName}"
+                                                       type="hidden" name="${attrItem.key.nameUri}"
+                                                       value="${attrItem.key.nameUri}"/>
+                                                <fmt:message key="${attrItem.key.friendlyName}.Description"
                                                              bundle="${i18n_eng}" var="tmpDesc"/>
                                                 <c:set var="tmpEmptyValue"
-                                                       value="???${attrItem.getKey().getFriendlyName()}.Description???"/>
+                                                       value="???${attrItem.key.friendlyName}.Description???"/>
                                                 <c:if test="${tmpEmptyValue ne tmpDesc}">
                                                             <span>
                                                                 <button type="button" class="btn btn-info"
                                                                         data-toggle="modal"
                                                                         data-target="#attributeModal"
-                                                                        data-attribute-name="<fmt:message key="${attrItem.getKey().getFriendlyName()}" bundle="${i18n_eng}"/>"
+                                                                        data-attribute-name="<fmt:message key="${attrItem.key.friendlyName}" bundle="${i18n_eng}"/>"
                                                                         data-attribute-desc="${tmpDesc}">?
                                                                 </button>
                                                             </span>
@@ -164,7 +164,7 @@
                                 <div class="col-sm-6"><% /** Natural person */ %>
                                     <c:set var="categoryIsDisplayed" value="false"/>
                                     <c:forEach items="${attrList}" var="attrItem">
-                                    <c:if test="${!attrItem.getKey().isRequired() && attrItem.getKey().getPersonType().getValue().equals('NaturalPerson')}">
+                                    <c:if test="${!attrItem.key.required && attrItem.key.personType.value=='NaturalPerson'}">
                                     <c:if test="${categoryIsDisplayed=='false'}">
                                     <h3><fmt:message key="presentConsent.natural" bundle="${i18n_eng}"/>
                                         <span><fmt:message key="presentConsent.person" bundle="${i18n_eng}"/></span>
@@ -174,33 +174,33 @@
                                         </c:if>
                                         <li>
                                             <c:if test="${fn:startsWith(fn:toLowerCase(displayAttr), 'false')}">
-                                                <input id="consentSelector_${attrItem.getKey().getFriendlyName()}"
-                                                       type="hidden" name="${attrItem.getKey().getNameUri()}"
-                                                       value="${attrItem.getKey().getNameUri()}"/>
+                                                <input id="consentSelector_${attrItem.key.friendlyName}"
+                                                       type="hidden" name="${attrItem.key.nameUri}"
+                                                       value="${attrItem.key.nameUri}"/>
                                             </c:if>
                                             <c:if test="${!fn:startsWith(fn:toLowerCase(displayAttr), 'false')}">
-                                                <p><fmt:message key="${attrItem.getKey().getFriendlyName()}"
+                                                <p><fmt:message key="${attrItem.key.friendlyName}"
                                                                 bundle="${i18n_eng}"/></p>
-                                                <fmt:message key="${attrItem.getKey().getFriendlyName()}.Description"
+                                                <fmt:message key="${attrItem.key.friendlyName}.Description"
                                                              bundle="${i18n_eng}" var="tmpDesc"/>
                                                 <c:set var="tmpEmptyValue"
-                                                       value="???${attrItem.getKey().getFriendlyName()}.Description???"/>
+                                                       value="???${attrItem.key.friendlyName}.Description???"/>
                                                 <c:if test="${tmpEmptyValue ne tmpDesc}">
                                                             <span>
                                                                 <button type="button" class="btn btn-info"
                                                                         data-toggle="modal"
                                                                         data-target="#attributeModal"
-                                                                        data-attribute-name="<fmt:message key="${attrItem.getKey().getFriendlyName()}" bundle="${i18n_eng}"/>"
+                                                                        data-attribute-name="<fmt:message key="${attrItem.key.friendlyName}" bundle="${i18n_eng}"/>"
                                                                         data-attribute-desc="${tmpDesc}">?
                                                                 </button>
                                                             </span>
                                                 </c:if>
                                                 <input class="js-switch"
-                                                       id="consentSelector_${attrItem.getKey().getFriendlyName()}"
-                                                       type="checkbox" name="${attrItem.getKey().getNameUri()}"
+                                                       id="consentSelector_${attrItem.key.friendlyName}"
+                                                       type="checkbox" name="${attrItem.key.nameUri}"
                                                        value="true"/>
-                                                <input id="__checkbox_consentSelector_${attrItem.getKey().getFriendlyName()}"
-                                                       type="hidden" name="__checkbox_${attrItem.getKey().getNameUri()}"
+                                                <input id="__checkbox_consentSelector_${attrItem.key.friendlyName}"
+                                                       type="hidden" name="__checkbox_${attrItem.key.nameUri}"
                                                        value="true"/>
                                             </c:if>
                                         </li>
@@ -212,7 +212,7 @@
                                 <div class="col-sm-6"><% /** Legal person */ %>
                                     <c:set var="categoryIsDisplayed" value="false"/>
                                     <c:forEach items="${attrList}" var="attrItem">
-                                    <c:if test="${!attrItem.getKey().isRequired() && attrItem.getKey().getPersonType().getValue().equals('LegalPerson')}">
+                                    <c:if test="${!attrItem.key.required && attrItem.key.personType.value=='LegalPerson'}">
                                     <c:if test="${categoryIsDisplayed=='false'}">
                                     <h3><fmt:message key="presentConsent.legal" bundle="${i18n_eng}"/>
                                         <span><fmt:message key="presentConsent.person" bundle="${i18n_eng}"/></span>
@@ -222,33 +222,33 @@
                                         </c:if>
                                         <li>
                                             <c:if test="${fn:startsWith(fn:toLowerCase(displayAttr), 'false')}">
-                                                <input id="consentSelector_${attrItem.getKey().getFriendlyName()}"
-                                                       type="hidden" name="${attrItem.getKey().getNameUri()}"
-                                                       value="${attrItem.getKey().getNameUri()}"/>
+                                                <input id="consentSelector_${attrItem.key.friendlyName}"
+                                                       type="hidden" name="${attrItem.key.nameUri}"
+                                                       value="${attrItem.key.nameUri}"/>
                                             </c:if>
                                             <c:if test="${!fn:startsWith(fn:toLowerCase(displayAttr), 'false')}">
-                                                <p><fmt:message key="${attrItem.getKey().getFriendlyName()}"
+                                                <p><fmt:message key="${attrItem.key.friendlyName}"
                                                                 bundle="${i18n_eng}"/></p>
-                                                <fmt:message key="${attrItem.getKey().getFriendlyName()}.Description"
+                                                <fmt:message key="${attrItem.key.friendlyName}.Description"
                                                              bundle="${i18n_eng}" var="tmpDesc"/>
                                                 <c:set var="tmpEmptyValue"
-                                                       value="???${attrItem.getKey().getFriendlyName()}.Description???"/>
+                                                       value="???${attrItem.key.friendlyName}.Description???"/>
                                                 <c:if test="${tmpEmptyValue ne tmpDesc}">
                                                             <span>
                                                                 <button type="button" class="btn btn-info"
                                                                         data-toggle="modal"
                                                                         data-target="#attributeModal"
-                                                                        data-attribute-name="<fmt:message key="${attrItem.getKey().getFriendlyName()}" bundle="${i18n_eng}"/>"
+                                                                        data-attribute-name="<fmt:message key="${attrItem.key.friendlyName}" bundle="${i18n_eng}"/>"
                                                                         data-attribute-desc="${tmpDesc}">?
                                                                 </button>
                                                             </span>
                                                 </c:if>
                                                 <input class="js-switch"
-                                                       id="consentSelector_${attrItem.getKey().getFriendlyName()}"
-                                                       type="checkbox" name="${attrItem.getKey().getNameUri()}"
+                                                       id="consentSelector_${attrItem.key.friendlyName}"
+                                                       type="checkbox" name="${attrItem.key.nameUri}"
                                                        value="true"/>
-                                                <input id="__checkbox_consentSelector_${attrItem.getKey().getFriendlyName()}"
-                                                       type="hidden" name="__checkbox_${attrItem.getKey().getNameUri()}"
+                                                <input id="__checkbox_consentSelector_${attrItem.key.friendlyName}"
+                                                       type="hidden" name="__checkbox_${attrItem.key.nameUri}"
                                                        value="true"/>
                                             </c:if>
                                         </li>
@@ -309,7 +309,7 @@
                                             <div class="col-sm-6"><% /** Natural person */ %>
                                                 <c:set var="categoryIsDisplayed" value="false"/>
                                                 <c:forEach items="${attrList}" var="attrItem">
-                                                <c:if test="${attrItem.getKey().isRequired() && attrItem.getKey().getPersonType().getValue().equals('NaturalPerson')}">
+                                                <c:if test="${attrItem.key.required && attrItem.key.personType.value=='NaturalPerson'}">
                                                 <c:if test="${categoryIsDisplayed=='false'}">
                                                 <h3><fmt:message key="presentConsent.natural" bundle="${i18n_eng}"/>
                                                     <span><fmt:message key="presentConsent.person"
@@ -320,15 +320,15 @@
                                                     </c:if>
                                                     <li>
                                                         <fmt:message var="displayAttr"
-                                                                     key="${attrItem.getKey().getNameUri()}.display"
+                                                                     key="${attrItem.key.nameUri}.display"
                                                                      bundle="${i18n_eng}"/>
                                                         <c:if test="${!fn:startsWith(fn:toLowerCase(displayAttr), 'false')}">
-                                                            <fmt:message key="${attrItem.getKey().getFriendlyName()}"
+                                                            <fmt:message key="${attrItem.key.friendlyName}"
                                                                          bundle="${i18n_eng}"/>
                                                         </c:if>
-                                                        <input id="consentSelector_${attrItem.getKey().getFriendlyName()}"
-                                                               type="hidden" name="${attrItem.getKey().getNameUri()}"
-                                                               value="${attrItem.getKey().getNameUri()}"/>
+                                                        <input id="consentSelector_${attrItem.key.friendlyName}"
+                                                               type="hidden" name="${attrItem.key.nameUri}"
+                                                               value="${attrItem.key.nameUri}"/>
                                                     </li>
                                                     </c:if>
                                                     </c:forEach>
@@ -338,7 +338,7 @@
                                             <div class="col-sm-6"><% /** Legal person */ %>
                                                 <c:set var="categoryIsDisplayed" value="false"/>
                                                 <c:forEach items="${attrList}" var="attrItem">
-                                                <c:if test="${attrItem.getKey().isRequired() && attrItem.getKey().getPersonType().getValue().equals('LegalPerson')}">
+                                                <c:if test="${attrItem.key.required && attrItem.key.personType.value=='LegalPerson'}">
                                                 <c:if test="${categoryIsDisplayed=='false'}">
                                                 <h3><fmt:message key="presentConsent.legal" bundle="${i18n_eng}"/>
                                                     <span><fmt:message key="presentConsent.person"
@@ -349,15 +349,15 @@
                                                     </c:if>
                                                     <li>
                                                         <fmt:message var="displayAttr"
-                                                                     key="${attrItem.getKey().getNameUri()}.display"
+                                                                     key="${attrItem.key.nameUri}.display"
                                                                      bundle="${i18n_eng}"/>
                                                         <c:if test="${!fn:startsWith(fn:toLowerCase(displayAttr), 'false')}">
-                                                            <fmt:message key="${attrItem.getKey().getFriendlyName()}"
+                                                            <fmt:message key="${attrItem.key.friendlyName}"
                                                                          bundle="${i18n_eng}"/>
-                                                            <input id="consentSelector_${attrItem.getKey().getFriendlyName()}"
+                                                            <input id="consentSelector_${attrItem.key.friendlyName}"
                                                                    type="hidden"
-                                                                   name="${attrItem.getKey().getNameUri()}"
-                                                                   value="${attrItem.getKey().getNameUri()}"/>
+                                                                   name="${attrItem.key.nameUri}"
+                                                                   value="${attrItem.key.nameUri}"/>
                                                         </c:if>
                                                     </li>
                                                     </c:if>
@@ -374,7 +374,7 @@
                                             <div class="col-sm-6"><% /** Natural person */ %>
                                                 <c:set var="categoryIsDisplayed" value="false"/>
                                                 <c:forEach items="${attrList}" var="attrItem">
-                                                <c:if test="${!attrItem.getKey().isRequired() && attrItem.getKey().getPersonType().equals('NaturalPerson')}">
+                                                <c:if test="${!attrItem.key.required && attrItem.key.personType.value=='NaturalPerson'}">
                                                 <c:if test="${categoryIsDisplayed=='false'}">
                                                 <h3><fmt:message key="presentConsent.natural" bundle="${i18n_eng}"/>
                                                     <span><fmt:message key="presentConsent.person"
@@ -385,22 +385,22 @@
                                                     </c:if>
                                                     <li>
                                                         <c:if test="${fn:startsWith(fn:toLowerCase(displayAttr), 'false')}">
-                                                            <input id="consentSelector_${attrItem.getKey().getNameUri()}"
+                                                            <input id="consentSelector_${attrItem.key.nameUri}"
                                                                    type="hidden"
-                                                                   name="${attrItem.getKey().getNameUri()}"
-                                                                   value="${attrItem.getKey().getNameUri()}"/>
+                                                                   name="${attrItem.key.nameUri}"
+                                                                   value="${attrItem.key.nameUri}"/>
                                                         </c:if>
                                                         <c:if test="${!fn:startsWith(fn:toLowerCase(displayAttr), 'false')}">
-                                                            <p><fmt:message key="${attrItem.getKey().getNameUri()}"
+                                                            <p><fmt:message key="${attrItem.key.nameUri}"
                                                                             bundle="${i18n_eng}"/></p>
                                                             <input class="js-switch"
-                                                                   id="consentSelector_${attrItem.getKey().getFriendlyName()}"
+                                                                   id="consentSelector_${attrItem.key.friendlyName}"
                                                                    type="checkbox"
-                                                                   name="${attrItem.getKey().getNameUri()}"
+                                                                   name="${attrItem.key.nameUri}"
                                                                    value="true"/>
-                                                            <input id="__checkbox_consentSelector_${attrItem.getKey().getFriendlyName()}"
+                                                            <input id="__checkbox_consentSelector_${attrItem.key.friendlyName}"
                                                                    type="hidden"
-                                                                   name="__checkbox_${attrItem.getKey().getNameUri()}"
+                                                                   name="__checkbox_${attrItem.key.nameUri}"
                                                                    value="true"/>
                                                         </c:if>
                                                     </li>
@@ -412,7 +412,7 @@
                                             <div class="col-sm-6"><% /** Legal person */ %>
                                                 <c:set var="categoryIsDisplayed" value="false"/>
                                                 <c:forEach items="${attrList}" var="attrItem">
-                                                <c:if test="${!attrItem.getKey().isRequired() && attrItem.getKey().getPersonType().getValue().equals('LegalPerson')}">
+                                                <c:if test="${!attrItem.key.required && attrItem.key.personType.value=='LegalPerson'}">
                                                 <c:if test="${categoryIsDisplayed=='false'}">
                                                 <h3><fmt:message key="presentConsent.legal" bundle="${i18n_eng}"/>
                                                     <span><fmt:message key="presentConsent.person"
@@ -423,22 +423,22 @@
                                                     </c:if>
                                                     <li>
                                                         <c:if test="${fn:startsWith(fn:toLowerCase(displayAttr), 'false')}">
-                                                            <input id="consentSelector_${attrItem.getKey().getFriendlyName()}"
+                                                            <input id="consentSelector_${attrItem.key.friendlyName}"
                                                                    type="hidden"
-                                                                   name="${attrItem.getKey().getNameUri()}"
-                                                                   value="${attrItem.getKey().getNameUri()}"/>
+                                                                   name="${attrItem.key.nameUri}"
+                                                                   value="${attrItem.key.nameUri}"/>
                                                         </c:if>
                                                         <c:if test="${!fn:startsWith(fn:toLowerCase(displayAttr), 'false')}">
-                                                            <p><fmt:message key="${attrItem.getKey().getNameUri()}"
+                                                            <p><fmt:message key="${attrItem.key.nameUri}"
                                                                             bundle="${i18n_eng}"/></p>
                                                             <input class="js-switch"
-                                                                   id="consentSelector_${attrItem.getKey().getFriendlyName()}"
+                                                                   id="consentSelector_${attrItem.key.friendlyName}"
                                                                    type="checkbox"
-                                                                   name="${attrItem.getKey().getNameUri()}"
+                                                                   name="${attrItem.key.nameUri}"
                                                                    value="true"/>
-                                                            <input id="__checkbox_consentSelector_${attrItem.getKey().getFriendlyName()}"
+                                                            <input id="__checkbox_consentSelector_${attrItem.key.friendlyName}"
                                                                    type="hidden"
-                                                                   name="__checkbox_${attrItem.getKey().getNameUri()}"
+                                                                   name="__checkbox_${attrItem.key.nameUri}"
                                                                    value="true"/>
                                                         </c:if>
                                                     </li>

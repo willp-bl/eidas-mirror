@@ -203,13 +203,11 @@ public class SpecificConnector {
                 .adminUnitFirstLine(complexAddressAttribute.getAdminUnitFirstLine())
                 .adminUnitSecondLine(complexAddressAttribute.getAdminUnitSecondLine())
                 .postName(complexAddressAttribute.getPostName())
-                .fullCvaddress(complexAddressAttribute.getFullCVAddress())
                 .locatorDesignator(complexAddressAttribute.getLocatorDesignator())
                 .locatorName(complexAddressAttribute.getLocatorName())
                 .poBox(complexAddressAttribute.getPoBox())
                 .postCode(complexAddressAttribute.getPostCode())
                 .thoroughfare(complexAddressAttribute.getThoroughFare())
-                .addressId(complexAddressAttribute.getAddressId())
                 .cvAddressArea(complexAddressAttribute.getAddressArea());
 
         return postalAddressBuilder.build();
@@ -282,7 +280,7 @@ public class SpecificConnector {
                                                  @Nonnull final StatusCodeTranslator statusCodeTranslator) {
         responseStatus.setStatusCode(statusCodeTranslator.stringSmsspStatusCode());
 
-        if (statusCodeTranslator == StatusCodeTranslator.FAILURE) {
+        if (statusCodeTranslator == StatusCodeTranslator.RESPONDER_FAILURE || statusCodeTranslator == StatusCodeTranslator.REQUESTER_FAILURE) {
             final String subStatusCode = StringUtils.remove(lightResponse.getStatus().getSubStatusCode(), StatusCodeTranslator.SAML_STATUS_PREFIX);
             responseStatus.setSubStatusCode(subStatusCode);
             responseStatus.setStatusMessage(lightResponse.getStatus().getStatusMessage());
@@ -369,13 +367,11 @@ public class SpecificConnector {
         complexAddressAttribute.setAdminUnitFirstLine(postalAddress.getAdminUnitFirstLine());
         complexAddressAttribute.setAdminUnitSecondLine(postalAddress.getAdminUnitSecondLine());
         complexAddressAttribute.setPostName(postalAddress.getPostName());
-        complexAddressAttribute.setFullCVAddress(postalAddress.getFullCvaddress());
         complexAddressAttribute.setLocatorDesignator(postalAddress.getLocatorDesignator());
         complexAddressAttribute.setLocatorName(postalAddress.getLocatorName());
         complexAddressAttribute.setPoBox(postalAddress.getPoBox());
         complexAddressAttribute.setPostCode(postalAddress.getPostCode());
         complexAddressAttribute.setThoroughFare(postalAddress.getThoroughfare());
-        complexAddressAttribute.setAddressId(postalAddress.getAddressId());
         complexAddressAttribute.setAddressArea(postalAddress.getCvAddressArea());
         addressAttribute.setValue(complexAddressAttribute);
         addressAttribute.setName(friendlyName);

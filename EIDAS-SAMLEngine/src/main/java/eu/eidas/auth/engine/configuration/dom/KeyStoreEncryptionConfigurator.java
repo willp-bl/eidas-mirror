@@ -37,6 +37,8 @@ public final class KeyStoreEncryptionConfigurator {
         boolean disallowedSelfSignedCertificate = CertificateValidator.isDisallowedSelfSignedCertificate(properties);
         boolean responseEncryptionMandatory = Boolean.parseBoolean(
                 StringUtils.trim(EncryptionKey.RESPONSE_ENCRYPTION_MANDATORY.getAsString(properties)));
+        boolean isAssertionEncryptWithKey = Boolean.parseBoolean(
+                StringUtils.trim(EncryptionKey.ASSERTION_ENCRYPTION_WITH_KEY.getAsString(properties)));
 
         String jcaProviderName = StringUtils.trim(EncryptionKey.JCA_PROVIDER_NAME.getAsString(properties));
 
@@ -52,7 +54,9 @@ public final class KeyStoreEncryptionConfigurator {
         KeyStoreContent keyStoreContent = new KeyStoreConfigurator(properties, defaultPath).loadKeyStoreContent();
 
         return new EncryptionConfiguration(checkedValidityPeriod, disallowedSelfSignedCertificate,
-                                           responseEncryptionMandatory, keyStoreContent.getPrivateKeyEntries(),
+                                           responseEncryptionMandatory, 
+                                           isAssertionEncryptWithKey,
+                                           keyStoreContent.getPrivateKeyEntries(),
                                            keyStoreContent.getCertificates(), dataEncryptionAlgorithm,
                                            keyEncryptionAlgorithm, jcaProviderName, encryptionAlgorithmWhiteList);
     }

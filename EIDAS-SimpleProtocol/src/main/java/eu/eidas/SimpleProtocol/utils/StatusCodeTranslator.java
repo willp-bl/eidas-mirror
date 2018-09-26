@@ -30,7 +30,13 @@ public enum StatusCodeTranslator {
 
     SUCCESS("success", "urn:oasis:names:tc:SAML:2.0:status:Success"),
 
-    FAILURE("failure", "urn:oasis:names:tc:SAML:2.0:status:Responder");
+    RESPONDER_FAILURE("responder failure", "urn:oasis:names:tc:SAML:2.0:status:Responder"),
+
+    REQUESTER_FAILURE("requester failure", "urn:oasis:names:tc:SAML:2.0:status:Requester");
+
+
+
+    public static final String SAML_STATUS_PREFIX = "urn:oasis:names:tc:SAML:2.0:status:";
 
     private static final EnumMapper<String, StatusCodeTranslator> URI_SMSSP_MAPPER =
             new EnumMapper<>(new KeyAccessor<String, StatusCodeTranslator>() {
@@ -53,7 +59,6 @@ public enum StatusCodeTranslator {
                 }
             }, Canonicalizers.trimLowerCase(), values());
 
-    public static final String SAML_STATUS_PREFIX = "urn:oasis:names:tc:SAML:2.0:status:";
 
     @Nullable
     public static StatusCodeTranslator fromSmsspStatusCodeString(@Nonnull String smsspStatusCode) {

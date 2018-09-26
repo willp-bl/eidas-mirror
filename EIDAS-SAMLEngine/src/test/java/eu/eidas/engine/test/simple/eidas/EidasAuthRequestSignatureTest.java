@@ -14,6 +14,22 @@
  */
 package eu.eidas.engine.test.simple.eidas;
 
+import static eu.eidas.engine.EidasAttributeTestUtil.newEidasAttributeDefinition;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
+
+import java.util.Arrays;
+import java.util.Collection;
+
+import javax.annotation.Nonnull;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.opensaml.saml.saml2.core.AuthnRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import eu.eidas.auth.commons.EidasStringUtil;
 import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
@@ -31,16 +47,6 @@ import eu.eidas.auth.engine.configuration.ProtocolEngineConfiguration;
 import eu.eidas.auth.engine.configuration.ProtocolEngineConfigurationException;
 import eu.eidas.auth.engine.configuration.dom.DefaultProtocolEngineConfigurationFactory;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
-import org.junit.Before;
-import org.junit.Test;
-import org.opensaml.saml.saml2.core.AuthnRequest;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nonnull;
-
-import static eu.eidas.engine.EidasAttributeTestUtil.newEidasAttributeDefinition;
-import static org.junit.Assert.*;
 
 public class EidasAuthRequestSignatureTest {
 
@@ -130,11 +136,12 @@ public class EidasAuthRequestSignatureTest {
     /**
      * Test generate authentication request error personal attribute name error.
      */
+    final static private String REQUEST_ISSUER = "http://localhost:7001/SP/metadata".toLowerCase();
     @Test
     public final void testGenerateAuthnRequest() throws Exception {
-        IEidasAuthenticationRequest request = new EidasAuthenticationRequest.Builder().destination(destination)
+		IEidasAuthenticationRequest request = new EidasAuthenticationRequest.Builder().destination(destination)
                 .id("f5e7e0f5-b9b8-4256-a7d0-4090141b326d")
-                .issuer("http://localhost:7001/SP/metadata")
+                .issuer(REQUEST_ISSUER)
                 .providerName(spName)
                 .requestedAttributes(immutableAttributeMap)
                 .assertionConsumerServiceURL(assertConsumerUrl)
@@ -148,6 +155,7 @@ public class EidasAuthRequestSignatureTest {
         ProtocolEngineInterceptor engineInterceptor = null;
         try {
             engineInterceptor = new ProtocolEngineInterceptor();
+            engineInterceptor.setWhitelist(Arrays.asList(REQUEST_ISSUER));
         } catch (EIDASSAMLEngineException exc) {
             fail("error while initializing samlengine " + exc);
         }
@@ -163,6 +171,7 @@ public class EidasAuthRequestSignatureTest {
         try {
             String signingAlgo = engineInterceptor.getSigningAlgo(tokenSaml);
             assertEquals(signingAlgo, "http://www.w3.org/2001/04/xmldsig-more#rsa-sha512");
+            
             IAuthenticationRequest authenticationRequest = engineInterceptor.validateAuthnRequest(tokenSaml);
             assertNotNull(authenticationRequest);
         } catch (EIDASSAMLEngineException exc) {
@@ -202,16 +211,26 @@ public class EidasAuthRequestSignatureTest {
             samlEngine = (ProtocolEngine) ProtocolEngineFactory.getDefaultProtocolEngine(SAML_ENGINE_NAME);
         }
 
+        private Collection<String> whitelist;
+        
+        private void setWhitelist(Collection<String> list) {
+			whitelist=list;
+		}
+
+        private Collection<String> getWhitelist() {
+			return whitelist;
+		}
+
         public IRequestMessage generateAuthnRequest(final IAuthenticationRequest request) throws EIDASSAMLEngineException {
-            return samlEngine.generateRequestMessage(request, null);
+            return samlEngine.generateRequestMessage(request, request.getIssuer());
         }
 
         public IAuthenticationRequest validateAuthnRequest(final byte[] tokenSaml) throws EIDASSAMLEngineException {
-            return samlEngine.unmarshallRequestAndValidate(tokenSaml, "ES");
+            return samlEngine.unmarshallRequestAndValidate(tokenSaml, "ES",getWhitelist());
         }
 
-        public String getSigningAlgo(final byte[] token) throws EIDASSAMLEngineException {
-            AuthnRequest unmarshalled = samlEngine.unmarshallRequest(token);
+		public String getSigningAlgo(final byte[] token) throws EIDASSAMLEngineException {
+            AuthnRequest unmarshalled = samlEngine.unmarshallRequest(token,getWhitelist(),true);
             return unmarshalled.getSignature().getSignatureAlgorithm();
         }
 

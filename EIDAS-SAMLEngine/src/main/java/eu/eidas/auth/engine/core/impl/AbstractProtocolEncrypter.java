@@ -55,6 +55,7 @@ public abstract class AbstractProtocolEncrypter extends AbstractProtocolCipher i
         this(encryptionConfiguration.isCheckedValidityPeriod(),
              encryptionConfiguration.isDisallowedSelfSignedCertificate(),
              encryptionConfiguration.isResponseEncryptionMandatory(),
+             encryptionConfiguration.isAssertionEncryptWithKey(),
              encryptionConfiguration.getEncryptionCertificates(), encryptionConfiguration.getDataEncryptionAlgorithm(),
              encryptionConfiguration.getKeyEncryptionAlgorithm(), encryptionConfiguration.getJcaProviderName(),
              encryptionConfiguration.getEncryptionAlgorithmWhiteList());
@@ -63,10 +64,12 @@ public abstract class AbstractProtocolEncrypter extends AbstractProtocolCipher i
     protected AbstractProtocolEncrypter(boolean checkedValidityPeriod,
                                         boolean disallowedSelfSignedCertificate,
                                         boolean responseEncryptionMandatory,
+                                        boolean isAssertionEncryptWithKey,
                                         @Nonnull ImmutableSet<X509Certificate> encryptionCertificates,
                                         @Nonnull SAMLAuthnResponseEncrypter samlAuthnResponseEncrypter,
                                         @Nonnull ImmutableSet<String> encryptionAlgorithmWhiteList) {
         super(checkedValidityPeriod, disallowedSelfSignedCertificate, responseEncryptionMandatory,
+        		isAssertionEncryptWithKey,
               encryptionAlgorithmWhiteList);
 
         Preconditions.checkNotEmpty(encryptionCertificates, "encryptionCertificates");
@@ -79,13 +82,14 @@ public abstract class AbstractProtocolEncrypter extends AbstractProtocolCipher i
     protected AbstractProtocolEncrypter(boolean checkedValidityPeriod,
                                         boolean disallowedSelfSignedCertificate,
                                         boolean responseEncryptionMandatory,
+                                        boolean isAssertionEncryptWithKey,
                                         @Nonnull ImmutableSet<X509Certificate> encryptionCertificates,
                                         @Nullable String dataEncryptionAlgorithm,
                                         @Nullable String keyEncryptionAlgorithm,
                                         @Nullable String jcaProviderName,
                                         @Nullable String encryptionAlgorithmWhiteList)
             throws ProtocolEngineConfigurationException {
-        super(checkedValidityPeriod, disallowedSelfSignedCertificate, responseEncryptionMandatory,
+        super(checkedValidityPeriod, disallowedSelfSignedCertificate, responseEncryptionMandatory,isAssertionEncryptWithKey,
               encryptionAlgorithmWhiteList);
 
         Preconditions.checkNotEmpty(encryptionCertificates, "encryptionCertificates");
@@ -110,7 +114,8 @@ public abstract class AbstractProtocolEncrypter extends AbstractProtocolCipher i
 
     @Override
     @Nonnull
-    public Response encryptSamlResponse(@Nonnull Response authResponse, @Nonnull X509Certificate destinationCertificate)
+    public Response encryptSamlResponse(@Nonnull Response authResponse, @Nonnull X509Certificate destinationCertificate,
+    		boolean encryptAssertionWithKey)
             throws EIDASSAMLEngineException {
         if (null == destinationCertificate) {
             throw new EIDASSAMLEngineException(EidasErrorKey.SAML_ENGINE_UNENCRYPTED_RESPONSE.errorCode(),
@@ -121,7 +126,7 @@ public abstract class AbstractProtocolEncrypter extends AbstractProtocolCipher i
 
         try {
             // Execute encryption
-            Response response = samlAuthnResponseEncrypter.encryptSAMLResponse(authResponse, credential);
+            Response response = samlAuthnResponseEncrypter.encryptSAMLResponse(authResponse, credential,encryptAssertionWithKey);
 
             LOG.debug("Encryption of SAML Response performed with certificate of: " + credential.getEntityCertificate()
                     .getIssuerDN());

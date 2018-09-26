@@ -14,29 +14,26 @@
  */
 package eu.eidas.auth.engine;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
-import org.junit.Ignore;
+import static org.junit.Assert.assertFalse;
+
+import java.util.Arrays;
+
 import org.junit.Test;
 import org.opensaml.saml.saml2.core.Response;
-import org.opensaml.xmlsec.signature.support.SignatureException;
 
 import eu.eidas.auth.commons.EIDASStatusCode;
 import eu.eidas.auth.commons.EidasStringUtil;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.attribute.impl.StringAttributeValue;
-import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.IAuthenticationResponse;
 import eu.eidas.auth.commons.protocol.IRequestMessage;
 import eu.eidas.auth.commons.protocol.IResponseMessage;
 import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.eidas.spec.EidasSpec;
 import eu.eidas.auth.commons.protocol.impl.AuthenticationResponse;
-import eu.eidas.auth.commons.protocol.impl.BinaryRequestMessage;
 import eu.eidas.auth.commons.xml.opensaml.OpenSamlHelper;
-import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
+
 
 /**
  * ProtocolEngineTest
@@ -47,82 +44,20 @@ public final class ProtocolEngineTest {
 
 
     @Test
-    public void testUnmarshallRequestAndValidateWithManipulateIssuerWithoutResigning() throws Exception {
-
-        ProtocolEngineI protocolEngine = DefaultProtocolEngineFactory.getInstance().getProtocolEngine("METADATATEST");
-
-        EidasAuthenticationRequest request = EidasAuthenticationRequest.builder()
-                .id("_1")
-                .issuer("https://source.europa.eu/metadata")
-                .destination("https://destination.europa.eu")
-                .citizenCountryCode("BE")
-                .originCountryCode("BE")
-                .providerName("Prov")
-                .assertionConsumerServiceURL("https://source.europa.eu/metadata")
-                .requestedAttributes(ImmutableAttributeMap.of(EidasSpec.Definitions.PERSON_IDENTIFIER,
-                                                              new StringAttributeValue[] {}))
-                .build();
-
-        IRequestMessage requestMessage =
-                protocolEngine.generateRequestMessage(request, "https://destination.europa.eu/metadata");
-        
-
-        //1. Successful unmarshalling (including validation/signature)
-        String citizenCountryCode="BE";
-        try{
-        	protocolEngine.unmarshallRequestAndValidate(requestMessage.getMessageBytes(), citizenCountryCode);
-        }catch(EIDASSAMLEngineException e){
-        	fail("Unexpected failure when unmarshalling and validating signature");
-        }
-        
-        //2. 'manipulate' issuer and unmarshall 
-        try{
-        	final String BOGUS_ISSUER="https://source.america.am/metadata";
-        	EidasAuthenticationRequest eAuthnReq = (EidasAuthenticationRequest)requestMessage.getRequest();
-
-        	//2.1. 'manipulating' issuer only without the binary payload will be unsuccessful as assertion proves  
-        	EidasAuthenticationRequest manipulated = eAuthnReq.builder(eAuthnReq).issuer(BOGUS_ISSUER).build();
-        	BinaryRequestMessage manipulatedMessage = new BinaryRequestMessage(manipulated, requestMessage.getMessageBytes());
-        	IAuthenticationRequest manipulatedAuthReq = protocolEngine.unmarshallRequestAndValidate(manipulatedMessage.getMessageBytes(), citizenCountryCode);
-        	assertFalse(manipulatedAuthReq.getIssuer().equals(BOGUS_ISSUER));
-
-        	//2.2. 'manipulating' issuer including its value in the binary payload will result in a  EIDASSAMLEngineException thrown
-        	String messageXmlPayload=new String(manipulatedMessage.getMessageBytes());
-        	String messageXmlManipulatedPayload = messageXmlPayload.replaceAll("https://source.europa.eu/metadata" + "</saml2:Issuer>", BOGUS_ISSUER + "</saml2:Issuer>");
-        	manipulatedMessage=new BinaryRequestMessage(manipulated, messageXmlManipulatedPayload.getBytes());
-        	
-        	//this call will throw an EIDASSAMLEngineException due to signature validation
-        	manipulatedAuthReq = protocolEngine.unmarshallRequestAndValidate(manipulatedMessage.getMessageBytes(), citizenCountryCode);
-
-        	fail("unmarshallRequestAndValidate of AuthnRequest with manipulated issuer should have failed");
-        	
-        }catch(EIDASSAMLEngineException e){
-        	
-        	assertTrue(e.getCause() instanceof SignatureException);
-
-        	final String EXPECTED_SIGNATURE_MESSAGE = "Signature cryptographic validation not successful".toUpperCase();
-        	assertTrue(e.getCause().getMessage().toUpperCase().indexOf(EXPECTED_SIGNATURE_MESSAGE) >= 0 );
-        	
-        }catch(Exception e){
-        	e.printStackTrace();
-        }
-        
-
-    }
-
-    @Test
     public void unmarshallResponseAndValidate() throws Exception {
 
         ProtocolEngineI protocolEngine = DefaultProtocolEngineFactory.getInstance().getProtocolEngine("METADATATEST");
 
-        EidasAuthenticationRequest request = EidasAuthenticationRequest.builder()
+        final String ISSUER = "https://source.europa.eu/metadata";
+        
+		EidasAuthenticationRequest request = EidasAuthenticationRequest.builder()
                 .id("_1")
-                .issuer("https://source.europa.eu/metadata")
+                .issuer(ISSUER)
                 .destination("https://destination.europa.eu")
                 .citizenCountryCode("BE")
                 .originCountryCode("BE")
                 .providerName("Prov")
-                .assertionConsumerServiceURL("https://source.europa.eu/metadata")
+                .assertionConsumerServiceURL(ISSUER)
                 .requestedAttributes(ImmutableAttributeMap.of(EidasSpec.Definitions.PERSON_IDENTIFIER,
                                                               new StringAttributeValue[] {}))
                 .build();
@@ -148,7 +83,7 @@ public final class ProtocolEngineTest {
         Response samlResponse = (Response) OpenSamlHelper.unmarshall(responseMessage.getMessageBytes());
         assertFalse(samlResponse.getEncryptedAssertions().isEmpty());
 
-        Correlated correlated = protocolEngine.unmarshallResponse(responseMessage.getMessageBytes());
+        Correlated correlated = protocolEngine.unmarshallResponse(responseMessage.getMessageBytes(),Arrays.asList("https://destination.europa.eu/metadata"), true);
 
         IAuthenticationResponse authenticationResponse =
                 protocolEngine.validateUnmarshalledResponse(correlated, "127.0.0.1", 0L, 0L, null);

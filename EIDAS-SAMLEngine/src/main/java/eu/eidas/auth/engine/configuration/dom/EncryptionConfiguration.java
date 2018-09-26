@@ -38,6 +38,8 @@ public final class EncryptionConfiguration {
 
     private final boolean disallowedSelfSignedCertificate;
 
+    private final boolean isAssertionEncryptWithKey;
+    
     /**
      * There can be more than one decryption private key and associated certificate because of overlaps.
      */
@@ -64,6 +66,7 @@ public final class EncryptionConfiguration {
     public EncryptionConfiguration(boolean checkedValidityPeriod,
                                    boolean disallowedSelfSignedCertificate,
                                    boolean responseEncryptionMandatory,
+                                   boolean isAssertionEncryptWithKey,
                                    @Nonnull ImmutableSet<KeyStore.PrivateKeyEntry> decryptionKeyAndCertificates,
                                    @Nonnull ImmutableSet<X509Certificate> encryptionCertificates,
                                    @Nullable String dataEncryptionAlgorithm,
@@ -73,6 +76,7 @@ public final class EncryptionConfiguration {
         this.checkedValidityPeriod = checkedValidityPeriod;
         this.disallowedSelfSignedCertificate = disallowedSelfSignedCertificate;
         this.responseEncryptionMandatory = responseEncryptionMandatory;
+        this.isAssertionEncryptWithKey = isAssertionEncryptWithKey;
         this.decryptionKeyAndCertificates = decryptionKeyAndCertificates;
         this.encryptionCertificates = encryptionCertificates;
         this.dataEncryptionAlgorithm = dataEncryptionAlgorithm;
@@ -198,4 +202,8 @@ public final class EncryptionConfiguration {
                 ", encryptionAlgorithmWhiteList='" + encryptionAlgorithmWhiteList + '\'' +
                 '}';
     }
+
+	public boolean isAssertionEncryptWithKey() {
+		return isAssertionEncryptWithKey;
+	}
 }

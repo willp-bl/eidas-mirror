@@ -19,14 +19,24 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
+import javax.annotation.concurrent.ThreadSafe;
+
 /**
  * Application context provider.
  *
+ * This class provides 1 method for setting the application context and one method for reading it.
+ * The thread safe behavior of this class relise on the volatile declaration of the application context.
+ *
  * @since 2.0
  */
+@ThreadSafe
 public class SpecificCommunicationApplicationContextProvider implements ApplicationContextAware {
 
-    private static ApplicationContext applicationContext = new ClassPathXmlApplicationContext("specificCommunicationDefinitionApplicationContext.xml");
+    private static volatile ApplicationContext applicationContext;
+
+    static  {
+        applicationContext = new ClassPathXmlApplicationContext("specificCommunicationDefinitionApplicationContext.xml");
+    }
 
     public static ApplicationContext getApplicationContext() {
         return applicationContext;
