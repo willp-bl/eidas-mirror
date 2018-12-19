@@ -154,6 +154,11 @@
         <time-to-live-seconds>86400</time-to-live-seconds><!-- 1 day -->
         <eviction-policy>LRU</eviction-policy>
     </map>
+    <map name="proxyServiceLogSamlCacheService">
+        <in-memory-format>BINARY</in-memory-format>
+        <time-to-live-seconds>86400</time-to-live-seconds><!-- 1 day -->
+        <eviction-policy>LRU</eviction-policy>
+    </map>
 
 
     <map name="default">

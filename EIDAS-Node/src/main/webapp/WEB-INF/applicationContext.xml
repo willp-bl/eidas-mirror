@@ -104,6 +104,7 @@
          <property name="validationMethod" value="${validation.method}" />
          <property name="messageSource" ref="errorMessageSource"/>
          <property name="isContentSecurityPolicyActive" value="${security.header.CSP.enabled:true}"/>
+         <property name="cspReportingUri" value="${security.header.CSP.report.uri}"/>
          <property name="isMoaActive" value="${isMoaActive:false}"/>
          <property name="includeXXssProtection" value="${security.header.XXssProtection.block:true}"/>
          <property name="includeXContentTypeOptions" value="${security.header.XContentTypeOptions.noSniff:true}"/>
@@ -150,15 +151,6 @@
 
 -->
 <!--
-    <bean id="springManagedContentSecurityPolicyInterceptor" class="eu.eidas.node.security.SecurityResponseHeaderInterceptor" scope="prototype">
-        <property name="isContentSecurityPolicyActive" value="${security.header.CSP.enabled:true}"/>
-        <property name="isMoaActive" value="${isMoaActive:false}"/>
-        <property name="includeXXssProtection" value="${security.header.XXssProtection.block:true}"/>
-        <property name="includeXContentTypeOptions" value="${security.header.XContentTypeOptions.noSniff:true}"/>
-        <property name="includeXFrameOptions" value="${security.header.XFrameOptions.sameOrigin:true}"/>
-        <property name="includeHSTS" value="${security.header.HSTS.includeSubDomains:true}"/>
-        <property name="includeMozillaDirectives" value="${security.header.CSP.includeMozillaDirectives:true}"/>
-    </bean>
 -->
     <!-- Connector requests parameters via servlet -->
     <bean id="connectorController" class="eu.eidas.node.connector.ConnectorControllerService" scope="prototype">
@@ -169,14 +161,17 @@
         <!--property name="moaService" ref="springManagedMoaService" /-->
         <property name="nodeAuth" value="${connector.destination.url}" />
 		<property name="specificConnector" ref="springManagedSpecificConnector"/>
+		<property name="connectorLoggingUtil" ref="springManagedLoggingUtil"/>
 	</bean>
     <!-- Service requests parameters via servlet -->
     <bean id="serviceController" class="eu.eidas.node.service.ServiceControllerService" scope="prototype">
         <property name="proxyServiceRequestCorrelationMap" ref="proxyServiceRequestCorrelationMap"/>
+        <property name="logSamlCache" ref="logSamlCache#{distributedEnvSuffix.toString()}"/>
         <property name="specificProxyService" ref="springManagedSpecificProxyService"/>
         <property name="proxyService" ref="springManagedAUSERVICE" />
         <property name="citizenConsentUrl" value="${service.citizenConsentUrl}" />
         <property name="askConsentType" value="${service.askconsent.type}" />
+		<property name="connectorLoggingUtil" ref="springManagedLoggingUtil"/>
     </bean>
 
     <!-- Specific request parameters-->
@@ -301,6 +296,17 @@
 		<property name="connectorResponderMetadataUrl" value="${connector.responder.metadata.url}"/>
 		<property name="metadataFetcher" ref="nodeMetadataFetcher"/>
         <property name="nodeProtocolEngineFactory" ref="NodeProtocolEngineFactory"/>
+		<property name="connectorLoggingUtil" ref="springManagedLoggingUtil"/>
+	</bean>
+
+	<bean id="springManagedLoggingUtil" class="eu.eidas.node.auth.LoggingUtil">
+		<property name="samlServiceInstance" value="${saml.connector:Connector}" />
+		<property name="samlEngineInstanceName" value="${saml.service:Service}" />
+		<property name="nodeProtocolEngineFactory" ref="NodeProtocolEngineFactory"/>
+		<property name="samlAuditable" value="${saml.audit:true}" />
+		<property name="metadataFetcher" ref="nodeMetadataFetcher"/>
+		<property name="countryCode" value="${service.countrycode}" />
+		<property name="connectorUtil" ref="springManagedAUCONNECTORUtil" />
 	</bean>
 
 	<bean id="runenvironment" class="java.lang.String">
@@ -433,6 +439,17 @@
 	<!-- for development environment -->
 	<bean id="metadataCacheDev" class="eu.eidas.node.auth.metadata.SimpleMetadataCaching"  lazy-init="true">
 		<constructor-arg value="${nonDistributedMetadata.retention}" />
+	</bean>
+
+	<!--production -->
+	<bean id="logSamlCacheProd" class="eu.eidas.node.logging.DistributedLogSamlCaching" lazy-init="true">
+		<property name="hazelcastInstanceInitializer" ref="eidasHazelcastInstanceInitializer"/>
+		<property name="cacheName" value="logSamlCache"/>
+	</bean>
+
+	<!-- for development environment -->
+	<bean id="logSamlCacheDev" class="eu.eidas.node.logging.SimpleLogSamlCaching"  lazy-init="true">
+		<constructor-arg value="${nonDistributedLogSaml.retention}" />
 	</bean>
 
 </beans>

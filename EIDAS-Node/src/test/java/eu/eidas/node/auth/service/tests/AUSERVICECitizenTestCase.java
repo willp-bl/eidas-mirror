@@ -25,7 +25,10 @@ package eu.eidas.node.auth.service.tests;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import eu.eidas.auth.commons.*;
+import eu.eidas.auth.commons.CitizenConsent;
+import eu.eidas.auth.commons.EidasErrorKey;
+import eu.eidas.auth.commons.IncomingRequest;
+import eu.eidas.auth.commons.WebRequest;
 import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.attribute.PersonType;
@@ -166,7 +169,7 @@ public final class AUSERVICECitizenTestCase {
 
         when(mockedServiceSAMLService.generateErrorAuthenticationResponse((IAuthenticationRequest) any(), anyString(),
                                                                           anyString(), anyString(), anyString(), anyString(),
-                                                                          anyBoolean())).thenReturn(new byte[0]);
+                                                                          anyBoolean(), anyString())).thenReturn(new byte[0]);
 
         when(mockedServiceSAMLService.updateRequest((IAuthenticationRequest) any(), (ImmutableAttributeMap) any())).thenReturn(AUTH_DATA.getRequest());
 

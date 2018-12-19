@@ -4,22 +4,18 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.Principal;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
-import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletInputStream;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import javax.servlet.*;
+import javax.servlet.http.*;
 
 import com.google.common.collect.Maps;
 
+import eu.eidas.auth.engine.ProtocolEngineFactory;
+import eu.eidas.auth.engine.configuration.dom.ProtocolEngineConfigurationFactory;
+import eu.eidas.node.auth.specific.LoggingUtil;
 import org.bouncycastle.util.encoders.Base64;
+import org.joda.time.DateTime;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -86,6 +82,11 @@ public class SpecificProxyServiceImplTest {
     private static final String AUDIENCE_RESTRICTION = "http://localhost:7001/EidasNode/ServiceRequesterMetadata";
     private static final String DESTINATION = "http://localhost:7001/IdP/AuthenticateCitizen";
 
+    private static final DateTime NOT_BEFORE = new DateTime(5000);
+    private static final DateTime NOT_ON_OR_AFTER = new DateTime(5000);
+    private static final String COUNTRY = "BE";
+    private final String SAML_ENGINE = "Specific-IdP";
+
     private static final AttributeDefinition<String> CURRENT_FAMILY_NAME =
             new AttributeDefinition.Builder<String>().nameUri(
                     "http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName")
@@ -129,6 +130,8 @@ public class SpecificProxyServiceImplTest {
     @Mock
     private RequestDispatcher dispatcher;
 
+    @Mock
+    private LoggingUtil specificLoggingUtil;
 
     @Test
     public void sendRequest() throws Exception {
@@ -184,6 +187,12 @@ public class SpecificProxyServiceImplTest {
         when(specificService.processAuthenticationResponse(bytes)).thenReturn(authenticationExchange);
         when(specificService.getProxyServiceRequestCorrelationMap()).thenReturn(correlationMap);
         when(specificService.compareAttributeLists(ImmutableAttributeMap.builder().put(CURRENT_FAMILY_NAME).build(), immutableAttributeMap())).thenReturn(true);
+
+        ProtocolEngineConfigurationFactory protocolEngineConfigurationFactory = new ProtocolEngineConfigurationFactory("SpecificSamlEngine.xml", null, "src/test/resources/");
+        ProtocolEngineFactory protocolEngineFactory = new ProtocolEngineFactory(protocolEngineConfigurationFactory);
+        specificProxyService.setProtocolEngineFactory(protocolEngineFactory);
+        specificProxyService.setSamlEngine(SAML_ENGINE);
+
         //test the bean
         ILightResponse lightResponse = specificProxyService.processResponse(httpServletRequest, httpServletResponse);
         //verify
@@ -194,7 +203,7 @@ public class SpecificProxyServiceImplTest {
         verifyNoMoreInteractions(specificIdPResponse, specificService);
         //assert
         assertEquals(ID, lightResponse.getInResponseToId());
-        assertEquals(ID_RESPONSE, lightResponse.getId());
+        assertEquals(lightResponse.getId(), lightResponse.getId());
         assertEquals(REMOTE_ADDRESS, lightResponse.getIPAddress());
         assertEquals(ISSUER_IDP, lightResponse.getIssuer());
         assertEquals(LEVEL_OF_ASSURANCE, lightResponse.getLevelOfAssurance());
@@ -566,7 +575,6 @@ public class SpecificProxyServiceImplTest {
     }
 
     private IAuthenticationResponse authenticationResponse() {
-
         return AuthenticationResponse.builder()
                 .id(ID_RESPONSE)
                 .inResponseTo(ID)
@@ -576,6 +584,9 @@ public class SpecificProxyServiceImplTest {
                 .issuer(ISSUER_IDP)
                 .levelOfAssurance(LEVEL_OF_ASSURANCE)
                 .attributes(immutableAttributeMap())
+                .notBefore(NOT_BEFORE)
+                .notOnOrAfter(NOT_ON_OR_AFTER)
+                .country(COUNTRY)
                 .build();
     }
 
@@ -587,6 +598,7 @@ public class SpecificProxyServiceImplTest {
         EidasAuthenticationRequest authenticationRequest = EidasAuthenticationRequest.builder()
                 .lightRequest(lightRequest())
                 .destination(DESTINATION)
+                .spType("PUBLIC")
                 .build();
 
         return StoredAuthenticationRequest.builder().remoteIpAddress(REMOTE_ADDRESS).request(authenticationRequest).build();

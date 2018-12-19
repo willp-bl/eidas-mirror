@@ -17,18 +17,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import eu.eidas.auth.commons.EidasStringUtil;
+import eu.eidas.auth.commons.*;
 import eu.eidas.auth.commons.attribute.PersonType;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 
-import eu.eidas.auth.commons.EIDASValues;
-import eu.eidas.auth.commons.EidasErrorKey;
-import eu.eidas.auth.commons.EidasErrors;
-import eu.eidas.auth.commons.EidasParameterKeys;
-import eu.eidas.auth.commons.IEIDASConfigurationProxy;
 import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.exceptions.EIDASServiceException;
@@ -54,7 +48,7 @@ import eu.eidas.auth.engine.xml.opensaml.SAMLEngineUtils;
 import eu.eidas.auth.specific.IAUService;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import eu.eidas.util.WhitelistUtil;
-
+import eu.eidas.node.auth.specific.LoggingUtil.*;
 /**
  * This class is specific and should be modified by each member state if they want to use any different settings.
  */
@@ -65,6 +59,9 @@ public final class SpecificEidasService implements IAUService {
      * Logger object.
      */
     private static final Logger LOG = LoggerFactory.getLogger(SpecificEidasService.class);
+
+    private static final Logger LOGGER_COM_REQ = LoggerFactory.getLogger(
+            EIDASValues.EIDAS_PACKAGE_REQUEST_LOGGER_VALUE.toString() + "_" + SpecificEidasService.class.getSimpleName());
 
     private static final String NOT_AVAILABLE_COUNTRY = "NA";
 
@@ -94,14 +91,14 @@ public final class SpecificEidasService implements IAUService {
     private String idpMetadataWhitelist;
 
     public String getIdpMetadataWhitelist() {
-		return idpMetadataWhitelist;
-	}
+        return idpMetadataWhitelist;
+    }
 
-	public void setIdpMetadataWhitelist(String idpMetadataWhitelist) {
-		this.idpMetadataWhitelist = idpMetadataWhitelist;
-	}
+    public void setIdpMetadataWhitelist(String idpMetadataWhitelist) {
+        this.idpMetadataWhitelist = idpMetadataWhitelist;
+    }
 
-	public ProtocolEngineFactory getProtocolEngineFactory() {
+    public ProtocolEngineFactory getProtocolEngineFactory() {
         return protocolEngineFactory;
     }
 
@@ -196,6 +193,16 @@ public final class SpecificEidasService implements IAUService {
 
     public void setIdpMetadataUrl(String idpMetadataUrl) {
         this.idpMetadataUrl = idpMetadataUrl;
+    }
+
+    private LoggingUtil specificLoggingUtil;
+
+    public void setSpecificLoggingUtil(LoggingUtil specificLoggingUtil) {
+        this.specificLoggingUtil = specificLoggingUtil;
+    }
+
+    public LoggingUtil getSpecificLoggingUtil() {
+        return specificLoggingUtil;
     }
 
     /**
@@ -401,11 +408,16 @@ public final class SpecificEidasService implements IAUService {
             builder.citizenCountryCode(citizenCountryCode);
             builder.levelOfAssurance(eidasLoa);
 
-            IRequestMessage generatedSpecificRequest = getProtocolEngine().generateRequestMessage(builder.build(), getIdpMetadataUrl());
+            IRequestMessage generatedSpecificRequest = getProtocolEngine().generateRequestMessage(builder.build(),
+                    getIdpMetadataUrl());
 
             IAuthenticationRequest generatedRequest = generatedSpecificRequest.getRequest();
 
             String specificRequestSamlId = generatedRequest.getId();
+
+            specificLoggingUtil.saveAuthenticationRequestLog(SpecificEidasService.LOGGER_COM_REQ,
+                    EIDASValues.PROXY_IDP_REQUEST.toString(), null, generatedSpecificRequest.getMessageBytes(),
+                    generatedRequest, lightRequest.getId(), "N/A", OperationTypes.GENERATES);
 
             // store the correlation between the specific request ID and the original ILightRequest
             proxyServiceRequestCorrelationMap.put(specificRequestSamlId, StoredLightRequest.builder()

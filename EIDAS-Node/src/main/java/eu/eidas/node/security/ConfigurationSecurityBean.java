@@ -9,6 +9,9 @@ import org.springframework.context.MessageSource;
 public class ConfigurationSecurityBean {
     private boolean isContentSecurityPolicyActive;
 
+     /** Host name used for the CSP directive report-uri */
+    private String cspReportingUri;
+
     private boolean isMoaActive;
 
     private boolean includeXXssProtection;
@@ -19,40 +22,27 @@ public class ConfigurationSecurityBean {
 
     private boolean includeHSTS;
 
-    /**
-     * Include CSP browser support test script into JSPs
-     */
+     /** Include CSP browser support test script into JSPs */
     private boolean cspFallbackCheck;
 
     private boolean includeMozillaDirectives;
-    /**
-     * Max requests per citizen.
-     */
+
+    /**Max requests per citizen.*/
     private int ipMaxRequests;
 
-    /**
-     * Max requests per SP.
-     */
+    /** Max requests per SP.*/
     private int spMaxRequests;
 
-    /**
-     * Citizen timer threshold.
-     */
+    /** Citizen timer threshold.*/
     private int ipMaxTime;
 
-    /**
-     * SP timer threshold.
-     */
+    /**SP timer threshold.*/
     private int spMaxTime;
 
-    /**
-     * String containing all the trusted domains.
-     */
+    /**String containing all the trusted domains. */
     private String trustedDomains;
 
-    /**
-     * Method of validating the SP, either by domain or by domain and QAA Level.
-     */
+    /**Method of validating the SP, either by domain or by domain and QAA Level.*/
     private String validationMethod;
 
     private MessageSource messageSource;
@@ -65,6 +55,14 @@ public class ConfigurationSecurityBean {
 
     public void setIsContentSecurityPolicyActive(boolean isContentSecurityPolicyActive) {
         this.isContentSecurityPolicyActive = isContentSecurityPolicyActive;
+    }
+
+    public String getCspReportingUri() {
+        return cspReportingUri;
+    }
+
+    public void setCspReportingUri(String cspReportingUri) {
+        this.cspReportingUri = cspReportingUri;
     }
 
     public boolean getIsMoaActive() {

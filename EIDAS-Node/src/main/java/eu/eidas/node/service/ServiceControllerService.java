@@ -24,10 +24,23 @@ package eu.eidas.node.service;
 
 import eu.eidas.auth.commons.tx.CorrelationMap;
 import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
+import eu.eidas.node.auth.LoggingUtil;
 import eu.eidas.node.auth.service.ISERVICEService;
+import eu.eidas.node.logging.ILogSamlCachingService;
 import eu.eidas.node.specificcommunication.ISpecificProxyService;
 
 public class ServiceControllerService {
+
+    private LoggingUtil connectorLoggingUtil;
+    private ILogSamlCachingService logSamlCache;
+
+    public void setConnectorLoggingUtil(LoggingUtil connectorLoggingUtil) {
+        this.connectorLoggingUtil = connectorLoggingUtil;
+    }
+
+    public LoggingUtil getConnectorLoggingUtil() {
+        return connectorLoggingUtil;
+    }
 
     private CorrelationMap<StoredAuthenticationRequest> proxyServiceRequestCorrelationMap;
 
@@ -43,6 +56,14 @@ public class ServiceControllerService {
 
     public void setProxyServiceRequestCorrelationMap(CorrelationMap<StoredAuthenticationRequest> proxyServiceRequestCorrelationMap) {
         this.proxyServiceRequestCorrelationMap = proxyServiceRequestCorrelationMap;
+    }
+
+    public void setLogSamlCache(ILogSamlCachingService logSamlCache) {
+        this.logSamlCache = logSamlCache;
+    }
+
+    public ILogSamlCachingService getLogSamlCache() {
+        return logSamlCache;
     }
 
     public boolean isAskConsentType() {

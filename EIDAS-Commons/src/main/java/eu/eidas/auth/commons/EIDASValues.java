@@ -141,21 +141,61 @@ public enum EIDASValues {
      */
     EIDAS_SERVICE_REQUEST("eIDAS Service receives request from eIDAS Connector"),
     /**
+     * Represents the 'eIDAS Specific Service generates response to eIDAS Service' constant value.
+     */
+    SPECIFIC_SERVICE_RESPONSE("eIDAS Specific Service generates response to eIDAS Service"),
+    /**
      * Represents the 'eIDAS Service generates response to eIDAS Connector' constant value.
      */
     EIDAS_SERVICE_RESPONSE("eIDAS Service generates response to eIDAS Connector"),
+    /**
+     * Represents the 'eIDAS Service generates response to eIDAS Service' constant value.
+     */
+    EIDAS_SERVICE_GENERATES_RESPONSE("eIDAS Service generates response to eIDAS Service"),
     /**
      * Represents the 'eIDAS Connector generates request to eIDAS Service' constant value.
      */
     EIDAS_CONNECTOR_REQUEST("eIDAS Connector generates request to eIDAS Service"),
     /**
+     * Represents the 'eIDAS Connector generates request to eIDAS Connector' constant value.
+     */
+    EIDAS_CONNECTOR_CONNECTOR_REQUEST("eIDAS Connector generates request to eIDAS Connector"),
+    /**
      * Represents the 'eIDAS Connector receives response from eIDAS Service' constant value.
      */
     EIDAS_CONNECTOR_RESPONSE("eIDAS Connector receives response from eIDAS Service"),
     /**
-     * Represents the 'eIDAS Connector generates response to SP' constant value.
+     * Represents the 'eIDAS Specific Connector sends response to SP' constant value.
      */
-    SP_RESPONSE("eIDAS Connector generates response to SP"),
+    CONNECTOR_SP_RESPONSE("eIDAS Specific Connector sends response to SP"),
+    /**
+     * Represents the 'eIDAS Specific Connector generates response to SP' constant value.
+     */
+    SPECIFIC_CONNECTOR_SP_RESPONSE("eIDAS Specific Connector generates response to SP"),
+    /**
+     * Represents the 'eIDAS Specific Connector generates request to Connector' constant value.
+     */
+    SPECIFIC_CONNECTOR_REQUEST("eIDAS Specific Connector generates request to eIDAS Connector"),
+    /**
+     * Represents the 'eIDAS Connector sends request to eIDAS Service' constant value.
+     */
+    CONNECTOR_SERVICE_REQUEST("eIDAS Connector sends request to eIDAS Service"),
+    /**
+     * Represents the 'eIDAS Specific Proxy Service generates request to IdP' constant value.
+     */
+    PROXY_IDP_REQUEST("eIDAS Specific Proxy Service generates request to IdP"),
+    /**
+     * Represents the 'eIDAS Specific Proxy Service sends request to IdP' constant value.
+     */
+    SPECIFIC_PROXY_IDP_REQUEST("eIDAS Specific Proxy Service sends request to IdP"),
+    /**
+     * Represents the 'eIDAS Service receives response from IdP' constant value.
+     */
+    EIDAS_IDP_SERVICE_RESPONSE("eIDAS Service receives response from IdP"),
+    /**
+     * Represents the 'eIDAS Service sends response to eIDAS Connector' constant value.
+     */
+    EIDAS_SERVICE_CONNECTOR_RESPONSE("eIDAS Service sends response to eIDAS Connector"),
     /**
      * Represents the 'Success' constant value.
      */

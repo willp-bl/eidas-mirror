@@ -13,6 +13,7 @@
  */
 package eu.eidas.node.connector;
 
+import eu.eidas.node.auth.LoggingUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,6 +33,16 @@ public final class ConnectorControllerService {
      * Connector service.
      */
     private ICONNECTORService connectorService;
+
+    private LoggingUtil connectorLoggingUtil;
+
+    public void setConnectorLoggingUtil(LoggingUtil connectorLoggingUtil) {
+        this.connectorLoggingUtil = connectorLoggingUtil;
+    }
+
+    public LoggingUtil getConnectorLoggingUtil() {
+        return connectorLoggingUtil;
+    }
 
     private CorrelationMap<StoredLightRequest> specificSpRequestCorrelationMap;
 

@@ -9,15 +9,21 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import eu.eidas.auth.commons.*;
+import eu.eidas.auth.commons.protocol.IResponseMessage;
+import eu.eidas.auth.commons.protocol.eidas.IEidasAuthenticationRequest;
+import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
+import eu.eidas.auth.engine.ProtocolEngineFactory;
+import eu.eidas.auth.engine.ProtocolEngineI;
+import eu.eidas.auth.engine.xml.opensaml.SAMLEngineUtils;
+import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
+import eu.eidas.node.auth.specific.LoggingUtil;
+import eu.eidas.node.auth.specific.LoggingUtil.*;
+import org.apache.commons.lang.StringUtils;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.eidas.auth.commons.EIDASStatusCode;
-import eu.eidas.auth.commons.EidasErrorKey;
-import eu.eidas.auth.commons.EidasErrors;
-import eu.eidas.auth.commons.EidasParameterKeys;
-import eu.eidas.auth.commons.EidasStringUtil;
-import eu.eidas.auth.commons.IncomingRequest;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.light.ILightRequest;
 import eu.eidas.auth.commons.light.ILightResponse;
@@ -54,6 +60,36 @@ public class SpecificProxyServiceImpl implements ISpecificProxyService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SpecificProxyServiceImpl.class);
 
+    private static final Logger LOGGER_COM_REQ = LoggerFactory.getLogger(
+            EIDASValues.EIDAS_PACKAGE_REQUEST_LOGGER_VALUE.toString() + "_" + SpecificProxyServiceImpl.class.getSimpleName());
+
+    private static final Logger LOGGER_COM_RESP = LoggerFactory.getLogger(
+            EIDASValues.EIDAS_PACKAGE_RESPONSE_LOGGER_VALUE.toString() + "_" + SpecificProxyServiceImpl.class.getSimpleName());
+
+    private String samlEngine;
+
+    public void setSamlEngine(String samlEngine) {
+        this.samlEngine = samlEngine;
+    }
+
+    public String getSamlEngine() {
+        return samlEngine;
+    }
+
+    private ProtocolEngineFactory protocolEngineFactory;
+
+    public ProtocolEngineFactory getProtocolEngineFactory() {
+        return protocolEngineFactory;
+    }
+
+    public void setProtocolEngineFactory(ProtocolEngineFactory protocolEngineFactory) {
+        this.protocolEngineFactory = protocolEngineFactory;
+    }
+
+    public ProtocolEngineI getSamlProtocolEngine() {
+        return protocolEngineFactory.getProtocolEngine(getSamlEngine());
+    }
+
     private CitizenAuthenticationBean citizenAuthentication;
 
     private boolean signResponseAssertion;
@@ -82,6 +118,26 @@ public class SpecificProxyServiceImpl implements ISpecificProxyService {
 
     public void setSpecificIdPResponse(SpecificIdPBean specificIdPResponse) {
         this.specificIdPResponse = specificIdPResponse;
+    }
+
+    private String idpMetadataUrl;
+
+    public String getIdpMetadataUrl() {
+        return idpMetadataUrl;
+    }
+
+    public void setIdpMetadataUrl(String idpMetadataUrl) {
+        this.idpMetadataUrl = idpMetadataUrl;
+    }
+
+    private LoggingUtil specificLoggingUtil;
+
+    public void setSpecificLoggingUtil(LoggingUtil specificLoggingUtil) {
+        this.specificLoggingUtil = specificLoggingUtil;
+    }
+
+    public LoggingUtil getSpecificLoggingUtil() {
+        return specificLoggingUtil;
     }
 
     @Override
@@ -124,6 +180,10 @@ public class SpecificProxyServiceImpl implements ISpecificProxyService {
                 byte[] samlTokenBytes = specificService.prepareCitizenAuthentication(lightRequest, attrMap, parameters,
                                                                                      getHttpRequestAttributesHeaders(
                                                                                              httpServletRequest));
+
+                specificLoggingUtil.prepareAndSaveAuthenticationRequestLog(SpecificProxyServiceImpl.LOGGER_COM_REQ,
+                        EIDASValues.SPECIFIC_PROXY_IDP_REQUEST.toString(), idpMetadataUrl, samlTokenBytes,
+                        lightRequest.getId(), "N/A", lightRequest.getCitizenCountryCode(), OperationTypes.SENDS);
                 // used by jsp
                 String samlToken = EidasStringUtil.encodeToBase64(samlTokenBytes);
 
@@ -199,13 +259,51 @@ public class SpecificProxyServiceImpl implements ISpecificProxyService {
             } else {
                 ILightRequest proxyServiceAuthnRequest = proxyServiceRequest.getRequest();
                 authenticationResponse = AuthenticationResponse.builder(specificResponse)
+                        .id(SAMLEngineUtils.generateNCName())
                         .inResponseTo(proxyServiceAuthnRequest.getId())
                         .build();
 
+                ProtocolEngineI protocolEngine = getSamlProtocolEngine();
+                try {
+
+                    //fix to overcome exception caused by "Request AssertionConsumerServiceURL must not be blank".
+                    IEidasAuthenticationRequest eidasAuthenticationRequest = setAssertionConsumerUrlIfNotSet(specificAuthnRequest);
+
+                    IResponseMessage signedResponse = protocolEngine.generateResponseMessage(eidasAuthenticationRequest, authenticationResponse,
+                            false, authenticationResponse.getIPAddress());
+                    byte[] samlObj = signedResponse.getMessageBytes();
+                    specificLoggingUtil.saveAuthenticationResponseLog(SpecificProxyServiceImpl.LOGGER_COM_RESP, EIDASValues.SPECIFIC_SERVICE_RESPONSE.toString(), samlObj,
+                            authenticationResponse, specificResponse.getId(), "N/A", null, OperationTypes.GENERATES);
+                } catch (EIDASSAMLEngineException e) {
+                    e.printStackTrace();
+                }
             }
         }
         //build the LightResponse
         return LightResponse.builder(authenticationResponse).build();
+    }
+
+    /**
+     * Method that sets the assertionConsumerServiceUrl to parameter specificAuthnRequest if not empty.
+     * <p>
+     * TODO check if why the assertionConsumerServiceUrl should be set in the first place. If so remove this method.
+     *
+     * @param specificAuthnRequest the IAuthenticationRequest to be checked if contains the assertionConsumerServiceUrl not empty.
+     * @return the new IEidasAuthenticationRequest with a non empty assertionConsumerServiceUrl or the original specificAuthnRequest otherwise.
+     */
+    private IEidasAuthenticationRequest setAssertionConsumerUrlIfNotSet(final IAuthenticationRequest specificAuthnRequest) {
+        final String assertionConsumerServiceURL = specificAuthnRequest.getAssertionConsumerServiceURL();
+        if (StringUtils.isEmpty(assertionConsumerServiceURL)) {
+            if (specificAuthnRequest instanceof IEidasAuthenticationRequest) {
+                EidasAuthenticationRequest.Builder builder = EidasAuthenticationRequest.builder((IEidasAuthenticationRequest) specificAuthnRequest);
+                builder.assertionConsumerServiceURL("N/A");
+
+
+                return builder.build();
+            }
+        }
+
+        return (IEidasAuthenticationRequest) specificAuthnRequest;
     }
 
     @Override

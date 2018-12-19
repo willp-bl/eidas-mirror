@@ -39,24 +39,28 @@ public final class ResponseCarryingServiceException extends EIDASServiceExceptio
     @Nullable
     private final String relayState;
 
+    @Nonnull
+    private final String requestIssuer;
+
     /**
      * Exception Constructor with three strings representing the errorCode, errorMessage and encoded samlToken as
      * parameters.
-     *
-     * @param errorCode The error code value.
+     *  @param errorCode The error code value.
      * @param errorMessage The error message value.
      * @param samlTokenFail The error SAML Token.
+     * @param requestIssuer
      */
     public ResponseCarryingServiceException(@Nonnull String errorCode,
                                             @Nonnull String errorMessage,
                                             @Nonnull String samlTokenFail,
                                             @Nonnull String errorRedirectUrl,
-                                            @Nullable String relayState) {
+                                            @Nullable String relayState, String requestIssuer) {
         super(errorCode, errorMessage, samlTokenFail);
         Preconditions.checkNotNull(samlTokenFail, "samlTokenFail");
         Preconditions.checkNotNull(errorRedirectUrl, "errorRedirectUrl");
         this.errorRedirectUrl = errorRedirectUrl;
         this.relayState = relayState;
+        this.requestIssuer = requestIssuer;
     }
 
     @Nonnull
@@ -67,5 +71,10 @@ public final class ResponseCarryingServiceException extends EIDASServiceExceptio
     @Nullable
     public String getRelayState() {
         return relayState;
+    }
+
+    @Nonnull
+    public String getRequestIssuer() {
+        return requestIssuer;
     }
 }

@@ -28,10 +28,15 @@ import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.stork.IStorkAuthenticationRequest;
 import eu.eidas.auth.commons.tx.CorrelationMap;
 import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
+import eu.eidas.auth.engine.configuration.dom.SignatureKey;
 import eu.eidas.auth.engine.core.eidas.spec.EidasSpec;
 import eu.eidas.node.NodeBeanNames;
 import eu.eidas.node.NodeParameterNames;
 import eu.eidas.node.NodeViewNames;
+import eu.eidas.node.auth.LoggingUtil;
+import eu.eidas.node.auth.LoggingUtil.OperationTypes;
+import eu.eidas.node.logging.ILogSamlCachingService;
+import eu.eidas.node.logging.LogSamlHolder;
 import eu.eidas.node.service.validation.NodeParameterValidator;
 import eu.eidas.node.utils.EidasAttributesUtil;
 import eu.eidas.node.utils.PropertiesUtil;
@@ -45,6 +50,9 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.UUID;
+
+import static eu.eidas.node.NodeViewNames.EIDAS_SERVICE_LOG_SAML_RESPONSE;
 
 @SuppressWarnings("squid:S1989") // due to the code uses correlation maps, not http sessions
 public class ColleagueRequestServlet extends AbstractServiceServlet {
@@ -55,6 +63,12 @@ public class ColleagueRequestServlet extends AbstractServiceServlet {
     protected Logger getLogger() {
         return LOG;
     }
+
+    /**
+     * Request logging.
+     */
+    private static final Logger LOGGER_COM_REQ = LoggerFactory.getLogger(
+            EIDASValues.EIDAS_PACKAGE_REQUEST_LOGGER_VALUE.toString() + "_" + ColleagueRequestServlet.class.getSimpleName());
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -92,8 +106,15 @@ public class ColleagueRequestServlet extends AbstractServiceServlet {
         // Obtains the parameters from httpRequest
         WebRequest webRequest = new IncomingRequest(request);
 
+
+
         // Validating the only HTTP parameter: SAMLRequest.
         String samlRequest = webRequest.getEncodedLastParameterValue(EidasParameterKeys.SAML_REQUEST);
+        String country = webRequest.getEncodedLastParameterValue(EidasParameterKeys.COUNTRY);
+
+        LoggingUtil serviceLoggingUtil  = controllerService.getConnectorLoggingUtil();
+        serviceLoggingUtil.prepareAndSaveAuthenticationRequestLog(ColleagueRequestServlet.LOGGER_COM_REQ, EIDASValues.EIDAS_SERVICE_REQUEST.toString(), request, "ProxyService", OperationTypes.RECEIVES);
+
         NodeParameterValidator.paramName(EidasParameterKeys.SAML_REQUEST)
                 .paramValue(samlRequest)
                 .eidasError(EidasErrorKey.COLLEAGUE_REQ_INVALID_SAML)
@@ -135,8 +156,9 @@ public class ColleagueRequestServlet extends AbstractServiceServlet {
         LOG.debug("sessionId is on cookies () or fromURL ", request.isRequestedSessionIdFromCookie(),
                   request.isRequestedSessionIdFromURL());
 
-        request.setAttribute(NodeParameterNames.SAML_TOKEN_FAIL.toString(), controllerService.getProxyService()
-                .generateSamlTokenFail(authData, EIDASStatusCode.REQUESTER_URI.toString(), EidasErrorKey.CITIZEN_RESPONSE_MANDATORY, remoteIpAddress));
+        final String samlTokenFail = controllerService.getProxyService()
+                .generateSamlTokenFail(authData, EIDASStatusCode.REQUESTER_URI.toString(), EidasErrorKey.CITIZEN_RESPONSE_MANDATORY, remoteIpAddress, StringUtils.EMPTY);
+        request.setAttribute(NodeParameterNames.SAML_TOKEN_FAIL.toString(), samlTokenFail);
 
         request.setAttribute(EidasParameterKeys.SP_ID.toString(), authData.getProviderName());
         if (authData instanceof IStorkAuthenticationRequest) {
@@ -153,6 +175,14 @@ public class ColleagueRequestServlet extends AbstractServiceServlet {
         request.setAttribute(NodeParameterNames.ATTR_LIST.toString(), authData.getRequestedAttributes().entrySet().asList());
         request.setAttribute(NodeParameterNames.REDIRECT_URL.toString(),
                              encodeURL(redirectUrl, response));// Correct URl redirect cookie implementation
+
+        request.setAttribute(NodeParameterNames.REDIRECT_CONNECTOR_URL.toString(),
+                             encodeURL(redirectUrl, response));// Correct URl redirect cookie implementation
+
+        final String redirectCancelUrl = getServletContext().getContextPath() + EIDAS_SERVICE_LOG_SAML_RESPONSE.toString();
+        request.setAttribute(NodeParameterNames.REDIRECT_CANCEL_URL.toString(), redirectCancelUrl);
+        request.setAttribute(SignatureKey.ISSUER.toString(), authData.getIssuer());
+
         request.setAttribute(NodeParameterNames.EIDAS_ATTRIBUTES_PARAM.toString(), Boolean.valueOf(hasEidasAttributes));
 
         request.setAttribute(NodeParameterNames.REQUEST_ID.toString(), authData.getId());
@@ -160,11 +190,21 @@ public class ColleagueRequestServlet extends AbstractServiceServlet {
 
         NodeViewNames forwardUrl;
         if (controllerService.isAskConsentType()) {
+
+            ILogSamlCachingService iLogSamlCachingService = controllerService.getLogSamlCache();
+            LogSamlHolder logSamlHolder = new LogSamlHolder(redirectUrl, StringUtils.EMPTY, samlTokenFail, relayState, authData.getIssuer(), authData.getId());
+
+            final String logSamlToken = EidasStringUtil.encodeToBase64(UUID.randomUUID().toString());
+            iLogSamlCachingService.put(logSamlToken, logSamlHolder);
+            request.setAttribute(NodeParameterNames.LOG_SAML_TOKEN.toString(), logSamlToken);
+
             forwardUrl = NodeViewNames.EIDAS_SERVICE_PRESENT_CONSENT;
+
         } else {
             forwardUrl = NodeViewNames.EIDAS_SERVICE_NO_CONSENT;
         }
         RequestDispatcher dispatcher = request.getRequestDispatcher(forwardUrl.toString());
         dispatcher.forward(request, response);
     }
+
 }

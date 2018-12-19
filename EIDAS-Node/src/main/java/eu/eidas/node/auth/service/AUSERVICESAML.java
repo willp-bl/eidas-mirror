@@ -13,35 +13,7 @@
  */
 package eu.eidas.node.auth.service;
 
-import static org.apache.commons.lang.StringUtils.isEmpty;
-import static org.apache.commons.lang.StringUtils.isNotEmpty;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
-import eu.eidas.node.utils.PropertiesUtil;
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.MessageSource;
-import org.springframework.context.NoSuchMessageException;
-
-import eu.eidas.auth.commons.DateUtil;
-import eu.eidas.auth.commons.EIDASStatusCode;
-import eu.eidas.auth.commons.EIDASSubStatusCode;
-import eu.eidas.auth.commons.EIDASValues;
-import eu.eidas.auth.commons.EidasDigestUtil;
-import eu.eidas.auth.commons.EidasErrorKey;
-import eu.eidas.auth.commons.EidasErrors;
-import eu.eidas.auth.commons.EidasParameterKeys;
-import eu.eidas.auth.commons.EidasStringUtil;
-import eu.eidas.auth.commons.IEIDASLogger;
-import eu.eidas.auth.commons.IncomingRequest;
+import eu.eidas.auth.commons.*;
 import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.exceptions.EidasNodeException;
@@ -63,10 +35,30 @@ import eu.eidas.auth.engine.metadata.MetadataSignerI;
 import eu.eidas.auth.engine.metadata.MetadataUtil;
 import eu.eidas.auth.engine.xml.opensaml.SAMLEngineUtils;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
+import eu.eidas.node.ApplicationContextProvider;
+import eu.eidas.node.NodeBeanNames;
+import eu.eidas.node.auth.LoggingUtil;
+import eu.eidas.node.auth.LoggingUtil.OperationTypes;
+import eu.eidas.node.connector.ConnectorControllerService;
 import eu.eidas.node.logging.LoggingMarkerMDC;
 import eu.eidas.node.utils.EidasNodeErrorUtil;
 import eu.eidas.node.utils.EidasNodeValidationUtil;
+import eu.eidas.node.utils.LoggingSanitizer;
+import eu.eidas.node.utils.PropertiesUtil;
 import eu.eidas.util.WhitelistUtil;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
+import org.springframework.context.NoSuchMessageException;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.List;
+import java.util.Locale;
+
+import static org.apache.commons.lang.StringUtils.isEmpty;
+import static org.apache.commons.lang.StringUtils.isNotEmpty;
 
 /**
  * This class is used by {@link AUSERVICE} to get, process and generate SAML Tokens. Also, it checks attribute values
@@ -86,17 +78,12 @@ public class AUSERVICESAML implements ISERVICESAMLService {
      */
     protected static final Logger LOGGER = LoggerFactory.getLogger(AUSERVICESAML.class);
 
-    /**
-     * Request logging.
-     */
-    private static final Logger LOGGER_COM_REQ = LoggerFactory.getLogger(
-            EIDASValues.EIDAS_PACKAGE_REQUEST_LOGGER_VALUE.toString() + "." + AUSERVICE.class.getSimpleName());
 
     /**
      * Response logging.
      */
     protected static final Logger LOGGER_COM_RESP = LoggerFactory.getLogger(
-            EIDASValues.EIDAS_PACKAGE_RESPONSE_LOGGER_VALUE.toString() + "." + AUSERVICE.class.getSimpleName());
+            EIDASValues.EIDAS_PACKAGE_RESPONSE_LOGGER_VALUE.toString() + "_" + AUSERVICE.class.getSimpleName());
 
     /**
      * Logger bean.
@@ -199,13 +186,11 @@ public class AUSERVICESAML implements ISERVICESAMLService {
             IResponseMessage signedResponse =
                     engine.generateResponseMessage(originalRequest, authnResponseBuilder.build(),
                                                    generateSignedAssertion, ipAddress);
-
-            // Audit
-            String message = EIDASValues.SUCCESS.toString() + EIDASValues.EID_SEPARATOR.toString()
-                    + EIDASValues.CITIZEN_CONSENT_LOG.toString();
-
-            prepareRespLoggerBean(signedResponse, message);
-            saveLog(AUSERVICESAML.LOGGER_COM_RESP);
+            ConnectorControllerService controllerService = (ConnectorControllerService) ApplicationContextProvider.getApplicationContext().getBean(
+                    NodeBeanNames.EIDAS_CONNECTOR_CONTROLLER.toString());
+            LoggingUtil serviceLoggingUtil = controllerService.getConnectorLoggingUtil();
+                serviceLoggingUtil.prepareAndSaveResponseToLog(AUSERVICESAML.LOGGER_COM_RESP, EIDASValues.EIDAS_SERVICE_GENERATES_RESPONSE.toString(),
+                        null, signedResponse.getMessageBytes(), signedResponse.getResponse().getId(), null, null, OperationTypes.GENERATES);
 
             return signedResponse;
         } catch (EIDASSAMLEngineException e) {
@@ -242,7 +227,8 @@ public class AUSERVICESAML implements ISERVICESAMLService {
                                                       String subCode,
                                                       String errorMessageVal,
                                                       String ipUserAddress,
-                                                      boolean isAuditable) {
+                                                      boolean isAuditable,
+                                                      String originatingResponseId) {
         try {
             String errorCode;
             String errorMessage;
@@ -276,14 +262,24 @@ public class AUSERVICESAML implements ISERVICESAMLService {
                 eidasAuthnResponseError.inResponseTo(authData.getId());
             }
 
-            eidasAuthnResponseError.id(SAMLEngineUtils.generateNCName());
+            String id = getId(originatingResponseId);
+            eidasAuthnResponseError.id(id);
             eidasAuthnResponseError.inResponseTo(authData.getId());
 
             final IResponseMessage responseMessage = generateResponseErrorMessage(authData, ipUserAddress, engine, eidasAuthnResponseError);
 
+            ConnectorControllerService controllerService = (ConnectorControllerService) ApplicationContextProvider.getApplicationContext().getBean(
+                    NodeBeanNames.EIDAS_CONNECTOR_CONTROLLER.toString());
+            LoggingUtil serviceLoggingUtil = controllerService.getConnectorLoggingUtil();
+            if ((subCode != null)&&(!subCode.equals("urn:oasis:names:tc:SAML:2.0:status:RequestDenied"))) {
+                // Obtaining the assertion consumer url from SPRING context
+                serviceLoggingUtil.saveAuthenticationResponseLog(AUSERVICESAML.LOGGER_COM_RESP, EIDASValues.EIDAS_SERVICE_GENERATES_RESPONSE.toString(), null, responseMessage.getMessageBytes(),
+                        responseMessage.getResponse(), id, "N/A", errorMessage, OperationTypes.GENERATES);
+            }
+
             if (isAuditable) {
-                prepareRespLoggerBean(responseMessage, errorMessage);
-                saveLog(AUSERVICESAML.LOGGER_COM_RESP);
+                serviceLoggingUtil.saveAuthenticationResponseLog(AUSERVICESAML.LOGGER_COM_RESP, EIDASValues.EIDAS_SERVICE_GENERATES_RESPONSE.toString(), null, responseMessage.getMessageBytes(),
+                        responseMessage.getResponse(), id, "N/A", errorMessage, OperationTypes.GENERATES);
             }
 
             return responseMessage.getMessageBytes();
@@ -294,6 +290,14 @@ public class AUSERVICESAML implements ISERVICESAMLService {
             throw new InternalErrorEIDASException(
                     EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_ERROR_CREATE_SAML.errorCode()),
                     EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_ERROR_CREATE_SAML.errorMessage()), e);
+        }
+    }
+
+    private String getId(String originatingResponseId) {
+        if (StringUtils.isEmpty(originatingResponseId)) {
+            return SAMLEngineUtils.generateNCName();
+        } else {
+            return originatingResponseId;
         }
     }
 
@@ -408,11 +412,11 @@ public class AUSERVICESAML implements ISERVICESAMLService {
 
                     byte[] samlTokenFail =
                             generateErrorAuthenticationResponse(authnRequest, EIDASStatusCode.REQUESTER_URI.toString(),
-                                                                errorCode, null, errorMessage, ipUserAddress, true);
+                                                                errorCode, null, errorMessage, ipUserAddress, true, StringUtils.EMPTY);
 
                     throw new ResponseCarryingServiceException(errorCode, errorMessage,
                                                                EidasStringUtil.encodeToBase64(samlTokenFail),
-                                                               assertionConsumerUrl, relayState);
+                                                               assertionConsumerUrl, relayState, authnRequest.getIssuer());
                 }
                 //put spType in the request (EIDINT-1251)
                 if (isEmpty(authnRequest.getSpType())) {
@@ -434,11 +438,11 @@ public class AUSERVICESAML implements ISERVICESAMLService {
                     String errorMessage = EidasErrors.get(EidasErrorKey.MESSAGE_FORMAT_UNSUPPORTED.errorMessage());
                     byte[] samlTokenFail =
                             generateErrorAuthenticationResponse(authnRequest, EIDASStatusCode.RESPONDER_URI.toString(),
-                                                                errorCode, null, errorMessage, ipUserAddress, true);
+                                                                errorCode, null, errorMessage, ipUserAddress, true, StringUtils.EMPTY);
 
                     throw new ResponseCarryingServiceException(errorCode, errorMessage,
                                                                EidasStringUtil.encodeToBase64(samlTokenFail),
-                                                               assertionConsumerUrl, relayState);
+                                                               assertionConsumerUrl, relayState, authnRequest.getIssuer());
                 }
 
                 NormalParameterValidator.paramName(EidasParameterKeys.EIDAS_CONNECTOR_REDIRECT_URL)
@@ -448,11 +452,9 @@ public class AUSERVICESAML implements ISERVICESAMLService {
             }
 
             // Checking for antiReplay
-            checkAntiReplay(samlObj, authnRequest);
+            checkAntiReplay(authnRequest);
             // Logging
             LOGGER.trace("Eidas Audit");
-            prepareReqLoggerBean(samlObj, authnRequest);
-            saveLog(AUSERVICESAML.LOGGER_COM_REQ);
 
             return authnRequest;
         } catch (EIDASSAMLEngineException e) {
@@ -467,11 +469,8 @@ public class AUSERVICESAML implements ISERVICESAMLService {
         }
     }
 
-    private void checkAntiReplay(byte[] samlObj, IAuthenticationRequest authnRequest) {
+    private void checkAntiReplay(IAuthenticationRequest authnRequest) {
         if (!serviceUtil.checkNotPresentInCache(authnRequest.getId(), authnRequest.getCitizenCountryCode())) {
-            LOGGER.trace("Eidas Audit");
-            prepareReqLoggerBean(samlObj, authnRequest);
-            saveLog(AUSERVICESAML.LOGGER_COM_REQ);
             throw new SecurityEIDASException(EidasErrors.get(EidasErrorKey.SPROVIDER_SELECTOR_INVALID_SAML.errorCode()),
                                              EidasErrors.get(
                                                      EidasErrorKey.SPROVIDER_SELECTOR_INVALID_SAML.errorMessage()));
@@ -490,11 +489,11 @@ public class AUSERVICESAML implements ISERVICESAMLService {
 
             byte[] samlTokenFail =
                     generateErrorAuthenticationResponse(authnRequest, EIDASStatusCode.REQUESTER_URI.toString(),
-                                                        errorCode, null, errorMessage, ipUserAddress, true);
+                                                        errorCode, null, errorMessage, ipUserAddress, true, StringUtils.EMPTY);
 
             throw new ResponseCarryingServiceException(errorCode, errorMessage,
                                                        EidasStringUtil.encodeToBase64(samlTokenFail),
-                                                       authnRequest.getAssertionConsumerServiceURL(), relayState);
+                                                       authnRequest.getAssertionConsumerServiceURL(), relayState, authnRequest.getIssuer());
         }
     }
 
@@ -509,12 +508,12 @@ public class AUSERVICESAML implements ISERVICESAMLService {
                 byte[] samlTokenFail =
                         generateErrorAuthenticationResponse(authnRequest, EIDASStatusCode.REQUESTER_URI.toString(),
                                                             null, EIDASSubStatusCode.QAA_NOT_SUPPORTED.toString(),
-                                                            EidasErrors.get(errorMsgCons), ipUserAddress, true);
+                                                            EidasErrors.get(errorMsgCons), ipUserAddress, true, StringUtils.EMPTY);
 
                 throw new ResponseCarryingServiceException(EidasErrors.get(errorCodeCons),
                                                            EidasErrors.get(errorMsgCons),
                                                            EidasStringUtil.encodeToBase64(samlTokenFail),
-                                                           authnRequest.getAssertionConsumerServiceURL(), relayState);
+                                                           authnRequest.getAssertionConsumerServiceURL(), relayState, authnRequest.getIssuer());
             }
         }
     }
@@ -534,11 +533,11 @@ public class AUSERVICESAML implements ISERVICESAMLService {
 
             byte[] samlTokenFail =
                     generateErrorAuthenticationResponse(authnRequest, EIDASStatusCode.REQUESTER_URI.toString(),
-                                                        errorCode, null, errorMessage, ipUserAddress, true);
+                                                        errorCode, null, errorMessage, ipUserAddress, true, StringUtils.EMPTY);
 
             throw new ResponseCarryingServiceException(errorCode, errorMessage,
                                                        EidasStringUtil.encodeToBase64(samlTokenFail),
-                                                       authnRequest.getAssertionConsumerServiceURL(), relayState);
+                                                       authnRequest.getAssertionConsumerServiceURL(), relayState, authnRequest.getIssuer());
         }
 
     }
@@ -588,60 +587,6 @@ public class AUSERVICESAML implements ISERVICESAMLService {
     }
 
     /**
-     * Sets all the fields to audit the request.
-     *
-     * @param samlObj The SAML token byte[].
-     * @param authnRequest The Authentication Request object.
-     * @see EidasAuthenticationRequest
-     */
-    private void prepareReqLoggerBean(byte[] samlObj, IAuthenticationRequest authnRequest) {
-        String hashClassName = serviceUtil.getProperty(EidasParameterKeys.HASH_DIGEST_CLASS.toString());
-        byte[] tokenHash = EidasDigestUtil.hashPersonalToken(samlObj, hashClassName);
-        loggerBean.setTimestamp(DateUtil.currentTimeStamp().toString());
-        loggerBean.setOpType(EIDASValues.EIDAS_SERVICE_REQUEST.toString());
-        loggerBean.setOrigin(authnRequest.getAssertionConsumerServiceURL());
-        loggerBean.setDestination(authnRequest.getDestination());
-        loggerBean.setProviderName(authnRequest.getProviderName());
-        loggerBean.setCountry(authnRequest.getServiceProviderCountryCode());
-
-        if (authnRequest instanceof IStorkAuthenticationRequest) {
-            IStorkAuthenticationRequest storkAuthenticationRequest = (IStorkAuthenticationRequest) authnRequest;
-            loggerBean.setSpApplication(storkAuthenticationRequest.getSpApplication());
-            loggerBean.setQaaLevel(storkAuthenticationRequest.getQaa());
-        }
-        loggerBean.setSamlHash(tokenHash);
-        loggerBean.setMsgId(authnRequest.getId());
-    }
-
-    /**
-     * Sets all the fields to the audit the response.
-     *
-     * @param message The Saml response message.
-     * @param message The message.
-     * @see EidasAuthenticationRequest
-     */
-    protected void prepareRespLoggerBean(IResponseMessage responseMessage, String message) {
-        String hashClassName = serviceUtil.getProperty(EidasParameterKeys.HASH_DIGEST_CLASS.toString());
-        byte[] tokenHash = EidasDigestUtil.hashPersonalToken(responseMessage.getMessageBytes(), hashClassName);
-        loggerBean.setTimestamp(DateUtil.currentTimeStamp().toString());
-        loggerBean.setOpType(EIDASValues.EIDAS_SERVICE_RESPONSE.toString());
-        IAuthenticationResponse authnResponse = responseMessage.getResponse();
-        loggerBean.setInResponseTo(authnResponse.getInResponseToId());
-        loggerBean.setMessage(message);
-        loggerBean.setSamlHash(tokenHash);
-        loggerBean.setMsgId(authnResponse.getId());
-    }
-
-    /**
-     * Logs the transaction with the Audit log.
-     *
-     * @param logger The Audit Logger.
-     */
-    public void saveLog(Logger logger) {
-        logger.info(LoggingMarkerMDC.SAML_EXCHANGE, loggerBean.toString());
-    }
-
-    /**
      * Setter for loggerBean.
      *
      * @param nLoggerBean The new loggerBean value.
@@ -649,16 +594,6 @@ public class AUSERVICESAML implements ISERVICESAMLService {
      */
     public void setLoggerBean(IEIDASLogger nLoggerBean) {
         this.loggerBean = nLoggerBean;
-    }
-
-    /**
-     * Getter for loggerBean.
-     *
-     * @return The loggerBean value.
-     * @see IEIDASLogger
-     */
-    public IEIDASLogger getLoggerBean() {
-        return loggerBean;
     }
 
     /**

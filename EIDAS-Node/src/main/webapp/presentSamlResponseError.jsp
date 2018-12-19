@@ -43,9 +43,12 @@
                     <c:if test="${!empty exception.samlTokenFail}">
                         <form action="${e:forHtml(errorRedirectUrl)}" name="redirectForm" id="redirectForm" method="post">
                             <input type="hidden" name="SAMLResponse" id="SAMLResponse" value="${e:forHtml(exception.samlTokenFail)}" />
+                            <input type="hidden" id="redirectConnectorUrl" name="redirectConnectorUrl" value="<c:out value='${e:forHtml(redirectConnectorUrl)}'/>"/>
+                            <input type="hidden" id="issuer" name="issuer" value="<c:out value='${e:forHtml(issuer)}'/>"/>
                             <c:if test="${!empty exception.relayState}">
                                 <input type="hidden" name="RelayState" id="RelayState" value="${e:forHtml(exception.relayState)}" />
                             </c:if>
+                            <input type="hidden" id="logSamlToken" name="logSamlToken" value="${e:forHtml(logSamlToken)}"/>
                         </form>
                     </c:if>
                     <jsp:include page="internal/footer-img.jsp"/>

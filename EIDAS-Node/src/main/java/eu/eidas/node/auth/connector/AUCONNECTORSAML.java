@@ -64,11 +64,9 @@ import eu.eidas.auth.engine.metadata.MetadataSignerI;
 import eu.eidas.auth.engine.metadata.MetadataUtil;
 import eu.eidas.auth.engine.xml.opensaml.SAMLEngineUtils;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
+import eu.eidas.node.auth.LoggingUtil;
 import eu.eidas.node.logging.LoggingMarkerMDC;
-import eu.eidas.node.utils.EidasNodeErrorUtil;
-import eu.eidas.node.utils.EidasNodeValidationUtil;
-import eu.eidas.node.utils.PropertiesUtil;
-import eu.eidas.node.utils.SessionHolder;
+import eu.eidas.node.utils.*;
 import org.apache.commons.lang.StringUtils;
 import org.opensaml.xml.validation.ValidationException;
 import org.slf4j.Logger;
@@ -87,6 +85,7 @@ import java.util.Collection;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.regex.Pattern;
+import eu.eidas.node.auth.LoggingUtil.*;
 
 /**
  * This class is used by {@link AUCONNECTOR} to get, process and generate SAML Tokens.
@@ -104,18 +103,22 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
      * Request logging.
      */
     private static final Logger LOGGER_COM_REQ = LoggerFactory.getLogger(
-            EIDASValues.EIDAS_PACKAGE_REQUEST_LOGGER_VALUE.toString() + "." + AUCONNECTOR.class.getSimpleName());
-
-    /**
-     * Response logging.
-     */
-    private static final Logger LOGGER_COM_RESP = LoggerFactory.getLogger(
-            EIDASValues.EIDAS_PACKAGE_RESPONSE_LOGGER_VALUE.toString() + "." + AUCONNECTOR.class.getSimpleName());
+            EIDASValues.EIDAS_PACKAGE_REQUEST_LOGGER_VALUE.toString() + "_" + AUCONNECTOR.class.getSimpleName());
 
     /**
      * Logger bean.
      */
     private IEIDASLogger loggerBean;
+
+    private LoggingUtil connectorLoggingUtil;
+
+    public void setConnectorLoggingUtil(LoggingUtil connectorLoggingUtil) {
+        this.connectorLoggingUtil = connectorLoggingUtil;
+    }
+
+    public LoggingUtil getConnectorLoggingUtil() {
+        return connectorLoggingUtil;
+    }
 
     /**
      * SAML instance to communicate with ServiceProxy.
@@ -372,7 +375,7 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
             return;
         }
         String colleagueLoA = MetadataUtil.getServiceLevelOfAssurance(metadataFetcher.getEntityDescriptor(idpUrl,
-                                                                                                          (MetadataSignerI) getSamlEngine(samlServiceInstance).getSigner()));
+                (MetadataSignerI) getSamlEngine(samlServiceInstance).getSigner()));
         if (!StringUtils.isEmpty(colleagueLoA) && !EidasNodeValidationUtil.isRequestLoAValid(authRequest,
                                                                                              colleagueLoA)) {
             throw new InternalErrorEIDASException(
@@ -421,11 +424,8 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
 
         //TODO check if tempAuthData creation could be avoided
         IRequestMessage tempAuthData = generateAuthenticationRequest(samlServiceInstance, request, serviceCountryCode);
+        byte[] samlObj = tempAuthData.getMessageBytes();
 
-        prepareReqLoggerBean(EIDASValues.EIDAS_CONNECTOR_REQUEST.toString(), tempAuthData.getMessageBytes(),
-                             tempAuthData.getRequest(), tempAuthData.getRequest().getId());
-
-        saveLog(AUCONNECTORSAML.LOGGER_COM_REQ);
         LOG.trace("Logging communication");
 
         return tempAuthData;
@@ -486,15 +486,12 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
             LOG.info(LoggingMarkerMDC.SAML_EXCHANGE, "Connector - Processing SAML Response to request with ID {}",
                      connectorRequestId);
 
-            prepareRespLoggerBean(EIDASValues.EIDAS_CONNECTOR_RESPONSE.toString(), authnResponse, connectorRequestId);
-            saveLog(AUCONNECTORSAML.LOGGER_COM_RESP);
+            checkAntiReplay(authnResponse);
 
-            checkAntiReplay(responseFromProxyService, connectorAuthnRequest, authnResponse);
-
-            checkServiceCountryToCitizenCountry(responseFromProxyService, connectorAuthnRequest, authnResponse);
+            checkServiceCountryToCitizenCountry(connectorAuthnRequest, authnResponse);
 
             if (!authnResponse.isFailure()) {
-                checkResponseLoA(responseFromProxyService, connectorAuthnRequest, authnResponse);
+                checkResponseLoA(connectorAuthnRequest, authnResponse);
                 checkIdentifierFormat(authnResponse);
             }
 
@@ -604,21 +601,16 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
 
     /**
      * Check if the citizen country code is the same than the Service signing certificate
-     *
-     * @param samlToken the samlToken received
-     * @param spAuthnRequest the initial authnRequest
+     *  @param spAuthnRequest the initial authnRequest
      * @param authnResponse the authnResponse
      */
-    private void checkServiceCountryToCitizenCountry(byte[] samlToken,
-                                                     IAuthenticationRequest spAuthnRequest,
+    private void checkServiceCountryToCitizenCountry(IAuthenticationRequest spAuthnRequest,
                                                      IAuthenticationResponse authnResponse) {
         if (checkCitizenCertificateServiceCertificate && !spAuthnRequest.getCitizenCountryCode()
                 .equals(authnResponse.getCountry())) {
             LOG.warn("ERROR : Signing country for Service " + authnResponse.getCountry()
                              + " is not the same than the citizen country code "
                              + spAuthnRequest.getCitizenCountryCode());
-            prepareReqLoggerBean(EIDASValues.SP_REQUEST.toString(), samlToken, spAuthnRequest, spAuthnRequest.getId());
-            saveLog(AUCONNECTORSAML.LOGGER_COM_REQ);
             throw new InvalidSessionEIDASException(
                     EidasErrors.get(EidasErrorKey.INVALID_RESPONSE_COUNTRY_ISOCODE.errorCode()),
                     EidasErrors.get(EidasErrorKey.INVALID_RESPONSE_COUNTRY_ISOCODE.errorMessage()));
@@ -627,13 +619,10 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
 
     /**
      * check the LoA in the response against connector's own LoA
-     *
-     * @param samlToken
-     * @param spAuthnRequest
+     *  @param spAuthnRequest
      * @param authnResponse
      */
-    private void checkResponseLoA(byte[] samlToken,
-                                  IAuthenticationRequest spAuthnRequest,
+    private void checkResponseLoA(IAuthenticationRequest spAuthnRequest,
                                   IAuthenticationResponse authnResponse) {
         LevelOfAssurance requestedLevel = LevelOfAssurance.getLevel(spAuthnRequest.getLevelOfAssurance());
         LevelOfAssurance responseLevel = LevelOfAssurance.getLevel(authnResponse.getLevelOfAssurance());
@@ -641,8 +630,6 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
                 spAuthnRequest, responseLevel.stringValue()))) {
             LOG.info("ERROR : the level of assurance in the response " + authnResponse.getLevelOfAssurance()
                              + " does not satisfy the requested level " + requestedLevel);
-            prepareReqLoggerBean(EIDASValues.SP_REQUEST.toString(), samlToken, spAuthnRequest, spAuthnRequest.getId());
-            saveLog(AUCONNECTORSAML.LOGGER_COM_REQ);
             throw new InvalidSessionEIDASException(EidasErrors.get(EidasErrorKey.INTERNAL_ERROR.errorCode()),
                                                    EidasErrors.get(EidasErrorKey.INTERNAL_ERROR.errorMessage()));
         }
@@ -651,17 +638,10 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
     /**
      * Check the antireplay cache to control if the samlId has not yet been submitted
      *
-     * @param samlToken the samlToken received
-     * @param spAuthnRequest the initial authnRequest
-     * @param authnResponse the authnResponse
-     */
-    private void checkAntiReplay(byte[] samlToken,
-                                 IAuthenticationRequest spAuthnRequest,
-                                 IAuthenticationResponse authnResponse) {
+     * @param authnResponse the authnResponse*/
+    private void checkAntiReplay(IAuthenticationResponse authnResponse) {
         if (!connectorUtil.checkNotPresentInCache(authnResponse.getId(), authnResponse.getCountry())) {
             LOG.info("ERROR : SAMLID " + authnResponse.getId() + "+ for response found in Antireplay cache");
-            prepareReqLoggerBean(EIDASValues.SP_REQUEST.toString(), samlToken, spAuthnRequest, spAuthnRequest.getId());
-            saveLog(AUCONNECTORSAML.LOGGER_COM_REQ);
             throw new SecurityEIDASException(EidasErrors.get(EidasErrorKey.SPROVIDER_SELECTOR_INVALID_SAML.errorCode()),
                                              EidasErrors.get(
                                                      EidasErrorKey.SPROVIDER_SELECTOR_INVALID_SAML.errorMessage()));
@@ -735,7 +715,13 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
                 request = builder.build();
             }
 
-            return engine.generateRequestMessage(request, serviceMetadataURL);
+            IRequestMessage tempAuthData =engine.generateRequestMessage(request, serviceMetadataURL);
+
+            connectorLoggingUtil.saveAuthenticationRequestLog(AUCONNECTORSAML.LOGGER_COM_REQ,
+                    EIDASValues.EIDAS_CONNECTOR_CONNECTOR_REQUEST.toString(), tempAuthData.getRequest().getIssuer(), tempAuthData.getMessageBytes(),
+                    tempAuthData.getRequest(), request.getId(), null, OperationTypes.GENERATES);
+
+            return tempAuthData;
 
         } catch (EIDASSAMLEngineException e) {
             LOG.info(instance + " : Error generating SAML Token", e.getMessage());
@@ -748,66 +734,6 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
         }
     }
 
-    /**
-     * Sets all the fields to audit the request.
-     *
-     * @param opType The operation type.
-     * @param samlObj The SAML token byte[].
-     * @param authnRequest The Authentication Request object.
-     * @param spSamlId The SP's SAML ID.
-     * @see EidasAuthenticationRequest
-     */
-    private void prepareReqLoggerBean(String opType,
-                                      byte[] samlObj,
-                                      IAuthenticationRequest authnRequest,
-                                      String spSamlId) {
-        String hashClassName =
-                getConnectorUtil() != null && getConnectorUtil().getConfigs() != null ? getConnectorUtil().getConfigs()
-                        .getProperty(EidasParameterKeys.HASH_DIGEST_CLASS.toString()) : null;
-        byte[] tokenHash = EidasDigestUtil.hashPersonalToken(samlObj, hashClassName);
-        loggerBean.setTimestamp(DateUtil.currentTimeStamp().toString());
-        loggerBean.setOpType(opType);
-        loggerBean.setOrigin(authnRequest.getAssertionConsumerServiceURL());
-        loggerBean.setDestination(authnRequest.getDestination());
-        loggerBean.setProviderName(authnRequest.getProviderName());
-        loggerBean.setCountry(authnRequest.getCitizenCountryCode());
-        if (authnRequest instanceof IStorkAuthenticationRequest) {
-            IStorkAuthenticationRequest storkAuthenticationRequest = (IStorkAuthenticationRequest) authnRequest;
-            loggerBean.setSpApplication(storkAuthenticationRequest.getSpApplication());
-            loggerBean.setQaaLevel(storkAuthenticationRequest.getQaa());
-        }
-        loggerBean.setSamlHash(tokenHash);
-        loggerBean.setSPMsgId(spSamlId);
-        loggerBean.setMsgId(authnRequest.getId());
-    }
-
-    /**
-     * Sets all the fields to the audit the response.
-     *
-     * @param opType The Operation Type.
-     * @param authnResponse The Authentication Response object.
-     * @param inResponseToSPReq The SP's SAML Id.
-     * @see EidasAuthenticationRequest
-     */
-    private void prepareRespLoggerBean(String opType, IAuthenticationResponse authnResponse, String inResponseToSPReq) {
-        String message = EIDASValues.SUCCESS.toString() + EIDASValues.EID_SEPARATOR.toString()
-                + EIDASValues.CITIZEN_CONSENT_LOG.toString();
-        loggerBean.setTimestamp(DateUtil.currentTimeStamp().toString());
-        loggerBean.setOpType(opType);
-        loggerBean.setInResponseTo(authnResponse.getInResponseToId());
-        loggerBean.setInResponseToSPReq(inResponseToSPReq);
-        loggerBean.setMessage(message);
-        loggerBean.setMsgId(authnResponse.getId());
-    }
-
-    /**
-     * Logs the transaction with the Audit log.
-     *
-     * @param logger The Audit Logger.
-     */
-    public void saveLog(Logger logger) {
-        logger.info(LoggingMarkerMDC.SAML_EXCHANGE, loggerBean.toString());
-    }
 
     /**
      * Setters and getters
@@ -821,16 +747,6 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
      */
     public void setLoggerBean(IEIDASLogger nLoggerBean) {
         this.loggerBean = nLoggerBean;
-    }
-
-    /**
-     * Getter for loggerBean.
-     *
-     * @return The loggerBean value.
-     * @see IEIDASLogger
-     */
-    public IEIDASLogger getLoggerBean() {
-        return loggerBean;
     }
 
     /**

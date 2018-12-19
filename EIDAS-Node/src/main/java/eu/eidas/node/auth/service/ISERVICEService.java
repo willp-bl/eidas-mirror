@@ -95,6 +95,7 @@ public interface ISERVICEService {
      * @param statusCode The status code.
      * @param errorId The status code to set.
      * @param ipUserAddress The citizen's IP address.
+     * @param originatingResponseId the id of the originating response
      * @return A {@link Base64} encoded SAML token.
      * @see EidasAuthenticationRequest
      * @see EidasErrorKey
@@ -103,7 +104,8 @@ public interface ISERVICEService {
     String generateSamlTokenFail(IAuthenticationRequest authData,
                                  String statusCode,
                                  EidasErrorKey errorId,
-                                 String ipUserAddress);
+                                 String ipUserAddress,
+                                 String originatingResponseId);
 
     /**
      * Generates an error SAML token.
@@ -114,6 +116,7 @@ public interface ISERVICEService {
      * @param subCode The sub status code to set.
      * @param errorMessage Error message to set.
      * @param ipUserAddress The citizen's IP address.
+     * @param originatingResponseId
      * @return A {@link Base64} encoded SAML token.
      * @see EidasAuthenticationRequest
      * @see EidasErrorKey
@@ -125,7 +128,8 @@ public interface ISERVICEService {
                                  String subCode,
                                  String errorMessage,
                                  String ipUserAddress,
-                                 boolean isAuditable);
+                                 boolean isAuditable,
+                                 String originatingResponseId);
 
     ISERVICESAMLService getSamlService();
 }

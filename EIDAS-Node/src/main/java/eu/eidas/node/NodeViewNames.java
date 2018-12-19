@@ -19,6 +19,7 @@ public enum NodeViewNames {
     PRESENT_ERROR("/presentError.jsp"),
     MISSING_PARAMETER("/missingParameter.jsp"),
     EIDAS_SERVICE_NO_CONSENT("/CitizenConsent"),
+    EIDAS_SERVICE_LOG_SAML_RESPONSE("/LogSaml"),
     SERVLET_PATH_SERVICE_PROVIDER ( "/ServiceProvider"),
     SERVLET_PATH_BKU_ANMELDUNG( "/Bku-anmeldung"),
     SUBMIT_ERROR("/presentSamlResponseError.jsp"),

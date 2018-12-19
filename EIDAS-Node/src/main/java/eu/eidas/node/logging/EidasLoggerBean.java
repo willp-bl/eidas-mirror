@@ -306,7 +306,8 @@ public final class EidasLoggerBean implements IEIDASLogger {
 
         if (EIDASValues.EIDAS_CONNECTOR_REQUEST.toString().equals(opType) ||
                 EIDASValues.EIDAS_SERVICE_REQUEST.toString().equals(opType) ||
-                EIDASValues.SP_REQUEST.toString().equals(opType)) {
+                EIDASValues.SP_REQUEST.toString().equals(opType) ||
+                EIDASValues.SPECIFIC_CONNECTOR_REQUEST.toString().equals(opType)) {
             stringBuilder.append("Origin        ").append(origin).append(",\n");
             stringBuilder.append("destination   ").append(destination)
                          .append(",\n");
@@ -317,7 +318,7 @@ public final class EidasLoggerBean implements IEIDASLogger {
             stringBuilder.append("country       ").append(country).append(",\n");
             stringBuilder.append("QaaLevel      ").append(qaaLevel).append(",\n");
         } else {
-            stringBuilder.append(inResponseTo);
+            stringBuilder.append("inResponseTo       ").append(inResponseTo).append(",\n");
 
             if (EIDASValues.EIDAS_CONNECTOR_RESPONSE.toString().equals(opType)) {
                 stringBuilder.append("inResponseToSPReq ")

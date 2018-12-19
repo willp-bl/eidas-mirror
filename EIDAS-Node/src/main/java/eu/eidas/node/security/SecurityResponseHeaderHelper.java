@@ -2,6 +2,8 @@ package eu.eidas.node.security;
 
 import eu.eidas.node.ApplicationContextProvider;
 import eu.eidas.node.NodeBeanNames;
+import eu.eidas.node.auth.connector.AUCONNECTORSAML;
+import eu.eidas.node.auth.connector.AUCONNECTORUtil;
 import eu.eidas.node.logging.LoggingMarkerMDC;
 
 import org.apache.commons.lang.StringUtils;
@@ -15,6 +17,9 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -48,6 +53,11 @@ public class SecurityResponseHeaderHelper {
      * Logger object.
      */
     private static final Logger LOGGER = LoggerFactory.getLogger(SecurityResponseHeaderHelper.class.getName());
+
+    private static final String CONFIGURATION_WARNING_NO_CSP_REPORT_URI = new StringBuilder().
+            append("Node configuration has no URI defined for the CSP reporting feature.").
+            append(" CSP violation will not be reported").
+            toString();
 
     protected static final String CONTENT_SECURITY_POLICY_HEADER      = "Content-Security-Policy";
     protected static final String X_CONTENT_SECURITY_POLICY_HEADER    = "X-Content-Security-Policy";
@@ -204,7 +214,9 @@ public class SecurityResponseHeaderHelper {
         // --Encode it into HEXA
         String scriptNonce = encodeHexString(digest, HEX_DIGITS_LOWER);
         policiesBuffer.append(";").append("script-nonce ").append(scriptNonce);
-        policiesBuffer.append(";").append("report-uri ").append(httpRequest.getScheme()).append("://").append(httpRequest.getServerName()).append(":").append(httpRequest.getServerPort()).append(httpRequest.getContextPath()).append("/cspReportHandler");
+        policiesBuffer.append(";").append(buildUriReport());
+
+
         // --Made available script nonce in view app layer
         httpRequest.setAttribute("CSP_SCRIPT_NONCE", scriptNonce);
 
@@ -213,6 +225,24 @@ public class SecurityResponseHeaderHelper {
             httpResponse.setHeader(header, policiesBuffer.toString());
             LOGGER.trace("Adding policy to header - " + policiesBuffer.toString());
         }
+    }
+
+    /**
+     * Checks if the security.header.CSP.report.uri property is defined.
+     * If the the security.header.CSP.report.uri property is not defined, we want to be sure that the CSP reporting
+     * will work properly and the report-uri is build from the HTTP Request scheme, the host InetAddress,
+     * the default context /EidasNode and the default url-pattern /cspReportHandler defined
+     * in the web.xml file of the node.
+     */
+    private String buildUriReport () {
+        String cspReportingUri = configurationSecurityBean.getCspReportingUri();
+        if (StringUtils.isBlank(cspReportingUri) || cspReportingUri.contains("${")) {
+            if (configurationSecurityBean.getIsContentSecurityPolicyActive()) {
+                LOGGER.info(LoggingMarkerMDC.SECURITY_WARNING, CONFIGURATION_WARNING_NO_CSP_REPORT_URI);
+            }
+            cspReportingUri = StringUtils.EMPTY;
+        }
+        return "report-uri " + cspReportingUri;
     }
 
     public boolean responseHasHeaders(ServletResponse response) {

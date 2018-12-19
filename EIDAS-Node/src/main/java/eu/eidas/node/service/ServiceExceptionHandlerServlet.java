@@ -1,23 +1,33 @@
 /*
- * This work is Open Source and licensed by the European Commission under the
- * conditions of the European Public License v1.1
+ * Copyright (c) 2018 by European Commission
  *
- * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1);
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
  *
- * any use of this file implies acceptance of the conditions of this license.
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations
- * under the License.
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
  */
+
 package eu.eidas.node.service;
 
 import eu.eidas.auth.commons.EidasParameterKeys;
+import eu.eidas.auth.commons.EidasStringUtil;
 import eu.eidas.auth.commons.exceptions.*;
+import eu.eidas.auth.engine.configuration.dom.SignatureKey;
+import eu.eidas.node.NodeBeanNames;
 import eu.eidas.node.NodeParameterNames;
 import eu.eidas.node.NodeViewNames;
 import eu.eidas.node.auth.service.ResponseCarryingServiceException;
+import eu.eidas.node.logging.ILogSamlCachingService;
+import eu.eidas.node.logging.LogSamlHolder;
 import eu.eidas.node.utils.EidasNodeErrorUtil;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -28,6 +38,9 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.UUID;
+
+import static eu.eidas.node.NodeViewNames.EIDAS_SERVICE_LOG_SAML_RESPONSE;
 
 /**
  * Handles the exceptions thrown by the ProxyService.
@@ -93,6 +106,8 @@ public final class ServiceExceptionHandlerServlet extends AbstractServiceServlet
             errorRedirectUrl = prepareSession(exception, request);
             request.setAttribute(NodeParameterNames.EXCEPTION.toString(), exception);
 
+            putLogSamlDataInCache(request, exception);
+
             if (!StringUtils.isBlank(exception.getSamlTokenFail()) && null != errorRedirectUrl) {
                 retVal = NodeViewNames.SUBMIT_ERROR.toString();
             } else if (exception instanceof EidasNodeException || exception instanceof EIDASServiceException) {
@@ -114,6 +129,22 @@ public final class ServiceExceptionHandlerServlet extends AbstractServiceServlet
         RequestDispatcher dispatcher = getServletContext().getRequestDispatcher(retVal);
         response.setStatus(HttpServletResponse.SC_OK);
         dispatcher.forward(request, response);
+    }
+
+    private void putLogSamlDataInCache(HttpServletRequest httpServletRequest, AbstractEIDASException exception) {
+        final IdPResponseBean controllerService = (IdPResponseBean) getApplicationContext().getBean(NodeBeanNames.IdP_RESPONSE.toString());
+        final String samlTokenFail = exception.getSamlTokenFail();
+
+        final String redirectConnectorUrl = (String) httpServletRequest.getAttribute(NodeParameterNames.REDIRECT_CONNECTOR_URL.toString());
+        final String relayState = (String) httpServletRequest.getAttribute(NodeParameterNames.RELAY_STATE.toString());
+        final String issuer = (String) httpServletRequest.getAttribute(SignatureKey.ISSUER.toString());
+
+        final ILogSamlCachingService iLogSamlCachingService = controllerService.getLogSamlCache();
+        final LogSamlHolder logSamlHolder = new LogSamlHolder(redirectConnectorUrl, StringUtils.EMPTY, samlTokenFail, relayState, issuer, StringUtils.EMPTY);
+
+        final String logSamlToken = EidasStringUtil.encodeToBase64(UUID.randomUUID().toString());
+        iLogSamlCachingService.put(logSamlToken, logSamlHolder);
+        httpServletRequest.setAttribute(NodeParameterNames.LOG_SAML_TOKEN.toString(), logSamlToken);
     }
 
     private void prepareErrorMessage(AbstractEIDASException exception, HttpServletRequest request) {
@@ -146,8 +177,13 @@ public final class ServiceExceptionHandlerServlet extends AbstractServiceServlet
             // Setting internal variables
             LOG.trace("Setting internal variables");
 
-            errorRedirectUrl = responseCarryingServiceException.getErrorRedirectUrl();
+            errorRedirectUrl = getServletContext().getContextPath() + EIDAS_SERVICE_LOG_SAML_RESPONSE.toString();
             request.setAttribute(EidasParameterKeys.ERROR_REDIRECT_URL.toString(), errorRedirectUrl);
+
+            final String errorRedirectUrlConnector = responseCarryingServiceException.getErrorRedirectUrl();
+            request.setAttribute(NodeParameterNames.REDIRECT_CONNECTOR_URL.toString(), errorRedirectUrlConnector);
+            request.setAttribute(EidasParameterKeys.ERROR_REDIRECT_URL.toString(), errorRedirectUrl);
+            request.setAttribute(SignatureKey.ISSUER.toString(), responseCarryingServiceException.getRequestIssuer());
 
             String relayState = responseCarryingServiceException.getRelayState();
 
@@ -158,4 +194,5 @@ public final class ServiceExceptionHandlerServlet extends AbstractServiceServlet
         }
         return errorRedirectUrl;
     }
+
 }

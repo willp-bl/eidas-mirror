@@ -43,6 +43,7 @@ import eu.eidas.auth.commons.tx.StoredAuthenticationRequestCorrelationMap;
 import eu.eidas.auth.engine.core.eidas.spec.EidasSpec;
 import eu.eidas.node.auth.service.*;
 import eu.eidas.node.auth.util.tests.TestingConstants;
+import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -391,7 +392,7 @@ public class AUSERVICETestCase {
         ISERVICESAMLService mockSamlService = mock(ISERVICESAMLService.class);
         when(mockSamlService.generateErrorAuthenticationResponse((IAuthenticationRequest) any(), anyString(),
                                                                  anyString(), anyString(), anyString(), anyString(),
-                                                                 anyBoolean())).thenReturn(new byte[0]);
+                                                                 anyBoolean(), anyString())).thenReturn(new byte[0]);
 
         auservice.setSamlService(mockSamlService);
         auservice.setCitizenService(mockCitizenService);
@@ -422,11 +423,11 @@ public class AUSERVICETestCase {
         ISERVICESAMLService mockSamlService = mock(ISERVICESAMLService.class);
         when(mockSamlService.generateErrorAuthenticationResponse((IAuthenticationRequest) any(), anyString(),
                                                                  anyString(), anyString(), anyString(), anyString(),
-                                                                 anyBoolean())).thenReturn(new byte[0]);
+                                                                 anyBoolean(), anyString())).thenReturn(new byte[0]);
         auservice.setSamlService(mockSamlService);
         assertEquals("", auservice.generateSamlTokenFail(authData, TestingConstants.ERROR_CODE_CONS.toString(),
                                                          EidasErrorKey.AUTHENTICATION_FAILED_ERROR,
-                                                         TestingConstants.USER_IP_CONS.toString()));
+                                                         TestingConstants.USER_IP_CONS.toString(), StringUtils.EMPTY));
     }
 
     /**

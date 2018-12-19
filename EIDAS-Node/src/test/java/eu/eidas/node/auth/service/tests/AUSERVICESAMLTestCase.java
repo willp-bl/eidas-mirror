@@ -41,6 +41,7 @@ import eu.eidas.node.auth.service.AUSERVICEUtil;
 import eu.eidas.node.auth.service.ISERVICESAMLService;
 import eu.eidas.node.auth.service.ResponseCarryingServiceException;
 import eu.eidas.node.auth.util.tests.TestingConstants;
+import org.apache.commons.lang.StringUtils;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -259,7 +260,7 @@ public final class AUSERVICESAMLTestCase {
                                                       TestingConstants.SUB_ERROR_CODE_CONS.toString(),
                                                       TestingConstants.ERROR_CODE_CONS.toString(),
                                                       TestingConstants.ERROR_MESSAGE_CONS.toString(),
-                                                      TestingConstants.USER_IP_CONS.toString(), true);
+                                                      TestingConstants.USER_IP_CONS.toString(), true, StringUtils.EMPTY);
     }
 
     /**
@@ -284,7 +285,7 @@ public final class AUSERVICESAMLTestCase {
                                                             TestingConstants.SUB_ERROR_CODE_CONS.toString(),
                                                             TestingConstants.ERROR_CODE_CONS.toString(),
                                                             TestingConstants.ERROR_MESSAGE_CONS.toString(),
-                                                            TestingConstants.USER_IP_CONS.toString(), false);
+                                                            TestingConstants.USER_IP_CONS.toString(), false, StringUtils.EMPTY);
     }
 
     /**
@@ -309,7 +310,7 @@ public final class AUSERVICESAMLTestCase {
                                                                        TestingConstants.ERROR_CODE_CONS.toString(),
                                                                        TestingConstants.ERROR_MESSAGE_CONS.toString(),
                                                                        TestingConstants.USER_IP_CONS.toString(),
-                                                                       true).length > 0);
+                                                                       true, StringUtils.EMPTY).length > 0);
     }
 
     /**
@@ -334,7 +335,7 @@ public final class AUSERVICESAMLTestCase {
                                                                        TestingConstants.ERROR_CODE_CONS.toString(),
                                                                        TestingConstants.ERROR_MESSAGE_CONS.toString(),
                                                                        TestingConstants.USER_IP_CONS.toString(),
-                                                                       false).length > 0);
+                                                                       false, StringUtils.EMPTY).length > 0);
     }
 
     /**

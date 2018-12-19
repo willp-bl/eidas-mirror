@@ -17,6 +17,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import eu.eidas.node.auth.specific.LoggingUtil;
 import org.bouncycastle.util.encoders.Base64;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -108,6 +109,9 @@ public class SpecificConnectorImplTest {
 
     @Mock
     private SpecificConnectorBean specificConnectorBean;
+
+    @Mock
+    private LoggingUtil specificLoggingUtil;
 
     @Mock
     private RequestDispatcher dispatcher;

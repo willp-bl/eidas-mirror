@@ -1,23 +1,19 @@
 /*
- * Copyright (c) 2016 by European Commission
+ * Copyright (c) 2018 by European Commission
  *
- * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
- * the European Commission - subsequent versions of the EUPL (the "Licence");
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
  * You may not use this work except in compliance with the Licence.
  * You may obtain a copy of the Licence at:
- * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the Licence is distributed on an "AS IS" basis,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
  * See the Licence for the specific language governing permissions and
  * limitations under the Licence.
- *
- * This product combines work with different licenses. See the "NOTICE" text
- * file for details on the various modules and licenses.
- * The "NOTICE" text file is part of the distribution. Any derivative works
- * that you distribute must include a readable copy of the "NOTICE" text file.
- *
  */
 
 package eu.eidas.node;
@@ -33,6 +29,10 @@ public enum NodeParameterNames {
 
     ATTR_LIST("attrList"),
 
+    CONSENT_CANCEL("consentCancel"),
+
+    CONSENT_OK("consentOk"),
+
     CALLBACK_URL("callbackURL"),
 
     CITIZEN_CONSENT_URL("citizenConsentUrl"),
@@ -45,11 +45,17 @@ public enum NodeParameterNames {
 
     LOA_VALUE("LoA"),
 
+    LOG_SAML_TOKEN("logSamlToken"),
+
     PAL("pal"),
 
     QAA_LEVEL("qaaLevel"),
 
+    REDIRECT_CANCEL_URL("redirectCancelUrl"),
+
     REDIRECT_URL("redirectUrl"),
+
+    REDIRECT_CONNECTOR_URL("redirectConnectorUrl"),
 
     RELAY_STATE("RelayState"),
 
@@ -62,6 +68,8 @@ public enum NodeParameterNames {
     SAML_TOKEN("samlToken"),
 
     SAML_TOKEN_FAIL("samlTokenFail"),
+
+    SAML_RESPONSE_ORIGINATING_MSG_ID("samlResponseOriginatingMsgId"),
 
     STR_ATTR_LIST("strAttrList"),
 

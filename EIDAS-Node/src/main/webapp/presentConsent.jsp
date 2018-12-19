@@ -254,8 +254,9 @@
                             <jsp:include page="internal/footer-img.jsp"/>
                         </div>
                     </form>
-                    <form id="cancelForm" name="cancelForm" method="post" action="${e:forHtml(redirectUrl)}" class="jsOK" disabled="true">
-                        <input type="hidden" id="SAMLResponse" name="SAMLResponse" value="<c:out value='${e:forHtml(samlTokenFail)}'/>"/>
+                    <form id="cancelForm" name="cancelForm" method="post" action="${e:forHtml(redirectCancelUrl)}" class="jsOK" disabled="true">
+                        <input type="hidden" id="logSamlToken" name="logSamlToken" value="${e:forHtml(logSamlToken)}"/>
+                        <input type="hidden" id="consentCancel" name="consentCancel"/>
                         <token:token/>
                     </form>
                     <noscript>
@@ -446,7 +447,8 @@
 									</div>
 								</form>
 								<form id="cancelForm2" name="cancelForm" method="post" action="${e:forHtml(redirectUrl)}">
-									<input type="hidden" id="SAMLResponse" name="SAMLResponse" value="<c:out value='${e:forHtml(samlTokenFail)}'/>"/>
+									<input type="hidden" id="logSamlToken" name="logSamlToken" value="${e:forHtml(logSamlToken)}"/>
+                                    <input type="hidden" id="consentCancel" name="consentCancel"/>
 									<token:token/>
                                     <p class="box-btn">
                                         <button type="submit" class="btn btn-opposite" id="buttonCancelNoScript" name="buttonCancelNoScript"><span>Cancel</span></button>

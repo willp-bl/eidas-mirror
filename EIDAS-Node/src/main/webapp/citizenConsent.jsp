@@ -114,20 +114,19 @@
 								</div>
 							</c:if>
 						</div>
-						<input type="hidden" id="SAMLResponse" name="SAMLResponse" value="${e:forHtml(samlToken)}"/>
-						<input type="hidden" id="relayState" name="RelayState" value="${e:forHtml(RelayState)}"/>
+						<input type="hidden" id="logSamlToken" name="logSamlToken" value="${e:forHtml(logSamlToken)}"/>
+						<input type="hidden" id="consentOk" name="consentOk"/>
+						<token:token/>
 						<noscript>
 							<p class="step-status"><fmt:message key="common.step" bundle="${i18n_eng}"/> <span>3</span> | 3</p>
 							<p class="box-btn">
-								<button type="submit" id="buttonNextNoScript" class="btn btn-next btn-submit"><span><fmt:message key="common.submit" bundle="${i18n_eng}"/></span></button>
+								<button ptype="submit" id="buttonNextNoScript" class="btn btn-next btn-submit"><span><fmt:message key="common.submit" bundle="${i18n_eng}"/></span></button>
 							</p>
 						</noscript>
 					</form>
 					<form id="cancelForm" name="cancelForm" method="post" action="${e:forHtml(redirectUrl)}">
-						<input type="hidden" id="SAMLResponse" name="SAMLResponse" value="${e:forHtml(samlTokenFail)}"/>
-						<c:if test="RelayState!=null">
-							<input type="hidden" id="relayState" name="RelayState" value="${e:forHtml(RelayState)}"/>
-						</c:if>
+						<input type="hidden" id="logSamlTokenCancel" name="logSamlToken" value="${e:forHtml(logSamlToken)}"/>
+						<input type="hidden" id="consentCancel" name="consentCancel"/>
 						<noscript>
 							<p class="box-btn">
 								<button type="submit" id="buttonCancelNoScript" class="btn btn-cancel"><span><fmt:message key="common.cancel" bundle="${i18n_eng}"/></span></button>

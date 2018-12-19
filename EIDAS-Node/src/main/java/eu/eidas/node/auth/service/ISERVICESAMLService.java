@@ -70,6 +70,7 @@ public interface ISERVICESAMLService {
      * @param errorMessage The error message.
      * @param ipUserAddress The citizen's IP address.
      * @param isAuditable Is a auditable saml error?
+     * @param originatingResponseId
      * @return A byte array containing the SAML Response.
      * @see EidasAuthenticationRequest
      */
@@ -79,7 +80,8 @@ public interface ISERVICESAMLService {
                                                String subCode,
                                                String errorMessage,
                                                String ipUserAddress,
-                                               boolean isAuditable);
+                                               boolean isAuditable,
+                                               String originatingResponseId);
 
     /**
      * Checks whether the attribute list contains at least one of the mandatory eIDAS attribute set (either for a

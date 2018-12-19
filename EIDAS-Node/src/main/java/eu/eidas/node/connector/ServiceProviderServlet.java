@@ -4,11 +4,15 @@ import eu.eidas.auth.commons.*;
 import eu.eidas.auth.commons.light.ILightRequest;
 import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.IRequestMessage;
+import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.impl.EidasSamlBinding;
 import eu.eidas.auth.commons.validation.NormalParameterValidator;
 import eu.eidas.node.NodeBeanNames;
 import eu.eidas.node.NodeParameterNames;
 import eu.eidas.node.NodeViewNames;
+import eu.eidas.node.auth.LoggingUtil;
+import eu.eidas.node.auth.connector.AUCONNECTOR;
+import eu.eidas.node.auth.LoggingUtil.*;
 import eu.eidas.node.specificcommunication.ISpecificConnector;
 import eu.eidas.node.specificcommunication.exception.SpecificException;
 import eu.eidas.node.utils.PropertiesUtil;
@@ -23,6 +27,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.bouncycastle.util.encoders.Base64.decode;
 
 @SuppressWarnings("squid:S1989") // due to the code uses correlation maps, not http sessions
 public class ServiceProviderServlet extends AbstractConnectorServlet {
@@ -30,6 +39,12 @@ public class ServiceProviderServlet extends AbstractConnectorServlet {
     private static final Logger LOG = LoggerFactory.getLogger(ServiceProviderServlet.class.getName());
 
     private static final long serialVersionUID = 2037358134080320372L;
+
+    /**
+     * Request logging.
+     */
+    private static final Logger LOGGER_COM_REQ = LoggerFactory.getLogger(
+            EIDASValues.EIDAS_PACKAGE_REQUEST_LOGGER_VALUE.toString() + "_" + AUCONNECTOR.class.getSimpleName());
 
     @Override
     protected Logger getLogger() {
@@ -69,13 +84,17 @@ public class ServiceProviderServlet extends AbstractConnectorServlet {
         // Obtaining the assertion consumer url from SPRING context
         ConnectorControllerService connectorController = (ConnectorControllerService) getApplicationContext().getBean(
                 NodeBeanNames.EIDAS_CONNECTOR_CONTROLLER.toString());
+
+        // Obtains the parameters from httpRequest
+        WebRequest webRequest = new IncomingRequest(request);
+
+        LoggingUtil connectorLoggingUtil  = connectorController.getConnectorLoggingUtil();
+        connectorLoggingUtil.prepareAndSaveAuthenticationRequestLog(ServiceProviderServlet.LOGGER_COM_REQ, EIDASValues.SP_REQUEST.toString(), request, "ConnectorService", OperationTypes.RECEIVES);
+
         LOG.trace(connectorController.toString());
 
         // Call the specific module
         ILightRequest lightRequest = processSpecificRequest(request, response, connectorController);
-
-        // Obtains the parameters from httpRequest
-        WebRequest webRequest = new IncomingRequest(request);
 
         // Validating the optional HTTP Parameter relayState.
         String relayState = validateRelayState(webRequest);
@@ -90,6 +109,13 @@ public class ServiceProviderServlet extends AbstractConnectorServlet {
         // Validates the origin of the request, creates, sign and send an SAML.
         IRequestMessage requestMessage = connectorController.getConnectorService().getAuthenticationRequest(webRequest, lightRequest);
         IAuthenticationRequest authData = requestMessage.getRequest();
+        String serviceUrl = authData.getDestination();
+
+        //String samlRequestFromSp = webRequest.getEncodedLastParameterValue(EidasParameterKeys.SAML_REQUEST);
+        String origin = request.getHeader("referer");
+        connectorLoggingUtil.saveAuthenticationRequestLog(ServiceProviderServlet.LOGGER_COM_REQ,
+                EIDASValues.CONNECTOR_SERVICE_REQUEST.toString(), null, decode(requestMessage.getMessageBytes()), authData, authData.getId(), origin, OperationTypes.SENDS);
+
         session.setAttribute(EidasParameterKeys.SAML_IN_RESPONSE_TO.toString(), authData.getId());
         session.setAttribute(EidasParameterKeys.ISSUER.toString(), authData.getIssuer());
 
@@ -98,7 +124,7 @@ public class ServiceProviderServlet extends AbstractConnectorServlet {
         PropertiesUtil.checkConnectorActive();
 
         // push the samlRequest in the distributed hashMap - Sets the internal ProxyService URL variable to redirect the Citizen to the ProxyService
-        String serviceUrl = authData.getDestination();
+
         NormalParameterValidator.paramName(EidasErrorKey.SERVICE_REDIRECT_URL.toString())
                 .paramValue(serviceUrl)
                 .validate();

@@ -192,6 +192,12 @@
         <servlet-class>eu.eidas.node.security.ContentSecurityPolicyReportServlet</servlet-class>
     </servlet>
 
+    <!-- SAML Logging Servlets-->
+    <servlet>
+        <servlet-name>LogSaml</servlet-name>
+        <servlet-class>eu.eidas.node.service.LogSamlServlet</servlet-class>
+    </servlet>
+
     <!-- Error Handler Servlets-->
     <servlet>
         <servlet-name>InternalExceptionHandler</servlet-name>
@@ -280,6 +286,15 @@
     <servlet-mapping>
         <servlet-name>ServiceExceptionHandler</servlet-name>
         <url-pattern>/ServiceExceptionHandler</url-pattern>
+    </servlet-mapping>
+
+    <!-- ****************** -->
+    <!-- SAML Logging       -->
+    <!-- ****************** -->
+
+    <servlet-mapping>
+        <servlet-name>LogSaml</servlet-name>
+        <url-pattern>/LogSaml</url-pattern>
     </servlet-mapping>
 
     <!-- ****************** -->

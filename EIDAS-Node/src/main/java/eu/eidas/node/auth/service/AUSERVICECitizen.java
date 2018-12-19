@@ -19,6 +19,7 @@ import javax.annotation.Nonnull;
 
 import com.google.common.collect.ImmutableSet;
 
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -109,11 +110,11 @@ public final class AUSERVICECitizen implements ISERVICECitizenService {
 
                 byte[] error = samlService.generateErrorAuthenticationResponse(storedRequest.getRequest(), EIDASStatusCode.REQUESTER_URI.toString(),
                                                                                EIDASSubStatusCode.REQUEST_DENIED_URI.toString(),
-                                                                               errorCode, errorMessage, ipUserAddress, true);
+                                                                               errorCode, errorMessage, ipUserAddress, true, StringUtils.EMPTY);
                 throw new ResponseCarryingServiceException(errorCode, errorMessage,
                                                            EidasStringUtil.encodeToBase64(error),
                                                            storedRequest.getRequest().getAssertionConsumerServiceURL(),
-                                                           storedRequest.getRelayState());
+                                                           storedRequest.getRelayState(), storedRequest.getRequest().getIssuer());
             }
             LOG.debug(name + " found");
         }

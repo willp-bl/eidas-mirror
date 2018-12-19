@@ -8,10 +8,10 @@ import java.util.List;
 import java.util.Properties;
 
 import eu.eidas.auth.commons.EidasStringUtil;
+import eu.eidas.auth.commons.protocol.IRequestMessage;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 
 import eu.eidas.auth.commons.EIDASValues;
 import eu.eidas.auth.commons.EidasErrorKey;
@@ -46,7 +46,7 @@ import eu.eidas.auth.engine.metadata.MetadataUtil;
 import eu.eidas.auth.specific.IAUConnector;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import eu.eidas.util.WhitelistUtil;
-
+import eu.eidas.node.auth.specific.LoggingUtil.*;
 /**
  * This class is specific on the connector side and should be modified by each member state if they want to use any
  * different settings.
@@ -56,6 +56,18 @@ import eu.eidas.util.WhitelistUtil;
 public class SpecificEidasConnector implements IAUConnector {
 
     private static final Logger LOG = LoggerFactory.getLogger(SpecificEidasConnector.class);
+
+    /**
+     * Response logging.
+     */
+    private static final Logger LOGGER_COM_REQ = LoggerFactory.getLogger(
+            EIDASValues.EIDAS_PACKAGE_REQUEST_LOGGER_VALUE.toString() + "_" + SpecificEidasConnector.class.getSimpleName());
+
+    /**
+     * Response logging.
+     */
+    private static final Logger LOGGER_COM_RESP = LoggerFactory.getLogger(
+            EIDASValues.EIDAS_PACKAGE_RESPONSE_LOGGER_VALUE.toString() + "_" + SpecificEidasConnector.class.getSimpleName());
 
     private String samlEngine;
 
@@ -153,6 +165,17 @@ public class SpecificEidasConnector implements IAUConnector {
         this.metadataFetcher = metadataFetcher;
     }
 
+
+    private LoggingUtil specificLoggingUtil;
+
+    public void setSpecificLoggingUtil(LoggingUtil specificLoggingUtil) {
+        this.specificLoggingUtil = specificLoggingUtil;
+    }
+
+    public LoggingUtil getSpecificLoggingUtil() {
+        return specificLoggingUtil;
+    }
+
     // Implement this unique ID generation based on the specific protocol.
     // It is an override point only if the ID cannot be presented at XXXProtocolProcessor level.
     protected String generateLRId(IAuthenticationRequest serviceProviderRequest) {
@@ -197,6 +220,19 @@ public class SpecificEidasConnector implements IAUConnector {
             String lightRequestId = generateLRId(serviceProviderRequest);
 
             LightRequest lightRequest = LightRequest.builder(serviceProviderRequest).id(lightRequestId).build();
+            //aici trebuie sa logam
+            String serviceCode = lightRequest.getCitizenCountryCode();
+            String serviceUrl = specificLoggingUtil.loadConfigServiceURL(serviceCode);
+            IAuthenticationRequest authnRequest = EidasAuthenticationRequest.builder()
+                    .lightRequest(lightRequest)
+                    .destination(serviceUrl)
+                    .citizenCountryCode(serviceCode)
+                    .assertionConsumerServiceURL(assertionConsumerUrl)
+                    .build();
+
+            IRequestMessage iRequestMessage = protocolEngine.generateRequestMessage(authnRequest, authnRequest.getIssuer());
+
+            specificLoggingUtil.saveAuthenticationRequestLog(SpecificEidasConnector.LOGGER_COM_REQ, EIDASValues.SPECIFIC_CONNECTOR_REQUEST.toString(), null, iRequestMessage.getMessageBytes(), authnRequest, serviceProviderRequest.getId(), "N/A", OperationTypes.GENERATES);
 
             specificSpRequestCorrelationMap.put(lightRequest.getId(), StoredAuthenticationRequest.builder()
                     .remoteIpAddress(ipAddress)
@@ -219,6 +255,31 @@ public class SpecificEidasConnector implements IAUConnector {
         }
     }
 
+/*    public String loadConfigServiceURL(final String serviceId) {
+        return loadServiceAttribute(serviceId, "url");
+    }
+
+    public String loadConfigServiceMetadataURL(final String pepId) {
+        return loadServiceAttribute(pepId, "metadata.url");
+    }
+
+    private String loadServiceAttribute(final String pepId, String paramName) {
+        String retVal = null;
+        final int nServices = Integer.parseInt(configs.getProperty(EidasParameterKeys.EIDAS_NUMBER.toString()));
+        LOG.debug("Number of Service: " + nServices);
+
+        // load URL
+        for (int i = 1; i <= nServices && retVal == null; i++) {
+            final String serviceCons = EIDASValues.EIDAS_SERVICE_PREFIX.index(i);
+            if (configs.containsKey(serviceCons) && configs.getProperty(serviceCons).equals(pepId)) {
+                retVal = configs.getProperty(EIDASValues.EIDAS_SERVICE_PREFIX.attribute(paramName, i));
+                LOG.debug("Service URL " + retVal);
+            }
+        }
+
+        return retVal;
+
+    }*/
     /**
      * {@inheritDoc}
      */
@@ -262,7 +323,11 @@ public class SpecificEidasConnector implements IAUConnector {
                                 generateSignedAssertion, ipAddress);
             }
 
-            return new BinaryAuthenticationExchange(storedAuthenticationRequest, responseMessage);
+            BinaryAuthenticationExchange binaryAuthenticationExchange = new BinaryAuthenticationExchange(storedAuthenticationRequest, responseMessage);
+
+            specificLoggingUtil.prepareAndSaveResponseToLog(SpecificEidasConnector.LOGGER_COM_RESP, EIDASValues.SPECIFIC_CONNECTOR_SP_RESPONSE.toString(), null, binaryAuthenticationExchange.getConnectorResponseMessage().getMessageBytes(), lightResponse.getId(), "N/A", null, OperationTypes.GENERATES);
+
+            return binaryAuthenticationExchange;
 
         } catch (EIDASSAMLEngineException e) {
             LOG.error("Error generating SAML Response", e);

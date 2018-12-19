@@ -27,6 +27,7 @@ import java.util.Locale;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.NoSuchMessageException;
@@ -260,7 +261,7 @@ public class EidasNodeErrorUtil {
 
         byte[] samlToken = serviceSamlService.generateErrorAuthenticationResponse(dummyAuthData.build(),
                                                                                   getSamlStatusCode(request), null, samlSubStatusCode,
-                                                                                  errorMessage, request.getRemoteAddr(), true);
+                                                                                  errorMessage, request.getRemoteAddr(), true, StringUtils.EMPTY);
         exc.setSamlTokenFail(EidasStringUtil.encodeToBase64(samlToken));
     }
 

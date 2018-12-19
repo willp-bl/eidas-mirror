@@ -74,6 +74,7 @@
 
         <property name="proxyServiceRequestCorrelationMap" ref="specificProxyServiceLightRequestCorrelationMap"/>
         <property name="specificIdpRequestCorrelationMap" ref="specificIdpRequestCorrelationMap"/>
+        <property name="specificLoggingUtil" ref="springManagedSpecificLoggingUtil"/>
     </bean>
 
     <!-- Specific Bean for the Connector node-->
@@ -87,8 +88,17 @@
         <property name="connectorRequestCorrelationMap" ref="specificConnectorLightRequestCorrelationMap"/>
         <property name="metadataFetcher" ref="nodeMetadataFetcher"/>
         <property name="spMetadataWhitelist" value="${sp.metadata.location.whitelist}" />
+        <property name="specificLoggingUtil" ref="springManagedSpecificLoggingUtil"/>
     </bean>
 
+    <bean id="springManagedSpecificLoggingUtil" class="eu.eidas.node.auth.specific.LoggingUtil">
+        <property name="protocolEngineFactory" ref="SpecificProtocolEngineFactory" />
+        <property name="samlEngine" value="${service.saml.sp:SP-Specific}" />
+        <property name="samlAuditable" value="${saml.audit:true}" />
+        <property name="metadataFetcher" ref="nodeMetadataFetcher"/>
+        <property name="countryCode" value="${service.countrycode}" />
+        <property name="configs" ref="nodeProps" />
+    </bean>
     <!-- IdP replies here -->
     <bean id="springManagedSpecificIdPResponse" class="eu.eidas.node.SpecificIdPBean"
           scope="prototype">
@@ -112,11 +122,16 @@
         <property name="signResponseAssertion" value="true"/>
         <property name="citizenAuthentication" ref="springManagedCitizenAuthentication"/>
         <property name="specificIdPResponse" ref="springManagedSpecificIdPResponse"/>
+        <property name="specificLoggingUtil" ref="springManagedSpecificLoggingUtil"/>
+        <property name="idpMetadataUrl" value="${idp.metadata.url}"/>
+        <property name="samlEngine" value="${service.saml.sp:SP-Specific}" />
+        <property name="protocolEngineFactory" ref="SpecificProtocolEngineFactory" />
     </bean>
 
     <bean id="springManagedSpecificConnector" class="eu.eidas.node.specificcommunication.SpecificConnectorImpl" scope="prototype">
         <property name="signResponseAssertion" value="true"/>
         <property name="specificConnectorBean" ref="springManagedSpecificConnectorBean"/>
+        <property name="specificLoggingUtil" ref="springManagedSpecificLoggingUtil"/>
     </bean>
 
     <!-- Metadata providers -->

@@ -34,6 +34,8 @@ import com.google.common.collect.UnmodifiableIterator;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.engine.core.eidas.spec.LegalPersonSpec;
 import eu.eidas.auth.engine.core.eidas.spec.RepresentativeLegalPersonSpec;
+import eu.eidas.node.auth.LoggingUtil;
+import eu.eidas.node.auth.connector.AUCONNECTOR;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,6 +52,7 @@ import eu.eidas.auth.commons.tx.AuthenticationExchange;
 import eu.eidas.node.specificcommunication.ISpecificConnector;
 import eu.eidas.node.specificcommunication.exception.SpecificException;
 import eu.eidas.node.utils.SessionHolder;
+import eu.eidas.node.auth.LoggingUtil.*;
 
 /**
  * Is invoked when ProxyService wants to pass control to the Connector.
@@ -63,6 +66,12 @@ public final class ColleagueResponseServlet extends AbstractConnectorServlet {
      * Logger object.
      */
     private static final Logger LOG = LoggerFactory.getLogger(ColleagueResponseServlet.class.getName());
+
+    /**
+     * Response logging.
+     */
+    private static final Logger LOGGER_COM_RESP = LoggerFactory.getLogger(
+            EIDASValues.EIDAS_PACKAGE_RESPONSE_LOGGER_VALUE.toString() + "_" + AUCONNECTOR.class.getSimpleName());
 
     @Override
     protected Logger getLogger() {
@@ -119,6 +128,9 @@ public final class ColleagueResponseServlet extends AbstractConnectorServlet {
 
             // Obtains the parameters from httpRequest
             WebRequest webRequest = new IncomingRequest(request);
+
+            LoggingUtil serviceLoggingUtil  = controllerService.getConnectorLoggingUtil();
+            serviceLoggingUtil.prepareAndSaveAuthenticationResponseLog(ColleagueResponseServlet.LOGGER_COM_RESP, EIDASValues.EIDAS_CONNECTOR_RESPONSE.toString(), request, "ConnectorService", OperationTypes.RECEIVES);
 
             String samlResponseFromProxyService =
                     webRequest.getEncodedLastParameterValue(EidasParameterKeys.SAML_RESPONSE);

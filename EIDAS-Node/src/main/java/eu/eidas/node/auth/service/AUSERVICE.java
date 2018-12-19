@@ -28,8 +28,8 @@ import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
 import eu.eidas.auth.commons.validation.NormalParameterValidator;
 import eu.eidas.auth.engine.core.eidas.spec.LegalPersonSpec;
 import eu.eidas.auth.engine.core.eidas.spec.RepresentativeLegalPersonSpec;
-import eu.eidas.auth.engine.xml.opensaml.SAMLEngineUtils;
 import eu.eidas.node.utils.EidasNodeValidationUtil;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -166,11 +166,11 @@ public final class AUSERVICE implements ISERVICEService {
                 byte[] samlTokenFail = samlService.generateErrorAuthenticationResponse(authnRequest,
                                                                                        EIDASStatusCode.RESPONDER_URI.toString(),
                                                                                        errorCode, null, errorMessage,
-                                                                                       remoteAddress, false);
+                                                                                       remoteAddress, false, StringUtils.EMPTY);
                 throw new ResponseCarryingServiceException(errorCode, errorMessage,
                                                            EidasStringUtil.encodeToBase64(samlTokenFail),
                                                            authnRequest.getAssertionConsumerServiceURL(),
-                                                           storedRequest.getRelayState());
+                                                           storedRequest.getRelayState(), authnRequest.getIssuer());
             }
         }
 
@@ -191,20 +191,20 @@ public final class AUSERVICE implements ISERVICEService {
 
         if (null == idpResponse || idpResponse.getStatus().isFailure()) {
             LOG.info("ERROR : IdP response Personal Attribute List is null!");
-            return sendFailure(proxyServiceRequest, EidasErrorKey.INVALID_ATTRIBUTE_LIST);
+            return sendFailure(proxyServiceRequest, EidasErrorKey.INVALID_ATTRIBUTE_LIST, idpResponse.getId());
         }
 
         // checks if all mandatory attributes have values.
         if (!samlService.checkMandatoryAttributes(originalRequest.getRequestedAttributes(),
                                                   idpResponse.getAttributes())) {
             LOG.info("BUSINESS EXCEPTION : Mandatory attribute is missing!");
-            return sendFailure(proxyServiceRequest, EidasErrorKey.ATT_VERIFICATION_MANDATORY);
+            return sendFailure(proxyServiceRequest, EidasErrorKey.ATT_VERIFICATION_MANDATORY, idpResponse.getId());
         }
 
         // check minimum data set
         if (!samlService.checkMandatoryAttributeSet(idpResponse.getAttributes())) {
             LOG.info("ERROR : IdP response Personal Attribute List is missing mandatory values!");
-            return sendFailure(proxyServiceRequest, EidasErrorKey.INVALID_ATTRIBUTE_LIST);
+            return sendFailure(proxyServiceRequest, EidasErrorKey.INVALID_ATTRIBUTE_LIST, idpResponse.getId());
         }
 
         for (final Map.Entry<AttributeDefinition<?>, ImmutableSet<? extends AttributeValue<?>>> entry : idpResponse
@@ -233,7 +233,7 @@ public final class AUSERVICE implements ISERVICEService {
             LOG.info("ERROR : IdP response Level of Assurance is to low: requested="
                              + originalRequest.getLevelOfAssurance(),
                      " vs response=" + idpResponse.getLevelOfAssurance());
-            return sendFailure(proxyServiceRequest, EidasErrorKey.INVALID_RESPONSE_LOA_VALUE);
+            return sendFailure(proxyServiceRequest, EidasErrorKey.INVALID_RESPONSE_LOA_VALUE, idpResponse.getId());
         }
 
        /* EID-423: wrong attribute name was implemented prior to 1.4, backward compatibility if for the Network only to ensure business continuity, the
@@ -242,19 +242,19 @@ public final class AUSERVICE implements ISERVICEService {
         ImmutableSet<AttributeDefinition<?>> suppliedAttributes = idpResponse.getAttributes().getDefinitions();
         if (suppliedAttributes != null && suppliedAttributes.contains(LegalPersonSpec.Definitions.LEGAL_ADDRESS)) {
             LOG.error("BUSINESS EXCEPTION : "+LegalPersonSpec.Definitions.LEGAL_ADDRESS.getNameUri().toASCIIString()+" found in Response instead of "+LegalPersonSpec.Definitions.LEGAL_PERSON_ADDRESS.getNameUri().toASCIIString());
-            sendFailure(proxyServiceRequest, EidasErrorKey.INVALID_ATTRIBUTE_LIST);
+            sendFailure(proxyServiceRequest, EidasErrorKey.INVALID_ATTRIBUTE_LIST, idpResponse.getId());
         }
         if (suppliedAttributes != null && suppliedAttributes.contains(LegalPersonSpec.Definitions.VAT_REGISTRATION)) {
             LOG.error("BUSINESS EXCEPTION : "+LegalPersonSpec.Definitions.VAT_REGISTRATION.getNameUri().toASCIIString()+" found in Response instead of "+LegalPersonSpec.Definitions.VAT_REGISTRATION_NUMBER.getNameUri().toASCIIString());
-            sendFailure(proxyServiceRequest, EidasErrorKey.INVALID_ATTRIBUTE_LIST);
+            sendFailure(proxyServiceRequest, EidasErrorKey.INVALID_ATTRIBUTE_LIST, idpResponse.getId());
         }
         if (suppliedAttributes != null && suppliedAttributes.contains(RepresentativeLegalPersonSpec.Definitions.LEGAL_ADDRESS)) {
             LOG.error("BUSINESS EXCEPTION : "+LegalPersonSpec.Definitions.LEGAL_ADDRESS.getNameUri().toASCIIString()+" found in Response instead of "+RepresentativeLegalPersonSpec.Definitions.LEGAL_PERSON_ADDRESS.getNameUri().toASCIIString());
-            sendFailure(proxyServiceRequest, EidasErrorKey.INVALID_ATTRIBUTE_LIST);
+            sendFailure(proxyServiceRequest, EidasErrorKey.INVALID_ATTRIBUTE_LIST, idpResponse.getId());
         }
         if (suppliedAttributes != null && suppliedAttributes.contains(RepresentativeLegalPersonSpec.Definitions.VAT_REGISTRATION)) {
             LOG.error("BUSINESS EXCEPTION : "+LegalPersonSpec.Definitions.VAT_REGISTRATION.getNameUri().toASCIIString()+" found in Response instead of "+RepresentativeLegalPersonSpec.Definitions.VAT_REGISTRATION_NUMBER.getNameUri().toASCIIString());
-            sendFailure(proxyServiceRequest, EidasErrorKey.INVALID_ATTRIBUTE_LIST);
+            sendFailure(proxyServiceRequest, EidasErrorKey.INVALID_ATTRIBUTE_LIST, idpResponse.getId());
         }
         //TODO END remove check of erroneous attributes after transition period of EID-423
 
@@ -267,19 +267,21 @@ public final class AUSERVICE implements ISERVICEService {
         ImmutableAttributeMap updatedResponseAttributes = updateResponseAttributes(request, responseAttributes);
 
         AuthenticationResponse.Builder authenticationResponseBuilder = AuthenticationResponse.builder();
-        authenticationResponseBuilder.levelOfAssurance(idpResponse.getLevelOfAssurance())
+        authenticationResponseBuilder
+                .levelOfAssurance(idpResponse.getLevelOfAssurance())
+                .id(idpResponse.getId())
                 .attributes(updatedResponseAttributes)
                 .inResponseTo(originalRequest.getId())
-                .ipAddress(idpResponse.getIPAddress());
-
-        authenticationResponseBuilder.id(SAMLEngineUtils.generateNCName())
+                .ipAddress(idpResponse.getIPAddress())
                 .statusCode(EIDASStatusCode.SUCCESS_URI.toString())
                 .issuer(getServiceMetadataUrl());
+
         serviceUtil.setMetadatUrlToAuthnResponse(getServiceMetadataUrl(), authenticationResponseBuilder);
 
         String currentIpAddress = webRequest.getRemoteIpAddress();
 
-        return samlService.processIdpSpecificResponse(originalRequest, authenticationResponseBuilder.build(),
+        AuthenticationResponse authenticationResponse1 = authenticationResponseBuilder.build();
+        return samlService.processIdpSpecificResponse(originalRequest, authenticationResponse1,
                                                       currentIpAddress, true);
     }
 
@@ -354,7 +356,7 @@ public final class AUSERVICE implements ISERVICEService {
         return responseAttributes;
     }
 
-    private IResponseMessage sendFailure(StoredAuthenticationRequest storedRequest, EidasErrorKey error) {
+    private IResponseMessage sendFailure(StoredAuthenticationRequest storedRequest, EidasErrorKey error, String originatingResponseId) {
         IAuthenticationRequest originalRequest = storedRequest.getRequest();
         String errorCode = EidasErrors.get(error.errorCode());
         String errorMessage = EidasErrors.get(error.errorMessage());
@@ -368,11 +370,12 @@ public final class AUSERVICE implements ISERVICEService {
                                                                                EIDASStatusCode.RESPONDER_URI.toString(),
                                                                                errorCode, null, errorMessage,
                                                                                storedRequest.getRemoteIpAddress(),
-                                                                               true);
+                                                                               true, originatingResponseId);
         throw new ResponseCarryingServiceException(errorCode, errorMessage,
                                                    EidasStringUtil.encodeToBase64(samlTokenFail),
                                                    originalRequest.getAssertionConsumerServiceURL(),
-                                                   storedRequest.getRelayState());
+                                                   storedRequest.getRelayState(),
+                                                    originalRequest.getIssuer());
     }
 
     /**
@@ -382,11 +385,12 @@ public final class AUSERVICE implements ISERVICEService {
     public String generateSamlTokenFail(IAuthenticationRequest authData,
                                         String statusCode,
                                         EidasErrorKey error,
-                                        String ipUserAddress) {
+                                        String ipUserAddress,
+                                        String originatingResponseId) {
 
         return generateSamlTokenFail(authData, statusCode, EidasErrors.get(error.errorCode()),
                                      EIDASSubStatusCode.REQUEST_DENIED_URI.toString(),
-                                     EidasErrors.get(error.errorMessage()), ipUserAddress, false);
+                                     EidasErrors.get(error.errorMessage()), ipUserAddress, false, StringUtils.EMPTY);
     }
 
     @Override
@@ -396,10 +400,11 @@ public final class AUSERVICE implements ISERVICEService {
                                         String subCode,
                                         String errorMessage,
                                         String ipUserAddress,
-                                        boolean isAuditable) {
+                                        boolean isAuditable,
+                                        String originatingResponseId) {
         byte[] samlTokenFail =
                 samlService.generateErrorAuthenticationResponse(originalRequest, statusCode, errorCode, subCode,
-                                                                errorMessage, ipUserAddress, isAuditable);
+                                                                errorMessage, ipUserAddress, isAuditable, originatingResponseId);
 
         return EidasStringUtil.encodeToBase64(samlTokenFail);
     }
