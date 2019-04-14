@@ -1,13 +1,70 @@
 ***********************************************
-CEF eIDAS-Node Release Version 1.4.4 
+CEF eIDAS-Node Release Version 1.4.5 
 ***********************************************
 • Product name: CEF eIDAS-Node
 • Purpose:  Sample Implementation of eIDAS-Node based on eIDAS Technical Specifications: v1.1
 • Produced by: CEF eID
 • Support Contact: CEF-EID-SUPPORT@ec.europa.eu
-• URL: https://ec.europa.eu/cefdigital/wiki/display/CEFDIGITAL/eIDAS-Node+-+All+releases
+• URL: https://ec.europa.eu/cefdigital/wiki/display/CEFDIGITAL/All+releases
 • License: EUPL v1.2 https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/eupl_v1.2_en.pdf
 ***********************************************
+
+
+** Documentation **
+
+CEF eID technical documentation pertaining to this release can be found on:
+CEF Digital Home > eID > Services eID > eIDAS-Node Integration Package > VIEW CURRENT VERSION 1.4.5
+
+** Distribution **
+
++ EIDAS-1.4.5.zip : Distribution version 1.4.5 of the sample eIDAS-Node
+++  EIDAS-Sources-1.4.5.zip :  Source files (Maven project) of the sample eIDAS-Node including an example of implementation of a SP (Service Provider) and IdP (Identity Provider).
+++  EIDAS-Binaries-Glassfish-1.4.5.zip : Deployable war files of a preconfigured eIDAS-Node for a Glassfish server (including IdP.war, EidasNode.war, SP.war)
+++  EIDAS-Binaries-Jboss-1.4.5.zip: Deployable war files of a preconfigured eIDAS-Node for a JBoss server (including IdP.war, EidasNode.war, SP.war)
+++  EIDAS-Binaries-Tomcat-1.4.5.zip: Deployable war files of a preconfigured eIDAS-Node for a Tomcat server (including IdP.war, EidasNode.war, SP.war)
+++  EIDAS-Binaries-Was-1.4.5.zip : Deployable war files of a preconfigured eIDAS-Node for a WebSphere server (including IdP.war, EidasNode.war, SP.war) 
+++  EIDAS-Binaries-Wls-1.4.5.zip : Deployable war files of a preconfigured eIDAS-Node for a WebLogic server (including IdP.war, EidasNode.war, SP.war)
+
+**This release contains the following improvements: (Please note that EIDINT-XXXX references are for internal use only)
+
+**This release contains the following security fixes:
++ Bouncycastle dependency was upgraded from v1.52 to v1.60 (EIDINT-3435)
+    EID-823 CVE-2016-1000338    EID-827 CVE-2016-1000342    EID-831 CVE-2016-1000346
+    EID-824 CVE-2016-1000339    EID-828 CVE-2016-1000343    EID-832 CVE-2016-1000352
+    EID-825 CVE-2016-1000340    EID-829 CVE-2016-1000344    EID-833 CVE-2017-13098
+    EID-826 CVE-2016-1000341    EID-830 CVE-2016-1000345    EID-834 CVE-2018-1000613
+
++ Bootstrap dependency was upgraded from v3.3.5 to v4.3.1 (EIDINT-3417)
+    EID-802 Vulnerable version of Bootsrap
+    EID-818 CVE-2018-14040
+    EID-820 CVE-2018-14041
+    EID-821 CVE-2018-14042
+    EID-822 CVE-2019-8331
+
+** This release has been successfully tested for interoperability with previous releases of eIDAS-Node versions of 2.2 and v1.4.4.
+** This release successfully tested and works with Middleware versions 1.0.7.  
+
+** Known Limitations
+The up to date list can be found at https://ec.europa.eu/cefdigital/wiki/x/lyYIBQ
+
+** Known Vulnerabilities
+Latest vulnerability notifications are found at https://ec.europa.eu/cefdigital/wiki/x/CwB2Ag
+
+
+####### IMPORTANT NOTICE #################################################################################################################################################################################
+
+The eIDAS-Node logs may contain person identification data. Hence, these logs should be handled and protected appropriately, following the European privacy regulations [Dir95/46/EC] and [Reg2016/679].
+
+[Reg2016/679] REGULATION (EU) 2016/679 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 27 April 2016 on the protection of natural persons with regard to the processing of personal data and on the free 
+movement of such data, and repealing Directive 95/46/EC.
+
+[Dir95/46/EC] Directive 95/46/EC of the European Parliament and of the Council of 24 October 1995 on the protection of individuals with regard to the processing of personal data and on the free movement
+of such data.
+
+#########################################################################################################################################################################################################
+
+
+####################### previous releases #######################
 
 
 ** Documentation **
@@ -52,21 +109,6 @@ The up to date list can be found at https://ec.europa.eu/cefdigital/wiki/x/eDBiB
 ** Known Vulnerabilities
 Latest vulnerability notifications are found at https://ec.europa.eu/cefdigital/wiki/x/CwB2Ag
 
-
-####### IMPORTANT NOTICE #################################################################################################################################################################################
-
-The eIDAS-Node logs may contain person identification data. Hence, these logs should be handled and protected appropriately, following the European privacy regulations [Dir95/46/EC] and [Reg2016/679].
-
-[Reg2016/679] REGULATION (EU) 2016/679 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 27 April 2016 on the protection of natural persons with regard to the processing of personal data and on the free 
-movement of such data, and repealing Directive 95/46/EC.
-
-[Dir95/46/EC] Directive 95/46/EC of the European Parliament and of the Council of 24 October 1995 on the protection of individuals with regard to the processing of personal data and on the free movement
-of such data.
-
-#########################################################################################################################################################################################################
-
-
-####################### previous releases #######################
 
 eIDAS-Node Build 1.4.3 Content
 
