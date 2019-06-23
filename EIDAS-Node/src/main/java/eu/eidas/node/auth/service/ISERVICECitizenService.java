@@ -32,6 +32,7 @@ public interface ISERVICECitizenService {
     /**
      * Checks that all mandatory values are present in the given attributes otherwise throws an Exception.
      *
+     * @param attributes the instance of {@link ImmutableAttributeMap} holding the attributes
      * @throws EIDASServiceException if the attributes are not missing a mandatory attribute
      */
     void checkMandatoryAttributes(@Nonnull ImmutableAttributeMap attributes) throws EIDASServiceException;
@@ -39,6 +40,7 @@ public interface ISERVICECitizenService {
     /**
      * Checks whether the attribute map satifisfies the rule of representation, otherwise thorows an Exception.
      *
+     * @param attributes the instance of {@link ImmutableAttributeMap} holding the attributes
      * @throws EIDASServiceException if the attributes are not missing a mandatory attribute
      */
     void checkRepresentativeAttributes(@Nonnull ImmutableAttributeMap attributes) throws EIDASServiceException;

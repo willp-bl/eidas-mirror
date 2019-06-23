@@ -21,6 +21,7 @@ import java.io.IOException;
 
 import org.junit.Before;
 import org.junit.FixMethodOrder;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
@@ -46,6 +47,7 @@ import static org.junit.Assert.fail;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations="/testcontext.xml")
 @FixMethodOrder(MethodSorters.JVM)
+@Ignore
 public class TestIntegrationSample {
     private static final String FILEREPO_DIR="target/test/config/";
     private static final String FILEREPO_SOURCE_DIR="src/test/resources/config/";

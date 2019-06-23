@@ -26,6 +26,8 @@ import eu.eidas.engine.exceptions.EIDASMetadataException;
 import eu.eidas.engine.exceptions.EIDASMetadataProviderException;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import eu.eidas.node.auth.util.tests.FileUtils;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -33,6 +35,12 @@ import org.junit.Test;
 import org.springframework.util.FileSystemUtils;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 
 public class TestEidasNodeMetadataLoader {
@@ -42,16 +50,18 @@ public class TestEidasNodeMetadataLoader {
     private static final String ENTITY_ID="http://EidasNode:8888/EidasNode/ConnectorMetadata";
     private static final String FILEREPO_SIGNATURE="src/test/resources/SignatureCheck/";
     private static final String CONNECTOR_ENTITY_ID =ENTITY_ID;
+
     @Before
-    public void setUp(){
-        File sampleNodeRepo=new File(FILEREPO_DIR_WRITE);
+    public void setUp() throws IOException {
+        File sampleNodeRepo = new File(FILEREPO_DIR_WRITE);
         FileSystemUtils.deleteRecursively(sampleNodeRepo);
-        sampleNodeRepo.mkdirs();
-        FileUtils.copyFile(new File(FILEREPO_DIR_READ), sampleNodeRepo);
+        Files.createDirectories(Paths.get(FILEREPO_DIR_WRITE));
+        FileUtils.copyFolder(Paths.get(FILEREPO_DIR_READ), Paths.get(FILEREPO_DIR_WRITE));
         new File(FILEREPO_DIR_WRITE_EMPTY).mkdirs();
 
         OpenSamlHelper.initialize();
     }
+
     @After
     public void removeDir(){
         FileSystemUtils.deleteRecursively(new File(FILEREPO_DIR_WRITE));
@@ -80,8 +90,13 @@ public class TestEidasNodeMetadataLoader {
         try{
             ProtocolEngineI engine = ProtocolEngineFactory.getDefaultProtocolEngine("METADATA");
             MetadataSignerI metadataSigner = (MetadataSignerI) engine.getSigner();
-            MetadataClockI metadataClock = (MetadataClockI) engine.getClock();
-            fetcher.getEidasMetadata(CONNECTOR_ENTITY_ID, metadataSigner, metadataClock);
+
+            MetadataClockI mockMetadataClockI = mock(MetadataClockI.class);
+            // one second less that the validity 2019-05-23T15:28:05.965Z at test/resources/ed.xml
+            DateTime dateTime = new DateTime(2019, 5, 23, 15, 28, 04, DateTimeZone.UTC);
+            when(mockMetadataClockI.getCurrentTime()).thenReturn(dateTime);
+
+            fetcher.getEidasMetadata(CONNECTOR_ENTITY_ID, metadataSigner, mockMetadataClockI);
         } catch (EIDASMetadataException e) {
             Assert.fail("got error checking the signature: "+ e);
             e.printStackTrace();

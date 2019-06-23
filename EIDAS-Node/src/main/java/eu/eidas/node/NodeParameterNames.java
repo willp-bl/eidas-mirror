@@ -28,6 +28,8 @@ public enum NodeParameterNames {
 
     CALLBACK_URL("callbackURL"),
 
+    CITIZEN_COUNTRY_CODE("citizenCountryCode"),
+
     EIDAS_ATTRIBUTES_PARAM("eidasAttributes"),
 
     EIDAS_SERVICE_URL("serviceUrl"),

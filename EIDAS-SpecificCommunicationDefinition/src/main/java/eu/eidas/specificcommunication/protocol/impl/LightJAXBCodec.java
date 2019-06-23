@@ -1,35 +1,23 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
 package eu.eidas.specificcommunication.protocol.impl;
 
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.net.URI;
-import java.util.Collection;
-import java.util.Iterator;
-
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.common.collect.ImmutableSet;
-
 import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.attribute.AttributeRegistry;
 import eu.eidas.auth.commons.attribute.AttributeValue;
@@ -42,13 +30,30 @@ import eu.eidas.auth.commons.light.ILightResponse;
 import eu.eidas.auth.commons.light.impl.LightRequest;
 import eu.eidas.auth.commons.light.impl.LightResponse;
 import eu.eidas.specificcommunication.exception.SpecificCommunicationException;
+import eu.eidas.specificcommunication.protocol.util.SecurityUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXNotRecognizedException;
+import org.xml.sax.SAXNotSupportedException;
+
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
+import javax.xml.bind.Unmarshaller;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.sax.SAXSource;
+import java.io.StringWriter;
+import java.net.URI;
+import java.util.Collection;
+import java.util.Iterator;
 
 class LightJAXBCodec {
 	private static final Logger LOG = LoggerFactory.getLogger(AttributeRegistry.class);
 
 	JAXBContext jaxbCtx;
 
-	LightJAXBCodec(JAXBContext jaxbCtx) throws JAXBException {
+	LightJAXBCodec(JAXBContext jaxbCtx) {
 		this.jaxbCtx = jaxbCtx;
 	}
 
@@ -74,7 +79,9 @@ class LightJAXBCodec {
 			throw new SpecificCommunicationException("missing registry");
 		}
 		try {
-			T unmarshalled = (T) createUnmarshaller().unmarshal(new StringReader(input));
+			SAXSource secureSaxSource = SecurityUtils.createSecureSaxSource(input);
+
+			T unmarshalled = (T) createUnmarshaller().unmarshal(secureSaxSource);
 			LightRequest.Builder resultBuilder = LightRequest.builder(unmarshalled);
 			ImmutableAttributeMap.Builder mapBuilder = ImmutableAttributeMap.builder();
 
@@ -87,7 +94,11 @@ class LightJAXBCodec {
 			}
 			T result = (T) resultBuilder.requestedAttributes(mapBuilder.build()).build();
 			return result;
-		} catch (JAXBException | AttributeValueMarshallingException e) {
+		} catch (JAXBException | AttributeValueMarshallingException
+				| SAXNotSupportedException | SAXNotRecognizedException
+				| ParserConfigurationException e) {
+			throw new SpecificCommunicationException(e);
+		} catch (SAXException e) {
 			throw new SpecificCommunicationException(e);
 		}
 	}
@@ -101,7 +112,9 @@ class LightJAXBCodec {
 			throw new SpecificCommunicationException("missing registry");
 		}
 		try {
-			T unmarshalled = (T) createUnmarshaller().unmarshal(new StringReader(input));
+			SAXSource secureSaxSource = SecurityUtils.createSecureSaxSource(input);
+
+			T unmarshalled = (T) createUnmarshaller().unmarshal(secureSaxSource);
 			LightResponse.Builder resultBuilder = LightResponse.builder(unmarshalled);
 
 			ImmutableAttributeMap.Builder mapBuilder = ImmutableAttributeMap.builder();
@@ -121,7 +134,8 @@ class LightJAXBCodec {
 			}
 			T result = (T) resultBuilder.attributes(mapBuilder.build()).build();
 			return result;
-		} catch (JAXBException | AttributeValueMarshallingException e) {
+		} catch (JAXBException | AttributeValueMarshallingException
+				| SAXException |ParserConfigurationException e) {
 			throw new SpecificCommunicationException(e);
 		}
 	}

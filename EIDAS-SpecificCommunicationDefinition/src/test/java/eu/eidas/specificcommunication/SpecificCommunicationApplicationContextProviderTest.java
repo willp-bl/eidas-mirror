@@ -15,10 +15,7 @@
 
 package eu.eidas.specificcommunication;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.ExpectedException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
@@ -75,7 +72,7 @@ public class SpecificCommunicationApplicationContextProviderTest {
     @Test
     public void testSetApplicationContextNonExistingBean() {
         thrown.expect(NoSuchBeanDefinitionException.class);
-        thrown.expectMessage("No bean named 'specificCommunicationDefinitionConnectorConfigFile' is defined");
+        thrown.expectMessage("No bean named 'specificCommunicationDefinitionConnectorConfigFile' available");
 
         final ClassPathXmlApplicationContext classPathXmlApplicationContext = new ClassPathXmlApplicationContext("testApplicationContext.xml");
         new SpecificCommunicationApplicationContextProvider().setApplicationContext(classPathXmlApplicationContext);

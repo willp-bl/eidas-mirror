@@ -1,16 +1,19 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
 package eu.eidas.auth.commons.attribute;
 
@@ -23,7 +26,11 @@ import javax.annotation.concurrent.ThreadSafe;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.namespace.QName;
-import java.io.*;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectStreamException;
+import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -58,12 +65,12 @@ public final class AttributeDefinition<T> implements Comparable<AttributeDefinit
     private static final long serialVersionUID = 5132258784285815491L;
 
     /**
+     * <p>
      * Builder pattern for the {@link AttributeDefinition} class.
-     * <p/>
+     * <p>
      * Effective Java, 2nd Ed. : Item 2: Builder Pattern.
-     * <p/>
+     * <p>
      * This Builder is not thread-safe but is thread-compliant, it is supposed to be used by only one thread.
-     * <p/>
      */
     @SuppressWarnings("ParameterHidesMemberVariable")
     @NotThreadSafe
@@ -444,8 +451,8 @@ public final class AttributeDefinition<T> implements Comparable<AttributeDefinit
     }
 
     /**
+     * <p>
      * Returns the XML qualified name to designate this attribute.
-     * <p/>
      * The qualified name must have a non-null namespace URI, a non-null local part and a non-null namespace prefix.
      *
      * @return the XML qualified name to designate this attribute.

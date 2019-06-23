@@ -1,27 +1,29 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
-
 package eu.eidas.specificcommunication.protocol;
-
-import java.util.Collection;
 
 import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.light.ILightRequest;
 import eu.eidas.auth.commons.light.ILightResponse;
 import eu.eidas.auth.commons.tx.BinaryLightToken;
 import eu.eidas.specificcommunication.exception.SpecificCommunicationException;
+
+import java.util.Collection;
 
 /**
  * Interface for the specific communication service
@@ -33,7 +35,7 @@ public interface SpecificCommunicationService {
 
     /**
      * Puts the {@link ILightRequest} in the request communication cache.
-     * <p/>
+     * <p>
      * Creates a {@link BinaryLightToken} which id will be used as key for the {@link ILightRequest}.
      *
      * @param iLightRequest the request to be put in the cache
@@ -54,12 +56,12 @@ public interface SpecificCommunicationService {
 
     /**
      * Puts {@link ILightResponse} in the response communication cache.
-     * <p/>
+     * <p>
      * Creates a {@link BinaryLightToken} which id will be used as key for the {@link ILightResponse}.
      *
      * @param iLightResponse the {@link ILightResponse} to put in the cache
      * @return the {@link BinaryLightToken} that holds the id/key to the {@link ILightResponse} in the cache
-     * @throws SpecificCommunicationException
+     * @throws SpecificCommunicationException if the {@link BinaryLightToken} could not be created.
      */
     BinaryLightToken putResponse(ILightResponse iLightResponse) throws SpecificCommunicationException;
 

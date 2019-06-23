@@ -1,16 +1,19 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
 
 package eu.eidas.specificcommunication.protocol;
@@ -23,8 +26,6 @@ import eu.eidas.specificcommunication.BinaryLightTokenHelper;
 import eu.eidas.specificcommunication.exception.SpecificCommunicationException;
 import eu.eidas.specificcommunication.protocol.impl.SpecificConnectorCommunicationServiceImpl;
 
-import static org.junit.Assert.*;
-
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -36,11 +37,13 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.util.Collection;
+
 /**
  * Test class for {@link SpecificConnectorCommunicationServiceImpl}.
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration("classpath:specificCommunicationDefinitionApplicationContext.xml")
+@ContextConfiguration(locations = {"classpath:specificCommunicationDefinitionApplicationContext.xml"})
 public class SpecificConnectorCommunicationServiceImplTest {
 
     private static ApplicationContext applicationContext = new ClassPathXmlApplicationContext("/specificCommunicationDefinitionApplicationContext.xml");
@@ -95,7 +98,7 @@ public class SpecificConnectorCommunicationServiceImplTest {
 
     /**
      * Test method for
-     * {@link SpecificConnectorCommunicationServiceImpl#getAndRemoveRequest(String)}
+     * {@link SpecificConnectorCommunicationServiceImpl#getAndRemoveRequest(String, Collection)}
      * to remove the {@link ILightRequest} put before by a successful call to
      * {@link SpecificConnectorCommunicationServiceImpl#putRequest(ILightRequest)}.
      * <p/>
@@ -108,26 +111,30 @@ public class SpecificConnectorCommunicationServiceImplTest {
         final String tokenBase64 = BinaryLightTokenHelper.encodeBinaryLightTokenBase64(binaryLightToken);
 		final ILightRequest iLightRequestOut = getSpecificCommunicationService().getAndRemoveRequest(tokenBase64,
 				iLightRequestIn.getRequestedAttributes().getDefinitions());
-        assertNotNull(iLightRequestOut);
+        Assert.assertNotNull(iLightRequestOut);
     }
 
     /**
      * Test method for
-     * {@link SpecificConnectorCommunicationServiceImpl#getAndRemoveRequest(String)}
+     * {@link SpecificConnectorCommunicationServiceImpl#getAndRemoveRequest(String, Collection)}
      * using a valid {@link BinaryLightToken} but which does not exist as key in the cache.
      * <p/>
      * Must succeed.
      */
     @Test
     public void testRemoveRequestFromCommunicationCacheValidTokenEmptyCache() throws Exception {
+        thrown.expect(SpecificCommunicationException.class);
+        thrown.expectMessage("Incoming light request is invalid");
+
         final String tokenBase64 = VALID_BINARY_LIGHT_TOKEN_REQUEST_BASE64;
-        final ILightRequest iLightRequest = getSpecificCommunicationService().getAndRemoveRequest(tokenBase64,null);
+        SpecificConnectorCommunicationServiceImpl specificCommunicationService = getSpecificCommunicationService();
+        final ILightRequest iLightRequest = specificCommunicationService.getAndRemoveRequest(tokenBase64,null);
         Assert.assertNull(iLightRequest);
     }
 
     /**
      * Test method for
-     * {@link SpecificConnectorCommunicationServiceImpl#getAndRemoveRequest(String)}
+     * {@link SpecificConnectorCommunicationServiceImpl#getAndRemoveRequest(String, Collection)}
      * to remove the {@link ILightRequest} using a valid {@link BinaryLightToken} in Base64
      * created with an incorrect secret, algorithm e.g. the ones used for a {@link ILightResponse}
      * instead of the correct ones used to validate the {@link ILightRequest}.
@@ -140,13 +147,14 @@ public class SpecificConnectorCommunicationServiceImplTest {
         thrown.expectMessage("LightToken digest failure");
 
         final String tokenBase64 = VALID_BINARY_LIGHT_TOKEN_RESPONSE_BASE64;
-        final ILightRequest iLightRequest = getSpecificCommunicationService().getAndRemoveRequest(tokenBase64,null);
+        SpecificConnectorCommunicationServiceImpl specificCommunicationService = getSpecificCommunicationService();
+        final ILightRequest iLightRequest = specificCommunicationService.getAndRemoveRequest(tokenBase64,null);
         Assert.assertNull(iLightRequest);
     }
 
     /**
      * Test method for
-     * {@link SpecificConnectorCommunicationServiceImpl#getAndRemoveRequest(String)}
+     * {@link SpecificConnectorCommunicationServiceImpl#getAndRemoveRequest(String, Collection)}
      * using an invalid {@link BinaryLightToken} in Base64.
      * <p/>
      * Must fail.
@@ -191,7 +199,7 @@ public class SpecificConnectorCommunicationServiceImplTest {
 
     /**
      * Test method for
-     * {@link SpecificConnectorCommunicationServiceImpl#getAndRemoveResponse(String)}
+     * {@link SpecificConnectorCommunicationServiceImpl#getAndRemoveResponse(String, Collection)}
      * tor remove the {@link ILightResponse} put before by a successful call to
      * {@link SpecificConnectorCommunicationServiceImpl#putResponse(ILightResponse)}.
      * <p/>
@@ -210,7 +218,7 @@ public class SpecificConnectorCommunicationServiceImplTest {
 
     /**
      * Test method for
-     * {@link SpecificConnectorCommunicationServiceImpl#getAndRemoveResponse(String)}
+     * {@link SpecificConnectorCommunicationServiceImpl#getAndRemoveResponse(String, Collection)}
      * using a valid {@link BinaryLightToken} but which does not exist as key in the cache.
      * <p/>
      * Must succeed.
@@ -224,7 +232,7 @@ public class SpecificConnectorCommunicationServiceImplTest {
 
     /**
      * Test method for
-     * {@link SpecificConnectorCommunicationServiceImpl#getAndRemoveResponse(String)}
+     * {@link SpecificConnectorCommunicationServiceImpl#getAndRemoveResponse(String, Collection)}
      * to remove the {@link ILightResponse} using a valid {@link BinaryLightToken} in Base64
      * created with an incorrect secret, algorithm e.g. the ones used for a {@link ILightRequest}
      * instead of the correct ones used to validate the {@link ILightResponse}.
@@ -243,7 +251,7 @@ public class SpecificConnectorCommunicationServiceImplTest {
 
     /**
      * Test method for
-     * {@link SpecificConnectorCommunicationServiceImpl#getAndRemoveResponse(String)}
+     * {@link SpecificConnectorCommunicationServiceImpl#getAndRemoveResponse(String, Collection)}
      * using an invalid {@link BinaryLightToken} in Base64.
      * <p/>
      * Must fail.

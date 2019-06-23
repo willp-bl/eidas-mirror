@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 by European Commission
+ * Copyright (c) 2019 by European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be
  * approved by the European Commission - subsequent versions of the
@@ -13,42 +13,17 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
  * implied.
  * See the Licence for the specific language governing permissions and
- * limitations under the Licence.
+ * limitations under the Licence
  */
 package eu.eidas.node.auth.service;
 
-import static org.apache.commons.lang.StringUtils.isEmpty;
-import static org.apache.commons.lang.StringUtils.isNotEmpty;
-
-import java.io.IOException;
-import java.util.Collection;
-import java.util.List;
-import java.util.Locale;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
-import eu.eidas.node.utils.PropertiesUtil;
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.config.PropertiesFactoryBean;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.MessageSource;
-import org.springframework.context.NoSuchMessageException;
-
 import eu.eidas.auth.commons.BindingMethod;
-import eu.eidas.auth.commons.DateUtil;
 import eu.eidas.auth.commons.EIDASStatusCode;
 import eu.eidas.auth.commons.EIDASValues;
-import eu.eidas.auth.commons.EidasDigestUtil;
 import eu.eidas.auth.commons.EidasErrorKey;
 import eu.eidas.auth.commons.EidasErrors;
 import eu.eidas.auth.commons.EidasParameterKeys;
 import eu.eidas.auth.commons.EidasStringUtil;
-import eu.eidas.auth.commons.IEIDASLogger;
 import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.exceptions.EidasNodeException;
@@ -56,7 +31,6 @@ import eu.eidas.auth.commons.exceptions.InternalErrorEIDASException;
 import eu.eidas.auth.commons.exceptions.InvalidParameterEIDASException;
 import eu.eidas.auth.commons.exceptions.SecurityEIDASException;
 import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
-import eu.eidas.auth.commons.protocol.IAuthenticationResponse;
 import eu.eidas.auth.commons.protocol.IResponseMessage;
 import eu.eidas.auth.commons.protocol.eidas.IEidasAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
@@ -72,12 +46,23 @@ import eu.eidas.auth.engine.metadata.MetadataUtil;
 import eu.eidas.auth.engine.xml.opensaml.SAMLEngineUtils;
 import eu.eidas.engine.exceptions.EIDASMetadataException;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
-import eu.eidas.node.BeanProvider;
 import eu.eidas.node.logging.LoggingMarkerMDC;
 import eu.eidas.node.utils.EidasNodeErrorUtil;
 import eu.eidas.node.utils.EidasNodeValidationUtil;
-import eu.eidas.node.utils.LoggingSanitizer;
-import eu.eidas.util.WhitelistUtil;
+import eu.eidas.node.utils.PropertiesUtil;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
+import org.springframework.context.NoSuchMessageException;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.List;
+import java.util.Locale;
+
+import static org.apache.commons.lang.StringUtils.isEmpty;
+import static org.apache.commons.lang.StringUtils.isNotEmpty;
 
 /**
  * This class is used by {@link AUSERVICE} to get, process and generate SAML Tokens. Also, it checks attribute values
@@ -105,10 +90,6 @@ public class AUSERVICESAML implements ISERVICESAMLService {
      * Connector's Util class.
      */
     protected AUSERVICEUtil serviceUtil;
-    /**
-     * Logger bean.
-     */
-    private IEIDASLogger loggerBean;
 
     /**
      * Instance of SAML Engine.
@@ -146,9 +127,6 @@ public class AUSERVICESAML implements ISERVICESAMLService {
 
     private MetadataFetcherI metadataFetcher;
 
-    @Autowired
-    private ApplicationContext context;
-    
     @Override
     public String getSamlEngineInstanceName() {
         return samlInstance;
@@ -197,13 +175,6 @@ public class AUSERVICESAML implements ISERVICESAMLService {
             IResponseMessage signedResponse =
                     engine.generateResponseMessage(originalRequest, authnResponseBuilder.build(),
                             generateSignedAssertion, ipAddress);
-
-            // Audit
-            String message = EIDASValues.SUCCESS.toString() + EIDASValues.EID_SEPARATOR.toString()
-                    + EIDASValues.CITIZEN_CONSENT_LOG.toString();
-
-            prepareRespLoggerBean(signedResponse, message);
-            saveLog(AUSERVICESAML.LOGGER_COM_RESP);
 
             return signedResponse;
         } catch (EIDASSAMLEngineException e) {
@@ -284,11 +255,6 @@ public class AUSERVICESAML implements ISERVICESAMLService {
 
             IResponseMessage responseMessage = generateResponseErrorMessage(authData, engine, eidasAuthnResponseError, ipUserAddress);
 
-            if (isAuditable) {
-                prepareRespLoggerBean(responseMessage, errorMessage);
-                saveLog(AUSERVICESAML.LOGGER_COM_RESP);
-            }
-
             return responseMessage.getMessageBytes();
         } catch (EIDASSAMLEngineException e) {
             LOGGER.info("BUSINESS EXCEPTION : Error generating SAMLToken", e.getMessage());
@@ -310,25 +276,6 @@ public class AUSERVICESAML implements ISERVICESAMLService {
         return EidasStringUtil.getTokens(property);
     }
 
-
-    public Collection<String> metadataWhitelist() {
-		ISERVICESAMLService springManagedAUSERVICESAML = context.getBean(ISERVICESAMLService.class);
-		return springManagedAUSERVICESAML.whitelist("connector.metadata.location.whitelist");
-	}
-
-	@Cacheable("whitelist")
-	public Collection<String> whitelist(String name) {
-		LOGGER.debug("Building ONCE cache for connector.metadata.location.whitelist...");
-		PropertiesFactoryBean propFactory = context.getBean(PropertiesFactoryBean.class);
-		String connectorMetadataWhitelist;
-		try {
-			connectorMetadataWhitelist = (String) propFactory.getObject().getProperty(name);
-			return WhitelistUtil.metadataWhitelist(connectorMetadataWhitelist);
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
 	/**
      * {@inheritDoc}
      */
@@ -341,8 +288,7 @@ public class AUSERVICESAML implements ISERVICESAMLService {
             LOGGER.trace("Validating the SAML token");
             // validates SAML Token
             ProtocolEngineI engine = getSamlEngine();
-            IAuthenticationRequest authnRequest = engine.unmarshallRequestAndValidate(samlObj, countryCode, 
-            		metadataWhitelist());
+            IAuthenticationRequest authnRequest = engine.unmarshallRequestAndValidate(samlObj, countryCode);
             EidasAuthenticationRequest.Builder eIDASAuthnRequestBuilder = null;
             EidasMetadataParametersI eidasMetadataParameters = null;
             String issuer = authnRequest.getIssuer();
@@ -486,8 +432,6 @@ public class AUSERVICESAML implements ISERVICESAMLService {
             checkAntiReplay(samlObj, authnRequest);
             // Logging
             LOGGER.trace("Eidas Audit");
-            prepareReqLoggerBean(samlObj, authnRequest);
-            saveLog(AUSERVICESAML.LOGGER_COM_REQ);
 
             return authnRequest;
         } catch (EIDASSAMLEngineException e) {
@@ -505,8 +449,6 @@ public class AUSERVICESAML implements ISERVICESAMLService {
     private void checkAntiReplay(byte[] samlObj, IAuthenticationRequest authnRequest) {
         if (!serviceUtil.checkNotPresentInCache(authnRequest.getId(), authnRequest.getCitizenCountryCode())) {
             LOGGER.trace("Eidas Audit");
-            prepareReqLoggerBean(samlObj, authnRequest);
-            saveLog(AUSERVICESAML.LOGGER_COM_REQ);
             throw new SecurityEIDASException(EidasErrors.get(EidasErrorKey.SPROVIDER_SELECTOR_INVALID_SAML.errorCode()),
                     EidasErrors.get(
                             EidasErrorKey.SPROVIDER_SELECTOR_INVALID_SAML.errorMessage()));
@@ -599,91 +541,6 @@ public class AUSERVICESAML implements ISERVICESAMLService {
         ProtocolEngineI engine = getSamlEngine();
 
         return engine.getProtocolProcessor().updateRequestWithConsent(authnRequest, updatedAttributes);
-    }
-
-    /**
-     * Sets all the fields to audit the request.
-     *
-     * @param samlObj      The SAML token byte[].
-     * @param authnRequest The Authentication Request object.
-     * @see EidasAuthenticationRequest
-     */
-    private void prepareReqLoggerBean(byte[] samlObj, IAuthenticationRequest authnRequest) {
-        String hashClassName = serviceUtil.getProperty(EidasParameterKeys.HASH_DIGEST_CLASS.toString());
-        byte[] tokenHash = EidasDigestUtil.hashPersonalToken(samlObj, hashClassName);
-        loggerBean.setSamlHash(tokenHash);
-
-        loggerBean.setTimestamp(DateUtil.currentTimeStamp().toString());
-        loggerBean.setOpType(EIDASValues.EIDAS_SERVICE_REQUEST.toString());
-
-        final String originWithoutCrlf = LoggingSanitizer.removeCRLFInjection(authnRequest.getAssertionConsumerServiceURL());
-        loggerBean.setOrigin(originWithoutCrlf);
-
-        final String destinationWithoutCrlf = LoggingSanitizer.removeCRLFInjection(authnRequest.getDestination());
-        loggerBean.setDestination(destinationWithoutCrlf);
-
-        final String providerNameWithoutCrlf = LoggingSanitizer.removeCRLFInjection(authnRequest.getProviderName());
-        loggerBean.setProviderName(providerNameWithoutCrlf);
-
-        final String countryWithoutCrlf = LoggingSanitizer.removeCRLFInjection(authnRequest.getServiceProviderCountryCode());
-        loggerBean.setCountry(countryWithoutCrlf);
-
-        final String msgIdWithoutCrlf = LoggingSanitizer.removeCRLFInjection(authnRequest.getId());
-        loggerBean.setMsgId(msgIdWithoutCrlf);
-    }
-
-    /**
-     * Sets all the fields to the audit the response.
-     *
-     * @param responseMessage The Saml response message.
-     * @param message The message.
-     * @see EidasAuthenticationRequest
-     */
-    protected void prepareRespLoggerBean(IResponseMessage responseMessage, String message) {
-        String hashClassName = serviceUtil.getProperty(EidasParameterKeys.HASH_DIGEST_CLASS.toString());
-        byte[] tokenHash = EidasDigestUtil.hashPersonalToken(responseMessage.getMessageBytes(), hashClassName);
-        loggerBean.setSamlHash(tokenHash);
-
-        loggerBean.setTimestamp(DateUtil.currentTimeStamp().toString());
-        loggerBean.setOpType(EIDASValues.EIDAS_SERVICE_RESPONSE.toString());
-        loggerBean.setMessage(message);
-
-        IAuthenticationResponse authnResponse = responseMessage.getResponse();
-
-        final String inResponseToWithoutCrlf = LoggingSanitizer.removeCRLFInjection(authnResponse.getInResponseToId());
-        loggerBean.setInResponseTo(inResponseToWithoutCrlf);
-
-        final String msgIdWithoutCrlf = LoggingSanitizer.removeCRLFInjection(authnResponse.getId());
-        loggerBean.setMsgId(msgIdWithoutCrlf);
-    }
-
-    /**
-     * Logs the transaction with the Audit log.
-     *
-     * @param logger The Audit Logger.
-     */
-    public void saveLog(Logger logger) {
-        logger.info(LoggingMarkerMDC.SAML_EXCHANGE, loggerBean.toString());
-    }
-
-    /**
-     * Getter for loggerBean.
-     *
-     * @return The loggerBean value.
-     * @see IEIDASLogger
-     */
-    public IEIDASLogger getLoggerBean() {
-        return loggerBean;
-    }
-
-    /**
-     * Setter for loggerBean.
-     *
-     * @param nLoggerBean The new loggerBean value.
-     * @see IEIDASLogger
-     */
-    public void setLoggerBean(IEIDASLogger nLoggerBean) {
-        this.loggerBean = nLoggerBean;
     }
 
     /**

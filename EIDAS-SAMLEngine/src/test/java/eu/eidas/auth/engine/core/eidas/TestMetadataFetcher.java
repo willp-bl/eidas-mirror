@@ -33,6 +33,11 @@ import javax.annotation.Nonnull;
  */
 public final class TestMetadataFetcher implements MetadataFetcherI {
 
+	public TestMetadataFetcher() {
+	}
+
+	public TestMetadataFetcher(String s, Boolean b) {
+	}
 
     private EidasMetadataParametersI EIDAS_METADATA_PARAMETERS = getEidasMetadataParameters("1.1", "CEF:eIDAS-ref:2.2");
 

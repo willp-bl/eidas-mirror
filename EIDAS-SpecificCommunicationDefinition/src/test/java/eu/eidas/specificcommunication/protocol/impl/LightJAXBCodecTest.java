@@ -1,16 +1,19 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
 package eu.eidas.specificcommunication.protocol.impl;
 
@@ -28,12 +31,16 @@ import eu.eidas.auth.commons.protocol.eidas.impl.PostalAddress;
 import eu.eidas.auth.commons.protocol.eidas.impl.PostalAddressAttributeValue;
 import eu.eidas.auth.commons.protocol.eidas.spec.EidasSpec;
 import eu.eidas.specificcommunication.exception.SpecificCommunicationException;
+import eu.eidas.specificcommunication.protocol.util.SecurityUtilsTest;
 import org.joda.time.DateTime;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import javax.xml.bind.JAXBException;
 import java.util.AbstractCollection;
+import java.util.Collection;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -83,6 +90,9 @@ public class LightJAXBCodecTest {
 	private static final String SUBJECT_NAME_ID_FORMAT = "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent";
 
 	LightJAXBCodec codecUnderTest;
+
+	@Rule
+	public ExpectedException thrown = ExpectedException.none();
 
 	@Before
 	public void setup() throws JAXBException {
@@ -174,7 +184,71 @@ public class LightJAXBCodecTest {
 		assertEquals(lightRequest.getRelayState(), result.getRelayState());
 		assertEquals(lightRequest.getRequestedAttributes().size(), result.getRequestedAttributes().size());
 	}
-	
+
+	/**
+	 * Test method for
+	 * {@link LightJAXBCodec#unmarshallRequest(String, Collection)}
+	 * when input string is an XML with DTD
+	 * <p>
+	 * Must fail and throw {@link SpecificCommunicationException}
+	 */
+	@Test
+	public void testMarshallUnmarshallRequestWithXXE() throws SpecificCommunicationException {
+		thrown.expect(SpecificCommunicationException.class);
+		thrown.expectMessage("DOCTYPE is disallowed when the feature \"http://apache.org/xml/features/disallow-doctype-decl\" set to true.");
+
+		String input = SecurityUtilsTest.MALICIOUS_XML_DTD_SAMPLE;
+		codecUnderTest.unmarshallRequest(input, REGISTRY);
+	}
+
+	/**
+	 * Test method for
+	 * {@link LightJAXBCodec#unmarshallRequest(String, Collection)}
+	 * when input string is an XML with DTD XXE BOMB
+	 * <p>
+	 * Must fail and throw {@link SpecificCommunicationException}
+	 */
+	@Test
+	public void testMarshallUnmarshallRequestWithXXEBomb() throws SpecificCommunicationException {
+		thrown.expect(SpecificCommunicationException.class);
+		thrown.expectMessage("DOCTYPE is disallowed when the feature \"http://apache.org/xml/features/disallow-doctype-decl\" set to true.");
+
+		String input = SecurityUtilsTest.MALICIOUS_XML_DTD_XXE_BOMB;
+		codecUnderTest.unmarshallRequest(input, REGISTRY);
+	}
+
+	/**
+	 * Test method for
+	 * {@link LightJAXBCodec#unmarshallResponse(String, Collection)}
+	 * when input string is an XML with DTD
+	 * <p>
+	 * Must fail and throw {@link SpecificCommunicationException}
+	 */
+	@Test
+	public void testMarshallUnmarshallResponseWithXXE() throws SpecificCommunicationException {
+		thrown.expect(SpecificCommunicationException.class);
+		thrown.expectMessage("DOCTYPE is disallowed when the feature \"http://apache.org/xml/features/disallow-doctype-decl\" set to true.");
+
+		String input = SecurityUtilsTest.MALICIOUS_XML_DTD_SAMPLE;
+		codecUnderTest.unmarshallResponse(input, REGISTRY);
+	}
+
+	/**
+	 * Test method for
+	 * {@link LightJAXBCodec#unmarshallResponse(String, Collection)}
+	 * when input string is an XML with DTD XXE BOMB
+	 * <p>
+	 * Must fail and throw {@link SpecificCommunicationException}
+	 */
+	@Test
+	public void testMarshallUnmarshallResponseWithXXEBomb() throws SpecificCommunicationException {
+		thrown.expect(SpecificCommunicationException.class);
+		thrown.expectMessage("DOCTYPE is disallowed when the feature \"http://apache.org/xml/features/disallow-doctype-decl\" set to true.");
+
+		String input = SecurityUtilsTest.MALICIOUS_XML_DTD_XXE_BOMB;
+		codecUnderTest.unmarshallResponse(input, REGISTRY);
+	}
+
 	// @formatter:off
 	private static String MARSHALLED_RESPONSE = "<lightResponse>" + "    <id>9e33f2c5-e4af-4997-b61d-8a25d3652b9e</id> "
 			+ "    <relayState>d061c40a-c6f7-4527-ae71-9253ed9b4666</relayState>" + "    <issuer>DEMO-IDP</issuer>"

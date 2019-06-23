@@ -23,15 +23,15 @@
 <html>
 
 <head>
-    <jsp:include page="include/htmlHeadSpecific.jsp"/>
+    <jsp:include page="include/htmlHeadProxyServiceSpecific.jsp"/>
     <title><fmt:message key="consent.page.title" bundle="${i18n_eng}"/></title>
 </head>
 
 <body>
 <main>
     <div class="wrapper">
-        <jsp:include page="include/centralSlider.jsp"/>
-        <jsp:include page="include/leftColumn.jsp"/>
+        <jsp:include page="include/proxyServiceCentralSlider.jsp"/>
+        <jsp:include page="include/proxyServiceLeftColumn.jsp"/>
         <div class="col-right">
             <div class="col-right-inner">
                 <div class="clearfix">
@@ -42,14 +42,14 @@
                     </div>
                 </div>
                 <div class="col-right-content">
-                    <jsp:include page="include/content-security-header-deactivated.jsp"/>
+                    <jsp:include page="include/proxyService-content-security-header-deactivated.jsp"/>
                     <form id="consentSelector" name="consentSelector" method="${e:forHtml(binding)}"
                           action="${e:forHtml(citizenConsentUrl)}" class="jsOK" disabled="true">
                         <input type="hidden" id="requestId" name="requestId"
                                value="<c:out value='${e:forHtml(requestId)}'/>"/>
                         <% /** Slider 1 */ %>
                         <div id="slider1">
-                            <jsp:include page="include/titleWithAssurance.jsp"/>
+                            <jsp:include page="include/proxyServiceTitleWithAssurance.jsp"/>
                             <p class="step-status"><fmt:message key="common.step" bundle="${i18n_eng}"/><span>1</span> |
                                 3</p>
                             <h2 class="sub-title"><fmt:message key="presentConsent.basicInformation"
@@ -151,11 +151,11 @@
                                                                                    bundle="${i18n_eng}"/></span>
                                 </button>
                             </p>
-                            <jsp:include page="include/footer-img.jsp"/>
+                            <jsp:include page="include/proxyServiceFooter-img.jsp"/>
                         </div>
                         <% /** Slider 2 */ %>
                         <div id="slider2">
-                            <jsp:include page="include/titleWithAssurance.jsp"/>
+                            <jsp:include page="include/proxyServiceTitleWithAssurance.jsp"/>
                             <p class="step-status"><fmt:message key="common.step" bundle="${i18n_eng}"/> <span>2</span>
                                 | 3</p>
                             <h2 class="sub-title"><fmt:message key="presentConsent.additionalInformation"
@@ -276,7 +276,7 @@
                                                                                    bundle="${i18n_eng}"/></span>
                                 </button>
                             </p>
-                            <jsp:include page="include/footer-img.jsp"/>
+                            <jsp:include page="include/proxyServiceFooter-img.jsp"/>
                         </div>
                         <input type="hidden" id="binaryLightToken" name="binaryLightToken"
                                value="<c:out value='${e:forHtml(binaryLightToken)}'/>"/>
@@ -471,7 +471,7 @@
                                         <button type="submit" class="btn btn-opposite" id="buttonCancelNoScript"
                                                 name="buttonCancelNoScript"><span>Cancel</span></button>
                                     </p>
-                                    <jsp:include page="include/footer-img.jsp"/>
+                                    <jsp:include page="include/proxyServiceFooter-img.jsp"/>
                                 </form>
 
                             </div>
@@ -482,9 +482,9 @@
         </div>
     </div>
 </main>
-<jsp:include page="helpPages/modal_loa.jsp"/>
-<jsp:include page="helpPages/modal_attribute.jsp"/>
-<jsp:include page="include/footerScripts.jsp"/>
+<jsp:include page="helpPages/proxyServiceModal_loa.jsp"/>
+<jsp:include page="helpPages/proxyServiceModal_attribute.jsp"/>
+<jsp:include page="include/proxyServiceFooterScripts.jsp"/>
 <script type="text/javascript" src="js/presentConsent.js"></script>
 <script type="text/javascript" src="js/autocompleteOff.js"></script>
 </body>

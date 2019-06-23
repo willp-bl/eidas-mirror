@@ -1,18 +1,20 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
-
 package eu.eidas.specificcommunication;
 
 import eu.eidas.auth.commons.EidasStringUtil;
@@ -64,7 +66,7 @@ public class BinaryLightTokenHelper {
      *
      * @param httpServletRequest the http servlet request that contains the {@link BinaryLightToken} Base64 encoded.
      * @param parameterKey the parameter key of the {@link BinaryLightToken} Base64 encoded
-     * @return
+     * @return the {@link BinaryLightToken} Base64 encoded
      */
     public static String getBinaryToken(final @Nonnull HttpServletRequest httpServletRequest, String parameterKey) {
         String binaryLightTokenBase64 = httpServletRequest.getParameter(parameterKey);
@@ -92,7 +94,7 @@ public class BinaryLightTokenHelper {
      * @param secret secret for creating the digest
      * @param algorithm digest algorithm
      * @return {@link BinaryLightToken}
-     * @throws SpecificCommunicationException
+     * @throws SpecificCommunicationException when digest algorithm could not be found.
      */
     public static BinaryLightToken createBinaryLightToken(String issuerName, String secret, String algorithm) throws SpecificCommunicationException {
         final LightToken lightToken = BinaryLightTokenHelper.createLightToken(issuerName);

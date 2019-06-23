@@ -1,36 +1,28 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
- */
 /*
- * This work is Open Source and licensed by the European Commission under the
- * conditions of the European Public License v1.1
+ * Copyright (c) 2018 by European Commission
  *
- * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1);
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
  *
- * any use of this file implies acceptance of the conditions of this license.
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations
- * under the License.
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
  */
 package eu.eidas.node.auth.service;
 
+import java.util.Base64;
 import java.util.Map;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.cache.Cache;
 
 import eu.eidas.auth.commons.EidasErrorKey;
 import eu.eidas.auth.commons.WebRequest;
@@ -38,7 +30,6 @@ import eu.eidas.auth.commons.light.ILightResponse;
 import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.IResponseMessage;
 import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
-import eu.eidas.auth.commons.tx.CorrelationMap;
 import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
 
 /**
@@ -51,27 +42,27 @@ public interface ISERVICEService {
      *
      * @param webRequest the webrequest containing the token
      * @param relayState the relay state if needed to be propagated
-     * @param requestCorrelationMap the request correlation map used
+     * @param requestCorrelationCache the request correlation map used
      * @param remoteIpAddress the ipaddres
      * @return the processed request
      */
     IAuthenticationRequest processAuthenticationRequest(@Nonnull WebRequest webRequest,
                                                         @Nullable String relayState,
                                                         @Nonnull
-                                                                CorrelationMap<StoredAuthenticationRequest> requestCorrelationMap,
+                                                                Cache<String, StoredAuthenticationRequest> requestCorrelationCache,
                                                         @Nonnull String remoteIpAddress);
 
 
     /**
      * Normalizes the attributes to request format (eg eIDAS), generates the SAML Tokens to send to Connector.
      *
-     * @param webRequest
-     * @param proxyServiceRequest
-     * @param idpResponse
+     * @param webRequest the instance of the {@link WebRequest}
+     * @param proxyServiceRequest the instance of the {@link StoredAuthenticationRequest}
+     * @param idpResponse the instance of the {@link ILightResponse}
      * @return The new authentication request.
      * @see EidasAuthenticationRequest
      * @see Map
-     * <p/>
+     * <p>
      * TODO: rename as processIdpResponse
      */
     IResponseMessage processIdpResponse(@Nonnull WebRequest webRequest,
@@ -104,6 +95,7 @@ public interface ISERVICEService {
      * @param subCode The sub status code to set.
      * @param errorMessage Error message to set.
      * @param ipUserAddress The citizen's IP address.
+     * @param isAuditable   the flag isAuditable
      * @return A {@link Base64} encoded SAML token.
      * @see EidasAuthenticationRequest
      * @see EidasErrorKey

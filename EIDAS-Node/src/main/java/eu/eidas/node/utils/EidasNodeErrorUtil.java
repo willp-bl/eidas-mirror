@@ -1,16 +1,19 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
 
 package eu.eidas.node.utils;
@@ -57,7 +60,7 @@ public class EidasNodeErrorUtil {
             EIDASSubStatusCode.REQUEST_DENIED_URI,
             EIDASSubStatusCode.INVALID_ATTR_NAME_VALUE_URI,
             EIDASSubStatusCode.AUTHN_FAILED_URI,
-            };
+    };
     /**
      * EidasErrorKey mapped to substatuscodes
      */
@@ -88,7 +91,7 @@ public class EidasNodeErrorUtil {
      *
      * @param request - the current http request
      * @param exc     - the exception for which the saml response is to be prepared
-     *                <p/>
+     *                <p>
      *                side effect: exc's samlTokenFail is set to the saml response to return
      * @param source  Enum values defining ProxyService/Connector
      */
@@ -110,19 +113,23 @@ public class EidasNodeErrorUtil {
 
     /**
      * Method called for processing the SAML error message and specific error behaviour related
-     * @param e the exception triggered
-     * @param destLog the specific logger
+     *
+     * @param e             the exception triggered
+     * @param destLog       the specific logger
      * @param redirectError the redirected error
      */
     public static void processSAMLEngineException(Exception e, Logger destLog, EidasErrorKey redirectError) {
         // Special case for propagating the error in case of xxe
-        String errorCode=null;
-        if(e instanceof EIDASSAMLEngineException){
-            errorCode = ((EIDASSAMLEngineException)e).getErrorCode();
-        }else if(e instanceof SAMLEngineException){
-            errorCode = ((SAMLEngineException)e).getErrorCode();
+        String errorCode = null;
+        if (e instanceof EIDASSAMLEngineException) {
+            errorCode = ((EIDASSAMLEngineException) e).getErrorCode();
+            if (EidasErrors.get(EidasErrorKey.MESSAGE_VALIDATION_ERROR.errorCode()).equals(errorCode)) {
+                errorCode = EidasErrorKey.MESSAGE_VALIDATION_ERROR.errorCode();
+            }
+        } else if (e instanceof SAMLEngineException) {
+            errorCode = ((SAMLEngineException) e).getErrorCode();
         }
-        if(errorCode==null) {
+        if (errorCode == null) {
             return;
         }
         if (EidasErrorKey.DOC_TYPE_NOT_ALLOWED_CODE.toString().equals(errorCode)) {
@@ -144,10 +151,11 @@ public class EidasNodeErrorUtil {
         }
     }
 
-    static Class[] samlEngineException={EIDASSAMLEngineException.class, SAMLEngineException.class};
-    private static boolean isSAMLEngineException(Throwable e){
-        for(Class t:samlEngineException){
-            if (t.isInstance(e)){
+    static Class[] samlEngineException = {EIDASSAMLEngineException.class, SAMLEngineException.class};
+
+    private static boolean isSAMLEngineException(Throwable e) {
+        for (Class t : samlEngineException) {
+            if (t.isInstance(e)) {
                 return true;
             }
         }
@@ -155,20 +163,19 @@ public class EidasNodeErrorUtil {
     }
 
     /**
-     *
-     * @param e
+     * @param e the instance of {@link EIDASSAMLEngineException}
      * @return the base SAML engine exception
      */
-    public static Exception getBaseSamlException(EIDASSAMLEngineException e){
-        Exception baseExc=e;
-        Throwable currentException=e;
-        while(true){
-            if(currentException!=null && currentException.getCause()!=null && currentException!=currentException.getCause()){
-                currentException=currentException.getCause();
-                if(isSAMLEngineException(currentException)){
-                    baseExc=(Exception)currentException;
+    public static Exception getBaseSamlException(EIDASSAMLEngineException e) {
+        Exception baseExc = e;
+        Throwable currentException = e;
+        while (true) {
+            if (currentException != null && currentException.getCause() != null && currentException != currentException.getCause()) {
+                currentException = currentException.getCause();
+                if (isSAMLEngineException(currentException)) {
+                    baseExc = (Exception) currentException;
                 }
-            }else {
+            } else {
                 break;
             }
         }
@@ -197,35 +204,35 @@ public class EidasNodeErrorUtil {
             return;
         }
         byte[] samlToken = connectorSamlService.generateErrorAuthenticationResponse(request, spUrl.toString(),
-                                                                                    getSamlStatusCode(request),
-                                                                                    getSamlSubStatusCode(exc), exc.getErrorMessage());
+                getSamlStatusCode(request),
+                getSamlSubStatusCode(exc), exc.getErrorMessage());
         exc.setSamlTokenFail(EidasStringUtil.encodeToBase64(samlToken));
     }
 
     private static void prepareSamlResponseFailService(final HttpServletRequest request, AbstractEIDASException exc) {
         String spUrl = getErrorReportingUrl(request);
         LOG.info("ERROR : " + exc.getErrorMessage());
-        if (spUrl == null ) {
+        if (spUrl == null) {
             return;
         }
         generateSamlResponse(request, exc, spUrl);
     }
 
-    private static void generateSamlResponse(final HttpServletRequest request, AbstractEIDASException exc, String spUrl){
+    private static void generateSamlResponse(final HttpServletRequest request, AbstractEIDASException exc, String spUrl) {
         ISERVICESAMLService serviceSamlService = getBean(ISERVICESAMLService.class);
         if (serviceSamlService == null) {
             return;
         }
-        if(exc.getUserErrorCode()!=null){
+        if (exc.getUserErrorCode() != null) {
             exc.setErrorMessage("");
         }
         String samlSubStatusCode = getSamlSubStatusCode(exc);
-        String errorMessage=exc.getErrorMessage();
-        if(!isErrorCodeAllowedForSamlGeneration(exc)){
-            if(exc.getUserErrorCode()!=null && isErrorCodeAllowedForSamlGeneration(exc.getUserErrorCode())){
+        String errorMessage = exc.getErrorMessage();
+        if (!isErrorCodeAllowedForSamlGeneration(exc)) {
+            if (exc.getUserErrorCode() != null && isErrorCodeAllowedForSamlGeneration(exc.getUserErrorCode())) {
                 errorMessage = resolveMessage(exc.getUserErrorMessage(), exc.getUserErrorCode(), request.getLocale());
-                samlSubStatusCode=getSamlSubStatusCode(exc.getUserErrorCode());
-            }else {
+                samlSubStatusCode = getSamlSubStatusCode(exc.getUserErrorCode());
+            } else {
                 return;
             }
         }
@@ -238,8 +245,8 @@ public class EidasNodeErrorUtil {
         dummyAuthData.assertionConsumerServiceURL(spUrl);
 
         byte[] samlToken = serviceSamlService.generateErrorAuthenticationResponse(dummyAuthData.build(),
-                                                                                  getSamlStatusCode(request), null, samlSubStatusCode,
-                                                                                  errorMessage, request.getRemoteAddr(), true);
+                getSamlStatusCode(request), null, samlSubStatusCode,
+                errorMessage, request.getRemoteAddr(), true);
         exc.setSamlTokenFail(EidasStringUtil.encodeToBase64(samlToken));
     }
 
@@ -267,7 +274,7 @@ public class EidasNodeErrorUtil {
     private static String getSamlSubStatusCode(final AbstractEIDASException exc) {
         loadErrorCodesArrays();
         String subStatusCode = getSamlSubStatusCode(exc.getErrorCode());
-        if(subStatusCode != null){
+        if (subStatusCode != null) {
             return subStatusCode;
         }
         if (exc instanceof InvalidParameterEIDASException) {
@@ -276,7 +283,7 @@ public class EidasNodeErrorUtil {
         return EIDASSubStatusCode.REQUEST_DENIED_URI.toString();// default?
     }
 
-    private static String getSamlSubStatusCode(final String errorCode){
+    private static String getSamlSubStatusCode(final String errorCode) {
         for (int i = 0; i < EIDAS_SUB_STATUS_CODES.length; i++) {
             if (EIDAS_ERRORS_CODES_WITH_SAML_GENERATION[i] != null && EIDAS_ERRORS_CODES_WITH_SAML_GENERATION[i].length > 0 && Arrays.binarySearch(EIDAS_ERRORS_CODES_WITH_SAML_GENERATION[i], errorCode) >= 0) {
                 return EIDAS_SUB_STATUS_CODES[i].toString();
@@ -286,24 +293,23 @@ public class EidasNodeErrorUtil {
     }
 
     /**
-     *
      * @param exc
      * @return true if the exception are allowed to generate a saml message to be shown to the user
      */
     private static boolean isErrorCodeAllowedForSamlGeneration(final AbstractEIDASException exc) {
         loadErrorCodesArrays();
         String errorCode = exc.getErrorCode();
-        if(isErrorCodeDisabledForSamlGeneration(errorCode)){
+        if (isErrorCodeDisabledForSamlGeneration(errorCode)) {
             return false;
         }
-        if(isErrorCodeAllowedForSamlGeneration(errorCode)){
+        if (isErrorCodeAllowedForSamlGeneration(errorCode)) {
             return true;
         }
         return exc instanceof InvalidParameterEIDASException || exc instanceof InvalidParameterEIDASServiceException;
 
     }
 
-    private static boolean isErrorCodeAllowedForSamlGeneration(final String errorCode){
+    private static boolean isErrorCodeAllowedForSamlGeneration(final String errorCode) {
         for (int i = 0; i < EIDAS_SUB_STATUS_CODES.length; i++) {
             if (EIDAS_ERRORS_CODES_WITH_SAML_GENERATION[i] != null && EIDAS_ERRORS_CODES_WITH_SAML_GENERATION[i].length > 0 && Arrays.binarySearch(EIDAS_ERRORS_CODES_WITH_SAML_GENERATION[i], errorCode) >= 0) {
                 return true;
@@ -311,8 +317,9 @@ public class EidasNodeErrorUtil {
         }
         return false;
     }
-    private static boolean isErrorCodeDisabledForSamlGeneration(final String errorCode){
-        if (Arrays.binarySearch(EIDAS_ERRORS_NO_SAML_GENERATION, errorCode) >= 0 ) {
+
+    private static boolean isErrorCodeDisabledForSamlGeneration(final String errorCode) {
+        if (Arrays.binarySearch(EIDAS_ERRORS_NO_SAML_GENERATION, errorCode) >= 0) {
             return true;
         }
         return false;
@@ -336,23 +343,22 @@ public class EidasNodeErrorUtil {
     }
 
     /**
-     *
-     * @param exceptionMessage
-     * @param exceptionCode
-     * @param locale
+     * @param exceptionMessage the exception Message
+     * @param exceptionCode    the exception code
+     * @param locale           the Locale
      * @return the message associated with the given error (identified by exceptionMessage and exceptionCode), retrieved from sysadmin properties
      */
-    public static String resolveMessage(String exceptionMessage, String exceptionCode, Locale locale){
+    public static String resolveMessage(String exceptionMessage, String exceptionCode, Locale locale) {
         return prepareErrorMessage(exceptionMessage, new Object[]{exceptionCode}, locale);
     }
 
-    private static String prepareErrorMessage(String message, Object[] parameters, Locale locale){
+    private static String prepareErrorMessage(String message, Object[] parameters, Locale locale) {
         try {
             String beanName = NodeBeanNames.SYSADMIN_MESSAGE_RESOURCES.toString();
             ResourceBundleMessageSource msgResource = getBean(ResourceBundleMessageSource.class, beanName);
             final String errorMessage = msgResource.getMessage(message, parameters, locale);
             return errorMessage;
-        }catch(NoSuchMessageException e){
+        } catch (NoSuchMessageException e) {
             LOG.warn("ERROR : message not found {} - {}", message, e);
         }
         return null;
@@ -379,7 +385,7 @@ public class EidasNodeErrorUtil {
             String message = EidasErrors.get(err.errorMessage());
 
             errorText = prepareErrorMessage(message, prepareParameters(err, messageParameters), Locale.getDefault());
-            if(!err.isShowToUser()){
+            if (!err.isShowToUser()) {
                 exc.setErrorMessage("");
             }
         }

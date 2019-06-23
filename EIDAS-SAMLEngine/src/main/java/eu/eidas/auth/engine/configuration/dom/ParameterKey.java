@@ -37,6 +37,9 @@ public enum ParameterKey {
     ADDITIONAL_ATTRIBUTE_REGISTRY_FILE("additionalAttributeRegistryFile"),
 
     METADATA_FETCHER_CLASS("metadataFetcherClass"),
+    METADATA_FETCHER_CONFIGURATION_FILE("metadata.fetcher.fileConfiguration"),
+    METADATA_FETCHER_WHITELIST("metadata.location.whitelist"),
+    METADATA_FETCHER_WHITELIST_FLAG("metadata.location.whitelist.use"),
 
     // put the ; on a separate line to make merges easier
     ;

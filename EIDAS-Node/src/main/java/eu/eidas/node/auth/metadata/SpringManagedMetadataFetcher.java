@@ -14,31 +14,28 @@
  */
 package eu.eidas.node.auth.metadata;
 
-import eu.eidas.auth.engine.metadata.EidasMetadataParametersI;
-import eu.eidas.auth.engine.metadata.MetadataClockI;
-import eu.eidas.auth.engine.metadata.MetadataFetcherI;
-import eu.eidas.auth.engine.metadata.MetadataSignerI;
-import eu.eidas.engine.exceptions.EIDASMetadataException;
-
-import javax.annotation.Nonnull;
-
 import static eu.eidas.node.BeanProvider.getBean;
+
+import eu.eidas.auth.engine.metadata.MetadataFetcherI;
+import eu.eidas.auth.engine.metadata.impl.WhitelistingMetadataFetcher;
 
 /**
  * Spring-Managed MetadataFetcher
  *
  * @since 1.1
  */
-public final class SpringManagedMetadataFetcher implements MetadataFetcherI {
+public final class SpringManagedMetadataFetcher extends WhitelistingMetadataFetcher {
 
-    private MetadataFetcherI getMetadataFetcher() {
+	public SpringManagedMetadataFetcher(String whitelistURL, Boolean useWhitelist) {
+		this.setWhitelistURL( whitelistURL );
+		this.setUseWhitelist(useWhitelist);
+	}
+
+	public SpringManagedMetadataFetcher() {
+	}
+
+	protected MetadataFetcherI getMetadataFetcher() {
         return getBean(MetadataFetcherI.class);
     }
 
-    @Override
-    @Nonnull
-    public EidasMetadataParametersI getEidasMetadata(@Nonnull String url, @Nonnull MetadataSignerI metadataSigner, MetadataClockI metadataClock)
-            throws EIDASMetadataException {
-        return getMetadataFetcher().getEidasMetadata(url, metadataSigner, metadataClock);
-    }
 }

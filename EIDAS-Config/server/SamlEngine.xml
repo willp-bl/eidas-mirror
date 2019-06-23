@@ -52,7 +52,6 @@
 
             <parameter name="metadataFetcherClass"
                        value="eu.eidas.node.auth.metadata.SpringManagedMetadataFetcher"/>
-
         </configuration>
 
         <!-- Settings for the Clock module -->
@@ -61,6 +60,7 @@
             <parameter name="class"
                        value="eu.eidas.auth.engine.SamlEngineSystemClock" />
         </configuration>
+
 	</instance>
 
 		<!-- ******************** Service-Connector ******************** -->
@@ -99,7 +99,6 @@
 
             <parameter name="metadataFetcherClass"
                        value="eu.eidas.node.auth.metadata.SpringManagedMetadataFetcher"/>
-
         </configuration>
 
         <!-- Settings for the Clock module -->
@@ -108,6 +107,7 @@
             <parameter name="class"
                        value="eu.eidas.auth.engine.SamlEngineSystemClock" />
         </configuration>
+
 	</instance>
 
 	

@@ -22,6 +22,11 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import eu.eidas.auth.commons.EidasErrorKey;
+import eu.eidas.auth.commons.EidasErrors;
+import eu.eidas.auth.commons.exceptions.EidasNodeException;
+import eu.eidas.engine.exceptions.EIDASMetadataRuntimeException;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -112,6 +117,17 @@ public final class InternalExceptionHandlerServlet extends AbstractNodeServlet {
                 //may have thrown it as ServletException
                 exception = (Exception) exception.getCause();
                 request.setAttribute("javax.servlet.error.exception", exception);
+            } else if (exception.getCause() instanceof EIDASMetadataRuntimeException) {
+                // Quick Hack for fixing EDINT-3249. A better fix would have implied a deep refactoring of
+                // the Node Exception Handling.mechanism.
+                EIDASMetadataRuntimeException metadataRuntimeException = (EIDASMetadataRuntimeException)exception.getCause();
+                String message = metadataRuntimeException.getMessage();
+                if (StringUtils.contains(message, "metadata not in whitelist"))  {
+                    exception = new EidasNodeException(EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INVALID_SAML.errorCode()),
+                            EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INVALID_SAML.errorMessage()));
+                    retVal="/ServiceExceptionHandler";
+                    request.setAttribute("javax.servlet.error.exception", exception);
+                }
             } else {
                 // Default General error
                 LOG.info("ERROR : Exception occurs (NOT instanceOf InterceptorException {})", exception.getMessage());

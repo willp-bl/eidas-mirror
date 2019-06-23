@@ -1,31 +1,50 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
-
 package member_country_specific.specific.connector.communication;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
-import eu.eidas.SimpleProtocol.*;
+import eu.eidas.SimpleProtocol.AddressAttribute;
+import eu.eidas.SimpleProtocol.Attribute;
+import eu.eidas.SimpleProtocol.AuthenticationRequest;
+import eu.eidas.SimpleProtocol.ComplexAddressAttribute;
+import eu.eidas.SimpleProtocol.DateAttribute;
+import eu.eidas.SimpleProtocol.RequestedAuthenticationContext;
+import eu.eidas.SimpleProtocol.Response;
+import eu.eidas.SimpleProtocol.ResponseStatus;
+import eu.eidas.SimpleProtocol.StringAttribute;
+import eu.eidas.SimpleProtocol.StringListAttribute;
+import eu.eidas.SimpleProtocol.StringListValue;
 import eu.eidas.SimpleProtocol.utils.ContextClassTranslator;
 import eu.eidas.SimpleProtocol.utils.NameIdPolicyTranslator;
 import eu.eidas.SimpleProtocol.utils.SimpleProtocolProcess;
 import eu.eidas.SimpleProtocol.utils.StatusCodeTranslator;
 import eu.eidas.auth.commons.EidasStringUtil;
-import eu.eidas.auth.commons.attribute.*;
+import eu.eidas.auth.commons.attribute.AttributeDefinition;
+import eu.eidas.auth.commons.attribute.AttributeRegistries;
+import eu.eidas.auth.commons.attribute.AttributeRegistry;
+import eu.eidas.auth.commons.attribute.AttributeValue;
+import eu.eidas.auth.commons.attribute.AttributeValueMarshaller;
+import eu.eidas.auth.commons.attribute.AttributeValueMarshallingException;
+import eu.eidas.auth.commons.attribute.AttributeValueTransliterator;
+import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.attribute.impl.DateTimeAttributeValue;
 import eu.eidas.auth.commons.exceptions.InvalidParameterEIDASException;
 import eu.eidas.auth.commons.light.ILightRequest;
@@ -43,7 +62,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.xml.bind.JAXBException;
 import java.io.StringReader;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * SpecificConnector: provides a sample implementation for interacting with the SP.
@@ -223,13 +246,17 @@ public class SpecificConnector {
      */
     public String translateNodeResponse(@Nonnull final ILightResponse iLightResponse,
                                         @Nonnull final HttpServletRequest httpServletRequest) throws JAXBException {
+        String encodedSpecificResponseJson = null;
         final String inResponseToId = iLightResponse.getInResponseToId();
         final AuthenticationRequest authenticationRequest = getRemoveCorrelatedAuthenticationRequest(inResponseToId);
-        final Response response = createSpecificResponse(iLightResponse, authenticationRequest.getId());
-        final String specificResponseJson = new SimpleProtocolProcess().convert2Json(response);
+        if (authenticationRequest != null){
+            httpServletRequest.setAttribute(SpecificConnectorParameterNames.SP_URL.toString(), authenticationRequest.getServiceUrl());
+            final Response response = createSpecificResponse(iLightResponse, authenticationRequest.getId());
+            final String specificResponseJson = new SimpleProtocolProcess().convert2Json(response);
+            encodedSpecificResponseJson = EidasStringUtil.encodeToBase64(specificResponseJson);
+        }
 
-        httpServletRequest.setAttribute(SpecificConnectorParameterNames.SP_URL.toString(), authenticationRequest.getServiceUrl());
-        return EidasStringUtil.encodeToBase64(specificResponseJson);
+        return encodedSpecificResponseJson;
     }
 
     private Response createSpecificResponse(@Nonnull final ILightResponse iLightResponse,

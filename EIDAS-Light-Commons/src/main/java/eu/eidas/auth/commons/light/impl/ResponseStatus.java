@@ -1,21 +1,23 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
 package eu.eidas.auth.commons.light.impl;
 
-import java.io.ObjectStreamException;
-import java.io.Serializable;
+import eu.eidas.auth.commons.light.IResponseStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
@@ -23,10 +25,9 @@ import javax.annotation.concurrent.NotThreadSafe;
 import javax.annotation.concurrent.ThreadSafe;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
-
-import eu.eidas.auth.commons.light.IResponseStatus;
+import java.io.ObjectStreamException;
+import java.io.Serializable;
 
 /**
  * Concrete class implementing the {@link IResponseStatus} interface.
@@ -50,12 +51,13 @@ public final class ResponseStatus extends AbstractResponseStatus implements Seri
 	}
 	
     /**
+     * <p>
      * Builder pattern for the {@link ResponseStatus} class.
-     * <p/>
+     * <p>
      * Effective Java, 2nd Ed. : Item 2: Builder Pattern.
-     * <p/>
+     * <p>
      * This Builder is not thread-safe but is thread-compliant, it is supposed to be used by only one thread.
-     * <p/>
+     *
      */
     @NotThreadSafe
     @SuppressWarnings("ParameterHidesMemberVariable")
@@ -105,10 +107,11 @@ public final class ResponseStatus extends AbstractResponseStatus implements Seri
     }
 
     /**
+     * <p>
      * Defensive serialization ensuring that the validation rules defined in the Builder are always used.
-     * <p/>
+     * <p>
      * Used upon de-serialization, not serialization.
-     * <p/>
+     *
      * The state of this class is transformed back into the class it represents.
      */
     private Object readResolve() throws ObjectStreamException {

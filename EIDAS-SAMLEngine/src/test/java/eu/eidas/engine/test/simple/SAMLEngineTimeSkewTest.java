@@ -77,7 +77,7 @@ public class SAMLEngineTimeSkewTest {
         LOG.info("testValidateResponseWithNoTimeSkew");
         clock.setDelta(0);
         byte[] samlResponse = generateTestSamlResponse();
-        engine.unmarshallResponseAndValidate(samlResponse, "", 0, 0, null, Arrays.asList(RESPONSE_ISSUER),true);
+        engine.unmarshallResponseAndValidate(samlResponse, "", 0, 0, null);
     }
 
     /**
@@ -90,7 +90,7 @@ public class SAMLEngineTimeSkewTest {
         LOG.info("testValidateResponseWithTestClockOneHourLaterAndNoTimeSkew");
         byte[] samlResponse = generateTestSamlResponse();
         clock.setDelta(600000);              // clock is now one hour later
-        engine.unmarshallResponseAndValidate(samlResponse, "", 0, 0, null,Arrays.asList(RESPONSE_ISSUER),true);
+        engine.unmarshallResponseAndValidate(samlResponse, "", 0, 0, null);
     }
 
     /**
@@ -103,7 +103,7 @@ public class SAMLEngineTimeSkewTest {
         LOG.info("testValidateResponseWithTestClockOneHourBeforeAndNoTimeSkew");
         byte[] samlResponse = generateTestSamlResponse();
         clock.setDelta(-600000);              // clock is now one hour before
-        engine.unmarshallResponseAndValidate(samlResponse, "", 0, 0, null,Arrays.asList(RESPONSE_ISSUER),true);
+        engine.unmarshallResponseAndValidate(samlResponse, "", 0, 0, null);
     }
 
     /**
@@ -116,7 +116,7 @@ public class SAMLEngineTimeSkewTest {
         LOG.info("testValidateResponseWithTestClockOneHourLaterAndTimeSkew");
         clock.setDelta(600000);              // clock is now one hour later
         byte[] samlResponse = generateTestSamlResponse();
-        engine.unmarshallResponseAndValidate(samlResponse, "", -600000, 600000, null,Arrays.asList(RESPONSE_ISSUER),true);
+        engine.unmarshallResponseAndValidate(samlResponse, "", -600000, 600000, null);
     }
 
     /**
@@ -211,7 +211,7 @@ public class SAMLEngineTimeSkewTest {
         try {
             authRequest = engine.generateRequestMessage(request, null).getMessageBytes();
 
-            authenRequest = engine.unmarshallRequestAndValidate(authRequest, "ES",Arrays.asList(REQUEST_ISSUER));
+            authenRequest = engine.unmarshallRequestAndValidate(authRequest, "ES");
 
         } catch (EIDASSAMLEngineException e) {
             fail("Error create EidasAuthenticationRequest");

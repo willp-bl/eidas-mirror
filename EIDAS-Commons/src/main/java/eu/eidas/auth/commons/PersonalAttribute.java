@@ -1,54 +1,41 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
- */
 /*
- * This work is Open Source and licensed by the European Commission under the
- * conditions of the European Public License v1.1
+ * Copyright (c) 2019 by European Commission
  *
- * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1);
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
  *
- * any use of this file implies acceptance of the conditions of this license.
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations
- * under the License.
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
+ *
  */
 package eu.eidas.auth.commons;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.annotation.concurrent.ThreadSafe;
-
-import org.apache.commons.lang.StringUtils;
+import eu.eidas.auth.commons.attribute.AttributeValue;
 import eu.eidas.auth.commons.lang.Canonicalizers;
 import eu.eidas.auth.commons.lang.EnumMapper;
 import eu.eidas.auth.commons.lang.KeyAccessor;
 import eu.eidas.util.Preconditions;
+import org.apache.commons.lang.StringUtils;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.annotation.concurrent.ThreadSafe;
+import java.util.*;
 
 /**
  * Stores all the information relative to the PersonalAttribute.
- * <p/>
+ * <p>
  * Note that every iterator obtained from this class MUST synchronize around its iteration loop.
  *
- * @deprecated use {@link eu.eidas.auth.model.attribute.ImmutablePersonalAttribute} instead.
+ * @deprecated use {@link AttributeValue} instead.
  */
 @Deprecated
 @ThreadSafe
@@ -105,14 +92,14 @@ public final class PersonalAttribute {
 
     /**
      * Name of the personal attribute as a URI.
-     * <p/>
+     * <p>
      * This is the full name as in {@code http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName}.
      */
     private final String name;
 
     /**
      * Friendly name of this personal attribute.
-     * <p/>
+     * <p>
      * For example for {@code http://eidas.europa.eu/attributes/naturalperson/CurrentGivenName}, the friendly name is
      * {@code FirstName}.
      */
@@ -146,7 +133,9 @@ public final class PersonalAttribute {
     /**
      * Copy constructor which can change the name and copies all values.
      *
-     * @param copy the instance to copy
+     * @param copy            the instance to copy
+     * @param newName         the new name
+     * @param newFriendlyName the new friendly name
      */
     public PersonalAttribute(@Nonnull PersonalAttribute copy,
                              @Nonnull String newName,
@@ -166,7 +155,7 @@ public final class PersonalAttribute {
     /**
      * Copy constructor
      *
-     * @param copy the instance to copy
+     * @param copy          the instance to copy
      * @param copyAllValues {@code true} if all the values must also be copied.
      */
     private PersonalAttribute(@Nonnull PersonalAttribute copy,
@@ -178,24 +167,22 @@ public final class PersonalAttribute {
         Preconditions.checkNotNull(newFriendlyName, "newFriendlyName");
         name = newName;
         friendlyName = newFriendlyName;
-        //noinspection SynchronizationOnLocalVariableOrMethodParameter
-        synchronized (copy) {
-            // lock obtention optimization // no deadlock possibility since this instance is not created yet
-            //noinspection NestedSynchronizedStatement
-            synchronized (this) {
-                if (copyAllValues) {
-                    setValue(copy.getValue());
-                    setComplexValue(copy.getComplexValue());
-                }
-                setIsRequired(copy.isRequired());
-                setEidasNaturalPersonAttr(copy.isEidasNaturalPersonAttr());
-                setEidasLegalPersonAttr(copy.isEidasLegalPersonAttr());
+        synchronized (this) {
+            if (copyAllValues) {
+                setValue(copy.getValue());
+                setComplexValue(copy.getComplexValue());
             }
+            setIsRequired(copy.isRequired());
+            setEidasNaturalPersonAttr(copy.isEidasNaturalPersonAttr());
+            setEidasLegalPersonAttr(copy.isEidasLegalPersonAttr());
         }
     }
 
     /**
      * Default Constructor.
+     *
+     * @param name         the name
+     * @param friendlyName the firendly name
      */
     public PersonalAttribute(@Nonnull String name, @Nonnull String friendlyName) {
         String tmpFriendlyName = friendlyName;
@@ -208,16 +195,17 @@ public final class PersonalAttribute {
     }
 
     public PersonalAttribute(@Nonnull String name, @Nonnull String friendlyName, boolean isRequired) {
-        this(name,friendlyName);
+        this(name, friendlyName);
         setIsRequired(isRequired);
     }
 
     /**
      * PersonalAttribute Constructor for complex values.
      *
-     * @param attrName The attribute name.
+     * @param attrName       The attribute name.
+     * @param friendlyName   the friendly name
      * @param attrIsRequired The attribute type value.
-     * @param simpleValue The attribute's value.
+     * @param simpleValue    The attribute's value.
      */
     public PersonalAttribute(@Nonnull String attrName,
                              @Nonnull String friendlyName,
@@ -234,8 +222,9 @@ public final class PersonalAttribute {
     /**
      * PersonalAttribute Constructor for complex values.
      *
-     * @param attrName The attribute name.
-     * @param attrIsRequired The attribute type value.
+     * @param attrName         The attribute name.
+     * @param friendlyName     the firendly name
+     * @param attrIsRequired   The attribute type value.
      * @param attrComplexValue The attribute's complex value.
      */
     @Deprecated
@@ -284,7 +273,9 @@ public final class PersonalAttribute {
     /**
      * Static factory to create a new copy of the given instance, including all values and which can change the name.
      *
-     * @param copy the instance to copy
+     * @param copy            the instance to copy
+     * @param newName         the new name
+     * @param newFriendlyName the new friendly name
      * @return a new copy
      */
     @Nullable
@@ -301,7 +292,9 @@ public final class PersonalAttribute {
     /**
      * Static factory to create a new copy of the given instance, excluding all values and which can change the name.
      *
-     * @param copy the instance to copy without any value
+     * @param copy            the instance to copy without any value
+     * @param newName         the new name
+     * @param newFriendlyName the new friendly name
      * @return a new copy without any value
      */
     @Nullable
@@ -353,7 +346,7 @@ public final class PersonalAttribute {
 
     /**
      * Returns the name of this personal attribute as a URI.
-     * <p/>
+     * <p>
      * This is the full name as in {@code http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName}.
      *
      * @return The name value.
@@ -364,7 +357,7 @@ public final class PersonalAttribute {
 
     /**
      * /** Friendly Name of this personal attribute.
-     * <p/>
+     * <p>
      * For example, for {@code http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName}, the friendly name is
      * {@code CurrentFamilyName}.
      *

@@ -1,20 +1,26 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
 package eu.eidas.auth.commons.light.impl;
 
-import java.io.Serializable;
+import eu.eidas.auth.commons.attribute.AttributeMapType;
+import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
+import eu.eidas.auth.commons.light.ILightRequest;
+import eu.eidas.util.Preconditions;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -23,11 +29,7 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-
-import eu.eidas.auth.commons.attribute.AttributeMapType;
-import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
-import eu.eidas.auth.commons.light.ILightRequest;
-import eu.eidas.util.Preconditions;
+import java.io.Serializable;
 
 /**
  * Abstract class for implementations of the {@link ILightRequest} interface.
@@ -56,17 +58,18 @@ public abstract class AbstractLightRequest implements ILightRequest, Serializabl
     }
 
     /**
+     * <p>
      * Abstract Builder pattern with self-bounding generics for {@link ILightRequest} subtypes.
-     * <p/>
+     * <p>
      * Effective Java, 2nd Ed. : Item 2: Builder Pattern.
-     * <p/>
+     * <p>
      * This Builder is not thread-safe but is thread-compliant, it is supposed to be used by only one thread.
-     * <p/>
-     * See Self-bounding generics:<p/> http://www.artima.com/weblogs/viewpost.jsp?thread=136394<p/>
-     * http://www.artima.com/forums/flat.jsp?forum=106&thread=136394<p/> http://en.wikipedia.org/wiki/Covariance_and_contravariance<p/>
+     * See Self-bounding generics: @see <a href="spec.html#section">http://www.artima.com/weblogs/viewpost.jsp?thread=136394</a>
+     * @see <a href="spec.html#section">http://www.artima.com/forums/flat.jsp?forum=106&amp;thread=136394</a>
+     * @see <a href="spec.html#section">http://en.wikipedia.org/wiki/Covariance_and_contravariance</a>
      *
-     * @param B the type of the Builder itself
-     * @param T the type being built by the {@link #build()} method of this builder.
+     * @param <B> the type of the Builder itself
+     * @param <T> the type being built by the {@link #build()} method of this builder.
      */
     @SuppressWarnings({"ParameterHidesMemberVariable", "unchecked"})
     @NotThreadSafe
@@ -199,8 +202,9 @@ public abstract class AbstractLightRequest implements ILightRequest, Serializabl
         protected abstract void validate() throws IllegalArgumentException;
 
         /**
+         * <p>
          * Builds a new {@code T} instance based on this Builder instance (Builder pattern for {@link ILightRequest}).
-         * <p/>
+         *
          * The {@link #validate()} is always called before creating a new instance through a call to the {@link
          * #newInstance()} method.
          *
@@ -213,9 +217,10 @@ public abstract class AbstractLightRequest implements ILightRequest, Serializabl
         }
 
         /**
+         * <p>
          * Method to be implemented by subtypes to create the right type {@code T} of instances.
-         * <p/>
-         * The typical implementation simply consists in writing <br/>{@code return new MySubType(this);}
+         *
+         * <br>The typical implementation simply consists in writing {@code return new MySubType(this);}
          *
          * @return a new {@code T} instance based on this Builder instance.
          */
@@ -266,7 +271,7 @@ public abstract class AbstractLightRequest implements ILightRequest, Serializabl
     private final String spType;
 
     /**
-     * @relayState
+     * relayState
      */
     @Nullable
     private String relayState;
@@ -385,7 +390,7 @@ public abstract class AbstractLightRequest implements ILightRequest, Serializabl
                 : lightRequestObj.relayState != null) {
             return false;
         }
-        return !(!requestedAttributes.equals(lightRequestObj.requestedAttributes));
+        return requestedAttributes.equals(lightRequestObj.requestedAttributes);
     }
 
     @Override

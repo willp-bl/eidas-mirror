@@ -38,8 +38,11 @@ import org.junit.Test;
 import org.springframework.util.FileSystemUtils;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 /**
  * Tests for testing the behaviour of the static metadata loading without validation of metadata signature enabled.
@@ -54,7 +57,7 @@ public class TestEidasNodeFileMetadataProcessorTrustChain {
     private static FileMetadataLoader fileMetadataLoader;
 
     @BeforeClass
-    public static void setUp() {
+    public static void setUp() throws IOException {
         initWorkFolder(FILEREPO_DIR_READ_COMBO, FILEREPO_DIR_WRITE);
         OpenSamlHelper.initialize();
         initFileMetadataLoader();
@@ -130,11 +133,11 @@ public class TestEidasNodeFileMetadataProcessorTrustChain {
     }
 
 
-    private static void initWorkFolder(String sourceFolder, String folderName){
-        File sampleNodeRepo=new File(folderName);
+    private static void initWorkFolder(String sourceFolder, String folderName) throws IOException {
+        File sampleNodeRepo = new File(folderName);
         FileSystemUtils.deleteRecursively(sampleNodeRepo);
-        sampleNodeRepo.mkdirs();
-        FileUtils.copyFile(new File(sourceFolder), sampleNodeRepo);
+        Files.createDirectories(Paths.get(folderName));
+        FileUtils.copyFolder(Paths.get(sourceFolder), Paths.get(folderName));
     }
 
 }

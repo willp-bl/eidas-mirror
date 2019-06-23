@@ -21,7 +21,9 @@ public final class EidasAttributesUtil {
     /**
      * TODO: use {@link LevelOfAssurance} instead
      *
+     * @param requestLoa the Loa in the request
      * @deprecated use {@link LevelOfAssurance} instead
+     * @return the user friendly Loa
      */
     @Deprecated
     public static String getUserFriendlyLoa(final String requestLoa) {

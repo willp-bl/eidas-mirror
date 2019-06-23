@@ -1,3 +1,20 @@
+<!--
+  ~ Copyright (c) 2018 by European Commission
+  ~
+  ~ Licensed under the EUPL, Version 1.2 or - as soon they will be
+  ~ approved by the European Commission - subsequent versions of the
+  ~ EUPL (the "Licence");
+  ~ You may not use this work except in compliance with the Licence.
+  ~ You may obtain a copy of the Licence at:
+  ~ https://joinup.ec.europa.eu/page/eupl-text-11-12
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the Licence is distributed on an "AS IS" basis,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+  ~ implied.
+  ~ See the Licence for the specific language governing permissions and
+  ~ limitations under the Licence.
+  -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
                              http://maven.apache.org/maven-v4_0_0.xsd">
@@ -5,11 +22,12 @@
     <artifactId>eidas-specific-communication-definition</artifactId>
     <packaging>jar</packaging>
     <name>eIDAS Specific Communication Definition</name>
-    <description>Defines and implements the communication protocol to be used between specific and node modules.</description>
+    <description>Defines and implements the communication protocol to be used between specific and node modules.
+    </description>
     <parent>
         <groupId>eu.eidas</groupId>
         <artifactId>eidas-parent</artifactId>
-        <version>2.2.0</version>
+        <version>2.3.0</version>
         <relativePath>../EIDAS-Parent/pom.xml</relativePath>
     </parent>
     <dependencies>
@@ -35,9 +53,13 @@
             <artifactId>commons-logging</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>eu.eidas</groupId>
+            <artifactId>eidas-jcache-dev</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
     <build>
-        <finalName>${artifactId}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -47,85 +69,45 @@
     </build>
     <profiles>
         <profile>
-            <id>specificProxyServiceWarPackaging</id>
+            <id>specificCommunicationJcacheIgnite</id>
             <activation>
-                <property>
-                    <name>!specificJar</name>
-                </property>
+                <activeByDefault>true</activeByDefault>
             </activation>
-            <properties>
-                <packaging.type>war</packaging.type>
-            </properties>
-            <build>
-                <finalName>${proj.name}</finalName>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-resources-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>copy-specific-connector-config</id>
-                                <phase>process-resources</phase>
-                                <goals>
-                                    <goal>copy-resources</goal>
-                                </goals>
-                                <configuration>
-                                    <outputDirectory>${project.build.directory}/${proj.name}/WEB-INF/classes
-                                    </outputDirectory>
-                                    <resources>
-                                        <resource>
-                                            <directory>${project.basedir}/src/main/config/warPackaging</directory>
-                                            <filtering>false</filtering>
-                                        </resource>
-                                    </resources>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
+            <dependencies>
+                <dependency>
+                    <groupId>eu.eidas</groupId>
+                    <artifactId>eidas-jcache-ignite-specific-communication</artifactId>
+                </dependency>
+            </dependencies>
         </profile>
         <profile>
-            <id>specificProxyServiceJarPackaging</id>
+            <id>specificCommunicationJcacheHazelcast</id>
+            <dependencies>
+                <dependency>
+                    <groupId>eu.eidas</groupId>
+                    <artifactId>eidas-jcache-hazelcast-specific-communication</artifactId>
+                </dependency>
+            </dependencies>
+        </profile>
+        <profile>
+            <id>specificCommunicationJcacheProvidedImpl</id>
             <activation>
-                <property>
-                    <name>specificJar</name>
-                </property>
+                <activeByDefault>false</activeByDefault>
             </activation>
-            <properties>
-                <packaging.type>jar</packaging.type>
-            </properties>
-            <build>
-                <finalName>${artifactId}</finalName>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-source-plugin</artifactId>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-resources-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>copy-specific-connector-config</id>
-                                <phase>process-resources</phase>
-                                <goals>
-                                    <goal>copy-resources</goal>
-                                </goals>
-                                <configuration>
-                                    <outputDirectory>${project.build.directory}/${proj.name}/WEB-INF/classes</outputDirectory>
-                                    <resources>
-                                        <resource>
-                                            <directory>${project.basedir}/src/main/config/jarPackaging</directory>
-                                            <filtering>false</filtering>
-                                        </resource>
-                                    </resources>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
+        </profile>
+        <profile>
+            <id>specificCommunicationJcacheDev</id>
+            <!-- <activation> -->
+                <!-- <property> -->
+                    <!-- <name>specificJar</name> -->
+                <!-- </property> -->
+            <!-- </activation> -->
+            <dependencies>
+                <dependency>
+                    <groupId>eu.eidas</groupId>
+                    <artifactId>eidas-jcache-dev-specific-communication</artifactId>
+                </dependency>
+            </dependencies>
         </profile>
     </profiles>
 </project>

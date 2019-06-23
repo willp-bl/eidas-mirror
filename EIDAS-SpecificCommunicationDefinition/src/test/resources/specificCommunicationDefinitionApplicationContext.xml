@@ -1,29 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
- -->
-
+<!--
+  ~ Copyright (c) 2019 by European Commission
+  ~
+  ~ Licensed under the EUPL, Version 1.2 or - as soon they will be
+  ~ approved by the European Commission - subsequent versions of the
+  ~ EUPL (the "Licence");
+  ~ You may not use this work except in compliance with the Licence.
+  ~ You may obtain a copy of the Licence at:
+  ~ https://joinup.ec.europa.eu/page/eupl-text-11-12
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the Licence is distributed on an "AS IS" basis,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+  ~ implied.
+  ~ See the Licence for the specific language governing permissions and
+  ~ limitations under the Licence
+  -->
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+
+    <import resource="specificCommunicationDefinitionEnvironmentContext.xml" />
+
+    <import resource="jCacheImplSpecificCommunicationBeans.xml" />
 
     <bean id="specificCommunicationDefinitionConnectorConfigFile" class="java.lang.String">
         <constructor-arg value="specificCommunicationDefinitionConnector.xml"/>
     </bean>
 
     <bean id="specificCommunicationDefinitionConnectorConfigWithPath" class="java.lang.String">
-        <constructor-arg value="#{specificCommunicationDefinitionConnectorConfigFile}"/>
+        <constructor-arg value="file:#{specificConnectorConfigRepository}#{specificCommunicationDefinitionConnectorConfigFile}"/>
     </bean>
 
     <bean id="specificCommunicationDefinitionProxyserviceConfigFile" class="java.lang.String">
@@ -31,7 +37,7 @@
     </bean>
 
     <bean id="specificCommunicationDefinitionProxyserviceConfigWithPath" class="java.lang.String">
-        <constructor-arg value="#{specificCommunicationDefinitionProxyserviceConfigFile}"/>
+        <constructor-arg value="file:#{specificProxyServiceConfigRepository}#{specificCommunicationDefinitionProxyserviceConfigFile}"/>
     </bean>
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
@@ -45,17 +51,6 @@
             </list>
         </property>
         <property name="fileEncoding" value="UTF-8" />
-    </bean>
-
-    <bean id="useDistributedMaps" class="java.lang.String">
-        <!--<constructor-arg value="${distributedMaps}"/>-->
-        <constructor-arg value="false"/>
-    </bean>
-
-    <!-- suffix for some of the beans having two possible implementations - one for development and one for production -->
-    <bean id="distributedEnvSuffix" class="java.lang.String">
-        <!--<constructor-arg value="#{useDistributedMaps.toString()=='false'?'Dev':'Prod'}"/>-->
-        <constructor-arg value="Dev"/>
     </bean>
 
     <bean id="springManagedSpecificConnectorCommunicationService" class="eu.eidas.specificcommunication.protocol.impl.SpecificConnectorCommunicationServiceImpl" scope="prototype">
@@ -76,89 +71,42 @@
         <constructor-arg index="5" type="java.lang.String" value="${lightToken.proxyservice.response.algorithm}"/>
     </bean>
 
-    <!-- production environment hazelcast instance name -->
-    <bean id="defaultHazelcastInstance" class="java.lang.String">
-        <constructor-arg value="eidasHazelcastInstance"/>
+    <bean id="springManagedSpecificConnectorCommunicationServiceExtension" class="eu.eidas.specificcommunication.protocol.impl.SpecificConnectorCommunicationServiceExtensionImpl" scope="prototype">
+        <constructor-arg index="0" type="java.lang.String" value="${lightToken.connector.request.node.id}"/>
+        <constructor-arg index="1" type="java.lang.String" value="${lightToken.connector.request.secret}"/>
+        <constructor-arg index="2" type="java.lang.String" value="${lightToken.connector.request.algorithm}"/>
+        <constructor-arg index="3" type="java.lang.String" value="${lightToken.connector.response.node.id}"/>
+        <constructor-arg index="4" type="java.lang.String" value="${lightToken.connector.response.secret}"/>
+        <constructor-arg index="5" type="java.lang.String" value="${lightToken.connector.response.algorithm}"/>
     </bean>
 
-    <!-- production environment hazelcast initializer bean - injected into map providers -->
-    <bean id="eidasHazelcastInstanceInitializer" class=" eu.eidas.auth.commons.cache.HazelcastInstanceInitializer" init-method="initializeInstance" lazy-init="true">
-        <property name="hazelcastConfigfileName" value="#{eidasConfigRepository}hazelcast.xml"/>
-        <property name="hazelcastInstanceName" ref="defaultHazelcastInstance"/>
+    <bean id="springManagedSpecificProxyserviceCommunicationServiceExtension" class="eu.eidas.specificcommunication.protocol.impl.SpecificProxyserviceCommunicationServiceExtensionImpl" scope="prototype">
+        <constructor-arg index="0" type="java.lang.String" value="${lightToken.proxyservice.request.node.id}"/>
+        <constructor-arg index="1" type="java.lang.String" value="${lightToken.proxyservice.request.secret}"/>
+        <constructor-arg index="2" type="java.lang.String" value="${lightToken.proxyservice.request.algorithm}"/>
+        <constructor-arg index="3" type="java.lang.String" value="${lightToken.proxyservice.response.node.id}"/>
+        <constructor-arg index="4" type="java.lang.String" value="${lightToken.proxyservice.response.secret}"/>
+        <constructor-arg index="5" type="java.lang.String" value="${lightToken.proxyservice.response.algorithm}"/>
     </bean>
 
-
-    <bean id="specificNodeConnectorRequestProviderMap" class="eu.eidas.specificcommunication.tx.CommunicationCache">
-        <constructor-arg ref="specificNodeConnectorRequestProvider#{distributedEnvSuffix.toString()}"/>
+    <bean id="specificNodeConnectorRequestCache" class="eu.eidas.specificcommunication.CommunicationCache">
+        <constructor-arg ref="specificNodeConnectorRequestCacheImpl"/>
+    </bean>
+    <bean id="nodeSpecificProxyserviceRequestCache" class="eu.eidas.specificcommunication.CommunicationCache">
+        <constructor-arg ref="nodeSpecificProxyserviceRequestCacheImpl"/>
+    </bean>
+    <bean id="specificNodeProxyserviceResponseCache" class="eu.eidas.specificcommunication.CommunicationCache">
+        <constructor-arg ref="specificNodeProxyserviceResponseCacheImpl"/>
+    </bean>
+    <bean id="nodeSpecificConnectorResponseCache" class="eu.eidas.specificcommunication.CommunicationCache">
+        <constructor-arg ref="nodeSpecificConnectorResponseCacheImpl"/>
     </bean>
 
-    <!-- Cache provided by Hazelcast for distributed environment, use these in productions! -->
-    <!-- Authreq correlation maps -->
-    <bean id="specificNodeConnectorRequestProviderProd" class="eu.eidas.auth.commons.cache.ConcurrentMapServiceDistributedImpl" lazy-init="true">
-        <property name="hazelcastInstanceInitializer" ref="eidasHazelcastInstanceInitializer"/>
-        <property name="cacheName" value="specificNodeConnectorRequestProviderCacheService"/>
+    <bean id="incomingLightRequestValidator" class="eu.eidas.specificcommunication.protocol.validation.IncomingLightRequestValidator">
+        <constructor-arg index="0" value="${incoming.lightRequest.max.number.characters:65535}"/>
     </bean>
 
-    <!-- Correlation maps for simple dev mode -->
-    <!-- Authreq correlation maps for DEV -->
-    <bean id="specificNodeConnectorRequestProviderDev" class="eu.eidas.auth.commons.cache.ConcurrentMapServiceDefaultImpl">
-        <property name="expireAfterAccess" value="1800"/>
-        <property name="maximumSize" value="1000"/>
+    <bean id="incomingLightResponseValidator" class="eu.eidas.specificcommunication.protocol.validation.IncomingLightResponseValidator">
+        <constructor-arg index="0" value="${incoming.lightResponse.max.number.characters:65535}"/>
     </bean>
-
-
-    <bean id="nodeSpecificConnectorResponseProviderMap" class="eu.eidas.specificcommunication.tx.CommunicationCache">
-        <constructor-arg ref="nodeSpecificConnectorResponseProvider#{distributedEnvSuffix.toString()}"/>
-    </bean>
-
-    <!-- Cache provided by Hazelcast for distributed environment, use these in productions! -->
-    <!-- Authreq correlation maps -->
-    <bean id="nodeSpecificConnectorResponseProviderProd" class="eu.eidas.auth.commons.cache.ConcurrentMapServiceDistributedImpl" lazy-init="true">
-        <property name="hazelcastInstanceInitializer" ref="eidasHazelcastInstanceInitializer"/>
-        <property name="cacheName" value="nodeSpecificConnectorResponseProviderCacheService"/>
-    </bean>
-
-    <!-- Correlation maps for simple dev mode -->
-    <!-- Authreq correlation maps for DEV -->
-    <bean id="nodeSpecificConnectorResponseProviderDev" class="eu.eidas.auth.commons.cache.ConcurrentMapServiceDefaultImpl">
-        <property name="expireAfterAccess" value="1800"/>
-        <property name="maximumSize" value="1000"/>
-    </bean>
-    
-    <bean id="nodeSpecificProxyserviceRequestProviderMap" class="eu.eidas.specificcommunication.tx.CommunicationCache">
-        <constructor-arg ref="nodeSpecificProxyserviceRequestProvider#{distributedEnvSuffix.toString()}"/>
-    </bean>
-
-    <!-- Cache provided by Hazelcast for distributed environment, use these in productions! -->
-    <!-- Authreq correlation maps -->
-    <bean id="nodeSpecificProxyserviceRequestProviderProd" class="eu.eidas.auth.commons.cache.ConcurrentMapServiceDistributedImpl" lazy-init="true">
-        <property name="hazelcastInstanceInitializer" ref="eidasHazelcastInstanceInitializer"/>
-        <property name="cacheName" value="nodeSpecificProxyserviceRequestProviderCacheService"/>
-    </bean>
-
-    <!-- Correlation maps for simple dev mode -->
-    <!-- Authreq correlation maps for DEV -->
-    <bean id="nodeSpecificProxyserviceRequestProviderDev" class="eu.eidas.auth.commons.cache.ConcurrentMapServiceDefaultImpl">
-        <property name="expireAfterAccess" value="1800"/>
-        <property name="maximumSize" value="1000"/>
-    </bean>
-
-    <bean id="specificNodeProxyserviceResponseProviderMap" class="eu.eidas.specificcommunication.tx.CommunicationCache">
-        <constructor-arg ref="specificNodeProxyserviceResponseProvider#{distributedEnvSuffix.toString()}"/>
-    </bean>
-
-    <!-- Cache provided by Hazelcast for distributed environment, use these in productions! -->
-    <!-- Authreq correlation maps -->
-    <bean id="specificNodeProxyserviceResponseProviderProd" class="eu.eidas.auth.commons.cache.ConcurrentMapServiceDistributedImpl" lazy-init="true">
-        <property name="hazelcastInstanceInitializer" ref="eidasHazelcastInstanceInitializer"/>
-        <property name="cacheName" value="specificNodeProxyserviceResponseProviderCacheService"/>
-    </bean>
-
-    <!-- Correlation maps for simple dev mode -->
-    <!-- Authreq correlation maps for DEV -->
-    <bean id="specificNodeProxyserviceResponseProviderDev" class="eu.eidas.auth.commons.cache.ConcurrentMapServiceDefaultImpl">
-        <property name="expireAfterAccess" value="1800"/>
-        <property name="maximumSize" value="1000"/>
-    </bean>
-
 </beans>

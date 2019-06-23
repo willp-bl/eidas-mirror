@@ -23,7 +23,10 @@ import org.springframework.context.MessageSource;
 public class ConfigurationSecurityBean {
     private boolean isContentSecurityPolicyActive;
 
-    private boolean isMoaActive;
+    /** Host name used for the CSP directive report-uri */
+   private String cspReportingUri;
+
+   private boolean isMoaActive;
 
     private boolean includeXXssProtection;
 
@@ -79,6 +82,14 @@ public class ConfigurationSecurityBean {
 
     public void setIsContentSecurityPolicyActive(boolean isContentSecurityPolicyActive) {
         this.isContentSecurityPolicyActive = isContentSecurityPolicyActive;
+    }
+
+    public String getCspReportingUri() {
+        return cspReportingUri;
+    }
+
+    public void setCspReportingUri(String cspReportingUri) {
+        this.cspReportingUri = cspReportingUri;
     }
 
     public boolean getIsMoaActive() {

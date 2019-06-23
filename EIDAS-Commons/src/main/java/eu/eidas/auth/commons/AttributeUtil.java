@@ -1,29 +1,20 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
- */
 /*
- * This work is Open Source and licensed by the European Commission under the
- * conditions of the European Public License v1.1
+ * Copyright (c) 2019 by European Commission
  *
- * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1);
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
  *
- * any use of this file implies acceptance of the conditions of this license.
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations
- * under the License.
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
+ *
  */
 package eu.eidas.auth.commons;
 
@@ -192,7 +183,8 @@ public final class AttributeUtil {
      *
      * @param tuples The Personal attribute's tuple.
      * @return true if the tuples' format is valid.
-     * @see EIDASUtil#validateParameter(String, String, String)
+     * @see AttributeUtil#isValidType(String)
+     * @see AttributeUtil#isValidValue(String)
      * @see String#equalsIgnoreCase(String)
      */
     public static boolean hasValidTuples(final String[] tuples) {
@@ -252,7 +244,7 @@ public final class AttributeUtil {
     /**
      * Safecopy of attribute definitions into another set (clone)
      *
-     * @param attributes
+     * @param attributes the attributes to be cloned
      * @return cloned attribute list
      */
     public static ImmutableSortedSet<AttributeDefinition<?>> clone(ImmutableSortedSet<AttributeDefinition<?>> attributes) {
@@ -262,8 +254,8 @@ public final class AttributeUtil {
     /**
      * Compares to attribute definition sets
      *
-     * @param src
-     * @param trgt
+     * @param src the instance of {@link ImmutableSortedSet} that holds one of the set of {@link AttributeDefinition} to be compared
+     * @param trgt the instance of {@link ImmutableSortedSet} that holds the other set of {@link AttributeDefinition} to be compared
      * @return true if equals
      */
     public static boolean areDefinitionsEqual(ImmutableSortedSet<AttributeDefinition<?>> src, ImmutableSortedSet<AttributeDefinition<?>> trgt) {

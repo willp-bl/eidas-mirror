@@ -28,7 +28,13 @@ import javax.annotation.Nonnull;
  *
  * @since 1.1
  */
+@Deprecated
 public final class WrappedMetadataFetcher implements MetadataFetcherI {
+    public WrappedMetadataFetcher() {
+    }
+
+    public WrappedMetadataFetcher(String s, Boolean b) {
+    }
 
     @Nonnull
     private volatile MetadataFetcherI metadataFetcher;

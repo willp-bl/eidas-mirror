@@ -45,6 +45,9 @@ import org.opensaml.xmlsec.signature.X509Certificate;
 import org.springframework.util.FileSystemUtils;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
 
 import static org.hamcrest.core.Is.isA;
@@ -68,7 +71,7 @@ public class TestEidasNodeMetadataTrustChain {
     public ExpectedException thrown = ExpectedException.none();
 
     @BeforeClass
-    public static void setUp() throws MarshallException, EIDASMetadataException, EIDASSAMLEngineException {
+    public static void setUp() throws MarshallException, EIDASMetadataException, EIDASSAMLEngineException, IOException {
         initWorkFolder(FILEREPO_DIR_READ_COMBO, FILEREPO_DIR_WRITE);
         OpenSamlHelper.initialize();
         metadataTC = loadSignMetadata("METADATA_TC");//signed metadata and publishing the full certificates chain
@@ -78,11 +81,11 @@ public class TestEidasNodeMetadataTrustChain {
         metadataTcWithoutIntermediateCA = loadSignMetadata("METADATA_TC_WITHOUT_INTERMEDIATE_CA_CERTIFICATE");//singed metadata publishing the TC except the intermediatecametadata
     }
 
-    private static void initWorkFolder(String sourceFolder, String folderName){
-        File sampleNodeRepo=new File(folderName);
+    private static void initWorkFolder(String sourceFolder, String folderName) throws IOException {
+        File sampleNodeRepo = new File(folderName);
         FileSystemUtils.deleteRecursively(sampleNodeRepo);
-        sampleNodeRepo.mkdirs();
-        FileUtils.copyFile(new File(sourceFolder), sampleNodeRepo);
+        Files.createDirectories(Paths.get(folderName));
+        FileUtils.copyFolder(Paths.get(sourceFolder), Paths.get(folderName));
     }
 
     @AfterClass

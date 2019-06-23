@@ -14,13 +14,34 @@
  */
 package eu.eidas.auth.engine.configuration.dom;
 
+import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Properties;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
+
 import eu.eidas.auth.commons.EidasErrorKey;
 import eu.eidas.auth.commons.EidasErrors;
 import eu.eidas.auth.commons.attribute.AttributeRegistries;
 import eu.eidas.auth.commons.attribute.AttributeRegistry;
 import eu.eidas.auth.commons.io.PropertiesConverter;
+import eu.eidas.auth.commons.io.ReloadableProperties;
 import eu.eidas.auth.commons.io.SingletonAccessor;
 import eu.eidas.auth.commons.io.SingletonAccessors;
 import eu.eidas.auth.commons.lang.reflect.ReflectionUtil;
@@ -28,27 +49,16 @@ import eu.eidas.auth.engine.SamlEngineClock;
 import eu.eidas.auth.engine.SamlEngineSystemClock;
 import eu.eidas.auth.engine.configuration.ProtocolEngineConfiguration;
 import eu.eidas.auth.engine.configuration.ProtocolEngineConfigurationException;
-import eu.eidas.auth.engine.core.*;
+import eu.eidas.auth.engine.core.DefaultCoreProperties;
+import eu.eidas.auth.engine.core.ProtocolCipherI;
+import eu.eidas.auth.engine.core.ProtocolProcessorI;
+import eu.eidas.auth.engine.core.ProtocolSignerI;
+import eu.eidas.auth.engine.core.SamlEngineCoreProperties;
 import eu.eidas.auth.engine.core.eidas.EidasProtocolProcessor;
 import eu.eidas.auth.engine.metadata.MetadataClockI;
 import eu.eidas.auth.engine.metadata.MetadataFetcherI;
 import eu.eidas.auth.engine.metadata.MetadataSignerI;
 import eu.eidas.util.Preconditions;
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Properties;
 
 /**
  * Creates typed configuration objects (BaseConfigurations) based on parsing results (InstanceMap).
@@ -168,13 +178,8 @@ public final class DOMConfigurator {
             String coreAttributeRegistryFile = parameters.get(ParameterKey.CORE_ATTRIBUTE_REGISTRY_FILE.getKey());
             String additionalAttributeRegistryFile =
                     parameters.get(ParameterKey.ADDITIONAL_ATTRIBUTE_REGISTRY_FILE.getKey());
-            String metadataFetcherClassName = parameters.get(ParameterKey.METADATA_FETCHER_CLASS.getKey());
-            MetadataFetcherI metadataFetcher = null;
-            if (StringUtils.isNotBlank(metadataFetcherClassName)) {
-                @SuppressWarnings("unchecked") Class<MetadataFetcherI> metadataFetcherClass =
-                        (Class<MetadataFetcherI>) Class.forName(metadataFetcherClassName, true, contextClassLoader);
-                metadataFetcher = metadataFetcherClass.newInstance();
-            }
+    		String metadataFetcherClassName = parameters.get(ParameterKey.METADATA_FETCHER_CLASS.getKey());
+            MetadataFetcherI metadataFetcher = configureMetadataFetcher(instanceName, defaultPath,instanceEntry, metadataFetcherClassName);
 
             AttributeRegistry coreAttributeRegistry = null;
 
@@ -205,28 +210,48 @@ public final class DOMConfigurator {
                     break;
                 }
             }
-/*
-            if (null == protocolProcessor) {
-                Constructor<ProtocolProcessorI> constructor =
-                        protocolProcessorClass.getConstructor(AttributeRegistry.class, AttributeRegistry.class);
-                protocolProcessor = constructor.newInstance(coreAttributeRegistry, additionalAttributeRegistry);
-            }
-*/
             LOG.trace("Loaded protocol processor for \"" + instanceName + "\": " + protocolProcessor);
 
             protocolProcessor.configure();
-
             LOG.trace("Configured protocol processor for \"" + instanceName + "\": " + protocolProcessor);
 
             return protocolProcessor;
-        } catch (NullPointerException|ClassNotFoundException | ClassCastException /*| NoSuchMethodException */
-        		| IllegalAccessException | InstantiationException | InvocationTargetException e) {
+        } catch (NullPointerException|ClassNotFoundException | ClassCastException | NoSuchMethodException 
+        		| IllegalAccessException | InstantiationException | InvocationTargetException | IOException e) {
             LOG.error("Error creating protocol processor for SAML engine \"" + instanceName + "\" in "
                               + protocolProcessorClassName + " due to " + e, e);
             throw new ProtocolEngineConfigurationException(EidasErrorKey.SAML_ENGINE_CONFIGURATION_ERROR.errorCode(),
                                                        EidasErrorKey.SAML_ENGINE_CONFIGURATION_ERROR.errorMessage(), e);
         }
     }
+
+	private static MetadataFetcherI configureMetadataFetcher(@Nonnull String instanceName, @Nullable String defaultPath, 
+			@Nonnull InstanceEntry instanceEntry, String metadataFetcherClassName) 
+			throws ClassNotFoundException, InstantiationException, IllegalAccessException, 
+					InvocationTargetException, NoSuchMethodException, IOException {
+        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+
+		MetadataFetcherI metadataFetcher = null;
+		if (StringUtils.isNotBlank(metadataFetcherClassName)) {
+			final @SuppressWarnings("unchecked") Class<MetadataFetcherI> metadataFetcherClass =
+		            (Class<MetadataFetcherI>) Class.forName(metadataFetcherClassName, true, contextClassLoader);
+			metadataFetcher = metadataFetcherClass.newInstance();
+
+			final String fileName = "metadata//MetadataFetcher_"+instanceName+".properties";
+			Properties props=(new ReloadableProperties(fileName, defaultPath)).getProperties();
+		    
+		    String flagWhitelist=(String) props.get(ParameterKey.METADATA_FETCHER_WHITELIST_FLAG.getKey());
+	        String whitelist = (String) props.get(ParameterKey.METADATA_FETCHER_WHITELIST.getKey());
+
+	        flagWhitelist=flagWhitelist!=null?flagWhitelist.toLowerCase():Boolean.TRUE.toString();
+		    boolean useWhitelist = Boolean.valueOf(flagWhitelist);
+		    if ( useWhitelist ) {
+		        metadataFetcher = metadataFetcherClass.getConstructor(String.class, Boolean.class)
+		        		.newInstance(whitelist , useWhitelist);
+			}
+		}
+		return metadataFetcher;
+	}
 
     @Nonnull
     private static SamlEngineCoreProperties configureSamlEngineCore(@Nonnull String instanceName,

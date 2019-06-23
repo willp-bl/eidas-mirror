@@ -57,7 +57,7 @@ public final class LightTokenEncoder {
      * @param secret secret for creating the digest
      * @param algorithm digest algorithm (SHA256 is recommended)
      * @return Object encapsulation both Logical and encoded LightToken
-     * @throws NoSuchAlgorithmException
+     * @throws NoSuchAlgorithmException when digest algorithm could not be found.
      */
     @Nonnull
     public static BinaryLightToken encode(ILightToken token, String secret, String algorithm) throws NoSuchAlgorithmException {
@@ -74,8 +74,14 @@ public final class LightTokenEncoder {
     }
 
     /**
-     * Same as decode, but it performs a safe BASE64 deocding as well
-     * @see decode(@Nonnull byte[] bytes , @Nonnull String secret, @Nonnull String algorithm)
+     * Same as {@link LightTokenEncoder#decode(byte[], String, String)}, but it performs a safe BASE64 deocding as well
+     *
+     * @param bytes the byte array
+     * @param secret the secret
+     * @param algorithm the algorithm
+     * @return the {@link BinaryLightToken}
+     * @throws NoSuchAlgorithmException when digest algorithm could not be found.
+     * @throws SecurityEIDASException when token cannot be parsed
      */
     @Nonnull
     public static BinaryLightToken decodeBase64(@Nonnull byte[] bytes , @Nonnull String secret, @Nonnull String algorithm) throws NoSuchAlgorithmException, SecurityEIDASException {
@@ -95,8 +101,8 @@ public final class LightTokenEncoder {
      * @param bytes array to be decoded
      * @param secret secret for checking the digest
      * @param algorithm digest algorithm (SHA256 is recommended)
-     * @return
-     * @throws NoSuchAlgorithmException
+     * @return the {@link BinaryLightToken}
+     * @throws NoSuchAlgorithmException when digest algorithm could not be found.
      * @throws SecurityEIDASException when token cannot be parsed
      */
     @Nonnull
@@ -152,8 +158,8 @@ public final class LightTokenEncoder {
      * @param lightToken logical LightToken
      * @param secret secret for the digest
      * @param algorithm algorithm for the digest
-     * @return
-     * @throws NoSuchAlgorithmException
+     * @return the digest
+     * @throws NoSuchAlgorithmException when digest algorithm could not be found.
      */
     protected static byte[] calculateDigest(@Nonnull ILightToken lightToken, @Nonnull String secret, @Nonnull String algorithm) throws NoSuchAlgorithmException {
         MessageDigest md = MessageDigest.getInstance(algorithm);

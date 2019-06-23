@@ -1,18 +1,20 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
-
 package eu.eidas.auth.engine.xml.opensaml;
 
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
@@ -24,7 +26,21 @@ import org.opensaml.core.xml.XMLObjectBuilderFactory;
 import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
 import org.opensaml.saml.common.SAMLVersion;
 import org.opensaml.saml.common.xml.SAMLConstants;
-import org.opensaml.saml.saml2.core.*;
+import org.opensaml.saml.saml2.core.Assertion;
+import org.opensaml.saml.saml2.core.AuthnContext;
+import org.opensaml.saml.saml2.core.AuthnRequest;
+import org.opensaml.saml.saml2.core.AuthnStatement;
+import org.opensaml.saml.saml2.core.Extensions;
+import org.opensaml.saml.saml2.core.Issuer;
+import org.opensaml.saml.saml2.core.NameID;
+import org.opensaml.saml.saml2.core.Response;
+import org.opensaml.saml.saml2.core.Status;
+import org.opensaml.saml.saml2.core.StatusCode;
+import org.opensaml.saml.saml2.core.StatusMessage;
+import org.opensaml.saml.saml2.core.Subject;
+import org.opensaml.saml.saml2.core.SubjectConfirmation;
+import org.opensaml.saml.saml2.core.SubjectConfirmationData;
+import org.opensaml.saml.saml2.core.SubjectLocality;
 import org.opensaml.saml.saml2.core.impl.AssertionBuilder;
 import org.opensaml.saml.saml2.core.impl.ExtensionsBuilder;
 import org.opensaml.xmlsec.signature.KeyInfo;
@@ -50,6 +66,7 @@ public final class BuilderFactoryUtil {
      *
      * @param qname the QName
      * @return the XML object
+     * @throws EIDASSAMLEngineException in case of errors
      */
     public static XMLObject buildXmlObject(QName qname) throws EIDASSAMLEngineException {
         XMLObjectBuilder builder = XMLObjectProviderRegistrySupport.getBuilderFactory().getBuilder(qname);
@@ -111,6 +128,7 @@ public final class BuilderFactoryUtil {
      * @param version the version
      * @param issueInstant the issue instant
      * @return the authentication request
+     * @throws EIDASSAMLEngineException in case of errors
      */
     public static AuthnRequest generateAuthnRequest(String identifier, SAMLVersion version, DateTime issueInstant)
             throws EIDASSAMLEngineException {
@@ -129,6 +147,7 @@ public final class BuilderFactoryUtil {
      * @param authnInstant the authentication instant
      * @param authnContext the authentication context
      * @return the authentication statement
+     * @throws EIDASSAMLEngineException in case of errors
      */
     public static AuthnStatement generateAuthnStatement(DateTime authnInstant, AuthnContext authnContext)
             throws EIDASSAMLEngineException {
@@ -155,6 +174,7 @@ public final class BuilderFactoryUtil {
      * Generate issuer.
      *
      * @return the issuer
+     * @throws EIDASSAMLEngineException in case of errors
      */
     public static Issuer generateIssuer() throws EIDASSAMLEngineException {
         return (Issuer) buildXmlObject(Issuer.DEFAULT_ELEMENT_NAME);
@@ -164,6 +184,7 @@ public final class BuilderFactoryUtil {
      * Generate key info.
      *
      * @return the key info
+     * @throws EIDASSAMLEngineException in case of errors
      */
     public static KeyInfo generateKeyInfo() throws EIDASSAMLEngineException {
         return (KeyInfo) buildXmlObject(KeyInfo.DEFAULT_ELEMENT_NAME);
@@ -173,6 +194,7 @@ public final class BuilderFactoryUtil {
      * Generate name id.
      *
      * @return the name id
+     * @throws EIDASSAMLEngineException in case of errors
      */
     public static NameID generateNameID() throws EIDASSAMLEngineException {
         return (NameID) buildXmlObject(NameID.DEFAULT_ELEMENT_NAME);
@@ -211,6 +233,7 @@ public final class BuilderFactoryUtil {
      * @param issueInstant the issue instant
      * @param status the status
      * @return the response
+     * @throws EIDASSAMLEngineException in case of errors
      */
     public static Response generateResponse(String identifier, DateTime issueInstant, Status status)
             throws EIDASSAMLEngineException {
@@ -226,6 +249,7 @@ public final class BuilderFactoryUtil {
      *
      * @param statusCode the status code
      * @return the status
+     * @throws EIDASSAMLEngineException in case of errors
      */
     public static Status generateStatus(StatusCode statusCode) throws EIDASSAMLEngineException {
         Status status = (Status) buildXmlObject(Status.DEFAULT_ELEMENT_NAME);
@@ -238,6 +262,7 @@ public final class BuilderFactoryUtil {
      *
      * @param value the value
      * @return the status code
+     * @throws EIDASSAMLEngineException in case of errors
      */
     public static StatusCode generateStatusCode(String value) throws EIDASSAMLEngineException {
         StatusCode statusCode = (StatusCode) buildXmlObject(StatusCode.DEFAULT_ELEMENT_NAME);
@@ -250,6 +275,7 @@ public final class BuilderFactoryUtil {
      *
      * @param message the message
      * @return the status message
+     * @throws EIDASSAMLEngineException in case of errors
      */
     public static StatusMessage generateStatusMessage(String message) throws EIDASSAMLEngineException {
         StatusMessage statusMessage = (StatusMessage) buildXmlObject(StatusMessage.DEFAULT_ELEMENT_NAME);
@@ -261,6 +287,7 @@ public final class BuilderFactoryUtil {
      * Generate subject.
      *
      * @return the subject
+     * @throws EIDASSAMLEngineException in case of errors
      */
     public static Subject generateSubject() throws EIDASSAMLEngineException {
         return (Subject) buildXmlObject(Subject.DEFAULT_ELEMENT_NAME);
@@ -292,6 +319,7 @@ public final class BuilderFactoryUtil {
      * @param recipient the recipient
      * @param inResponseTo the in response to
      * @return the subject confirmation data
+     * @throws EIDASSAMLEngineException in case of errors
      */
     public static SubjectConfirmationData generateSubjectConfirmationData(DateTime notOnOrAfter,
                                                                           String recipient,
@@ -309,7 +337,9 @@ public final class BuilderFactoryUtil {
      * Generate subject locality.
      *
      * @param address the address
+     * @param dnsName the DNS name
      * @return the subject locality
+     * @throws EIDASSAMLEngineException in case of errors
      */
     public static SubjectLocality generateSubjectLocality(String address, String dnsName) throws EIDASSAMLEngineException {
         final SubjectLocality subjectLocality = (SubjectLocality) buildXmlObject(SubjectLocality.DEFAULT_ELEMENT_NAME);

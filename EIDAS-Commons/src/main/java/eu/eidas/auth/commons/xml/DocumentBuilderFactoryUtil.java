@@ -1,22 +1,27 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
 package eu.eidas.auth.commons.xml;
 
 import eu.eidas.auth.commons.EidasStringUtil;
 import eu.eidas.util.Preconditions;
 import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
@@ -47,6 +52,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * https://www.owasp.org/index.php/XML_Entity_(XXE)_Processing for more details
  */
 public final class DocumentBuilderFactoryUtil {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DocumentBuilderFactoryUtil.class);
 
     // See http://stackoverflow.com/questions/9828254/is-documentbuilderfactory-thread-safe-in-java-5
     // See also org.opensaml.xml.parse.ParserPool -- Code removed : private static DocumentBuilderFactory dbf = null
@@ -88,9 +94,14 @@ public final class DocumentBuilderFactoryUtil {
     }
 
     /**
-     * Build the default set of parser features to use. The default features set are: <ul> <li>{@link
-     * javax.xml.XMLConstants#FEATURE_SECURE_PROCESSING} = true</li> <li>http://apache.org/xml/features/disallow-doctype-decl
-     * = true</li> Reference : https://www.owasp.org/index.php/XML_External_Entity_%28XXE%29_Processing </ul>
+     * Build the default set of parser features to use. The default features set are:
+     * <ul>
+     * <li>{@link javax.xml.XMLConstants#FEATURE_SECURE_PROCESSING} = true</li>
+     * <li>http://apache.org/xml/features/disallow-doctype-decl = true</li>
+     * </ul>
+     * Reference : https://www.owasp.org/index.php/XML_External_Entity_%28XXE%29_Processing
+     *
+     * @return the Secure Document Builder Features
      */
     @Nonnull
     public static Map<String, Boolean> getSecureDocumentBuilderFeatures() {
@@ -117,14 +128,15 @@ public final class DocumentBuilderFactoryUtil {
     }
 
     /**
-     * This method performs marshal on {@param node} and returns it in a byte array.
+     * This method performs marshal on {@code node} and returns it in a byte array.
+     * <p>
+     * Note that it does not protect against XXE. If necessary it should be done the {@code  node} before.
      *
-     * Note that it does not protect against XXE. If necessary it should be done the {@param node} before.
-     *
-     * @param node the object to marshall
+     * @param node               the object to marshall
      * @param omitXMLDeclaration the flag to omit XML Declaration
      * @return the marshalled node in a byte array
-     * @throws TransformerException
+     * @throws TransformerException When it is not
+     *                              possible to create a <code>Transformer</code> instance.
      */
     @Nonnull
     public static byte[] marshall(@Nonnull Node node, boolean omitXMLDeclaration) throws TransformerException {
@@ -134,12 +146,17 @@ public final class DocumentBuilderFactoryUtil {
         Transformer transformer = TRANSFORMER_POOL.poll();
         try {
             if (null == transformer) {
+
                 TransformerFactory transformerFactory = TRANSFORMER_FACTORY_POOL.poll();
                 try {
                     if (null == transformerFactory) {
-                        transformerFactory = TransformerFactory.newInstance();
+                        transformerFactory = newSecureTransformerFactory();
                     }
-                    transformer = transformerFactory.newTransformer();
+                    if(transformerFactory != null) {
+                        transformer = transformerFactory.newTransformer();
+                    } else {
+                        throw new TransformerException("Could not create TransformerFactory");
+                    }
                 } finally {
                     TRANSFORMER_FACTORY_POOL.offer(transformerFactory);
                 }
@@ -177,7 +194,7 @@ public final class DocumentBuilderFactoryUtil {
      * Returns a new DocumentBuilderFactory instance already set up with security features turned on.
      *
      * @return a new DocumentBuilderFactory instance already set up with security features turned on.
-     * @throws ParserConfigurationException
+     * @throws ParserConfigurationException if an instance could not be created
      */
     @Nonnull
     public static DocumentBuilderFactory newSecureDocumentBuilderFactory() throws ParserConfigurationException {
@@ -191,10 +208,15 @@ public final class DocumentBuilderFactoryUtil {
      *
      * @return a new {@link TransformerFactory} instance already set up with security features turned on.
      */
-    @Nonnull
     public static TransformerFactory newSecureTransformerFactory() {
-        TransformerFactory transformerFactory = TransformerFactory.newInstance();
-        configureSecureTransformerFactory(transformerFactory);
+        TransformerFactory transformerFactory = null;
+        try {
+            Class clazz = Class.forName("com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl");
+            transformerFactory = (TransformerFactory) clazz.newInstance();
+            configureSecureTransformerFactory(transformerFactory);
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+            LOGGER.error("BUSINESS EXCEPTION : Error generating SAMLToken", e);
+        }
         return transformerFactory;
     }
 
@@ -217,7 +239,9 @@ public final class DocumentBuilderFactoryUtil {
      * See https://www.owasp.org/index.php/XML_External_Entity_(XXE)_Prevention_Cheat_Sheet for more details.
      * The default features set are: <ul> <li>{@link
      * javax.xml.XMLConstants#ACCESS_EXTERNAL_DTD} = ""</li> <li>{@link javax.xml.XMLConstants#ACCESS_EXTERNAL_STYLESHEET} = ""
-     *</li></ul>
+     * </li></ul>
+     *
+     * @return a Map of features.
      */
     @Nonnull
     public static Map<String, String> getSecureTransformerFactoryFeatures() {
@@ -240,12 +264,11 @@ public final class DocumentBuilderFactoryUtil {
         try {
             documentBuilder = DOCUMENT_BUILDER_POOL.poll();
             documentBuilder = validateDocumentBuilder(documentBuilder);
-            doc =  documentBuilder.parse(xmlInputStream);
+            doc = documentBuilder.parse(xmlInputStream);
         } finally {
             DOCUMENT_BUILDER_POOL.offer(documentBuilder);
-            if (xmlInputStream != null) {
-                xmlInputStream.close();
-            }
+            xmlInputStream.close();
+
         }
         return doc;
     }

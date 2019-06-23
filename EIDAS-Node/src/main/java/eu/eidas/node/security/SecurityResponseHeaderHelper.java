@@ -37,7 +37,7 @@ import java.util.List;
 import static eu.eidas.node.BeanProvider.getBean;
 
 /**
- * This filter set CSP policies using all HTTP headers defined into W3C specification.<br/>
+ * This filter set CSP policies using all HTTP headers defined into W3C specification.<br>
  *
  * Purposes :
  *
@@ -191,17 +191,17 @@ public class SecurityResponseHeaderHelper {
 
     /**
      * Method used to process the content security policy header
-     * @param httpRequest request
-     * @param httpResponse response
-     * @throws javax.servlet.ServletException
+     * @param httpRequest the instance of {@link HttpServletRequest}
+     * @param httpResponse the instance of {@link HttpServletResponse}
+     * @throws ServletException when NoSuchAlgorithmException is thrown
      */
     protected void processContentSecurityPolicy(HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws ServletException {
         if (!StringUtils.isEmpty(httpRequest.getRemoteHost())) {
             MDC.put(LoggingMarkerMDC.MDC_REMOTE_HOST, httpRequest.getRemoteHost());
         }
     /* Add CSP policies to HTTP response */
-        StringBuilder policiesBuffer = new StringBuilder(this.policies);
-        policiesBuffer.append(";").append("script-src " + SELF_ORIGIN_LOCATION_REF);
+        StringBuilder policiesBuilder = new StringBuilder(this.policies);
+        policiesBuilder.append(";").append("script-src ").append(SELF_ORIGIN_LOCATION_REF);
         //policiesBuffer.append(";").append("script-src 'self' 'unsafe-inline'" );
 
         // Add Script Nonce CSP Policy
@@ -217,15 +217,17 @@ public class SecurityResponseHeaderHelper {
         byte[] digest = sha.digest(randomNum.getBytes(Charset.forName("UTF-8")));
         // --Encode it into HEXA
         String scriptNonce = encodeHexString(digest, HEX_DIGITS_LOWER);
-        policiesBuffer.append(";").append("script-nonce ").append(scriptNonce);
-        policiesBuffer.append(";").append("report-uri ").append(httpRequest.getScheme()).append("://").append(httpRequest.getServerName()).append(":").append(httpRequest.getServerPort()).append(httpRequest.getContextPath()).append("/cspReportHandler");
+        policiesBuilder.append(";").append("script-nonce ").append(scriptNonce);
+        
+        policiesBuilder.append(";").append("report-uri ")
+        						.append(configurationSecurityBean.getCspReportingUri());
         // --Made available script nonce in view app layer
         httpRequest.setAttribute("CSP_SCRIPT_NONCE", scriptNonce);
-
+        
         // Add policies to all HTTP headers
         for (String header : this.cspHeaders) {
-            httpResponse.setHeader(header, policiesBuffer.toString());
-            LOGGER.trace("Adding policy to header - " + policiesBuffer.toString());
+            httpResponse.setHeader(header, policiesBuilder.toString());
+            LOGGER.trace("Adding policy to header - " + policiesBuilder);
         }
     }
 

@@ -28,28 +28,31 @@ import eu.eidas.auth.commons.light.impl.LightRequest;
 import eu.eidas.auth.commons.light.impl.LightResponse;
 import eu.eidas.auth.commons.tx.BinaryLightToken;
 import eu.eidas.specificcommunication.BinaryLightTokenHelper;
+import eu.eidas.specificcommunication.CommunicationCache;
 import eu.eidas.specificcommunication.SpecificCommunicationApplicationContextProvider;
 import eu.eidas.specificcommunication.SpecificCommunicationDefinitionBeanNames;
 import eu.eidas.specificcommunication.exception.SpecificCommunicationException;
 import eu.eidas.specificcommunication.protocol.SpecificCommunicationService;
-import eu.eidas.specificcommunication.tx.CommunicationCache;
+import eu.eidas.specificcommunication.protocol.validation.IncomingLightResponseValidator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Implements {@link SpecificCommunicationService} to be used for exchanging of
- * {@link ILightRequest} and {@link ILightRequest} between the specific
+ * {@link ILightRequest} and {@link ILightResponse} between the specific
  * proxy-service and node proxy-service
  *
  * @since 2.0
  */
 public class SpecificProxyserviceCommunicationServiceImpl implements SpecificCommunicationService {
-
+	private static final Logger LOG = LoggerFactory.getLogger(SpecificCommunicationService.class);
 	private static LightJAXBCodec codec;
 	static {
 		try {
 			codec = new LightJAXBCodec(JAXBContext.newInstance(LightRequest.class, LightResponse.class,
 					ImmutableAttributeMap.class, AttributeDefinition.class));
 		} catch (JAXBException e) {
-			e.printStackTrace();
+			LOG.error("Unable to instantiate in static initializer ",e);
 		}
 	}
 
@@ -64,6 +67,14 @@ public class SpecificProxyserviceCommunicationServiceImpl implements SpecificCom
 	private String lightTokenResponseSecret;
 
 	private String lightTokenResponseAlgorithm;
+
+	/**
+	 * The instance of the {@link IncomingLightResponseValidator}
+	 */
+	private IncomingLightResponseValidator incomingLightResponseValidator =
+			(IncomingLightResponseValidator) SpecificCommunicationApplicationContextProvider
+					.getApplicationContext()
+					.getBean(SpecificCommunicationDefinitionBeanNames.INCOMING_LIGHT_RESPONSE_VALIDATOR.toString());
 
 	SpecificProxyserviceCommunicationServiceImpl(final String lightTokenRequestIssuerName,
 			final String lightTokenRequestSecret, final String lightTokenRequestAlgorithm,
@@ -83,8 +94,8 @@ public class SpecificProxyserviceCommunicationServiceImpl implements SpecificCom
 		final BinaryLightToken binaryLightToken = BinaryLightTokenHelper.createBinaryLightToken(
 				getLightTokenRequestIssuerName(), getLightTokenRequestSecret(), getLightTokenRequestAlgorithm());
 		final String tokenId = binaryLightToken.getToken().getId();
-		final CommunicationCache nodeSpecificProxyserviceRequestProviderMap = getRequestCommunicationCache();
-		nodeSpecificProxyserviceRequestProviderMap.put(tokenId, codec.marshall(iLightRequest));
+		final CommunicationCache specificNodeProxyserviceRequestCommunicationCache = getRequestCommunicationCache();
+		specificNodeProxyserviceRequestCommunicationCache.put(tokenId, codec.marshall(iLightRequest));
 		return binaryLightToken;
 	}
 
@@ -93,15 +104,15 @@ public class SpecificProxyserviceCommunicationServiceImpl implements SpecificCom
 			final Collection<AttributeDefinition<?>> registry) throws SpecificCommunicationException {
 		final String binaryLightTokenId = BinaryLightTokenHelper.getBinaryLightTokenId(tokenBase64,
 				getLightTokenRequestSecret(), getLightTokenRequestAlgorithm());
-		final CommunicationCache specificConnectorNodeConnectorRequestProviderMap = getRequestCommunicationCache();
-		ILightRequest result = codec.unmarshallRequest(specificConnectorNodeConnectorRequestProviderMap.remove(binaryLightTokenId),registry);
+		final CommunicationCache specificNodeProxyserviceRequestCommunicationCache = getRequestCommunicationCache();
+		ILightRequest result = codec.unmarshallRequest(specificNodeProxyserviceRequestCommunicationCache.getAndRemove(binaryLightTokenId),registry);
 		return result;
 	}
 
 	private CommunicationCache getRequestCommunicationCache() {
 		return (CommunicationCache) SpecificCommunicationApplicationContextProvider
 				.getApplicationContext()
-				.getBean(SpecificCommunicationDefinitionBeanNames.NODE_SPECIFIC_PROXYSERVICE_MAP.toString());
+				.getBean(SpecificCommunicationDefinitionBeanNames.NODE_SPECIFIC_PROXYSERVICE_CACHE.toString());
 	}
 
 	@Override
@@ -109,8 +120,8 @@ public class SpecificProxyserviceCommunicationServiceImpl implements SpecificCom
 		final BinaryLightToken binaryLightToken = BinaryLightTokenHelper.createBinaryLightToken(
 				getLightTokenResponseIssuerName(), getLightTokenResponseSecret(), getLightTokenResponseAlgorithm());
 		final String tokenId = binaryLightToken.getToken().getId();
-		final CommunicationCache specificNodeProxyserviceRequestProviderMap = getResponseCommunicationCache();
-		specificNodeProxyserviceRequestProviderMap.put(tokenId, codec.marshall(iLightResponse));
+		final CommunicationCache specificNodeProxyserviceResponseCommunicationCache = getResponseCommunicationCache();
+		specificNodeProxyserviceResponseCommunicationCache.put(tokenId, codec.marshall(iLightResponse));
 		return binaryLightToken;
 	}
 
@@ -119,15 +130,25 @@ public class SpecificProxyserviceCommunicationServiceImpl implements SpecificCom
 			final Collection<AttributeDefinition<?>> registry) throws SpecificCommunicationException {
 		final String binaryLightTokenId = BinaryLightTokenHelper.getBinaryLightTokenId(tokenBase64,
 				getLightTokenResponseSecret(), getLightTokenResponseAlgorithm());
-		final CommunicationCache nodeConnectorSpecificConnectorRequestProviderMap = getResponseCommunicationCache();
-		ILightResponse result = codec.unmarshallResponse(nodeConnectorSpecificConnectorRequestProviderMap.remove(binaryLightTokenId),registry);
+		final CommunicationCache specificNodeProxyserviceResponseCommunicationCache = getResponseCommunicationCache();
+		String lightResponse = specificNodeProxyserviceResponseCommunicationCache.getAndRemove(binaryLightTokenId);
+
+		validateIncomingLightResponse(lightResponse);
+
+		ILightResponse result = codec.unmarshallResponse(lightResponse,registry);
 		return result;
+	}
+
+	private void validateIncomingLightResponse(final String lightResponse) throws SpecificCommunicationException {
+		if (incomingLightResponseValidator.isInvalid(lightResponse)) {
+			throw new SpecificCommunicationException("Incoming light response is invalid.");
+		}
 	}
 
 	private CommunicationCache getResponseCommunicationCache() {
 		return (CommunicationCache) SpecificCommunicationApplicationContextProvider
 				.getApplicationContext()
-				.getBean(SpecificCommunicationDefinitionBeanNames.SPECIFIC_NODE_PROXYSERVICE_MAP.toString());
+				.getBean(SpecificCommunicationDefinitionBeanNames.SPECIFIC_NODE_PROXYSERVICE_CACHE.toString());
 	}
 
 	private String getLightTokenRequestIssuerName() {

@@ -1,5 +1,146 @@
 ***********************************************
+CEF eIDAS-Node Release Version 2.3
+***********************************************
+• Product name: CEF eIDAS-Node
+• Purpose:  Sample Implementation of eIDAS-Node based on eIDAS Technical Specifications: v1.1
+• Produced by: CEF eID
+• Support Contact: CEF-EID-SUPPORT@ec.europa.eu
+• URL:  https://ec.europa.eu/cefdigital/wiki/display/CEFDIGITAL/All+releases
+• License: EUPL v1.2 https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/eupl_v1.2_en.pdf
+***********************************************
+
+** Documentation **
+
++ CEF eID technical documentation pertaining to this release can be found on:
+++ CEF Digital Home > eID > Services eID > eIDAS-Node Integration Package > VIEW CURRENT VERSION 2.3.0
+
+** Distribution **
+
++ EIDAS-2.3.0.zip : Distribution version 2.3.0 of the sample eIDAS-Node
+++  EIDAS-Sources-2.3.0.zip :  Source files (Maven project) of the sample eIDAS-Node including an example of implementation of a Specific Proxy Service module, Specific Connector module , a SP (Service Provider) and IdP (Identity Provider).
+++  EIDAS-Binaries-Glassfish-2.3.0.zip : Deployable war files of a preconfigured eIDAS-Node for a Glassfish server (including SpecificConnector.war, SpecificProxyService.war,IdP.war, EidasNode.war, SP.war)
+++  EIDAS-Binaries-wildfly-2.3.0.zip: Deployable war files of a preconfigured eIDAS-Node for a wildfly server (including SpecificConnector.war, SpecificProxyService.war, IdP.war, EidasNode.war, SP.war)
+++  EIDAS-Binaries-Tomcat-2.3.0.zip: Deployable war files of a preconfigured eIDAS-Node for a Tomcat server (including SpecificConnector.war, SpecificProxyService.war, IdP.war, EidasNode.war, SP.war)
+++  EIDAS-Binaries-Was-2.3.0.zip : Deployable war files of a preconfigured eIDAS-Node for a WebSphere server (including SpecificConnector.war, SpecificProxyService.war, IdP.war, EidasNode.war, SP.war) 
+++  EIDAS-Binaries-Wls-2.3.0.zip : Deployable war files of a preconfigured eIDAS-Node for a WebLogic server (including SpecificConnector.war, SpecificProxyService.war, IdP.war, EidasNode.war, SP.war)
+
+**This release contains the following improvements: (Please note that EIDINT-XXXX references are for internal use only)
+
+.Java 8 Migration (EIDINT-2296, EIDINT-3467,EIDINT-2583 )
++ Upgrade to Java 8 servers. 
+
+.JCache support for Distributed Caches (EDINT-2614,EIDINT-2531,EIDINT-3039, EIDINT-3058 )
+
+.Improvement of message logging (EIDINT-2614) (EID-667)
++ Log the outgoing Light Response (EIDINT-3054)
++ Log the outgoing Light Request (EIDINT-3050)
++ Log the outgoing Light Request (EIDINT-3050)
++ Log the incoming Light Request (EIDINT-3047)
++ Log the incoming Light Response (EIDINT-3051)
++ Log the outgoing Saml Request (EIDINT-3048)
++ Log the incoming Saml Request EIDINT-3049)
++ Log the incoming Saml Response (EIDINT-3053)
++ Enable saml.audit propperty (EIDINT-3562)
++ Use UTC (Zulu) format to Timestamp of audit messages (EIDINT-3059)
++ Use UTC (Zulu) format in the logs of EidasNode (EIDINT-3060)
++ Use UTC (Zulu) format in the logs of SP (EIDINT-3595)
++ Implementation of  a flowId for logging (Implement a flowId for logging (EIDINT-3045)
++ Generate a new Id for the outgoing LightRequest. (EIDINT-3055)
++ Generate a new Id for the outgoing LightResponse. (EIDINT-3057,EDINT-3201 )
+
+. Refactoring of metadata whitelist from SamlEngine to MetadataFetcher (EIDINT-2606, EIDINT-2734, EIDINT-2732, EIDINT-2733 )
+ 
+. Improvement of unit test coverage (EIDINT-2653).   
+
+**This release contains the following bug fixes:
++ Correct of Unit test failure :eu.eidas.node.auth.metadata.TestEidasNodeMetadataLoader.testValidatesignature (EIDINT-3607) (EID-920)
++ Correct of EidasNode fails to start on Linux	(EIDINT-3424)
++ Correct of (EID-652) Problem in validation of entityID of SP	(EIDINT-2539)
++ Correct of Build failure due to Unit failure on LINUX 	(EIDINT-3429)
++ Correct of Validate Signature flag not working for unmarshall response	(EIDINT-3177)
++ Correct of Static metadata : including entityId (URI) containing illegal characters should not be loaded 	(EIDINT-2711)
++ Add the missing values for consent attribute validation in both request and response	(EIDINT-3156)
++ Correct of Alllow setting of Consent attribute value from configuration files (EIDINT-3157)
++ Correct of Typo in the supported values for "Consent" attribute in SAML response messages	(EIDINT-3103)
++ Correct of Duplicated Copyright headers	(EIDINT-2381)
++ Correct of Metadata whitelist should be reloadable	(EIDINT-3110)
++ Correct of Unexpected CSP violation logged in eIDASNodeDetail 	(EIDINT-2511)
++ Correct of Color convention is not respected in the proxyservice consent page when building using specificjar 	(EIDINT-3174)
++ Correct of CSP violation reported for EidasNode/AfterCitizenConsentRequest	(EIDINT-2186)
++ Correct of CSP violation reported for  EidasNode/IdpResponse	(EIDINT-2187)
++ Correct of (EID-659) Interface changes in EIDAS-SAMLEngine (EIDINT-2592)
++ Remove extra string from weblogic.xml file	(EIDINT-3626)
++ Correct of Logging: default log directory is not created for jboss and wildfly (EIDINT-2607)
+
+**This release contains the following security fixes:
++ Remove or upgrade jquery-1.11.3.min.js (EIDINT-3034)
+   Library removed from eIDAS-Node Generic parts, but still present in the Specific parts
+    Vulnerable version of JQuery  EID-799
+    CVE-2019-11358  EID-909
+    CVE-2015-9251  EID-858
+
++ Remove or upgrade bootstrap.min.js (EIDINT-3033)
+   Library updated to v4.3.1
+    Vulnerable version of Bootsrap EID-800
+    CVE-2016-1000343  EID-864
+    CVE-2018-14042  EID-856
+    CVE-2018-14040  EID-854
+    CVE-2019-8331  EID-857
++ Upgrade bouncycastle version (EIDINT-3408, EIDINT-3472)
+   Library updated to v1.60
+    CVE-2018-1000180  EID-912  CVE-2016-1000339  EID-860  CVE-2017-13098  EID-869
+    CVE-2016-1000346  EID-867  CVE-2016-1000340  EID-861  CVE-2016-1000341  EID-862
+    CVE-2016-1000342  EID-863  CVE-2016-1000343  EID-864  CVE-2016-1000344  EID-865
+    CVE-2016-1000345  EID-866  CVE-2018-1000613  EID-870  CVE-2016-1000352  EID-868
+    CVE-2016-1000338  EID-859
++ Correct of DTD is not disabled in the XML parser (light response)  (EIDINT-3531) (EID-914)
++ Correct of DTD is not disabled in the XML parser (light request)  (EIDINT-3415) (EID-914)
++ Correct of Create size limitation for incoming Connector's LightRequest (EIDINT-3455)
++ Correct of Create size limitation for incoming ProxyService's LightResponse (EIDINT-3456)
++ Correct of Upgrade version of Ignite from 2.6.0 to 2.7.0 (EIDINT-3082) 
++ Exclude ignite-shmem dependency (EIDINT-3558)
++ Correct of Possible Cross-Site-Scripting : Sanitize input/output field  (EIDINT-2514)
++ Correct of Unnecessary xalan dependency declaration in EIDAS-Parent pom.xml (EIDINT-2994)
++ Correct of Upgrade Spring Framework from v4.1.0 to newer version (EIDINT-2594)
+   Library updated to v4.3.18
+    CVE-2014-3625  EID-754  CVE-2016-5007  EID-758
+    CVE-2015-0201  EID-755  CVE-2018-1270  EID-759
+    CVE-2015-3192  EID-756  CVE-2018-1271  EID-760
+    CVE-2015-5211  EID-757  CVE-2018-1272  EID-761
+    CVE-2018-1199  EID-911
++ Correct of Replace report-uri value from configuration instead from httpServletRequest fields (EIDINT-2733) (EID-671)
+  
+** This release has been successfully tested for interoperability with previous releases of eIDAS-Node versions v2.2 and v1.4.5
+** This release successfully tested and works with Middleware version 1.1.0
+
+** Known Limitations
+The up to date list can be found at https://ec.europa.eu/cefdigital/wiki/x/e4YnBg 
+ 
+** Known Vulnerabilities
+Latest vulnerability notifications are found at https://ec.europa.eu/cefdigital/wiki/x/CwB2Ag
+
+** The eIDAS default supported Cipher suites for java8 https://ec.europa.eu/cefdigital/wiki/x/6MXuAw
+
+
+####### IMPORTANT NOTICE #################################################################################################################################################################################
+
+The eIDAS-Node logs may contain person identification data. Hence, these logs should be handled and protected appropriately, following the European privacy regulations [Dir95/46/EC] and [Reg2016/679].
+
+[Reg2016/679] REGULATION (EU) 2016/679 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 27 April 2016 on the protection of natural persons with regard to the processing of personal data and on the free 
+movement of such data, and repealing Directive 95/46/EC.
+
+[Dir95/46/EC] Directive 95/46/EC of the European Parliament and of the Council of 24 October 1995 on the protection of individuals with regard to the processing of personal data and on the free movement
+of such data.
+
+#########################################################################################################################################################################################################
+
+
+
+
+####################### previous releases #######################
+
 CEF eIDAS-Node Release Version 2.2
+
 ***********************************************
 • Product name: CEF eIDAS-Node
 • Purpose:  Sample Implementation of eIDAS-Node based on eIDAS Technical Specifications: v1.1
@@ -74,20 +215,7 @@ Latest vulnerability notifications are found at https://ec.europa.eu/cefdigital/
 
 ** The eIDAS default supported Cipher suites for Java7 and Java8 https://ec.europa.eu/cefdigital/wiki/x/6MXuAw
 
-####### IMPORTANT NOTICE #################################################################################################################################################################################
 
-The eIDAS-Node logs may contain person identification data. Hence, these logs should be handled and protected appropriately, following the European privacy regulations [Dir95/46/EC] and [Reg2016/679].
-
-[Reg2016/679] REGULATION (EU) 2016/679 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 27 April 2016 on the protection of natural persons with regard to the processing of personal data and on the free 
-movement of such data, and repealing Directive 95/46/EC.
-
-[Dir95/46/EC] Directive 95/46/EC of the European Parliament and of the Council of 24 October 1995 on the protection of individuals with regard to the processing of personal data and on the free movement
-of such data.
-
-#########################################################################################################################################################################################################
-
-
-####################### previous releases #######################
 CEF eID eIDAS-Node Build 2.1.0 Content
 
 This release is based on version 1.1 of the eIDAS Technical Specifications.

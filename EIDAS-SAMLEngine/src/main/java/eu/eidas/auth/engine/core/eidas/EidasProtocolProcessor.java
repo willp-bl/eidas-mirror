@@ -1,78 +1,25 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
-
 package eu.eidas.auth.engine.core.eidas;
-
-import java.net.URI;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.xml.namespace.QName;
-import javax.xml.transform.TransformerException;
-
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
-import org.joda.time.DateTime;
-import org.opensaml.core.xml.Namespace;
-import org.opensaml.core.xml.XMLObject;
-import org.opensaml.core.xml.XMLObjectBuilder;
-import org.opensaml.core.xml.XMLObjectBuilderFactory;
-import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
-import org.opensaml.core.xml.schema.XSAny;
-import org.opensaml.core.xml.schema.XSBooleanValue;
-import org.opensaml.core.xml.schema.XSString;
-import org.opensaml.core.xml.schema.impl.XSAnyImpl;
-import org.opensaml.core.xml.schema.impl.XSStringImpl;
-import org.opensaml.saml.common.SAMLVersion;
-import org.opensaml.saml.common.SignableSAMLObject;
-import org.opensaml.saml.common.xml.SAMLConstants;
-import org.opensaml.saml.saml2.core.Assertion;
-import org.opensaml.saml.saml2.core.Attribute;
-import org.opensaml.saml.saml2.core.AttributeStatement;
-import org.opensaml.saml.saml2.core.AttributeValue;
-import org.opensaml.saml.saml2.core.AuthnContextClassRef;
-import org.opensaml.saml.saml2.core.AuthnContextComparisonTypeEnumeration;
-import org.opensaml.saml.saml2.core.AuthnRequest;
-import org.opensaml.saml.saml2.core.Extensions;
-import org.opensaml.saml.saml2.core.Issuer;
-import org.opensaml.saml.saml2.core.NameIDPolicy;
-import org.opensaml.saml.saml2.core.RequestAbstractType;
-import org.opensaml.saml.saml2.core.RequestedAuthnContext;
-import org.opensaml.saml.saml2.core.Response;
-import org.opensaml.saml.saml2.core.Status;
-import org.opensaml.saml.saml2.core.StatusCode;
-import org.opensaml.saml.saml2.core.StatusMessage;
-import org.opensaml.xmlsec.signature.Signature;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.Marker;
-import org.slf4j.MarkerFactory;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Ordering;
-
 import eu.eidas.auth.commons.EidasErrorKey;
 import eu.eidas.auth.commons.EidasErrors;
 import eu.eidas.auth.commons.attribute.AttributeDefinition;
@@ -117,6 +64,58 @@ import eu.eidas.auth.engine.xml.opensaml.SAMLEngineUtils;
 import eu.eidas.engine.exceptions.EIDASMetadataException;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import eu.eidas.util.Preconditions;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
+import org.joda.time.DateTime;
+import org.opensaml.core.xml.Namespace;
+import org.opensaml.core.xml.XMLObject;
+import org.opensaml.core.xml.XMLObjectBuilder;
+import org.opensaml.core.xml.XMLObjectBuilderFactory;
+import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
+import org.opensaml.core.xml.schema.XSAny;
+import org.opensaml.core.xml.schema.XSBooleanValue;
+import org.opensaml.core.xml.schema.XSString;
+import org.opensaml.core.xml.schema.impl.XSAnyImpl;
+import org.opensaml.core.xml.schema.impl.XSStringImpl;
+import org.opensaml.saml.common.SAMLVersion;
+import org.opensaml.saml.common.SignableSAMLObject;
+import org.opensaml.saml.common.xml.SAMLConstants;
+import org.opensaml.saml.saml2.core.Assertion;
+import org.opensaml.saml.saml2.core.Attribute;
+import org.opensaml.saml.saml2.core.AttributeStatement;
+import org.opensaml.saml.saml2.core.AttributeValue;
+import org.opensaml.saml.saml2.core.AuthnContextClassRef;
+import org.opensaml.saml.saml2.core.AuthnContextComparisonTypeEnumeration;
+import org.opensaml.saml.saml2.core.AuthnRequest;
+import org.opensaml.saml.saml2.core.Extensions;
+import org.opensaml.saml.saml2.core.Issuer;
+import org.opensaml.saml.saml2.core.NameIDPolicy;
+import org.opensaml.saml.saml2.core.RequestAbstractType;
+import org.opensaml.saml.saml2.core.RequestedAuthnContext;
+import org.opensaml.saml.saml2.core.Response;
+import org.opensaml.saml.saml2.core.Status;
+import org.opensaml.saml.saml2.core.StatusCode;
+import org.opensaml.saml.saml2.core.StatusMessage;
+import org.opensaml.xmlsec.signature.Signature;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.xml.namespace.QName;
+import javax.xml.transform.TransformerException;
+import java.net.URI;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Implements the eIDAS protocol.
@@ -452,7 +451,7 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
      * Checks whether the attribute list contains at least one of the mandatory eIDAS attribute set (either for a
      * natural [person or for a legal person)
      *
-     * @param immutableAttributeMap
+     * @param immutableAttributeMap the attribute map.
      */
     @Override
     public boolean checkMandatoryAttributes(@Nullable ImmutableAttributeMap immutableAttributeMap) {
@@ -497,7 +496,7 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
      *
      * According to Specs 1.1 representative attributes MUST no be requested
      *
-     * @param immutableAttributeMap
+     * @param immutableAttributeMap the attribute map.
      */
     @Override
     public boolean checkRepresentativeAttributes(@Nullable ImmutableAttributeMap immutableAttributeMap) {
@@ -526,6 +525,8 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
      * definitions from the eIDAS specification.
      *
      * @param requestedAttribute the requested attribute definition
+     * @return the attribute from {@link AttributeDefinition}
+     * @throws EIDASSAMLEngineException in case of errors
      */
     @Nullable
     public AttributeDefinition<?> checkRequestedAttribute(@Nonnull AttributeDefinition<?> requestedAttribute)
@@ -745,7 +746,7 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
     /**
      * Extracts the level of assurance in the RequestedAuthContext of the authRequest
      *
-     * @param authnRequest
+     * @param authnRequest the request data
      * @return nullable level
      * @throws EIDASSAMLEngineException in case of invalid level of assurance value
      */
@@ -1128,7 +1129,7 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
      *
      * @param issuer the issuer URI
      * @return a {@link Set} of attribute name URIs as {@link String}s.
-     * @throws EIDASSAMLEngineException
+     * @throws EIDASSAMLEngineException in case of errors
      * @since 1.1
      */
     @Nonnull
@@ -1288,7 +1289,7 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
     /**
      * {@inheritDoc}
      *
-     * The returned {@link Response} contains or not one assertion if the application identifier of the {@param request} matches or not one of {@param applicationIdentifiers}.
+     * The returned {@link Response} contains or not one assertion if the application identifier of the param request matches or not one of param applicationIdentifiers.
      */
     @Nonnull
     @Override
@@ -1505,7 +1506,7 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
      * @param coreProperties the saml engine core properties
      * @param currentTime the current time
      * @return the authentication response
-     * @throws EIDASSAMLEngineException
+     * @throws EIDASSAMLEngineException in case of errors
      */
     @Override
     @Nonnull
@@ -1625,7 +1626,7 @@ public class EidasProtocolProcessor implements ProtocolProcessorI {
     /**
      * Register the namespace on the response SAML xml token
      *
-     * @param xmlObject
+     * @param xmlObject the response SAML xml token
      */
     public void registerResponseNamespace(@Nonnull XMLObject xmlObject) {
         LOG.trace("Set namespaces.");

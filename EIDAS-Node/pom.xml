@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright (c) 2017 by European Commission
+  ~ Copyright (c) 2018 by European Commission
   ~
   ~ Licensed under the EUPL, Version 1.2 or - as soon they will be
   ~ approved by the European Commission - subsequent versions of the
@@ -15,7 +15,6 @@
   ~ See the Licence for the specific language governing permissions and
   ~ limitations under the Licence.
   -->
-
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
                              http://maven.apache.org/maven-v4_0_0.xsd">
@@ -30,7 +29,7 @@
     <parent>
         <groupId>eu.eidas</groupId>
         <artifactId>eidas-parent</artifactId>
-        <version>2.2.0</version>
+        <version>2.3.0</version>
         <relativePath>../EIDAS-Parent/pom.xml</relativePath>
     </parent>
     <properties>
@@ -137,17 +136,11 @@
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>xalan</groupId>
-            <artifactId>xalan</artifactId>
-            <scope>runtime</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>xml-apis</groupId>
-                    <artifactId>xml-apis</artifactId>
-                </exclusion>
-            </exclusions>
+            <groupId>eu.eidas</groupId>
+            <artifactId>eidas-jcache-dev-node</artifactId>
+            <scope>test</scope>
         </dependency>
- 	</dependencies>
+    </dependencies>
 
     <build>
         <finalName>${proj.name}</finalName>
@@ -177,6 +170,38 @@
         </plugins>
     </build>
     <profiles>
+        <!-- wildlfy profile -->
+        <profile>
+            <id>wildfly</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-wildlfy-resources</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>
+                                        ${project.build.directory}/${proj.name}/WEB-INF
+                                    </outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.basedir}/src/main/config/wildfly</directory>
+                                            <filtering>true</filtering>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
         <!-- weblogic profile -->
         <profile>
             <id>weblogic</id>
@@ -200,38 +225,6 @@
                                         <resource>
                                             <directory>${project.basedir}/src/main/config/weblogic</directory>
                                             <filtering>false</filtering>
-                                        </resource>
-                                    </resources>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <!-- jboss7 profile -->
-        <profile>
-            <id>jBoss7</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-resources-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>copy-jboss-resources</id>
-                                <phase>process-resources</phase>
-                                <goals>
-                                    <goal>copy-resources</goal>
-                                </goals>
-                                <configuration>
-                                    <outputDirectory>
-                                        ${project.build.directory}/${proj.name}/WEB-INF
-                                    </outputDirectory>
-                                    <resources>
-                                        <resource>
-                                            <directory>${project.basedir}/src/main/config/jBoss7</directory>
-                                            <filtering>true</filtering>
                                         </resource>
                                     </resources>
                                 </configuration>
@@ -473,6 +466,33 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+        <profile>
+            <id>nodeJcacheIgnite</id>
+            <dependencies>
+                <dependency>
+                    <groupId>eu.eidas</groupId>
+                    <artifactId>eidas-jcache-ignite-node</artifactId>
+                </dependency>
+            </dependencies>
+        </profile>
+        <profile>
+            <id>nodeJcacheHazelcast</id>
+            <dependencies>
+                <dependency>
+                    <groupId>eu.eidas</groupId>
+                    <artifactId>eidas-jcache-hazelcast-node</artifactId>
+                </dependency>
+            </dependencies>
+        </profile>
+        <profile>
+            <id>nodeJcacheDev</id>
+            <dependencies>
+                <dependency>
+                    <groupId>eu.eidas</groupId>
+                    <artifactId>eidas-jcache-dev-node</artifactId>
+                </dependency>
+            </dependencies>
         </profile>
     </profiles>
 </project>

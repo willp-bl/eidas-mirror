@@ -1,16 +1,19 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
 package eu.eidas.auth.commons.attribute.impl.reflect;
 
@@ -24,7 +27,7 @@ import java.lang.reflect.WildcardType;
 /**
  * Utility class for doing reflection on types.
  *
- * @author Wouter Coekaerts <wouter@coekaerts.be>
+ * @author Wouter Coekaerts @see "wouter@coekaerts.be"
  */
 public final class GenericTypeReflector {
 
@@ -101,14 +104,17 @@ public final class GenericTypeReflector {
 
     /**
      * Finds the most specific supertype of <tt>type</tt> whose erasure is <tt>searchClass</tt>. In other words, returns
-     * a type representing the class <tt>searchClass</tt> plus its exact type parameters in <tt>type</tt>. <p> <ul>
+     * a type representing the class <tt>searchClass</tt> plus its exact type parameters in <tt>type</tt>. <ul>
      * <li>Returns an instance of {@link ParameterizedType} if <tt>searchClass</tt> is a real class or interface and
      * <tt>type</tt> has parameters for it</li> <li>Returns an instance of {@link GenericArrayType} if
      * <tt>searchClass</tt> is an array type, and <tt>type</tt> has type parameters for it</li> <li>Returns an instance
      * of {@link Class} if <tt>type</tt> is a raw type, or has no type parameters for <tt>searchClass</tt></li>
-     * <li>Returns null if <tt>searchClass</tt> is not a superclass of type.</li> </ul> <p> <p>For example, with
+     * <li>Returns null if <tt>searchClass</tt> is not a superclass of type.</li> </ul> <p>For example, with
      * <tt>class StringList implements List&lt;String&gt;</tt>, <tt>getExactSuperType(StringList.class,
-     * Collection.class)</tt> returns a {@link ParameterizedType} representing <tt>Collection&lt;String&gt;</tt>. </p>
+     * Collection.class)</tt> returns a {@link ParameterizedType} representing <tt>Collection&lt;String&gt;</tt>.
+     * @param type the type parameters.
+     * @param searchClass the type parameters.
+     * @return type representing the class searchClass
      */
     public static Type getExactSuperType(Type type, Class<?> searchClass) {
         if (type instanceof ParameterizedType || type instanceof Class || type instanceof GenericArrayType) {

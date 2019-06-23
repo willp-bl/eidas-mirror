@@ -155,7 +155,6 @@ public class EidasAuthRequestSignatureTest {
         ProtocolEngineInterceptor engineInterceptor = null;
         try {
             engineInterceptor = new ProtocolEngineInterceptor();
-            engineInterceptor.setWhitelist(Arrays.asList(REQUEST_ISSUER));
         } catch (EIDASSAMLEngineException exc) {
             fail("error while initializing samlengine " + exc);
         }
@@ -211,26 +210,16 @@ public class EidasAuthRequestSignatureTest {
             samlEngine = (ProtocolEngine) ProtocolEngineFactory.getDefaultProtocolEngine(SAML_ENGINE_NAME);
         }
 
-        private Collection<String> whitelist;
-        
-        private void setWhitelist(Collection<String> list) {
-			whitelist=list;
-		}
-
-        private Collection<String> getWhitelist() {
-			return whitelist;
-		}
-
         public IRequestMessage generateAuthnRequest(final IAuthenticationRequest request) throws EIDASSAMLEngineException {
             return samlEngine.generateRequestMessage(request, request.getIssuer());
         }
 
         public IAuthenticationRequest validateAuthnRequest(final byte[] tokenSaml) throws EIDASSAMLEngineException {
-            return samlEngine.unmarshallRequestAndValidate(tokenSaml, "ES",getWhitelist());
+            return samlEngine.unmarshallRequestAndValidate(tokenSaml, "ES");
         }
 
 		public String getSigningAlgo(final byte[] token) throws EIDASSAMLEngineException {
-            AuthnRequest unmarshalled = samlEngine.unmarshallRequest(token,getWhitelist(),true);
+            AuthnRequest unmarshalled = samlEngine.unmarshallRequest(token);
             return unmarshalled.getSignature().getSignatureAlgorithm();
         }
 

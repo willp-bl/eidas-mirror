@@ -26,9 +26,9 @@
                     </h1>
 
                     <fmt:message var="redirectingValue" key="colleagueRequestRedirect.text" bundle="${i18n_eng}"/>
-                    <input type="hidden" id="dummyField" value="${redirectingValue}"
+                    <input type="hidden" id="dummyField" value="${e:forHtml(redirectingValue)}"
                     />
-                    <h2 style="display:none;" id="redirectLabel" class="sub-title"></h2>
+                    <h2 class="display-none" id="redirectLabel" class="sub-title"></h2>
 
                     <form name="redirectForm" method="${e:forHtml(binding)}" action="${e:forHtml(serviceUrl)}">
                         <input type="hidden" id="SAMLRequest" name="SAMLRequest" value="${e:forHtml(SAMLRequest)}"/>

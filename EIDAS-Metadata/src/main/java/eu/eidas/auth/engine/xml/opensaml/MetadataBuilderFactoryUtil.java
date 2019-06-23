@@ -1,16 +1,19 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
 package eu.eidas.auth.engine.xml.opensaml;
 
@@ -20,7 +23,11 @@ import org.opensaml.core.xml.XMLObjectBuilder;
 import org.opensaml.core.xml.XMLObjectBuilderFactory;
 import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
 import org.opensaml.saml.common.xml.SAMLConstants;
-import org.opensaml.saml.saml2.core.*;
+import org.opensaml.saml.saml2.core.Issuer;
+import org.opensaml.saml.saml2.core.NameID;
+import org.opensaml.saml.saml2.core.Status;
+import org.opensaml.saml.saml2.core.StatusCode;
+import org.opensaml.saml.saml2.core.StatusMessage;
 import org.opensaml.saml.saml2.metadata.Extensions;
 import org.opensaml.saml.saml2.metadata.impl.ExtensionsBuilder;
 import org.opensaml.xmlsec.signature.KeyInfo;
@@ -43,6 +50,7 @@ public final class MetadataBuilderFactoryUtil {
      *
      * @param qname the QName
      * @return the XML object
+     * @throws EIDASMetadataException if the xml object can not be built
      */
     public static XMLObject buildXmlObject(QName qname) throws EIDASMetadataException {
         XMLObjectBuilder builder = XMLObjectProviderRegistrySupport.getBuilderFactory().getBuilder(qname);
@@ -86,6 +94,7 @@ public final class MetadataBuilderFactoryUtil {
      * Generate issuer.
      *
      * @return the issuer
+     * @throws EIDASMetadataException if the issuer can not be generated
      */
     public static Issuer generateIssuer() throws EIDASMetadataException {
         return (Issuer) buildXmlObject(Issuer.DEFAULT_ELEMENT_NAME);
@@ -95,6 +104,7 @@ public final class MetadataBuilderFactoryUtil {
      * Generate key info.
      *
      * @return the key info
+     * @throws EIDASMetadataException if the key info can not be generated
      */
     public static KeyInfo generateKeyInfo() throws EIDASMetadataException {
         return (KeyInfo) buildXmlObject(KeyInfo.DEFAULT_ELEMENT_NAME);
@@ -104,6 +114,7 @@ public final class MetadataBuilderFactoryUtil {
      * Generate name id.
      *
      * @return the name id
+     * @throws EIDASMetadataException if the nameId can not be generated
      */
     public static NameID generateNameID() throws EIDASMetadataException {
         return (NameID) buildXmlObject(NameID.DEFAULT_ELEMENT_NAME);
@@ -140,6 +151,7 @@ public final class MetadataBuilderFactoryUtil {
      *
      * @param statusCode the status code
      * @return the status
+     * @throws EIDASMetadataException if the status can not be generated
      */
     public static Status generateStatus(StatusCode statusCode) throws EIDASMetadataException {
         Status status = (Status) buildXmlObject(Status.DEFAULT_ELEMENT_NAME);
@@ -152,6 +164,7 @@ public final class MetadataBuilderFactoryUtil {
      *
      * @param value the value
      * @return the status code
+     * @throws EIDASMetadataException if the status can not be generated
      */
     public static StatusCode generateStatusCode(String value) throws EIDASMetadataException {
         StatusCode statusCode = (StatusCode) buildXmlObject(StatusCode.DEFAULT_ELEMENT_NAME);
@@ -164,6 +177,7 @@ public final class MetadataBuilderFactoryUtil {
      *
      * @param message the message
      * @return the status message
+     * @throws EIDASMetadataException if the status can not be generated
      */
     public static StatusMessage generateStatusMessage(String message) throws EIDASMetadataException {
         StatusMessage statusMessage = (StatusMessage) buildXmlObject(StatusMessage.DEFAULT_ELEMENT_NAME);

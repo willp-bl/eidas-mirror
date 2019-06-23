@@ -1,16 +1,19 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
 
 package eu.eidas.specificcommunication.protocol;
@@ -25,10 +28,7 @@ import eu.eidas.specificcommunication.protocol.impl.SpecificProxyserviceCommunic
 
 import static org.junit.Assert.assertNotNull;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.springframework.context.ApplicationContext;
@@ -36,11 +36,13 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.util.Collection;
+
 /**
  * Test class for {@link SpecificProxyserviceCommunicationServiceImpl}.
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration("classpath:specificCommunicationDefinitionApplicationContext.xml")
+@ContextConfiguration(locations = {"classpath:specificCommunicationDefinitionApplicationContext.xml"})
 public class SpecificProxyserviceCommunicationServiceImplTest {
 
     private static ApplicationContext applicationContext = new ClassPathXmlApplicationContext("/specificCommunicationDefinitionApplicationContext.xml");
@@ -96,7 +98,7 @@ public class SpecificProxyserviceCommunicationServiceImplTest {
 
     /**
      * Test method for
-     * {@link SpecificProxyserviceCommunicationServiceImpl#getAndRemoveRequest(String)}
+     * {@link SpecificProxyserviceCommunicationServiceImpl#getAndRemoveRequest(String, Collection)}
      * to remove the {@link ILightRequest} put before by a successful call to
      * {@link SpecificProxyserviceCommunicationServiceImpl#putRequest(ILightRequest)}.
      * <p/>
@@ -113,7 +115,7 @@ public class SpecificProxyserviceCommunicationServiceImplTest {
 
     /**
      * Test method for
-     * {@link SpecificProxyserviceCommunicationServiceImpl#getAndRemoveRequest(String)}
+     * {@link SpecificProxyserviceCommunicationServiceImpl#getAndRemoveRequest(String, Collection)}
      * using a valid {@link BinaryLightToken} but which does not exist as key in the cache.
      * <p/>
      * Must succeed.
@@ -127,7 +129,7 @@ public class SpecificProxyserviceCommunicationServiceImplTest {
 
     /**
      * Test method for
-     * {@link SpecificProxyserviceCommunicationServiceImpl#getAndRemoveRequest(String)}
+     * {@link SpecificProxyserviceCommunicationServiceImpl#getAndRemoveRequest(String, Collection)}
      * to remove the {@link ILightRequest} using a valid {@link BinaryLightToken} in Base64
      * created with an incorrect secret, algorithm e.g. the ones used for a {@link ILightResponse}
      * instead of the correct ones used to validate the {@link ILightRequest}.
@@ -146,7 +148,7 @@ public class SpecificProxyserviceCommunicationServiceImplTest {
 
     /**
      * Test method for
-     * {@link SpecificProxyserviceCommunicationServiceImpl#getAndRemoveRequest(String)}
+     * {@link SpecificProxyserviceCommunicationServiceImpl#getAndRemoveRequest(String, Collection)}
      * using an invalid {@link BinaryLightToken} in Base64.
      * <p/>
      * Must fail.
@@ -191,7 +193,7 @@ public class SpecificProxyserviceCommunicationServiceImplTest {
 
     /**
      * Test method for
-     * {@link SpecificProxyserviceCommunicationServiceImpl#getAndRemoveResponse(String)}
+     * {@link SpecificProxyserviceCommunicationServiceImpl#getAndRemoveResponse(String, Collection)}
      * tor remove the {@link ILightResponse} put before by a successful call to
      * {@link SpecificProxyserviceCommunicationServiceImpl#putResponse(ILightResponse)}.
      * <p/>
@@ -209,13 +211,16 @@ public class SpecificProxyserviceCommunicationServiceImplTest {
 
     /**
      * Test method for
-     * {@link SpecificProxyserviceCommunicationServiceImpl#getAndRemoveResponse(String)}
+     * {@link SpecificProxyserviceCommunicationServiceImpl#getAndRemoveResponse(String, Collection)}
      * using a valid {@link BinaryLightToken} but which does not exist as key in the cache.
      * <p/>
      * Must succeed.
      */
     @Test
     public void testRemoveResponseFromCommunicationCacheValidTokenEmptyCache() throws Exception {
+        thrown.expect(SpecificCommunicationException.class);
+        thrown.expectMessage("Incoming light response is invalid");
+
         final String tokenBase64 = VALID_BINARY_LIGHT_TOKEN_RESPONSE_BASE64;
         final ILightResponse iLightResponse = getSpecificCommunicationService().getAndRemoveResponse(tokenBase64,null);
         Assert.assertNull(iLightResponse);
@@ -223,7 +228,7 @@ public class SpecificProxyserviceCommunicationServiceImplTest {
 
     /**
      * Test method for
-     * {@link SpecificProxyserviceCommunicationServiceImpl#getAndRemoveResponse(String)}
+     * {@link SpecificProxyserviceCommunicationServiceImpl#getAndRemoveResponse(String, Collection)}
      * to remove the {@link ILightResponse} using a valid {@link BinaryLightToken} in Base64
      * created with an incorrect secret, algorithm e.g. the ones used for a {@link ILightRequest}
      * instead of the correct ones used to validate the {@link ILightResponse}.
@@ -242,7 +247,7 @@ public class SpecificProxyserviceCommunicationServiceImplTest {
 
     /**
      * Test method for
-     * {@link SpecificProxyserviceCommunicationServiceImpl#getAndRemoveResponse(String)}
+     * {@link SpecificProxyserviceCommunicationServiceImpl#getAndRemoveResponse(String, Collection)}
      * using an invalid {@link BinaryLightToken} in Base64.
      * <p/>
      * Must fail.

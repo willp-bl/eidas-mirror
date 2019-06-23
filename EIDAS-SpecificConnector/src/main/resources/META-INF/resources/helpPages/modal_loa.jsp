@@ -23,7 +23,7 @@
             </div>
             <div class="modal-body">
                 <h3>Level of assurance</h3>
-                <p>Article 8 of Regulation (EU) No 910/2014 provides that an electronic identification scheme notified pursuant to Article 9(1) needs to specify assurance levels <b>low, substantial and high </b>for electronic identification means issued under that scheme.</p>
+                <p>Article 8 of Regulation (EU) No 910/2014 provides that an electronic identification scheme notified pursuant to Article 9(1) needs to specify assurance levels <strong>low, substantial and high </strong>for electronic identification means issued under that scheme.</p>
                 <p>Determining the minimum technical specifications, standards and procedures is essential in order to ensure common understanding of the details of the assurance levels and to ensure interoperability when mapping the national assurance levels of notified electronic identification schemes to the assurance levels under Article 8 as provided by Article 12(4)(b) of Regulation (EU) No 910/2014.</p>
             </div>
             <div class="modal-footer">

@@ -26,7 +26,6 @@
 <meta name="author" content="CEF eID Team">
 <link rel="stylesheet" href="resource/skin0/css/bootstrap.min.css">
 <link rel="stylesheet" href="resource/skin0/css/custom.css">
-<link rel="stylesheet" href="resource/skin0/css/switchery.min.css" />
 <link rel="stylesheet" href="resource/skin0/css/awesome-bootstrap-checkbox.css" />
 <link rel="apple-touch-icon" sizes="57x57" href="resource/skin0/favicon/apple-touch-icon-57x57.png">
 <link rel="apple-touch-icon" sizes="60x60" href="resource/skin0/favicon/apple-touch-icon-60x60.png">

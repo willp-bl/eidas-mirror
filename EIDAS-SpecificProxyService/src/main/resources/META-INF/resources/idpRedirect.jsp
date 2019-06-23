@@ -23,17 +23,18 @@
 <html>
 
 <head>
-    <jsp:include page="/include/htmlHeadSpecific.jsp"/>
+    <title></title>
+    <jsp:include page="/include/htmlHeadProxyServiceSpecific.jsp"/>
 </head>
 <body>
 <main>
     <div class="wrapper">
-        <jsp:include page="include/centralSliderNoAnim.jsp"/>
-        <jsp:include page="include/leftColumn.jsp"/>
+        <jsp:include page="include/proxyServiceCentralSliderNoAnim.jsp"/>
+        <jsp:include page="include/proxyServiceLeftColumn.jsp"/>
         <div class="col-right">
             <div class="col-right-inner">
                 <div class="col-right-content">
-                    <jsp:include page="include/content-security-header-deactivated.jsp"/>
+                    <jsp:include page="include/proxyService-content-security-header-deactivated.jsp"/>
                     <fmt:message var="redirectingValue" key="idpRedirecting.text" bundle="${i18n_eng}"/>
                     <input type="hidden" id="dummyField" value="${redirectingValue}"
                     />
@@ -65,13 +66,13 @@
                             </p>
                         </form>
                     </noscript>
-                    <jsp:include page="include/footer-img.jsp"/>
+                    <jsp:include page="include/proxyServiceFooter-img.jsp"/>
                 </div>
             </div>
         </div>
     </div>
 </main>
-<jsp:include page="include/footerScripts.jsp"/>
+<jsp:include page="include/proxyServiceFooterScripts.jsp"/>
 <script type="text/javascript" src="js/autocompleteOff.js"></script>
 <c:if test="${empty idp_number}">
     <script type="text/javascript" src="js/redirectOnload.js"></script>

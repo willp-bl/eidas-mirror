@@ -27,7 +27,7 @@ import java.io.IOException;
 
 /**
  * This filter remove unwanted http headers sent by the server
- * <br/>
+ * <br>
  *
  * Purposes :
  *

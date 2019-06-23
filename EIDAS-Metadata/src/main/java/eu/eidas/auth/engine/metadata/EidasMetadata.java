@@ -77,13 +77,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.concurrent.NotThreadSafe;
 import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Representing a full, final Eidas Metadata object built in XML, represented in String to be served over HTTP.
@@ -93,9 +87,7 @@ public class EidasMetadata {
 
     public static final String ERROR_ERROR_GENERATING_THE_ORGANIZATION_DATA = "ERROR : error generating the OrganizationData: {}";
     private static final Logger LOGGER = LoggerFactory.getLogger(EidasMetadata.class.getName());
-    private static final Set<String> DEFAULT_BINDING = new HashSet<String>() {{
-        this.add(SAMLConstants.SAML2_POST_BINDING_URI);
-    }};
+    private static final Set<String> DEFAULT_BINDING = new HashSet<>(Arrays.asList(SAMLConstants.SAML2_PAOS_BINDING_URI));
 
     public static final String PROTOCOL_VERSION_URI = "http://eidas.europa.eu/entity-attributes/protocol-version";
     public static final String APPLICATION_IDENTIFIER = "http://eidas.europa.eu/entity-attributes/application-identifier";

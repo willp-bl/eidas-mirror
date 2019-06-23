@@ -1,18 +1,20 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2018 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
  */
-
 package eu.eidas.node.connector;
 
 import java.io.IOException;
@@ -24,6 +26,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import eu.eidas.auth.commons.*;
+import eu.eidas.auth.commons.exceptions.EidasNodeException;
 import eu.eidas.node.*;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -31,12 +35,6 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ImmutableSortedSet;
 
-import eu.eidas.auth.commons.EIDASValues;
-import eu.eidas.auth.commons.EidasErrorKey;
-import eu.eidas.auth.commons.EidasParameterKeys;
-import eu.eidas.auth.commons.EidasStringUtil;
-import eu.eidas.auth.commons.IncomingRequest;
-import eu.eidas.auth.commons.WebRequest;
 import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.light.ILightRequest;
 import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
@@ -89,8 +87,11 @@ public class SpecificConnectorRequestServlet extends AbstractNodeServlet {
      *
      * @param httpServletRequest the http servlet request
      * @param httpServletResponse the http servlet response
-     * @throws ServletException
-     * @throws IOException
+     * @throws ServletException if the request for the POST
+     *                                  could not be handled
+     * @throws IOException  if an input or output error is
+     *                              detected when the servlet handles
+     *                              the request
      */
     @Override
     protected void doPost(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse)
@@ -162,6 +163,7 @@ public class SpecificConnectorRequestServlet extends AbstractNodeServlet {
         }
         httpServletRequest.setAttribute(NodeParameterNames.EIDAS_SERVICE_URL.toString(),
                              encodeURL(serviceUrl, httpServletResponse)); // // Correct URl redirect cookie implementation
+        httpServletRequest.setAttribute(NodeParameterNames.CITIZEN_COUNTRY_CODE.toString(), authData.getCitizenCountryCode());
         httpServletRequest.setAttribute(EidasParameterKeys.SAML_REQUEST.toString(), samlRequestTokenSaml);
         httpServletRequest.setAttribute(NodeParameterNames.RELAY_STATE.toString(), relayState);
         // Redirecting where it should be
@@ -174,13 +176,19 @@ public class SpecificConnectorRequestServlet extends AbstractNodeServlet {
     }
 
     private ILightRequest getiLightRequest(HttpServletRequest httpServletRequest,
-    		final Collection<AttributeDefinition<?>> registry) throws ServletException, IOException {
+    		final Collection<AttributeDefinition<?>> registry) throws ServletException {
         final String tokenBase64 = httpServletRequest.getParameter(EidasParameterKeys.TOKEN.toString());
 
         final SpecificConnectorCommunicationServiceImpl springManagedSpecificConnectorCommunicationService =getBean(SpecificConnectorCommunicationServiceImpl.class, SpecificCommunicationDefinitionBeanNames.SPECIFIC_CONNECTOR_COMMUNICATION_SERVICE.toString());
 
         try {
-            return springManagedSpecificConnectorCommunicationService.getAndRemoveRequest(tokenBase64,registry);
+            final ILightRequest iLightRequest = springManagedSpecificConnectorCommunicationService.getAndRemoveRequest(tokenBase64, registry);
+
+            if (null == iLightRequest) {
+                throw new SpecificCommunicationException("iLight Request could not be retrieved from cache.");
+            }
+
+            return iLightRequest;
         } catch (SpecificCommunicationException e) {
             throw new ServletException(e);
         }

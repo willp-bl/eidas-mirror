@@ -44,14 +44,10 @@ import org.joda.time.DateTime;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.xml.bind.JAXBException;
 import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * SpecificProxyService: provides a sample implementation for interacting with the IdP.
@@ -89,18 +85,18 @@ public class SpecificProxyService {
     private boolean askConsentResponseShowAttributeValues;
 
     private String issuerName;
-    
+
     boolean relaystateRandomizeNull;
 
     public boolean getRelaystateRandomizeNull() {
-		return relaystateRandomizeNull;
-	}
+        return relaystateRandomizeNull;
+    }
 
-	public void setRelaystateRandomizeNull(boolean relaystateRandomizeNull) {
-		this.relaystateRandomizeNull = relaystateRandomizeNull;
-	}
+    public void setRelaystateRandomizeNull(boolean relaystateRandomizeNull) {
+        this.relaystateRandomizeNull = relaystateRandomizeNull;
+    }
 
-	/**
+    /**
      * Correlation Map between the simple protocol request Id to be send to the IdP and the holder
      * of the light request and correlated simple protocol request sent by the Proxy-service.
      */
@@ -189,10 +185,12 @@ public class SpecificProxyService {
                 requestImmutableAttributeMap.getAttributeMap();
 
         List<Attribute> simpleAttributes = new ArrayList<>();
-        for (AttributeDefinition attrDef : requestImmutableMap.keySet()) {
+        for (Map.Entry<AttributeDefinition<?>, ImmutableSet<? extends AttributeValue<?>>> entry : requestImmutableMap.entrySet()) {
 
-            AttributeValue<?> attributeValue = null;
-            ImmutableSet<? extends AttributeValue<?>> attributeValues = requestImmutableMap.get(attrDef);
+            AttributeDefinition attrDef = entry.getKey();
+            ImmutableSet<? extends AttributeValue<?>> attributeValues = entry.getValue();
+
+            AttributeValue<?> attributeValue;
 
             if (!requestImmutableMap.get(attrDef).isEmpty()) {
                 attributeValue = attributeValues.iterator().next();
@@ -328,10 +326,10 @@ public class SpecificProxyService {
         }
     }
 
-    private ILightResponse createLightResponse(@Nonnull final Response specificResponse, final String inResponseToId, final String relayState) throws ServletException {
+    private ILightResponse createLightResponse(@Nonnull final Response specificResponse, final String inResponseToId, final String relayState) {
 
         final LightResponse.Builder lightResponseBuilder = LightResponse.builder()
-                .id(specificResponse.getId())
+                .id(UUID.randomUUID().toString())
                 .inResponseToId(inResponseToId)
                 .relayState(getRelayState(relayState));
 
@@ -369,10 +367,10 @@ public class SpecificProxyService {
     }
 
     boolean doesRandomize() {
-    	return getRelaystateRandomizeNull();
-	}
+        return getRelaystateRandomizeNull();
+    }
 
-	private String getRelayState(final String relayState) {
+    private String getRelayState(final String relayState) {
         return (StringUtils.isEmpty(relayState) && doesRandomize()) ? createRelayState() : relayState;
     }
 
@@ -438,10 +436,8 @@ public class SpecificProxyService {
                 final ComplexAddressAttribute complexAddressAttribute = ((AddressAttribute) attribute).getValue();
                 final PostalAddress postalAddress = translateComplexAddressAttribute(complexAddressAttribute);
                 final AttributeValue postalAddressAttributeValue = new PostalAddressAttributeValue(postalAddress);
-                if (postalAddressAttributeValue != null)
-                    immutableAttributeMapBuilder.put(attributeDefinition, postalAddressAttributeValue);
-                else
-                    immutableAttributeMapBuilder.put(attributeDefinition);
+                immutableAttributeMapBuilder.put(attributeDefinition, postalAddressAttributeValue);
+
             }
         }
 
@@ -469,7 +465,7 @@ public class SpecificProxyService {
         AttributeDefinition<?> attributeDefinition = getAttributeDefinitionForRepresentativeUserName(name);
 
         if (attributeDefinition == null)
-            return (getEidasAttributeRegistry().getByFriendlyName(name).size() == 0) ? getAdditionalAttributeRegistry().getByFriendlyName(name).first() : getEidasAttributeRegistry().getByFriendlyName(name).first();
+            return (getEidasAttributeRegistry().getByFriendlyName(name).isEmpty()) ? getAdditionalAttributeRegistry().getByFriendlyName(name).first() : getEidasAttributeRegistry().getByFriendlyName(name).first();
         return attributeDefinition;
     }
 
@@ -495,14 +491,15 @@ public class SpecificProxyService {
      * @return the LightResponse translated from the MS Specific Response
      * @throws JAXBException if cannot unmarshall the MS Specific Response.
      */
-    public ILightResponse translateSpecificResponse(@Nonnull final String specificResponse) throws JAXBException, ServletException {
+    public ILightResponse translateSpecificResponse(@Nonnull final String specificResponse) throws JAXBException {
         final Response response = unmarshallSpecificResponse(specificResponse);
         if (isValidateMandatoryFields(response)) {
             validateMandatoryFields(response);
         }
         final String inResponseToId = response.getInResponseTo();
-        final ILightRequest iLightRequest = getRemoveCorrelatediLightRequest(inResponseToId);
-        return createLightResponse(response, iLightRequest.getId(), iLightRequest.getRelayState());
+        return getRemoveCorrelatediLightRequest(inResponseToId)
+                .map(iLightRequest -> createLightResponse(response, iLightRequest.getId(), iLightRequest.getRelayState()))
+                .orElseThrow(() -> new NullPointerException("Unable to create ILightResponse, iLightRequest null"));
     }
 
     private boolean isValidateMandatoryFields(Response response) {
@@ -519,11 +516,12 @@ public class SpecificProxyService {
         return simpleProtocolProcess.convertFromJson(new StringReader(specificResponse), Response.class);
     }
 
-    private ILightRequest getRemoveCorrelatediLightRequest(@Nonnull final String inResponseToId) {
-        final CorrelatedRequestsHolder correlatedRequestsHolder = specificMSIdpRequestCorrelationMap.get(inResponseToId);
-        ILightRequest iLightRequest = correlatedRequestsHolder.getiLightRequest();
-        if (iLightRequest != null)
+    private Optional<ILightRequest> getRemoveCorrelatediLightRequest(@Nonnull final String inResponseToId) {
+        Optional<ILightRequest> iLightRequest = Optional.ofNullable(specificMSIdpRequestCorrelationMap.get(inResponseToId))
+                .map(CorrelatedRequestsHolder::getiLightRequest);
+        if (iLightRequest.isPresent()) {
             specificMSIdpRequestCorrelationMap.remove(inResponseToId);
+        }
         return iLightRequest;
     }
 

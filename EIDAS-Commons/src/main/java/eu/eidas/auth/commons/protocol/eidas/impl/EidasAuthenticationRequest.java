@@ -36,11 +36,11 @@ public final class EidasAuthenticationRequest extends AbstractEidasAuthenticatio
 
     /**
      * Builder pattern for the {@link EidasAuthenticationRequest} class.
-     * <p/>
+     * <p>
      * Effective Java, 2nd Ed. : Item 2: Builder Pattern.
-     * <p/>
+     * <p>
      * This Builder is not thread-safe but is thread-compliant, it is supposed to be used by only one thread.
-     * <p/>
+     * <br>
      */
     @SuppressWarnings("ParameterHidesMemberVariable")
     @NotThreadSafe
@@ -92,9 +92,9 @@ public final class EidasAuthenticationRequest extends AbstractEidasAuthenticatio
 
     /**
      * Defensive serialization ensuring that the validation rules defined in the Builder are always used.
-     * <p/>
+     * <p>
      * Used upon de-serialization, not serialization.
-     * <p/>
+     * <p>
      * The state of this class is transformed back into the class it represents.
      */
     private Object readResolve() throws ObjectStreamException {

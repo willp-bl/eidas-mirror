@@ -21,7 +21,7 @@
 	<!-- Types of consent obtained from the user for this authentication and
 		data transfer. Allow values: 'unspecified'. -->
 	<entry key="consentAuthnRequest">unspecified</entry>
-	<!-- Allow values: 'obtained', 'prior', 'curent-implicit', 'curent-explicit',
+	<!-- Allow values: 'obtained', 'prior', 'current-implicit', 'current-explicit',
 		'unspecified'. -->
 	<entry key="consentAuthnResponse">obtained</entry>
 

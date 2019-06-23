@@ -1,28 +1,20 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
- */
-
-/**
- * This work is Open Source and licensed by the European Commission under the conditions of the European Public License
- * v1.1
- * <p/>
- * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1);
- * <p/>
- * any use of this file implies acceptance of the conditions of this license. Unless required by applicable law or
- * agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT WARRANTIES
- * OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
- * and limitations under the License.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
+ *
  */
 package eu.eidas.auth.commons.protocol.eidas.impl;
 
@@ -67,13 +59,13 @@ public abstract class AbstractEidasAuthenticationRequest extends AbstractAuthent
     private static final Logger LOG = LoggerFactory.getLogger(AbstractEidasAuthenticationRequest.class);
     /**
      * Abstract Builder pattern with self-bounding generics for {@link IEidasAuthenticationRequest} subtypes.
-     * <p/>
+     * <p>
      * Effective Java, 2nd Ed. : Item 2: Builder Pattern.
-     * <p/>
+     * <p>
      * This Builder is not thread-safe but is thread-compliant, it is supposed to be used by only one thread.
-     * <p/>
-     * See Self-bounding generics:<p/> http://www.artima.com/weblogs/viewpost.jsp?thread=136394<p/>
-     * http://www.artima.com/forums/flat.jsp?forum=106&thread=136394<p/> http://en.wikipedia.org/wiki/Covariance_and_contravariance<p/>
+     * <p>
+     * See Self-bounding generics:<p> http://www.artima.com/weblogs/viewpost.jsp?thread=136394<p>
+     * http://www.artima.com/forums/flat.jsp?forum=106&amp;thread=136394<p> http://en.wikipedia.org/wiki/Covariance_and_contravariance<p>
      *
      * @param B the type of the Builder itself
      * @param T the type being built by the {@link #build()} method of this builder.

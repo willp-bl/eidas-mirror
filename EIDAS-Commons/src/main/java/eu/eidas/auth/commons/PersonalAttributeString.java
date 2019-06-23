@@ -30,11 +30,11 @@ import eu.eidas.util.Preconditions;
 
 /**
  * Converts {@link PersonalAttribute} objects to their String representations and vice versa.
- * <p/>
+ * <p>
  * The PersonalAttribute format is as follows:
- * <p/>
+ * <p>
  * {@code name:required:[v,a,l,u,e,s]|[v=a,l=u,e=s]:status;}
- * <p/>
+ * <p>
  *
  * @since 1.1
  */
@@ -169,6 +169,7 @@ public final class PersonalAttributeString {
      *
      * @param attrList String representing the attribute list.
      * @throws IllegalArgumentException if the string representation using tuples is invalid
+     * @return the PersonalAttributeList
      */
     @Nonnull
     public static PersonalAttributeList fromStringList(@Nonnull String attrList) {
@@ -185,6 +186,7 @@ public final class PersonalAttributeString {
     /**
      * Prints the PersonalAttribute in the following format. name:required:[v,a,l,u,e,s]|[v=a,l=u,e=s]:status;
      *
+     * @param personalAttribute the personalAttribute
      * @return The PersonalAttribute as a string.
      */
     @Nonnull
@@ -223,7 +225,7 @@ public final class PersonalAttributeString {
 
     /**
      * Creates a string in the following format.
-     * <p/>
+     * <p>
      * attrName:attrType:[attrValue1,attrValue2=attrComplexValue]:attrStatus;
      *
      * @return {@inheritDoc}

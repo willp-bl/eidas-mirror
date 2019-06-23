@@ -46,6 +46,8 @@ public final class ResponseCarryingServiceException extends EIDASServiceExceptio
      * @param errorCode The error code value.
      * @param errorMessage The error message value.
      * @param samlTokenFail The error SAML Token.
+     * @param errorRedirectUrl  The error redirect URL
+     * @param relayState The relay state
      */
     public ResponseCarryingServiceException(@Nonnull String errorCode,
                                             @Nonnull String errorMessage,

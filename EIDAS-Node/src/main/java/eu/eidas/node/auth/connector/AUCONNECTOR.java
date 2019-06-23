@@ -1,27 +1,21 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2018 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
  */
 package eu.eidas.node.auth.connector;
-
-import static java.lang.Boolean.parseBoolean;
-
-import javax.annotation.Nonnull;
-
-import org.apache.commons.lang.StringUtils;
-import org.bouncycastle.util.encoders.Base64;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import eu.eidas.auth.commons.EIDASValues;
 import eu.eidas.auth.commons.EidasErrorKey;
@@ -37,10 +31,17 @@ import eu.eidas.auth.commons.protocol.eidas.IEidasAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.impl.BinaryRequestMessage;
 import eu.eidas.auth.commons.tx.AuthenticationExchange;
-import eu.eidas.auth.commons.tx.CorrelationMap;
 import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
 import eu.eidas.auth.commons.tx.StoredLightRequest;
-import eu.eidas.node.NodeParameterNames;
+import org.apache.commons.lang.StringUtils;
+import org.bouncycastle.util.encoders.Base64;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nonnull;
+import javax.cache.Cache;
+
+import static java.lang.Boolean.parseBoolean;
 
 /**
  * The AUCONNECTOR class serves as the middle-man in the communications between the Service Provider and the eIDAS
@@ -67,24 +68,23 @@ public final class AUCONNECTOR implements ICONNECTORService {
     private ICONNECTORSAMLService samlService;
 
     /**
-     * Connector configuration.
+     * Connector configuration: Never null. initialized via Spring Application Context
      */
     private AUCONNECTORUtil connectorUtil;
 
-    private CorrelationMap<StoredLightRequest> specificSpRequestCorrelationMap;
+    private Cache<String, StoredLightRequest> specificSpRequestCorrelationCache;
 
-    private CorrelationMap<StoredAuthenticationRequest> connectorRequestCorrelationMap;
+    private Cache<String, StoredAuthenticationRequest> connectorRequestCorrelationCache;
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public IRequestMessage getAuthenticationRequest(WebRequest webRequest, ILightRequest lightRequest) {
+    public IRequestMessage getAuthenticationRequest(@Nonnull WebRequest webRequest, ILightRequest lightRequest) {
 
         IAuthenticationRequest serviceProviderRequest = samlService.processSpRequest(lightRequest, webRequest);
 
         String citizenIpAddress = webRequest.getRemoteIpAddress();
-        String relayState = webRequest.getEncodedLastParameterValue(NodeParameterNames.RELAY_STATE.toString());
 
         IAuthenticationRequest fullRequest = prepareEidasRequest((IEidasAuthenticationRequest) serviceProviderRequest);
 
@@ -97,12 +97,12 @@ public final class AUCONNECTOR implements ICONNECTORService {
 
         String connectorRequestSamlId = connectorRequest.getRequest().getId();
 
-        specificSpRequestCorrelationMap.put(connectorRequestSamlId, StoredLightRequest.builder()
+        specificSpRequestCorrelationCache.put(connectorRequestSamlId, StoredLightRequest.builder()
                 .request(lightRequest)
                 .remoteIpAddress(citizenIpAddress)
                 .build());
 
-        connectorRequestCorrelationMap.put(connectorRequestSamlId, StoredAuthenticationRequest.builder()
+        connectorRequestCorrelationCache.put(connectorRequestSamlId, StoredAuthenticationRequest.builder()
                 .request(connectorRequest.getRequest())
                 .remoteIpAddress(citizenIpAddress)
                 .build());
@@ -118,7 +118,7 @@ public final class AUCONNECTOR implements ICONNECTORService {
                 !samlService.checkMandatoryAttributes(authData.getRequestedAttributes())) {
             LOG.error("BUSINESS EXCEPTION : incomplete mandatory set");
             throw new EidasNodeException(EidasErrors.get(EidasErrorKey.EIDAS_MANDATORY_ATTRIBUTES.errorCode()),
-                                         EidasErrors.get(EidasErrorKey.EIDAS_MANDATORY_ATTRIBUTES.errorMessage()));
+                    EidasErrors.get(EidasErrorKey.EIDAS_MANDATORY_ATTRIBUTES.errorMessage()));
         }
 
         //Validate Representative
@@ -144,7 +144,10 @@ public final class AUCONNECTOR implements ICONNECTORService {
         }
 
         // SP type setting to Request depending on Node type
-        String nodeSpType = connectorUtil.getConfigs().getProperty(EIDASValues.EIDAS_SPTYPE.toString());
+        String nodeSpType = null;
+        if (connectorUtil != null) {
+            nodeSpType = connectorUtil.getConfigs().getProperty(EIDASValues.EIDAS_SPTYPE.toString());
+        }
         String spType = authData.getSpType();
         if (StringUtils.isNotBlank(nodeSpType)) {
             if (StringUtils.isNotBlank(spType)) {
@@ -188,8 +191,8 @@ public final class AUCONNECTOR implements ICONNECTORService {
 
         // processing the webRequest
         AuthenticationExchange authenticationExchange =
-                samlService.processProxyServiceResponse(webRequest, connectorRequestCorrelationMap,
-                                                        specificSpRequestCorrelationMap);
+                samlService.processProxyServiceResponse(webRequest, connectorRequestCorrelationCache,
+                        specificSpRequestCorrelationCache);
 
         IAuthenticationResponse connectorResponse = authenticationExchange.getConnectorResponse();
 
@@ -264,20 +267,20 @@ public final class AUCONNECTOR implements ICONNECTORService {
         this.connectorUtil = connectorUtil;
     }
 
-    public CorrelationMap<StoredLightRequest> getSpecificSpRequestCorrelationMap() {
-        return specificSpRequestCorrelationMap;
+    public Cache<String, StoredLightRequest> getSpecificSpRequestCorrelationCache() {
+        return specificSpRequestCorrelationCache;
     }
 
-    public void setSpecificSpRequestCorrelationMap(CorrelationMap<StoredLightRequest> specificSpRequestCorrelationMap) {
-        this.specificSpRequestCorrelationMap = specificSpRequestCorrelationMap;
+    public void setSpecificSpRequestCorrelationCache(Cache<String, StoredLightRequest> specificSpRequestCorrelationCache) {
+        this.specificSpRequestCorrelationCache = specificSpRequestCorrelationCache;
     }
 
-    public CorrelationMap<StoredAuthenticationRequest> getConnectorRequestCorrelationMap() {
-        return connectorRequestCorrelationMap;
+    public Cache<String, StoredAuthenticationRequest> getConnectorRequestCorrelationCache() {
+        return connectorRequestCorrelationCache;
     }
 
-    public void setConnectorRequestCorrelationMap(CorrelationMap<StoredAuthenticationRequest> connectorRequestCorrelationMap) {
-        this.connectorRequestCorrelationMap = connectorRequestCorrelationMap;
+    public void setConnectorRequestCorrelationCache(Cache<String, StoredAuthenticationRequest> connectorRequestCorrelationCache) {
+        this.connectorRequestCorrelationCache = connectorRequestCorrelationCache;
     }
 
 

@@ -1,16 +1,19 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
 package eu.eidas.auth.engine.xml.opensaml;
 
@@ -18,7 +21,6 @@ import eu.eidas.auth.commons.EidasErrorKey;
 import eu.eidas.auth.commons.EidasStringUtil;
 import eu.eidas.auth.commons.protocol.impl.EidasSamlBinding;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
-import eu.eidas.engine.exceptions.SAMLEngineException;
 import org.joda.time.DateTime;
 import org.opensaml.saml.saml2.core.Response;
 import org.opensaml.saml.saml2.core.StatusCode;
@@ -118,9 +120,9 @@ public final class SAMLEngineUtils {
     /**
      * validates the issuer to be an url of a known scheme
      *
-     * @param value
+     * @param value the issuer
      * @return the validated value
-     * @throws SAMLEngineException
+     * @throws EIDASSAMLEngineException if the issuer can not be retrieved
      */
     public static String getValidIssuerValue(String value) throws EIDASSAMLEngineException {
         if (value != null) {

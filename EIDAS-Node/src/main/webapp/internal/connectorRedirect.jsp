@@ -26,7 +26,7 @@
                         <span><fmt:message key="eidas.title" bundle="${i18n_eng}"/></span>
                     </h1>
                     <fmt:message var="redirectingValue" key="eidas.redirecting" bundle="${i18n_eng}"/>
-                    <input type="hidden" id="dummyField" value="${redirectingValue}"
+                    <input type="hidden" id="dummyField" value="${e:forHtml(redirectingValue)}"
                     />
                     <h2 id="connectorRedirectLabel" class="sub-title"></h2>
                     <form id="ColleagueResponse" name="redirectForm" action="${e:forHtml(redirectUrl)}" method="post">
@@ -50,7 +50,7 @@
                             </c:if>
 
                             <fmt:message var="btnMsg" key="accept.button" bundle="${i18n_eng}"/>
-                            <input type="submit" id="ColleagueResponse_0" class="btn btn-next" value="${btnMsg}"/>
+                            <input type="submit" id="ColleagueResponse_0" class="btn btn-next" value="${e:forHtml(btnMsg)}"/>
                             <input type="hidden" name="RelayState" value="${e:forHtml(RelayState)}" id="relayState"/>
                         </form>
                     </noscript>
@@ -61,6 +61,5 @@
 </main>
 <script type="text/javascript" src="js/autocompleteOff.js"></script>
 <script type="text/javascript" src="js/redirectOnload.js"></script>
-<jsp:include page="footerScripts.jsp"/>
 </body>
 </html>

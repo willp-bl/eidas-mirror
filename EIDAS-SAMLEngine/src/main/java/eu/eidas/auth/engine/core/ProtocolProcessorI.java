@@ -1,18 +1,20 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
-
 package eu.eidas.auth.engine.core;
 
 import com.google.common.collect.ImmutableSortedSet;
@@ -46,6 +48,7 @@ public interface ProtocolProcessorI {
      * [person or for a legal person)
      *
      * @param immutableAttributeMap the attribute map.
+     * @return true or false
      */
     boolean checkMandatoryAttributes(@Nullable ImmutableAttributeMap immutableAttributeMap);
 
@@ -53,6 +56,7 @@ public interface ProtocolProcessorI {
      * Checks whether the attribute map satisfy the rules of representation
      *
      * @param immutableAttributeMap the attribute map.
+     * @return true or false
      */
     boolean checkRepresentativeAttributes(@Nullable ImmutableAttributeMap  immutableAttributeMap);
 
@@ -60,6 +64,7 @@ public interface ProtocolProcessorI {
      * Ensures that the generated request is complete and is not missing information required by this protocol.
      *
      * @param request the current request
+     * @throws EIDASSAMLEngineException the EIDASSAML engine exception
      */
     void checkRequestSanity(@Nonnull IAuthenticationRequest request) throws EIDASSAMLEngineException;
 
@@ -95,7 +100,9 @@ public interface ProtocolProcessorI {
     /**
      * Returns the encryption certificate to be used to encrypt a response for the given requester
      *
+     * @param requestIssuer the issuer from request
      * @return the encryption certificate to be used to encrypt a response for the given requester
+     * @throws EIDASSAMLEngineException the EIDASSAML engine exception
      */
     @Nullable
     X509Certificate getEncryptionCertificate(@Nullable String requestIssuer) throws EIDASSAMLEngineException;
@@ -146,7 +153,7 @@ public interface ProtocolProcessorI {
      * @param authnRequest the incoming request
      * @param httpMethod the current HTTP method (verb) or {@code null} if the HTTP binding is not relevant
      * @return {@code true} if the given request is valid and can be processed, returns {@code false} otherwise.
-     * @throws EIDASSAMLEngineException
+     * @throws EIDASSAMLEngineException in case of errors
      */
     boolean isAcceptableHttpRequest(@Nonnull IAuthenticationRequest authnRequest, @Nullable String httpMethod)
             throws EIDASSAMLEngineException;
@@ -160,10 +167,18 @@ public interface ProtocolProcessorI {
      * The returned SAML response is not encrypted and is not signed, encryption and signature are handled by the {@link
      * eu.eidas.auth.engine.ProtocolEngineI} itself.
      *
+     * @param request the request data
+     * @param response the response data
+     * @param ipAddress the ip address
+     * @param samlCoreProperties the saml engine's core properties
+     *
      * @since 1.1
      *
      * @deprecated since 1.4
      * Use {@link ProtocolProcessorI#marshallErrorResponse(IAuthenticationRequest, IAuthenticationResponse, String, SamlEngineCoreProperties, DateTime)}
+     *
+     * @return the response
+     * @throws EIDASSAMLEngineException if the response could not be generated
      */
     @Nonnull
     @Deprecated
@@ -180,8 +195,16 @@ public interface ProtocolProcessorI {
      * The returned SAML response is not encrypted and is not signed, encryption and signature are handled by the {@link
      * eu.eidas.auth.engine.ProtocolEngineI} itself.
      *
+     * @param request the request data
+     * @param response the response data
+     * @param ipAddress the ip address
+     * @param samlCoreProperties the saml engine's core properties
+     * @param currentTime the current time
+     *
      * @since 1.4
      *
+     * @return the response
+     * @throws EIDASSAMLEngineException if the response could not be generated
      */
     @Nonnull
     Response marshallErrorResponse(@Nonnull IAuthenticationRequest request,
@@ -233,7 +256,15 @@ public interface ProtocolProcessorI {
      * <p>
      * If the given {@link IAuthenticationRequest} is not valid, throws an EIDASSAMLEngineException.
      *
+     * @param requestToBeSent the request data
+     * @param serviceIssuer the issuer of a request
+     * @param samlCoreProperties the saml engine's core properties
+     *
      * @since 1.1.1
+     *
+     * @return the request
+     * @throws EIDASSAMLEngineException if the request could not be generated
+     *
      */
     @Nonnull
     IAuthenticationRequest createProtocolRequestToBeSent(@Nonnull IAuthenticationRequest requestToBeSent,
@@ -250,10 +281,17 @@ public interface ProtocolProcessorI {
      * The returned SAML request is not encrypted and is not signed, encryption and signature are handled by the {@link
      * eu.eidas.auth.engine.ProtocolEngineI} itself.
      *
+     * @param requestToBeSent the request data
+     * @param serviceIssuer the issuer of a request
+     * @param samlCoreProperties the saml engine's core properties
+     *
      * @since 1.1
      *
      * @deprecated since 1.4
      * Use {@link ProtocolProcessorI#marshallRequest(IAuthenticationRequest, String, SamlEngineCoreProperties, DateTime)}
+     *
+     * @return the request
+     * @throws EIDASSAMLEngineException if the request could not be generated
      */
     @Nonnull
     @Deprecated
@@ -267,7 +305,15 @@ public interface ProtocolProcessorI {
      * The returned SAML request is not encrypted and is not signed, encryption and signature are handled by the {@link
      * eu.eidas.auth.engine.ProtocolEngineI} itself.
      *
+     * @param requestToBeSent the request data
+     * @param serviceIssuer the issuer of a request
+     * @param samlCoreProperties the saml engine's core properties
+     * @param currentTime the current time
+     *
      * @since 1.4
+     *
+     * @return the request
+     * @throws EIDASSAMLEngineException if the request could not be generated
      */
     @Nonnull
     AuthnRequest marshallRequest(@Nonnull IAuthenticationRequest requestToBeSent,
@@ -283,10 +329,18 @@ public interface ProtocolProcessorI {
      * The returned SAML response is not encrypted and is not signed, encryption and signature are handled by the {@link
      * eu.eidas.auth.engine.ProtocolEngineI} itself.
      *
+     * @param request the request data
+     * @param response the response data
+     * @param ipAddress the ip address
+     * @param samlCoreProperties the saml engine's core properties
+     *
      * @since 1.1
      *
      * @deprecated since 1.4
      * Use {@link ProtocolProcessorI#marshallResponse(IAuthenticationRequest, IAuthenticationResponse, String, SamlEngineCoreProperties, DateTime)}
+     *
+     * @return the response
+     * @throws EIDASSAMLEngineException if the response could not be generated
      */
     @Nonnull
     @Deprecated
@@ -301,7 +355,16 @@ public interface ProtocolProcessorI {
      * The returned SAML response is not encrypted and is not signed, encryption and signature are handled by the {@link
      * eu.eidas.auth.engine.ProtocolEngineI} itself.
      *
+     * @param request the request data
+     * @param response the response data
+     * @param ipAddress the ip address
+     * @param samlCoreProperties the saml engine's core properties
+     * @param currentTime the current time
+     *
      * @since 1.4
+     *
+     * @return the response
+     * @throws EIDASSAMLEngineException if the response could not be generated
      */
     @Nonnull
     Response marshallResponse(@Nonnull IAuthenticationRequest request,
@@ -313,7 +376,16 @@ public interface ProtocolProcessorI {
 
 
     /**
+     *
+     * @param errorResponse the response data
+     * @param samlErrorResponse the response
+     * @param ipAddress the ip address
+     * @param coreProperties the saml engine's core properties
+     *
      * @since 1.1
+     *
+     * @return the response data
+     * @throws EIDASSAMLEngineException if the response could not be generated
      */
     @Nonnull
     IAuthenticationResponse unmarshallErrorResponse(@Nonnull IAuthenticationResponse errorResponse,
@@ -323,7 +395,15 @@ public interface ProtocolProcessorI {
             throws EIDASSAMLEngineException;
 
     /**
+     *
+     * @param citizenCountryCode the citizen Country Code
+     * @param samlRequest the request data
+     * @param originCountryCode the country code
+     *
      * @since 1.1
+     *
+     * @return the request data
+     * @throws EIDASSAMLEngineException if the response could not be generated
      */
     @Nonnull
     IAuthenticationRequest unmarshallRequest(@Nonnull String citizenCountryCode,
@@ -333,7 +413,18 @@ public interface ProtocolProcessorI {
     /**
      * Converts the given SAML response into the appropriate kind of {@link IAuthenticationResponse}.
      *
+     * @param response the response data
+     * @param verifyBearerIpAddress true, if is IP validation
+     * @param userIpAddress the ip address
+     * @param beforeSkewTimeInMillis the skew time for notBefore (value to be added)
+     * @param afterSkewTimeInMillis  the skew time for notOnOrAfter (value to be added)
+     * @param now the current time
+     * @param audienceRestriction the restriction based on URI
+     *
      * @since 1.1
+     *
+     * @return the response data
+     * @throws EIDASSAMLEngineException if the response could not be generated
      */
     @Nonnull
     IAuthenticationResponse unmarshallResponse(@Nonnull Response response,

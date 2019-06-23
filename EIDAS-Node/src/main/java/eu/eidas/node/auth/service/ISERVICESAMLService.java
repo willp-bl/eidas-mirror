@@ -1,29 +1,20 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
- */
 /*
- * This work is Open Source and licensed by the European Commission under the
- * conditions of the European Public License v1.1
+ * Copyright (c) 2019 by European Commission
  *
- * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1);
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
  *
- * any use of this file implies acceptance of the conditions of this license.
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations
- * under the License.
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
+ *
  */
 package eu.eidas.node.auth.service;
 
@@ -66,6 +57,7 @@ public interface ISERVICESAMLService {
      * Process the response received from the IDP.
      *
      * @param originalRequest The original authentication request.
+     * @param response the instance of {@link AuthenticationResponse}
      * @param ipUserAddress The citizen's IP address.
      * @return A byte array containing the SAML Response Token.
      * @see EidasAuthenticationRequest
@@ -99,22 +91,24 @@ public interface ISERVICESAMLService {
      * Checks whether the attribute list contains at least one of the mandatory eIDAS attribute set (either for a
      * natural [person or for a legal person)
      *
-     * @param attributes
+     * @param attributes the instance of {@link ImmutableAttributeMap} holding the attributes
+     * @return true if attribute list contains at least one of the mandatory eIDAS attribute and false otherwise
      */
     boolean checkMandatoryAttributeSet(@Nullable ImmutableAttributeMap attributes);
 
     /**
      * Checks whether the attribute map satifisfies the rule of representation
      *
-     * @param attributes
+     * @param attributes the instance of {@link ImmutableAttributeMap} holding the attributes
+     * @return true if the attribute map satifisfies the rule of representation and false otherwise
      */
     boolean checkRepresentativeAttributes(@Nullable ImmutableAttributeMap attributes);
 
     /**
      * Checks if all the requested mandatory attributes have values.
      *
-     * @param requestedAttributes
-     * @param responseAttributes
+     * @param requestedAttributes the instance of {@link ImmutableAttributeMap} holding the request attributes
+     * @param responseAttributes the instance of {@link ImmutableAttributeMap} holding the response attributes
      *
      * @return true if all mandatory attributes have values, false if at least one
      * attribute doesn't have value.
@@ -132,8 +126,5 @@ public interface ISERVICESAMLService {
 
     @Nonnull
     String getCountryCode();
-
-    @Nonnull
-    Collection<String> whitelist(String name);
 
 }

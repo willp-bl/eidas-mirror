@@ -23,15 +23,15 @@
 <html lang="en">
 
 <head>
-    <jsp:include page="include/htmlHeadSpecific.jsp"/>
+    <jsp:include page="include/htmlHeadProxyServiceSpecific.jsp"/>
     <title><fmt:message key="consent.page.title" bundle="${i18n_eng}"/></title>
 </head>
 <% /* Page displayed when going back from IDP-AP, after user's consent, will redirect to Connector.ColleagueResponse */%>
 <body>
 <main>
     <div class="wrapper">
-        <jsp:include page="include/centralSlider.jsp"/>
-        <jsp:include page="include/leftColumn.jsp"/>
+        <jsp:include page="include/proxyServiceCentralSlider.jsp"/>
+        <jsp:include page="include/proxyServiceLeftColumn.jsp"/>
         <div class="col-right">
             <div class="col-right-inner">
                 <div class="clearfix">
@@ -41,10 +41,10 @@
                     </div>
                 </div>
                 <div class="col-right-content">
-                    <jsp:include page="include/content-security-header-deactivated.jsp"/>
+                    <jsp:include page="include/proxyService-content-security-header-deactivated.jsp"/>
                     <form id="consentSelector" name="consentSelector" method="${e:forHtml(binding)}"
                           action="${e:forHtml(redirectUrl)}">
-                        <jsp:include page="include/titleWithAssurance.jsp"/>
+                        <jsp:include page="include/proxyServiceTitleWithAssurance.jsp"/>
                         <p id="stepstatusjs" name="stepstatusjs" class="step-status">
                             <fmt:message key="common.step" bundle="${i18n_eng}"/>
                             <span>3</span> | 3
@@ -167,14 +167,14 @@
                             </span>
                         </button>
                     </p>
-                    <jsp:include page="include/footer-img.jsp"/>
+                    <jsp:include page="include/proxyServiceFooter-img.jsp"/>
                 </div>
             </div>
         </div>
     </div>
 </main>
-<jsp:include page="helpPages/modal_loa.jsp"/>
-<jsp:include page="include/footerScripts.jsp"/>
+<jsp:include page="helpPages/proxyServiceModal_loa.jsp"/>
+<jsp:include page="include/proxyServiceFooterScripts.jsp"/>
 <script type="text/javascript" src="js/citizenConsent.js"></script>
 <script type="text/javascript" src="js/autocompleteOff.js"></script>
 </body>

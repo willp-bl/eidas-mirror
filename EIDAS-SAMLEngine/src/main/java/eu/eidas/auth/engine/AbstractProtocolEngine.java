@@ -1,18 +1,20 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
-
 package eu.eidas.auth.engine;
 
 import com.google.common.collect.ImmutableSet;
@@ -23,7 +25,12 @@ import eu.eidas.auth.commons.xml.opensaml.OpenSamlHelper;
 import eu.eidas.auth.engine.configuration.ProtocolConfigurationAccessor;
 import eu.eidas.auth.engine.configuration.ProtocolEngineConfiguration;
 import eu.eidas.auth.engine.configuration.ProtocolEngineConfigurationException;
-import eu.eidas.auth.engine.core.*;
+import eu.eidas.auth.engine.core.ProtocolCipherI;
+import eu.eidas.auth.engine.core.ProtocolDecrypterI;
+import eu.eidas.auth.engine.core.ProtocolEncrypterI;
+import eu.eidas.auth.engine.core.ProtocolProcessorI;
+import eu.eidas.auth.engine.core.ProtocolSignerI;
+import eu.eidas.auth.engine.core.SamlEngineCoreProperties;
 import eu.eidas.auth.engine.xml.opensaml.SAMLEngineUtils;
 import eu.eidas.encryption.exception.MarshallException;
 import eu.eidas.encryption.exception.UnmarshallException;
@@ -145,6 +152,8 @@ public abstract class AbstractProtocolEngine {
 
     /**
      * Gets the Encrypter.
+     *
+     * @return the {@link ProtocolCipherI}
      */
     public ProtocolCipherI getCipher() {
         return getConfiguration().getCipher();
@@ -212,6 +221,7 @@ public abstract class AbstractProtocolEngine {
     /**
      * Sign and transform to byte array.
      *
+     * @param request the {@link AuthnRequest}
      * @return the byte[] of the SAML token
      * @throws EIDASSAMLEngineException the SAML engine exception
      */
@@ -225,6 +235,8 @@ public abstract class AbstractProtocolEngine {
     /**
      * Sign and transform to byte array.
      *
+     * @param request the {@link IAuthenticationRequest}
+     * @param response the {@link Response}
      * @return the byte[] of the SAML token
      * @throws EIDASSAMLEngineException the SAML engine exception
      */
@@ -239,6 +251,7 @@ public abstract class AbstractProtocolEngine {
     /**
      * Method that signs a SAML Token.
      *
+     * @param assertion the {@link Assertion}
      * @return the SAML object sign
      * @throws EIDASSAMLEngineException the SAML engine exception
      */
@@ -251,6 +264,7 @@ public abstract class AbstractProtocolEngine {
     /**
      * Method that signs a SAML Token.
      *
+     * @param request the {@link AuthnRequest}
      * @return the SAML object sign
      * @throws EIDASSAMLEngineException the SAML engine exception
      */
@@ -263,6 +277,8 @@ public abstract class AbstractProtocolEngine {
     /**
      * Method that signs a SAML Token.
      *
+     * @param request the {@link IAuthenticationRequest}
+     * @param response the {@link Response}
      * @return the SAML object sign
      * @throws EIDASSAMLEngineException the SAML engine exception
      */

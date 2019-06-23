@@ -26,6 +26,7 @@
 <html>
     <head>
         <jsp:include page="/internal/htmlHead.jsp"/>
+        <title></title>
     </head>
     <body>
         <main>
@@ -38,7 +39,7 @@
                             <jsp:include page="/internal/content-security-header-deactivated.jsp"/>
                             <fmt:message var="redirectingValue" key="msSpecificConnectorRedirecting.text"
                                          bundle="${i18n_eng}"/>
-                            <input type="hidden" id="dummyField" value="${redirectingValue}"
+                            <input type="hidden" id="dummyField" value="${e:forHtml(redirectingValue)}"
                             />
                             <h2 id="tokenConnectorRedirectLabel" class="sub-title"></h2>
                             <form id="redirectForm" name="redirectForm" action="${e:forHtml(redirectUrl)}" method="${e:forHtml(binding)}">
@@ -49,7 +50,7 @@
                                 <form id="noJavaScriptForm" name="noJavaScriptRedirectForm" action="${e:forHtml(redirectUrl)}" method="${e:forHtml(binding)}">
                                     <input type="hidden" name="token" id="noJavaScriptToken" value="${e:forHtml(token)}"/>
                                     <fmt:message var="btnMsg" key="accept.button" bundle="${i18n_eng}"/>
-                                    <input type="submit" id="submitButton1" class="btn btn-next" value="${btnMsg}"/>
+                                    <input type="submit" id="submitButton1" class="btn btn-next" value="${e:forHtml(btnMsg)}"/>
                                 </form>
                             </noscript>
                         </div>
@@ -59,6 +60,5 @@
         </main>
         <script type="text/javascript" src="js/autocompleteOff.js"></script>
         <script type="text/javascript" src="js/redirectOnload.js"></script>
-        <jsp:include page="/internal/footerScripts.jsp"/>
     </body>
 </html>

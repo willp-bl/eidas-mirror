@@ -206,11 +206,11 @@ public class AuthRequestSignatureTest {
         }
 
         public IAuthenticationRequest validateAuthnRequest(final byte[] tokenSaml) throws EIDASSAMLEngineException {
-            return samlEngine.unmarshallRequestAndValidate(tokenSaml, "BE",null);
+            return samlEngine.unmarshallRequestAndValidate(tokenSaml, "BE");
         }
 
         public String getSigningAlgo(final byte[] token) throws EIDASSAMLEngineException {
-            AuthnRequest unmarshalled = samlEngine.unmarshallRequest(token,null,false);
+            AuthnRequest unmarshalled = samlEngine.unmarshallRequest(token);
             return unmarshalled.getSignature().getSignatureAlgorithm();
         }
 

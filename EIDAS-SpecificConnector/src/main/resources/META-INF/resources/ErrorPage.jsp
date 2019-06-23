@@ -31,9 +31,7 @@
             <div class="col-right-inner">
                 <div class="col-right-content">
                     <h1>Demo Specific Connector</h1>
-                    <center>
                         <h2>Apologise, we could not parse the message.</h2>
-                    </center>
                 </div>
             </div>
         </div>

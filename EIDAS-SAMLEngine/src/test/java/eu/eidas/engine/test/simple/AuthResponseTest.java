@@ -1,32 +1,21 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
- */
 /*
- * Licensed under the EUPL, Version 1.1 or Ã¢â‚¬â€œ as soon they will be approved by
- * the European Commission - subsequent versions of the EUPL (the "Licence");
- * You may not use this work except in compliance with the Licence. You may
- * obtain a copy of the Licence at:
+ * Copyright (c) 2019 by European Commission
  *
- * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the Licence is distributed on an "AS IS" basis, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * Licence for the specific language governing permissions and limitations under
- * the Licence.
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
+ *
  */
-
 package eu.eidas.engine.test.simple;
 
 import com.google.common.collect.ImmutableSet;
@@ -275,7 +264,7 @@ public class AuthResponseTest {
         try {
             authRequest = engine.generateRequestMessage(request, null).getMessageBytes();
 
-            authenRequest = (IEidasAuthenticationRequest) engine.unmarshallRequestAndValidate(authRequest, "ES",Arrays.asList(ISSUER));
+            authenRequest = (IEidasAuthenticationRequest) engine.unmarshallRequestAndValidate(authRequest, "ES");
 
         } catch (EIDASSAMLEngineException e) {
             fail("Error create EidasAuthenticationRequest");
@@ -455,7 +444,7 @@ public class AuthResponseTest {
     @Test
     public final void testResponseInvalidParametersToken() {
         try {
-            getEngine().unmarshallResponseAndValidate(null, ipAddress, 0, 0, null,null, false);
+            getEngine().unmarshallResponseAndValidate(null, ipAddress, 0, 0, null);
             fail(ERROR_TXT);
         } catch (EIDASSAMLEngineException e) {
             LOG.error("Error: " + e, e);
@@ -480,7 +469,7 @@ public class AuthResponseTest {
         try {
             authResponse = getEngine().generateResponseMessage(authenRequest, response, false, ipAddress).getMessageBytes();
             // In Conf1 ipValidate is false
-            getEngine().unmarshallResponseAndValidate(authResponse, null, 0, 0, null,null, false);
+            getEngine().unmarshallResponseAndValidate(authResponse, null, 0, 0, null);
         } catch (EIDASSAMLEngineException e) {
             LOG.error("Error: " + e, e);
         }
@@ -514,7 +503,7 @@ public class AuthResponseTest {
         try {
             authResponse = getEngine().generateResponseMessage(authenRequest, response, false, ipAddress).getMessageBytes();
             // In Conf1 ipValidate is false
-            getEngine().unmarshallResponseAndValidate(authResponse, null, 0, 0, null,null, false);
+            getEngine().unmarshallResponseAndValidate(authResponse, null, 0, 0, null);
             fail("generateResponseMessage(...) should've thrown an EIDASSAMLEngineException!");
         } catch (EIDASSAMLEngineException expected) {
             // expected
@@ -547,7 +536,7 @@ public class AuthResponseTest {
         try {
             authResponse = getEngine().generateResponseMessage(authenRequest, response, false, ipAddress).getMessageBytes();
             // In Conf1 ipValidate is false
-            getEngine().unmarshallResponseAndValidate(authResponse, null, 0, 0, null,null, false);
+            getEngine().unmarshallResponseAndValidate(authResponse, null, 0, 0, null);
         } catch (EIDASSAMLEngineException e) {
             LOG.error("Error " + e, e);
         }
@@ -579,7 +568,7 @@ public class AuthResponseTest {
         try {
             authResponse = getEngine().generateResponseMessage(authenRequest, response, false, ipAddress).getMessageBytes();
             // In Conf1 ipValidate is false
-            getEngine().unmarshallResponseAndValidate(authResponse, null, 0, 0, null,null, false);
+            getEngine().unmarshallResponseAndValidate(authResponse, null, 0, 0, null);
         } catch (EIDASSAMLEngineException e) {
             LOG.error("Error " + e, e);
         }
@@ -606,7 +595,7 @@ public class AuthResponseTest {
         try {
             authResponse = getEngine().generateResponseMessage(authenRequest, response, false, ipAddress).getMessageBytes();
             // In Conf1 ipValidate is false
-            getEngine().unmarshallResponseAndValidate(authResponse, null, 0, 0,null,null, false);
+            getEngine().unmarshallResponseAndValidate(authResponse, null, 0, 0,null);
         } catch (EIDASSAMLEngineException e) {
             LOG.error("Error " + e, e);
         }
@@ -622,7 +611,7 @@ public class AuthResponseTest {
             // ipAddrValidation = false
             // Subject Confirmation Bearer.
 
-            getEngine().unmarshallResponseAndValidate(authResponse, "127.0.0.1", 0, 0, null,Arrays.asList(RESPONSE_ISSUER), false);
+            getEngine().unmarshallResponseAndValidate(authResponse, "127.0.0.1", 0, 0, null);
         } catch (EIDASSAMLEngineException e) {
             LOG.error("Error: " + e, e);
             fail("validateAuthenticationResponse(...) should've thrown an EIDASSAMLEngineException!: " + e);
@@ -637,7 +626,7 @@ public class AuthResponseTest {
         try {
             // ipAddress origin "111.222.333.444"
             // Subject Confirmation Bearer.
-            getEngine().unmarshallResponseAndValidate(EidasStringUtil.getBytes("errorMessage"), ipAddress, 0, 0, null,null, false);
+            getEngine().unmarshallResponseAndValidate(EidasStringUtil.getBytes("errorMessage"), ipAddress, 0, 0, null);
             fail("validateAuthenticationResponse(...) should've thrown an EIDASSAMLEngineException!");
         } catch (EIDASSAMLEngineException e) {
             LOG.error("Error: " + e, e);
@@ -653,7 +642,7 @@ public class AuthResponseTest {
     public final void testValidateAuthenticationResponseIsFail() throws EIDASSAMLEngineException {
     	//TODO: a test invoking another test is unusual, tests not independent, relying on changed state, bad 
         testGenerateAuthnResponse();//prepare valid authnResponse
-        authnResponse = getEngine().unmarshallResponseAndValidate(authResponse, ipAddress, 0, 0, null, Arrays.asList(RESPONSE_ISSUER), false);
+        authnResponse = getEngine().unmarshallResponseAndValidate(authResponse, ipAddress, 0, 0, null);
         assertFalse("Generate incorrect response: ", authnResponse.isFailure());
     }
 
@@ -664,7 +653,7 @@ public class AuthResponseTest {
      */
     @Test
     public final void testValidateAuthenticationResponseDestination() throws EIDASSAMLEngineException {
-        authnResponse = getEngine().unmarshallResponseAndValidate(authResponse, ipAddress, 0, 0, null,Arrays.asList(RESPONSE_ISSUER), false);
+        authnResponse = getEngine().unmarshallResponseAndValidate(authResponse, ipAddress, 0, 0, null);
 
         assertEquals("Destination incorrect: ", authnResponse.getInResponseToId(), authenRequest.getId());
     }
@@ -675,7 +664,7 @@ public class AuthResponseTest {
      * @throws EIDASSAMLEngineException the EIDASSAML engine exception
      */
     public final void testValidateAuthenticationResponseValuesComplex() throws EIDASSAMLEngineException {
-        authnResponse = getEngine().unmarshallResponseAndValidate(authResponse, ipAddress, 0, 0, null,null, false);
+        authnResponse = getEngine().unmarshallResponseAndValidate(authResponse, ipAddress, 0, 0, null);
 
         assertEquals("Country incorrect:", authnResponse.getCountry(), "EN");
 
@@ -813,7 +802,7 @@ public class AuthResponseTest {
 
         LOG.info("RESPONSE: " + SSETestUtils.encodeSAMLToken(authResponse));
 
-        authnResponse = getEngine().unmarshallResponseAndValidate(authResponse, ipAddress, 0, 0, null,Arrays.asList(RESPONSE_ISSUER), false);
+        authnResponse = getEngine().unmarshallResponseAndValidate(authResponse, ipAddress, 0, 0, null);
 
         LOG.info("RESPONSE ID: " + authnResponse.getId());
         LOG.info("RESPONSE IN_RESPONSE_TO: " + authnResponse.getInResponseToId());
@@ -847,7 +836,7 @@ public class AuthResponseTest {
 
         LOG.error("ERROR_FAIL: " + EidasStringUtil.encodeToBase64(authResponse));
 
-        authnResponse = getEngine().unmarshallResponseAndValidate(authResponse, ipAddress, 0, 0, null,Arrays.asList("http://response.issuer"), false);
+        authnResponse = getEngine().unmarshallResponseAndValidate(authResponse, ipAddress, 0, 0, null);
 
         LOG.info("COUNTRY: " + authnResponse.getCountry());
         assertTrue("Generate incorrect response: ", authnResponse.isFailure());

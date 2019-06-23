@@ -1,30 +1,20 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
- */
 /*
- * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
- * the European Commission - subsequent versions of the EUPL (the "Licence");
- * You may not use this work except in compliance with the Licence. You may
- * obtain a copy of the Licence at:
+ * Copyright (c) 2019 by European Commission
  *
- * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the Licence is distributed on an "AS IS" basis, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * Licence for the specific language governing permissions and limitations under
- * the Licence.
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
+ *
  */
 
 package eu.eidas.engine.test.simple.eidas;
@@ -38,7 +28,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -211,7 +200,7 @@ public class EidasAuthRequestTest {
 
         byte[] samlToken = getEngine().generateRequestMessage(request, null).getMessageBytes();
         LOG.info("EidasAuthenticationRequest 1: " + SSETestUtils.encodeSAMLToken(samlToken));
-        IAuthenticationRequest parsedRequest = getEngine().unmarshallRequestAndValidate(samlToken, "ES",Arrays.asList(DUMMY_ISSUER_URI));
+        IAuthenticationRequest parsedRequest = getEngine().unmarshallRequestAndValidate(samlToken, "ES");
         assertNotNull(parsedRequest);
         assertFalse(parsedRequest.getRequestedAttributes().isEmpty());
 
@@ -407,7 +396,7 @@ public class EidasAuthRequestTest {
     @Test
     public void testValidateAuthnRequestNullParam() throws EIDASSAMLEngineException {
         try {
-            getEngine().unmarshallRequestAndValidate(null, "ES",null);
+            getEngine().unmarshallRequestAndValidate(null, "ES"/*,null*/);
             fail("processValidateRequestToken(...) should've thrown an EIDASSAMLEngineException!");
         } catch (EIDASSAMLEngineException e) {
             LOG.error("Error");
@@ -422,7 +411,7 @@ public class EidasAuthRequestTest {
     @Test
     public void testValidateAuthnRequestErrorEncode() throws EIDASSAMLEngineException {
         try {
-            getEngine().unmarshallRequestAndValidate(EidasStringUtil.getBytes("messageError"), "ES",null);
+            getEngine().unmarshallRequestAndValidate(EidasStringUtil.getBytes("messageError"), "ES"/*,null*/);
             fail("processValidateRequestToken(...) should've thrown an EIDASSAMLEngineException!");
         } catch (EIDASSAMLEngineException e) {
             LOG.error("Error");
@@ -438,7 +427,7 @@ public class EidasAuthRequestTest {
     public void testValidateAuthnRequest() throws EIDASSAMLEngineException {
         IEidasAuthenticationRequest validatedRequest =
                 (IEidasAuthenticationRequest) getEngine().unmarshallRequestAndValidate(
-                        getDefaultTestEidasAuthnRequestTokenSaml(), "ES",Arrays.asList(DUMMY_ISSUER_URI));
+                        getDefaultTestEidasAuthnRequestTokenSaml(), "ES"/*,Arrays.asList(DUMMY_ISSUER_URI)*/);
         assertNotNull(validatedRequest.getSpType());
     }
 
@@ -451,7 +440,7 @@ public class EidasAuthRequestTest {
     public void testValidateDataAuthnRequest() throws EIDASSAMLEngineException {
 
         IAuthenticationRequest request =
-                getEngine().unmarshallRequestAndValidate(getDefaultTestEidasAuthnRequestTokenSaml(), "ES",Arrays.asList(DUMMY_ISSUER_URI));
+                getEngine().unmarshallRequestAndValidate(getDefaultTestEidasAuthnRequestTokenSaml(), "ES"/*,Arrays.asList(DUMMY_ISSUER_URI)*/);
 
         assertEquals("Sestination incorrect: ", request.getDestination(), destination);
 
@@ -497,7 +486,7 @@ public class EidasAuthRequestTest {
                     .build();
             byte[] authReqNotTrust = engineNotTrusted.generateRequestMessage(request, null).getMessageBytes();
 
-            getEngine().unmarshallRequestAndValidate(authReqNotTrust, "ES",Arrays.asList(DUMMY_ISSUER_URI));
+            getEngine().unmarshallRequestAndValidate(authReqNotTrust, "ES"/*,Arrays.asList(DUMMY_ISSUER_URI)*/);
         } catch (EIDASSAMLEngineException e) {
             LOG.error("Error");
             fail("validateEIDASAuthnRequestNotTrusted(...) should not have thrown an EIDASSAMLEngineException!");
@@ -530,7 +519,7 @@ public class EidasAuthRequestTest {
         byte[] authReqTrust = engineTrusted.generateRequestMessage(request, null).getMessageBytes();
 
         // engine ("CONF1")  have trust certificate from "CONF3"
-        getEngine().unmarshallRequestAndValidate(authReqTrust, "ES",Arrays.asList(DUMMY_ISSUER_URI));
+        getEngine().unmarshallRequestAndValidate(authReqTrust, "ES"/*,Arrays.asList(DUMMY_ISSUER_URI)*/);
 
     }
 
@@ -553,7 +542,7 @@ public class EidasAuthRequestTest {
 
         try {
             authRequest = getEngine().generateRequestMessage(request, null).getMessageBytes();
-            getEngine().unmarshallRequestAndValidate(authRequest, "ES",null);
+            getEngine().unmarshallRequestAndValidate(authRequest, "ES"/*,null*/);
             assertNotNull(request.getSpType());
         } catch (EIDASSAMLEngineException e) {
             LOG.error("Error");
@@ -579,7 +568,7 @@ public class EidasAuthRequestTest {
 
         try {
             authRequest = getEngine().generateRequestMessage(request, null).getMessageBytes();
-            IAuthenticationRequest authenticationRequest = getEngine().unmarshallRequestAndValidate(authRequest, "ES",null);
+            IAuthenticationRequest authenticationRequest = getEngine().unmarshallRequestAndValidate(authRequest, "ES");
             assertEquals("public", authenticationRequest.getSpType());
         } catch (EIDASSAMLEngineException e) {
             LOG.error("Error");
@@ -619,7 +608,7 @@ public class EidasAuthRequestTest {
         String saml = EidasStringUtil.toString(messageBytes);
         assertFalse(saml.isEmpty());
 
-        IAuthenticationRequest authenticationRequest = getEngine().unmarshallRequestAndValidate(messageBytes, "ES",Arrays.asList(DUMMY_ISSUER_URI));
+        IAuthenticationRequest authenticationRequest = getEngine().unmarshallRequestAndValidate(messageBytes, "ES"/*,Arrays.asList(DUMMY_ISSUER_URI)*/);
 
         assertNull("The value shouldn't exist",
                    authenticationRequest.getRequestedAttributes().getAttributeValuesByNameUri("unknown"));

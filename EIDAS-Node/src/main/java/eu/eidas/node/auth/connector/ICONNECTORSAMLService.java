@@ -1,35 +1,26 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
- */
 /*
- * This work is Open Source and licensed by the European Commission under the
- * conditions of the European Public License v1.1
+ * Copyright (c) 2018 by European Commission
  *
- * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1);
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
  *
- * any use of this file implies acceptance of the conditions of this license.
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations
- * under the License.
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
  */
 package eu.eidas.node.auth.connector;
 
 import java.util.Map;
 
 import javax.annotation.Nonnull;
+import javax.cache.Cache;
 import javax.servlet.http.HttpServletRequest;
 
 import eu.eidas.auth.commons.WebRequest;
@@ -41,7 +32,6 @@ import eu.eidas.auth.commons.protocol.IAuthenticationResponse;
 import eu.eidas.auth.commons.protocol.IRequestMessage;
 import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
 import eu.eidas.auth.commons.tx.AuthenticationExchange;
-import eu.eidas.auth.commons.tx.CorrelationMap;
 import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
 import eu.eidas.auth.commons.tx.StoredLightRequest;
 import eu.eidas.auth.engine.ProtocolEngineI;
@@ -59,7 +49,7 @@ public interface ICONNECTORSAMLService {
      * Process the Service Provider Request received from the specific and transform the light request received.
      *
      * @param lightRequest The LightRequest.
-     * @param webRequest
+     * @param webRequest the instance of the {@link WebRequest}
      * @return An authentication request created from the SAML token.
      * @see EidasAuthenticationRequest
      * @see Map
@@ -80,15 +70,16 @@ public interface ICONNECTORSAMLService {
      */
     AuthenticationExchange processProxyServiceResponse(@Nonnull WebRequest webRequest,
                                                        @Nonnull
-                                                               CorrelationMap<StoredAuthenticationRequest> connectorRequestCorrelationMap,
+                                                               Cache<String, StoredAuthenticationRequest> connectorRequestCorrelationMap,
                                                        @Nonnull
-                                                               CorrelationMap<StoredLightRequest> specificSpRequestCorrelationMap)
+                                                               Cache<String, StoredLightRequest> specificSpRequestCorrelationMap)
             throws InternalErrorEIDASException;
 
     /**
      * Creates a SAML Authentication Request to send to Service.
      *
-     * @param authData An authentication request.
+     * @param webRequest the instance of the {@link WebRequest}
+     * @param request the instance of the {@link IAuthenticationRequest}
      * @return A new authentication request with the SAML token embedded.
      * @see EidasAuthenticationRequest
      */

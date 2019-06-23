@@ -1,16 +1,20 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
+ *
  */
 
 package eu.eidas.auth.engine.core;
@@ -23,10 +27,10 @@ import eu.eidas.auth.engine.configuration.dom.DOMConfigurationParser;
 import eu.eidas.auth.engine.core.eidas.spec.EidasSAMLFormat;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineRuntimeException;
 import eu.eidas.util.Preconditions;
-import org.apache.commons.lang.StringUtils;
 import org.opensaml.saml.common.xml.SAMLConstants;
 import org.opensaml.saml.saml2.core.NameIDType;
 import org.opensaml.saml.saml2.core.RequestAbstractType;
+import org.opensaml.saml.saml2.core.StatusResponseType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,6 +42,10 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+
+import static java.lang.Boolean.parseBoolean;
+import static org.apache.commons.lang.StringUtils.isBlank;
+import static org.apache.commons.lang.StringUtils.isNotBlank;
 
 /**
  * Saml Engine Core Properties.
@@ -114,7 +122,7 @@ public final class DefaultCoreProperties implements SamlEngineCoreProperties {
 
         private boolean validateSignature = true;
 
-        private Set<String> supportedMessageFormatNames = new HashSet<String>();
+        private Set<String> supportedMessageFormatNames = new HashSet<>();
 
         /**
          * The time not on or after.
@@ -196,7 +204,7 @@ public final class DefaultCoreProperties implements SamlEngineCoreProperties {
             return this;
         }
 
-        private void validate() throws IllegalArgumentException {
+        private void validate() {
             // validation logic
         }
     }
@@ -494,7 +502,6 @@ public final class DefaultCoreProperties implements SamlEngineCoreProperties {
 
     /**
      * Method that loads the configuration file for the SAML Engine.
-     *
      */
     @Nonnull
     private TypedState loadConfiguration() {
@@ -514,33 +521,25 @@ public final class DefaultCoreProperties implements SamlEngineCoreProperties {
             builder.eidCrossBordShare(samlCoreProp.get("eIDCrossBorderShare"));
 
             String ipAddrValidation = samlCoreProp.get("ipAddrValidation");
-            if (StringUtils.isNotBlank(ipAddrValidation)) {
-                builder.ipValidation(Boolean.valueOf(ipAddrValidation).booleanValue());
+            if (isNotBlank(ipAddrValidation)) {
+                builder.ipValidation(parseBoolean(ipAddrValidation));
             }
 
             String oneTimeUseProp = samlCoreProp.get(SAMLCore.ONE_TIME_USE.getValue());
 
-            if (StringUtils.isNotBlank(oneTimeUseProp)) {
-                builder.oneTimeUse(Boolean.valueOf(oneTimeUseProp).booleanValue());
+            if (isNotBlank(oneTimeUseProp)) {
+                builder.oneTimeUse(parseBoolean(oneTimeUseProp));
             }
 
             // Protocol Binding
-            builder.protocolBinding(loadProtocolBiding());
-
-            // Consent Authentication Request
-            String consentAuthnReq = samlCoreProp.get(SAMLCore.CONSENT_AUTHN_REQ.getValue());
-            if ("unspecified".equalsIgnoreCase(consentAuthnReq)) {
-                builder.consentAuthnReq(RequestAbstractType.UNSPECIFIED_CONSENT);
-            } else {
-                builder.consentAuthnReq(consentAuthnReq);
-            }
-
+            builder.protocolBinding(loadProtocolBinding());
+            builder.consentAuthnReq(loadConsentAuthReq());
             builder.consentAuthnResp(loadConsentAuthResp());
 
             Integer timeNotOnOrAfter = Integer.valueOf(samlCoreProp.get("timeNotOnOrAfter"));
-            if (timeNotOnOrAfter.intValue() < 0) {
+            if (timeNotOnOrAfter < 0) {
                 LOGGER.error("{} - timeNotOnOrAfter cannot be negative.",
-                             DOMConfigurationParser.DEFAULT_CONFIGURATION_FILE);
+                        DOMConfigurationParser.DEFAULT_CONFIGURATION_FILE);
                 throw new ProtocolEngineConfigurationException(
                         DOMConfigurationParser.DEFAULT_CONFIGURATION_FILE + " - timeNotOnOrAfter cannot be negative.");
             }
@@ -550,8 +549,8 @@ public final class DefaultCoreProperties implements SamlEngineCoreProperties {
             builder.responder(samlCoreProp.get(SAMLCore.RESPONDER_TAG.getValue()));
 
             String validateSignature = samlCoreProp.get(SAMLCore.VALIDATE_SIGNATURE_TAG.getValue());
-            if (StringUtils.isNotBlank(validateSignature)) {
-                builder.validateSignature(Boolean.valueOf(validateSignature).booleanValue());
+            if (isNotBlank(validateSignature)) {
+                builder.validateSignature(parseBoolean(validateSignature));
             }
 
             builder.supportedMessageFormatNames(loadSupportedFormats());
@@ -567,69 +566,100 @@ public final class DefaultCoreProperties implements SamlEngineCoreProperties {
     }
 
     /**
+     * Load consent authentication request.
+     *
+     * @return the loaded consent authentication request
+     */
+    private String loadConsentAuthReq() {
+        String consentAuthnReq = samlCoreProp.get(SAMLCore.CONSENT_AUTHN_REQ.getValue());
+
+        if ("obtained".equalsIgnoreCase(consentAuthnReq)) {
+            consentAuthnReq = RequestAbstractType.OBTAINED_CONSENT;
+        } else if ("prior".equalsIgnoreCase(consentAuthnReq)) {
+            consentAuthnReq = RequestAbstractType.PRIOR_CONSENT;
+        } else if ("current-implicit".equalsIgnoreCase(consentAuthnReq)) {
+            consentAuthnReq = RequestAbstractType.IMPLICIT_CONSENT;
+        } else if ("current-explicit".equalsIgnoreCase(consentAuthnReq)) {
+            consentAuthnReq = RequestAbstractType.EXPLICIT_CONSENT;
+        } else if ("unspecified".equalsIgnoreCase(consentAuthnReq)) {
+            consentAuthnReq = RequestAbstractType.UNSPECIFIED_CONSENT;
+        } else if ("unavailable".equalsIgnoreCase(consentAuthnReq)) {
+            consentAuthnReq = RequestAbstractType.UNAVAILABLE_CONSENT;
+        } else if ("inapplicable".equalsIgnoreCase(consentAuthnReq)) {
+            consentAuthnReq = RequestAbstractType.INAPPLICABLE_CONSENT;
+        } else if (isBlank(consentAuthnReq)) {
+            consentAuthnReq = null;
+        }
+        return consentAuthnReq;
+    }
+
+    /**
      * Load consent authentication response.
+     *
+     * @return the loaded consent authentication response
+     * @throws ProtocolEngineConfigurationException when no valid consent authentication response could be mapped
      */
     private String loadConsentAuthResp() throws ProtocolEngineConfigurationException {
         // Consent Authentication Response
         String consentAuthnResp = samlCoreProp.get(SAMLCore.CONSENT_AUTHN_RES.getValue());
 
         if ("obtained".equalsIgnoreCase(consentAuthnResp)) {
-            consentAuthnResp = RequestAbstractType.OBTAINED_CONSENT;
+            consentAuthnResp = StatusResponseType.OBTAINED_CONSENT;
         } else if ("prior".equalsIgnoreCase(consentAuthnResp)) {
-            consentAuthnResp = RequestAbstractType.PRIOR_CONSENT;
-        } else if ("curent-implicit".equalsIgnoreCase(consentAuthnResp)) {
-            consentAuthnResp = "urn:oasis:names:tc:SAML:2.0:consent:current-implicit";
-        } else if ("curent-explicit".equalsIgnoreCase(consentAuthnResp)) {
-            consentAuthnResp = "urn:oasis:names:tc:SAML:2.0:consent:current-explicit";
+            consentAuthnResp = StatusResponseType.PRIOR_CONSENT;
+        } else if ("current-implicit".equalsIgnoreCase(consentAuthnResp)) {
+            consentAuthnResp = StatusResponseType.IMPLICIT_CONSENT;
+        } else if ("current-explicit".equalsIgnoreCase(consentAuthnResp)) {
+            consentAuthnResp = StatusResponseType.EXPLICIT_CONSENT;
         } else if ("unspecified".equalsIgnoreCase(consentAuthnResp)) {
-            consentAuthnResp = RequestAbstractType.UNSPECIFIED_CONSENT;
+            consentAuthnResp = StatusResponseType.UNSPECIFIED_CONSENT;
+        } else if ("unavailable".equalsIgnoreCase(consentAuthnResp)) {
+            consentAuthnResp = StatusResponseType.UNAVAILABLE_CONSENT;
+        } else if ("inapplicable".equalsIgnoreCase(consentAuthnResp)) {
+            consentAuthnResp = StatusResponseType.INAPPLICABLE_CONSENT;
+        } else if (isBlank(consentAuthnResp)) {
+            consentAuthnResp = null;
         } else {
-            LOGGER.info("ERROR : " + DOMConfigurationParser.DEFAULT_CONFIGURATION_FILE + " - "
-                                + SAMLCore.CONSENT_AUTHN_RES.getValue() + " is not supported (" + consentAuthnResp
-                                + ").");
-            throw new ProtocolEngineConfigurationException(
-                    DOMConfigurationParser.DEFAULT_CONFIGURATION_FILE + " - " + SAMLCore.CONSENT_AUTHN_RES.getValue()
-                            + " is not supported (" + consentAuthnResp + ").");
+            String message = DOMConfigurationParser.DEFAULT_CONFIGURATION_FILE + " - "
+                    + SAMLCore.CONSENT_AUTHN_RES.getValue() + " is not supported (" + consentAuthnResp
+                    + ").";
+            LOGGER.info("ERROR : {}", message);
+            throw new ProtocolEngineConfigurationException(message);
         }
         return consentAuthnResp;
     }
 
     /**
-     * Load protocol biding.
+     * Load protocol binding.
      *
      * @throws ProtocolEngineConfigurationException the SAML engine exception
-     *
-     * // TODO check this, as it means that the SAML Engine can only be used with HTTP-POST
      */
+    // TODO check this, as it means that the SAML Engine can only be used with HTTP-POST
     @Nonnull
-    private String loadProtocolBiding() throws ProtocolEngineConfigurationException {
+    private String loadProtocolBinding() throws ProtocolEngineConfigurationException {
         // Protocol Binding
         String protocolBinding = samlCoreProp.get(SAMLCore.PROT_BINDING_TAG.getValue());
 
-        if (StringUtils.isBlank(protocolBinding)) {
-            LOGGER.info(
-                    "ERROR : " + DOMConfigurationParser.DEFAULT_CONFIGURATION_FILE + " - " + SAMLCore.PROT_BINDING_TAG
-                            + " is mandatory.");
-            throw new ProtocolEngineConfigurationException(
-                    DOMConfigurationParser.DEFAULT_CONFIGURATION_FILE + " - " + SAMLCore.PROT_BINDING_TAG
-                            + " is mandatory.");
+        if (isBlank(protocolBinding)) {
+            String message = DOMConfigurationParser.DEFAULT_CONFIGURATION_FILE + " - " + SAMLCore.PROT_BINDING_TAG
+                    + " is mandatory.";
+            LOGGER.info("ERROR : {}", message);
+            throw new ProtocolEngineConfigurationException(message);
         } else if ("HTTP-POST".equalsIgnoreCase(protocolBinding)) {
             return SAMLConstants.SAML2_POST_BINDING_URI;
         } else {
-            LOGGER.info(
-                    "ERROR : " + DOMConfigurationParser.DEFAULT_CONFIGURATION_FILE + " - " + SAMLCore.PROT_BINDING_TAG
-                            + " is not supported (" + protocolBinding + ").");
-            throw new ProtocolEngineConfigurationException(
-                    DOMConfigurationParser.DEFAULT_CONFIGURATION_FILE + " - " + SAMLCore.PROT_BINDING_TAG
-                            + " is not supported (" + protocolBinding + ").");
+            String message = DOMConfigurationParser.DEFAULT_CONFIGURATION_FILE + " - " + SAMLCore.PROT_BINDING_TAG
+                    + " is not supported (" + protocolBinding + ").";
+            LOGGER.info("ERROR : {}", message);
+            throw new ProtocolEngineConfigurationException(message);
         }
     }
 
     private Set<String> loadSupportedFormats() {
-        Set<String> supportedFormats = new HashSet<String>();
+        Set<String> supportedFormats = new HashSet<>();
         for (String format : AVAILABLE_FORMATS) {
             String formatKeyName = "messageFormat." + format;
-            if (samlCoreProp.containsKey(formatKeyName) && !Boolean.parseBoolean(samlCoreProp.get(formatKeyName))) {
+            if (samlCoreProp.containsKey(formatKeyName) && !parseBoolean(samlCoreProp.get(formatKeyName))) {
                 continue;
             }
             supportedFormats.add(format);

@@ -25,7 +25,7 @@
 	-->
 	<entry key="consentAuthnRequest">unspecified</entry>
 	<!--
-	Allow values: 'obtained', 'prior', 'curent-implicit', 'curent-explicit', 'unspecified'.
+	Allow values: 'obtained', 'prior', 'current-implicit', 'current-explicit', 'unspecified'.
 	-->
 	<entry key="consentAuthnResponse">obtained</entry>
 

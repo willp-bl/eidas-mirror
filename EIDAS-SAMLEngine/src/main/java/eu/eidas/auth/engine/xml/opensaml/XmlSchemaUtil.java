@@ -1,18 +1,20 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
-
 package eu.eidas.auth.engine.xml.opensaml;
 
 import eu.eidas.auth.commons.EidasErrorKey;
@@ -74,8 +76,8 @@ public final class XmlSchemaUtil {
             throws EIDASSAMLEngineException {
         try {
             Element element = document.getDocumentElement();
-            Validator validator = schema.newValidator();
             DOMSource domSrc = new DOMSource(element);
+            Validator validator = newSecureValidator(schema);
             validator.validate(domSrc);
         } catch (IOException | SAXException e) {
             LOG.error(AbstractProtocolEngine.SAML_EXCHANGE, "BUSINESS EXCEPTION : Validate schema exception: " + e, e);
@@ -115,15 +117,13 @@ public final class XmlSchemaUtil {
     /**
      * Create a new {@link Validator} for this schema, already set up with security features turned on.
      *
-     * @param schema
+     * @param schema the {@link Schema} instance to be used in creating the secured {@link Validator} which is should have
+     *               security features turned on see {@link OpenSamlHelper#getSchema()}
      * @return a new {@link Validator} for this schema, already set up with security features turned on.
-     * @throws SAXNotRecognizedException
-     * @throws SAXNotSupportedException
      */
     @Nonnull
-    public static Validator newSecureValidator(@Nonnull Schema schema) throws SAXNotRecognizedException, SAXNotSupportedException {
+    public static Validator newSecureValidator(@Nonnull Schema schema) {
         Validator validator = schema.newValidator();
-        configureSecureValidator(validator);
         return validator;
     }
 
@@ -131,8 +131,8 @@ public final class XmlSchemaUtil {
      * Configures a given {@link Validator} with security features turned on.
      *
      * @param validator the instance to configure
-     * @throws SAXNotRecognizedException
-     * @throws SAXNotSupportedException
+     * @throws SAXNotRecognizedException exception for an unrecognized identifier
+     * @throws SAXNotSupportedException  exception for an unsupported operation
      * @since 1.1.1
      */
     public static void configureSecureValidator(@Nonnull Validator validator) throws SAXNotRecognizedException, SAXNotSupportedException {
@@ -149,6 +149,8 @@ public final class XmlSchemaUtil {
      * The default features set are: <ul> <li>{@link
      * javax.xml.XMLConstants#ACCESS_EXTERNAL_DTD} = ""</li> <li>{@link javax.xml.XMLConstants#ACCESS_EXTERNAL_SCHEMA} = ""
      *</li></ul>
+     *
+     * @return the map of features
      */
     @Nonnull
     public static Map<String, String> getSecureSchemaFeatures() {

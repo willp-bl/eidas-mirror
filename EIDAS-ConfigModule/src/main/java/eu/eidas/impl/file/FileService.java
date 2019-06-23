@@ -1,32 +1,26 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
- */
 /*
- * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
- * the European Commission - subsequent versions of the EUPL (the "Licence");
- * You may not use this work except in compliance with the Licence. You may
- * obtain a copy of the Licence at:
+ * Copyright (c) 2019 by European Commission
  *
- * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the Licence is distributed on an "AS IS" basis, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * Licence for the specific language governing permissions and limitations under
- * the Licence.
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
 package eu.eidas.impl.file;
+
+import eu.eidas.auth.commons.EidasStringUtil;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.File;
@@ -47,12 +41,6 @@ import java.util.InvalidPropertiesFormatException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
-
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import eu.eidas.auth.commons.EidasStringUtil;
 
 /**
  * provide file services - reading/writing to disk
@@ -151,7 +139,7 @@ public class FileService {
     }
     /**
      *
-     * @param fileName
+     * @param fileName an xml file with properties
      * @return a Properties object loaded from the file
      */
     public Properties loadPropsFromXml(String fileName){
@@ -177,7 +165,7 @@ public class FileService {
 
     /**
      *
-     * @param fileName
+     * @param fileName and xml file with properties
      * @return a Properties object loaded from the file
      */
     public Properties loadPropsFromTextFile(String fileName){
@@ -203,9 +191,8 @@ public class FileService {
 
     /**
      * stores a Properties object to a file
-     * @param fileName
-     * @param props
-     * @return
+     * @param fileName and xml file with properties to be saved
+     * @param props the {@link Properties}
      */
     public void saveToXMLFile(String fileName, Properties props){
         OutputStream os=null;
@@ -341,6 +328,7 @@ public class FileService {
 
     /**
      *
+     * @param filterBackups when false add absolute path
      * @return the list of all the files contained in the current location
      */
     public List<String> getFileList(boolean filterBackups){

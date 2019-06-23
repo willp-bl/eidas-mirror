@@ -23,18 +23,18 @@ import eu.eidas.auth.commons.lang.KeyAccessor;
 
 /**
  * Gender as per the eIDAS spec.
- * <p>
+ * <br>
  * <pre>
- *     <xsd:simpleType name="GenderType">
- *         <xsd:annotation>
- *             <xsd:documentation> Gender of the natural person.</xsd:documentation>
- *         </xsd:annotation>
- *         <xsd:restriction base="xsd:string">
- *             <xsd:enumeration value="Male"/>
- *             <xsd:enumeration value="Female"/>
- *             <xsd:enumeration value="Unspecified"/>
- *         </xsd:restriction>
- *     </xsd:simpleType>
+ *     &lt;xsd:simpleType name="GenderType"&gt;
+ *         &lt;xsd:annotation&gt;
+ *             &lt;xsd:documentation&gt; Gender of the natural person.&lt;/xsd:documentation&gt;
+ *         &lt;/xsd:annotation&gt;
+ *         &lt;xsd:restriction base="xsd:string"&gt;
+ *             &lt;xsd:enumeration value="Male"/&gt;
+ *             &lt;xsd:enumeration value="Female"/&gt;
+ *             &lt;xsd:enumeration value="Unspecified"/&gt;
+ *         &lt;/xsd:restriction&gt;
+ *     &lt;/xsd:simpleType&gt;
  * </pre>
  *
  * @since 1.1

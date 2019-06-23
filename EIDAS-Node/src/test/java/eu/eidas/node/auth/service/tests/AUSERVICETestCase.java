@@ -1,22 +1,25 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2018 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
  */
-
 package eu.eidas.node.auth.service.tests;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import eu.eidas.auth.cache.ConcurrentMapJcacheServiceDefaultImpl;
 import eu.eidas.auth.commons.*;
 import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
@@ -30,6 +33,7 @@ import eu.eidas.auth.commons.protocol.eidas.spec.EidasSpec;
 import eu.eidas.auth.commons.tx.CorrelationMap;
 import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
 import eu.eidas.auth.commons.tx.StoredAuthenticationRequestCorrelationMap;
+import eu.eidas.auth.commons.tx.StoredLightRequestCorrelationCache;
 import eu.eidas.node.auth.service.AUSERVICE;
 import eu.eidas.node.auth.service.AUSERVICESAML;
 import eu.eidas.node.auth.service.ISERVICECitizenService;
@@ -40,6 +44,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import javax.cache.Cache;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Properties;
@@ -102,10 +107,9 @@ public class AUSERVICETestCase {
         AUSERVICE auservice = new AUSERVICE();
         auservice.setSamlService(mockSamlService);
 
-        CorrelationMap<StoredAuthenticationRequest> correlationMap =
-                new StoredAuthenticationRequestCorrelationMap(new ConcurrentMapServiceDefaultImpl());
+        Cache<String, StoredAuthenticationRequest> requestCorrelationCache = new ConcurrentMapJcacheServiceDefaultImpl().getConfiguredCache();
 
-        auservice.processAuthenticationRequest(mockParameters, "relayState", correlationMap,
+        auservice.processAuthenticationRequest(mockParameters, "relayState", requestCorrelationCache,
                                                TestingConstants.USER_IP_CONS.toString());
     }
 
@@ -125,13 +129,14 @@ public class AUSERVICETestCase {
                 new InvalidParameterEIDASException(TestingConstants.ERROR_CODE_CONS.toString(),
                                                    TestingConstants.ERROR_MESSAGE_CONS.toString()));
 
-        CorrelationMap<StoredAuthenticationRequest> correlationMap =
-                new StoredAuthenticationRequestCorrelationMap(new ConcurrentMapServiceDefaultImpl());
         WebRequest mockParameters = mock(WebRequest.class);
         when(mockParameters.getMethod()).thenReturn(BindingMethod.POST);
         AUSERVICE auservice = new AUSERVICE();
         auservice.setSamlService(mockSamlService);
-        auservice.processAuthenticationRequest(mockParameters, "relayState", correlationMap,
+
+        Cache<String, StoredAuthenticationRequest> requestCorrelationCache = new ConcurrentMapJcacheServiceDefaultImpl().getConfiguredCache();
+
+        auservice.processAuthenticationRequest(mockParameters, "relayState", requestCorrelationCache,
                                                TestingConstants.USER_IP_CONS.toString());
     }
 
@@ -153,13 +158,13 @@ public class AUSERVICETestCase {
                                           TestingConstants.ERROR_MESSAGE_CONS.toString(),
                                           TestingConstants.SAML_TOKEN_CONS.toString()));
 
-        CorrelationMap<StoredAuthenticationRequest> correlationMap =
-                new StoredAuthenticationRequestCorrelationMap(new ConcurrentMapServiceDefaultImpl());
+        Cache<String, StoredAuthenticationRequest> requestCorrelationCache = new ConcurrentMapJcacheServiceDefaultImpl().getConfiguredCache();
+
         WebRequest mockParameters = mock(WebRequest.class);
         when(mockParameters.getMethod()).thenReturn(BindingMethod.POST);
         AUSERVICE auservice = new AUSERVICE();
         auservice.setSamlService(mockSamlService);
-        auservice.processAuthenticationRequest(mockParameters, "relayState", correlationMap,
+        auservice.processAuthenticationRequest(mockParameters, "relayState", requestCorrelationCache,
                                                TestingConstants.USER_IP_CONS.toString());
     }
 
@@ -184,8 +189,6 @@ public class AUSERVICETestCase {
                                                      eq(TestingConstants.USER_IP_CONS.toString()),
                                                      eq("relayState"))).thenReturn(authData);
 
-        CorrelationMap<StoredAuthenticationRequest> correlationMap =
-                new StoredAuthenticationRequestCorrelationMap(new ConcurrentMapServiceDefaultImpl());
         WebRequest mockParameters = mock(WebRequest.class);
         when(mockParameters.getMethod()).thenReturn(BindingMethod.POST);
         when(mockParameters.getRemoteIpAddress()).thenReturn(TestingConstants.USER_IP_CONS.toString());
@@ -196,7 +199,9 @@ public class AUSERVICETestCase {
 
         ISERVICECitizenService mockCitizenService = mock(ISERVICECitizenService.class);
         auservice.setCitizenService(mockCitizenService);
-        assertSame(authData, auservice.processAuthenticationRequest(mockParameters, "relayState", correlationMap,
+
+        Cache<String, StoredAuthenticationRequest> requestCorrelationCache = new ConcurrentMapJcacheServiceDefaultImpl().getConfiguredCache();
+        assertSame(authData, auservice.processAuthenticationRequest(mockParameters, "relayState", requestCorrelationCache,
                                                                     TestingConstants.USER_IP_CONS.toString()));
     }
 

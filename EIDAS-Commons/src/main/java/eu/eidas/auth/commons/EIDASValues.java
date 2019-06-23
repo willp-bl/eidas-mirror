@@ -1,29 +1,20 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
- */
 /*
- * This work is Open Source and licensed by the European Commission under the
- * conditions of the European Public License v1.1
+ * Copyright (c) 2019 by European Commission
  *
- * (http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1);
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
  *
- * any use of this file implies acceptance of the conditions of this license.
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,  WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations
- * under the License.
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
+ *
  */
 package eu.eidas.auth.commons;
 
@@ -147,9 +138,25 @@ public enum EIDASValues {
      */
     CITIZEN_CONSENT_LOG("Get Citizen Consent"),
     /**
-     * Represents the 'eIDAS Service receives request from eIDAS Connector' constant value.
+     * Represents the 'eIDAS Connector receives request from Specific Connector' constant value.
      */
-    EIDAS_SERVICE_REQUEST("eIDAS Service receives request from eIDAS Connector"),
+    SPECIFIC_EIDAS_CONNECTOR_REQUEST("eIDAS Connector receives request from Specific Connector"),
+    /**
+     * Represents the 'eIDAS Connector sends request to eIDAS Proxy Service' constant value.
+     */
+    CONNECTOR_SERVICE_REQUEST("eIDAS Connector sends request to eIDAS Proxy Service"),
+    /**
+     * Represents the 'eIDAS Proxy Service sends request to Specific Proxy Service' constant value.
+     */
+    EIDAS_SERVICE_SPECIFIC_REQUEST("eIDAS Proxy Service sends request to Specific Proxy Service"),
+    /**
+     * Represents the 'eIDAS Proxy Service receives request from eIDAS Connector' constant value.
+     */
+    EIDAS_SERVICE_REQUEST("eIDAS Proxy Service receives request from eIDAS Connector"),
+    /**
+     * Represents the 'eIDAS Proxy Service receives response from Specific Proxy Service' constant value.
+     */
+    EIDAS_SERVICE_SPECIFIC_RESPONSE("eIDAS Proxy Service receives response from Specific Proxy Service"),
     /**
      * Represents the 'eIDAS Service generates response to eIDAS Connector' constant value.
      */
@@ -159,9 +166,21 @@ public enum EIDASValues {
      */
     EIDAS_CONNECTOR_REQUEST("eIDAS Connector generates request to eIDAS Service"),
     /**
-     * Represents the 'eIDAS Connector receives response from eIDAS Service' constant value.
+     * Represents the 'eIDAS Proxy Service sends response to eIDAS Connector' constant value.
      */
-    EIDAS_CONNECTOR_RESPONSE("eIDAS Connector receives response from eIDAS Service"),
+    EIDAS_SERVICE_CONNECTOR_RESPONSE("eIDAS Proxy Service sends response to eIDAS Connector"),
+    /**
+     * Represents the 'eIDAS Connector receives response from eIDAS Proxy Service' constant value.
+     */
+    EIDAS_CONNECTOR_RESPONSE("eIDAS Connector receives response from eIDAS Proxy Service"),
+    /**
+     * Represents the 'eIDAS Connector sends response to Specific Connector' constant value.
+     */
+    EIDAS_CONNECTOR_CONNECTOR_RESPONSE("eIDAS Connector sends response to Specific Connector"),
+    /**
+     * Represents the Service Country Code.
+     */
+    COUNTRY_CODE("service.countrycode"),
     /**
      * Represents the 'eIDAS Connector generates response to SP' constant value.
      */

@@ -49,7 +49,7 @@ public class EidasSAMLRequestSyntaxTest {
     @Test
     public void testNormalValidationOnSAMLrequest() throws Exception {
         IAuthenticationRequest parsedRequest = SyntaxTestUtil.getEngine(SyntaxTestUtil.SAMLENGINE_CONF).unmarshallRequestAndValidate(
-                samlToken, "BE",Arrays.asList(SyntaxTestUtil.ISSUER_REQUEST));
+                samlToken, "BE");
         assertNotNull(parsedRequest);
         assertFalse(parsedRequest.getRequestedAttributes().isEmpty());
     }

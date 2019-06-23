@@ -35,29 +35,29 @@ public abstract class CountrySpecificService {
 
     /**
      *
-     * @param req
-     * @param authData
+     * @param req the instance of {@link HttpServletRequest}
+     * @param authData the instance of {@link IAuthenticationRequest}
      * enrich the request with parameters needed by the country web component (included in eDAIS Node)
      */
     public abstract void prepareRequest(HttpServletRequest req, IAuthenticationRequest authData);
 
     /**
      *
-     * @param req
+     * @param req the instance of {@link HttpServletRequest}
      * @return the ursl of the country's web component
      */
     public abstract String getRedirectUrl(HttpServletRequest req);
 
     /**
      *
-     * @param req
+     * @param req the instance of {@link HttpServletRequest}
      * @return true when the current req contains a response belonging to the current country
      */
     public abstract boolean isCountryResponse(HttpServletRequest req);
 
     /**
      *
-     * @param req
+     * @param req the instance of {@link HttpServletRequest}
      * @return true if the request should be allowed through the security filters
      */
     public boolean allowRequestThroughFilter(HttpServletRequest req){

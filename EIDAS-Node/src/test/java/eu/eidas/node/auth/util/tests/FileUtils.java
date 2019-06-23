@@ -21,6 +21,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 
 public class FileUtils {
@@ -50,6 +54,26 @@ public class FileUtils {
             int iBytesReads;
             while ((iBytesReads = fis.read(buffer)) >= 0)
                 fos.write(buffer, 0, iBytesReads);
+        }
+    }
+
+    /**
+     * Copies the files from a source path to a destination path
+     *
+     * @param sourcePath the source path
+     * @param destinationPath the destination path
+     * @throws IOException  if an I/O error is thrown when accessing the starting file.
+     */
+    public static void copyFolder(Path sourcePath, Path destinationPath) throws IOException {
+        Files.walk(sourcePath)
+                .forEach(source -> copy(source, destinationPath.resolve(sourcePath.relativize(source))));
+    }
+
+    private static void copy(Path sourcePath, Path destinationPath) {
+        try {
+            Files.copy(sourcePath, destinationPath, REPLACE_EXISTING);
+        } catch (IOException e) {
+            throw new RuntimeException(e.getMessage(), e);
         }
     }
 

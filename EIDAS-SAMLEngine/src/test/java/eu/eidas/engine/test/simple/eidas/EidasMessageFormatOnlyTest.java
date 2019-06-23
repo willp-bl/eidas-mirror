@@ -129,7 +129,7 @@ public class EidasMessageFormatOnlyTest {
             fail("error during the generation of eidas request: " + ee);
         }
         try {
-            getEngine("CONF2").unmarshallRequestAndValidate(request, "EN",Arrays.asList(REQUEST_ISSUER));
+            getEngine("CONF2").unmarshallRequestAndValidate(request, "EN");
         } catch (EIDASSAMLEngineException ee1) {
             fail("cannot validate eidas request on multi processor engine");
         }

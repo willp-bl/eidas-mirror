@@ -22,7 +22,7 @@ import eu.eidas.auth.commons.exceptions.InvalidParameterEIDASException;
 
 /**
  * Fluent API to validate parameter in non-service classes.
- * <p/>
+ * <p>
  * Usage:
  * <pre>
  *     NormalParameterValidator.paramName("name").paramValue("value").eidasError(error).validate();

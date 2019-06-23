@@ -1,28 +1,38 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
-
 package eu.eidas.node.service;
 
-import eu.eidas.auth.commons.*;
+import eu.eidas.auth.commons.EIDASValues;
+import eu.eidas.auth.commons.EidasErrorKey;
+import eu.eidas.auth.commons.EidasParameterKeys;
+import eu.eidas.auth.commons.IncomingRequest;
+import eu.eidas.auth.commons.WebRequest;
 import eu.eidas.auth.commons.exceptions.AbstractEIDASException;
 import eu.eidas.auth.commons.light.impl.LightRequest;
 import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.tx.BinaryLightToken;
-import eu.eidas.auth.commons.tx.CorrelationMap;
+import eu.eidas.auth.commons.tx.FlowIdCache;
 import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
-import eu.eidas.node.*;
+import eu.eidas.auth.engine.xml.opensaml.SAMLEngineUtils;
+import eu.eidas.node.AbstractNodeServlet;
+import eu.eidas.node.NodeBeanNames;
+import eu.eidas.node.NodeParameterNames;
+import eu.eidas.node.NodeSpecificViewNames;
 import eu.eidas.node.service.validation.NodeParameterValidator;
 import eu.eidas.node.utils.PropertiesUtil;
 import eu.eidas.node.utils.SessionHolder;
@@ -34,18 +44,32 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.cache.Cache;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-import static eu.eidas.node.BeanProvider.*;
+import static eu.eidas.node.BeanProvider.getBean;
 
 @SuppressWarnings("squid:S1989") // due to the code uses correlation maps, not http sessions
 public class ColleagueRequestServlet extends AbstractNodeServlet {
 
     private static final Logger LOG = LoggerFactory.getLogger(ColleagueRequestServlet.class.getName());
+
+    private FlowIdCache getFlowIdCache() {
+        String beanName = NodeBeanNames.EIDAS_PROXYSERVICE_FLOWID_CACHE.toString();
+        FlowIdCache flowIdCache = getBean(FlowIdCache.class, beanName);
+        return flowIdCache;
+    }
+
+    private ServiceControllerService getServiceControllerService() {
+        // Obtaining the assertion consumer url from SPRING context
+        ServiceControllerService controllerService = getBean(ServiceControllerService.class,
+                NodeBeanNames.EIDAS_SERVICE_CONTROLLER.toString());
+        return controllerService;
+    }
 
     @Override
     protected Logger getLogger() {
@@ -62,23 +86,10 @@ public class ColleagueRequestServlet extends AbstractNodeServlet {
         }
     }
 
-    /**
-     * Post method
-     *
-     * @param httpServletRequest
-     * @param httpServletResponse
-     * @throws ServletException
-     * @throws IOException
-     */
     @Override
     protected void doPost(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse)
             throws ServletException, IOException {
         PropertiesUtil.checkProxyServiceActive();
-        // Obtaining the assertion consumer url from SPRING context
-        ServiceControllerService controllerService = getBean(ServiceControllerService.class,
-                NodeBeanNames.EIDAS_SERVICE_CONTROLLER.toString());
-
-        CorrelationMap<StoredAuthenticationRequest> requestCorrelationMap = controllerService.getProxyServiceRequestCorrelationMap();
 
         // Prevent cookies from being accessed through client-side script WITHOUT renew of session.
         setHTTPOnlyHeaderToSession(false, httpServletRequest, httpServletResponse);
@@ -102,8 +113,10 @@ public class ColleagueRequestServlet extends AbstractNodeServlet {
         String relayState = webRequest.getEncodedLastParameterValue(NodeParameterNames.RELAY_STATE.toString());
         LOG.debug("Saving ProxyService relay state. " + relayState);
 
+        //TODO: remove requestCorrelationMap parameter from processAuthenticationRequest
+        Cache<String, StoredAuthenticationRequest> requestCorrelationMap = getServiceControllerService().getProxyServiceRequestCorrelationCache();
         // Obtaining the authData
-        IAuthenticationRequest authData = controllerService.getProxyService()
+        IAuthenticationRequest iAuthenticationRequest = getServiceControllerService().getProxyService()
                 .processAuthenticationRequest(webRequest, relayState, requestCorrelationMap, remoteIpAddress);
         if (StringUtils.isNotBlank(relayState)) { // RelayState's HTTP Parameter is optional!
             NodeParameterValidator.paramName(NodeParameterNames.RELAY_STATE)
@@ -112,14 +125,20 @@ public class ColleagueRequestServlet extends AbstractNodeServlet {
                     .validate();
         }
 
-        String redirectUrl = authData.getAssertionConsumerServiceURL();
+        String redirectUrl = iAuthenticationRequest.getAssertionConsumerServiceURL();
         LOG.debug("RedirectUrl: " + redirectUrl);
         LOG.debug("sessionId is on cookies () or fromURL ", httpServletRequest.isRequestedSessionIdFromCookie(),
                   httpServletRequest.isRequestedSessionIdFromURL());
 
-        httpServletRequest.setAttribute(EidasParameterKeys.SP_ID.toString(), authData.getProviderName());
+        httpServletRequest.setAttribute(EidasParameterKeys.SP_ID.toString(), iAuthenticationRequest.getProviderName());
 
-        LightRequest lightRequest = buildLightRequest(httpServletRequest, httpServletResponse, authData);
+        LightRequest lightRequest = buildLightRequest(httpServletRequest, httpServletResponse, iAuthenticationRequest);
+
+        updateRequestCorrelationCache(iAuthenticationRequest, lightRequest.getId(), webRequest.getRemoteIpAddress());
+
+        final String flowId = getFlowIdCache().get(iAuthenticationRequest.getId());
+        if (StringUtils.isNotEmpty(flowId))
+            getFlowIdCache().put(lightRequest.getId(), flowId);
 
         final String tokenBase64 = putRequestInCommunicationCache(lightRequest);
 
@@ -128,6 +147,19 @@ public class ColleagueRequestServlet extends AbstractNodeServlet {
         RequestDispatcher dispatcher = getServletContext().getRequestDispatcher(NodeSpecificViewNames.TOKEN_REDIRECT_MS_PROXY_SERVICE.toString());
         dispatcher.forward(httpServletRequest, httpServletResponse);
 
+    }
+
+    private void updateRequestCorrelationCache(IAuthenticationRequest authData, String newRequestId, String remoteIpAddress){
+
+        StoredAuthenticationRequest updatedStoredRequest =
+                new StoredAuthenticationRequest.Builder()
+                        .remoteIpAddress(remoteIpAddress)
+                        .request(authData)
+                        .build();
+
+        //put into the Map the new Id generated with the previous authRequest
+        Cache<String, StoredAuthenticationRequest> requestCorrelationMap = getServiceControllerService().getProxyServiceRequestCorrelationCache();
+        requestCorrelationMap.put(newRequestId, updatedStoredRequest);
     }
 
     private String putRequestInCommunicationCache(LightRequest lightRequest) throws ServletException {
@@ -163,12 +195,15 @@ public class ColleagueRequestServlet extends AbstractNodeServlet {
         }
     }
 
-    protected LightRequest buildLightRequest(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, IAuthenticationRequest authenticationRequest)
-            throws ServletException, IOException {
+    private LightRequest buildLightRequest(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, IAuthenticationRequest authenticationRequest) {
         try {
             // Prevent cookies from being accessed through client-side script.
             setHTTPOnlyHeaderToSession(false, httpServletRequest, httpServletResponse);
-            return LightRequest.builder(authenticationRequest).build();
+
+            LightRequest.Builder builder = LightRequest.builder(authenticationRequest);
+            builder.id(SAMLEngineUtils.generateNCName());
+
+            return builder.build();
         } catch (AbstractEIDASException e) {
             LOG.info("BUSINESS EXCEPTION : " + e, e);
             throw e;

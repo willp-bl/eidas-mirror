@@ -61,10 +61,10 @@ public class EidasNodeValidationUtil {
      * same, as for metadata, but later this function to be refactored into samlengine, because destination check is a saml2
      * standard requirement. Also, TODO do not check web binding, check message binding instead.
      *
-     * @param authnRequest
-     * @param connectorUtil
-     * @param httpMethod
-     * @param reportedErr
+     * @param authnRequest the instance of {@link IAuthenticationRequest}
+     * @param connectorUtil the instance of {@link AUCONNECTORUtil}
+     * @param httpMethod the HTTP method
+     * @param reportedErr the instance of {@link EidasErrorKey}
      */
     public static void validateConnectorDestination(IAuthenticationRequest authnRequest,
                                                     AUCONNECTORUtil connectorUtil,
@@ -101,10 +101,10 @@ public class EidasNodeValidationUtil {
      *  same, as for metadata, but later this function to be refactored into samlengine, because destination check is a saml2
      *  standard requirement. Also, TODO do not check web binding, check message binding instead.
      *
-     * @param authnRequest
-     * @param serviceUtil
-     * @param httpMethod
-     * @param reportedErr
+     * @param authnRequest  the instance of {@link IAuthenticationRequest}
+     * @param serviceUtil   the instance of {@link AUSERVICEUtil}
+     * @param httpMethod    the HTTP method
+     * @param reportedErr   the instance of {@link EidasErrorKey}
      */
     public static void validateServiceDestination(IAuthenticationRequest authnRequest,
                                                   AUSERVICEUtil serviceUtil,
@@ -139,9 +139,9 @@ public class EidasNodeValidationUtil {
     /**
      *  Validates assertion consumer URL against Connector metadata.
      *
-     * @param authnRequest
-     * @param metadataAssertationConsumerURL
-     * @param reportedErr
+     * @param authnRequest  the instance of {@link IAuthenticationRequest}
+     * @param metadataAssertationConsumerURL    the metadata Assertation Consumer URL
+     * @param reportedErr   the instance of {@link EidasErrorKey}
      */
     public static void validateAssertionConsumerURL(IAuthenticationRequest authnRequest,
                                                     String metadataAssertationConsumerURL,
@@ -162,8 +162,9 @@ public class EidasNodeValidationUtil {
     /**
      * validates the current binding with that configured in the SAMLRequest
      *
-     * @param authRequest
-     * @param method
+     * @param authRequest   the instance of {@link IAuthenticationRequest}
+     * @param method        the HTTP method
+     * @param reportedErr   the instance of {@link EidasErrorKey}
      */
     public static void validateBinding(IAuthenticationRequest authRequest,
                                        BindingMethod method,
@@ -185,7 +186,7 @@ public class EidasNodeValidationUtil {
     /**
      * Check if the Level of assurance is valid
      *
-     * @param authnRequest
+     * @param authnRequest  the instance of {@link IAuthenticationRequest}
      * @param stringMaxLoA - max LoA value of the responder
      * @return true when the LoA value in the request exists and is inferior (or equal) to that of the responder
      */
@@ -207,8 +208,8 @@ public class EidasNodeValidationUtil {
     /**
      * Check if the Level of assurance is valid compared to a given max value
      *
-     * @param compareType
-     * @param requestLoA
+     * @param compareType   the instance of {@link LevelOfAssuranceComparison}
+     * @param requestLoA    the request's Loa
      * @param stringMaxLoA - max LoA value of the responder
      * @return true when the LoA compare type and value exist and the value is inferior (or equal) to that of the
      * responder

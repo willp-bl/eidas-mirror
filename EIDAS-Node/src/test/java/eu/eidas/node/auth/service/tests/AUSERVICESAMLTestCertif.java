@@ -1,23 +1,26 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
-
 package eu.eidas.node.auth.service.tests;
 
 import java.util.Locale;
 import java.util.Properties;
 
+import eu.eidas.auth.cache.ConcurrentMapJcacheServiceDefaultImpl;
 import eu.eidas.auth.commons.EidasErrorKey;
 import eu.eidas.auth.commons.EidasStringUtil;
 import eu.eidas.auth.commons.cache.ConcurrentMapServiceDefaultImpl;
@@ -55,7 +58,7 @@ public class AUSERVICESAMLTestCertif {
     private static Properties CONFIGS = new Properties();
 
     @BeforeClass
-    public static void runBeforeClass() throws Exception {
+    public static void runBeforeClass() {
         CONFIGS.setProperty(EidasErrorKey.ATT_VERIFICATION_MANDATORY.errorCode(), "202010");
         CONFIGS.setProperty(EidasErrorKey.ATT_VERIFICATION_MANDATORY.errorMessage(), "missing.mandatory.attr");
 
@@ -82,8 +85,8 @@ public class AUSERVICESAMLTestCertif {
     public void testProcessAuthenticationRequest() {
         // Instantiate the util service for anti replay check
         AUSERVICEUtil auserviceutil = new AUSERVICEUtil();
-        auserviceutil.setConcurrentMapService(new ConcurrentMapServiceDefaultImpl());
-        auserviceutil.setAntiReplayCache(auserviceutil.getConcurrentMapService().getConfiguredMapCache());
+        ConcurrentMapJcacheServiceDefaultImpl concurrentMapJcacheServiceDefault = new ConcurrentMapJcacheServiceDefaultImpl();
+        auserviceutil.setAntiReplayCache(concurrentMapJcacheServiceDefault.getConfiguredCache());
         auserviceutil.flushReplayCache();
         AUSERVICESAML auservicesaml = new AUSERVICESAML();
         auservicesaml.setServiceUtil(auserviceutil);
@@ -94,8 +97,6 @@ public class AUSERVICESAMLTestCertif {
                 TestingConstants.ERROR_MESSAGE_CONS.toString());
         auservicesaml.setMessageSource(mockMessages);
 
-        IEIDASLogger mockLoggerBean = mock(IEIDASLogger.class);
-        auservicesaml.setLoggerBean(mockLoggerBean);
         auservicesaml.setCountryCode(TestingConstants.LOCAL_CONS.toString());
         auservicesaml.setMaxQAA(TestingConstants.MAX_QAA_CONS.intValue());
         auservicesaml.setMaxQAAlevel(TestingConstants.MAX_QAA_CONS.intValue());

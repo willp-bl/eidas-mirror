@@ -1,25 +1,21 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
 package eu.eidas.auth.engine;
-
-import java.security.cert.X509Certificate;
-import java.util.Collection;
-import java.util.List;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.IAuthenticationResponse;
@@ -31,6 +27,11 @@ import eu.eidas.auth.engine.core.ProtocolProcessorI;
 import eu.eidas.auth.engine.core.ProtocolSignerI;
 import eu.eidas.auth.engine.core.SamlEngineCoreProperties;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.security.cert.X509Certificate;
+import java.util.List;
 
 /**
  * Engine providing the implementation of the actual protocol (e.g. SAML, eIDAS, etc).
@@ -45,7 +46,7 @@ public interface ProtocolEngineI {
      * @param request the request data
      * @param serviceIssuer the target service to which the request is to be sent
      * @return the container of the request bytes
-     * @throws EIDASSAMLEngineException
+     * @throws EIDASSAMLEngineException if the request could not be generated
      */
     @Nonnull
     IRequestMessage generateRequestMessage(@Nonnull IAuthenticationRequest request, @Nonnull String serviceIssuer)
@@ -107,39 +108,29 @@ public interface ProtocolEngineI {
 
     @Nonnull
     IAuthenticationRequest unmarshallRequestAndValidate(@Nonnull byte[] requestBytes,
-                                                        @Nonnull String citizenCountryCode,
-                                                        Collection<String> whitelistMetadataURLs, 
-                                                        boolean checkWhitelist)
-            throws EIDASSAMLEngineException;
-
-    @Nonnull
-    IAuthenticationRequest unmarshallRequestAndValidate(@Nonnull byte[] requestBytes,
-                                                        @Nonnull String citizenCountryCode,
-                                                        Collection<String> whitelistMetadataURLs)
+                                                        @Nonnull String citizenCountryCode)
             throws EIDASSAMLEngineException;
 
     /**
      * Unmarshalls the given bytes into a {@link Correlated} response object.
      * <p>
      * The {@link Correlated} response object is used to retrieve the correlated request object in a {@link
-     * CorrelationMap} before invoking {@link #validateUnmarshalledResponse(Correlated, String, long)} to obtain the
+     * CorrelationMap} before invoking {@link #validateUnmarshalledResponse(Correlated, String, long, long, String)} to obtain the
      * complete response.
-     * @param checkWhitelist TODO
-     * @param tokenSaml the SAML response bytes
+     * @param responseBytes the SAML response bytes
      *
      * @return the SAML response instance
      * @throws EIDASSAMLEngineException the EIDASSAML engine exception
      */
     @Nonnull
-    Correlated unmarshallResponse(@Nonnull byte[] responseBytes, Collection<String> metadataWhitelist, boolean checkWhitelist) throws EIDASSAMLEngineException;
+    Correlated unmarshallResponse(@Nonnull byte[] responseBytes) throws EIDASSAMLEngineException;
 
     @Nonnull
     IAuthenticationResponse unmarshallResponseAndValidate(@Nonnull byte[] responseBytes,
                                                           @Nonnull String userIpAddress,
                                                           long beforeSkewTimeInMillis,
                                                           long afterSkewTimeInMillis,
-                                                          @Nullable String audienceRestriction
-                                                          ,Collection<String> metadataWhitelist, boolean checkWhitelist)
+                                                          @Nullable String audienceRestriction)
             throws EIDASSAMLEngineException;
 
     @Nonnull

@@ -1,30 +1,20 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
- */
 /*
- * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
- * the European Commission - subsequent versions of the EUPL (the "Licence");
- * You may not use this work except in compliance with the Licence. You may
- * obtain a copy of the Licence at:
+ * Copyright (c) 2019 by European Commission
  *
- * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the Licence is distributed on an "AS IS" basis, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * Licence for the specific language governing permissions and limitations under
- * the Licence.
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
+ *
  */
 package eu.eidas.auth.engine.core.validator.eidas;
 
@@ -33,104 +23,93 @@ import net.shibboleth.utilities.java.support.xml.SerializeSupport;
 import org.opensaml.saml.common.SAMLVersion;
 import org.opensaml.saml.saml2.core.Response;
 import org.opensaml.saml.saml2.core.StatusCode;
+import org.w3c.dom.Element;
 
-import java.nio.charset.Charset;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Stream;
 
+import static eu.eidas.auth.engine.core.validator.eidas.EidasValidator.validateNotNull;
+import static eu.eidas.auth.engine.core.validator.eidas.EidasValidator.validateOK;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
+/**
+ * eIDAS validator for {@link Response}.
+ */
+public class EidasResponseValidator extends ResponseSchemaValidator implements EidasValidator {
 
-public class EidasResponseValidator extends ResponseSchemaValidator {
+    static final int MAX_SIZE = 131072;
 
-    private static final String CONSENT_ALLOWED_VALUE_1 = "urn:oasis:names:tc:SAML:2.0:consent:obtained";
-    private static final String CONSENT_ALLOWED_VALUE_2 = "urn:oasis:names:tc:SAML:2.0:consent:prior";
-    private static final String CONSENT_ALLOWED_VALUE_3 = "urn:oasis:names:tc:SAML:2.0:consent:curent-implicit";
-    private static final String CONSENT_ALLOWED_VALUE_4 = "urn:oasis:names:tc:SAML:2.0:consent:curent-explicit";
-    private static final String CONSENT_ALLOWED_VALUE_5 = "urn:oasis:names:tc:SAML:2.0:consent:unspecified";
-
-    private static final int MAX_SIZE = 131072;
-
-    /**
-     * Constructor
-     */
+    static final String[] CONSENT_ALLOWED_VALUES = {
+            "urn:oasis:names:tc:SAML:2.0:consent:obtained",
+            "urn:oasis:names:tc:SAML:2.0:consent:prior",
+            "urn:oasis:names:tc:SAML:2.0:consent:current-implicit",
+            "urn:oasis:names:tc:SAML:2.0:consent:current-explicit",
+            "urn:oasis:names:tc:SAML:2.0:consent:unspecified",
+            "urn:oasis:names:tc:SAML:2.0:consent:unavailable",
+            "urn:oasis:names:tc:SAML:2.0:consent:inapplicable"
+    };
 
     public EidasResponseValidator() {
-
         super();
     }
 
     /**
-     * {@inheritDoc}
+     * Validates a single {@link Response} and throws a {@link ValidationException} if the validation fails.
+     *
+     * @param response the {@link Response} to validate
+     * @throws ValidationException when an invalid value was found
      */
-    public void validate(Response resp) throws ValidationException {
+    @Override
+    public void validate(Response response) throws ValidationException {
 
-        if (SerializeSupport.prettyPrintXML(resp.getDOM()).getBytes(Charset.forName("UTF-8")).length > MAX_SIZE) {
-            throw new ValidationException("SAML Response exceeds max size.");
-        }
+        Element node = Objects.requireNonNull(response.getDOM());
+        int responseSize = SerializeSupport.prettyPrintXML(node).getBytes(UTF_8).length;
+        validateOK(responseSize <= MAX_SIZE, "SAML Response exceeds max size.");
 
-        super.validate(resp);
+        super.validate(response);
 
-        if (resp.getID() == null) {
+        validateNotNull(response.getID(), "ID is required");
+        validateNotNull(response.getInResponseTo(), "InResponseTo is required");
+        validateNotNull(response.getVersion(), "Version is required.");
+        validateOK(SAMLVersion.VERSION_20.equals(response.getVersion()), "Version is invalid.");
+        validateNotNull(response.getIssueInstant(), "IssueInstant is required");
+        validateNotNull(response.getDestination(), "Destination is required");
 
-            throw new ValidationException("ID is required");
-        }
+        validateConsent(response.getConsent());
 
-        if (resp.getInResponseTo() == null) {
+        validateNotNull(response.getIssuer(), "Issuer is required.");
+        validateNotNull(response.getStatus(), "Status is required.");
+        validateNotNull(response.getSignature(), "Signature is required.");
+        validateOK((!StatusCode.SUCCESS.equals(response.getStatus().getStatusCode().getValue())
+                        || !(response.getAssertions() == null || response.getAssertions().isEmpty())),
+                "Assertion is required");
+    }
 
-            throw new ValidationException("InResponseTo is required");
-        }
-
-        if (resp.getVersion() == null) {
-            throw new ValidationException("Version is required.");
-        } else if (!resp.getVersion().equals(SAMLVersion.VERSION_20)) {
-            throw new ValidationException("Version is invalid.");
-        }
-
-        if (resp.getIssueInstant() == null) {
-            throw new ValidationException("IssueInstant is required");
-        }
-
-        if (resp.getDestination() == null) {
-
-            throw new ValidationException("Destination is required");
-        }
-
+    /**
+     * Validates the consent, it is optional, but when not null, it should be one of:
+     * <ul>
+     * <li>urn:oasis:names:tc:SAML:2.0:consent:obtained</li>
+     * <li>urn:oasis:names:tc:SAML:2.0:consent:prior</li>
+     * <li>urn:oasis:names:tc:SAML:2.0:consent:current-implicit</li>
+     * <li>urn:oasis:names:tc:SAML:2.0:consent:current-explicit</li>
+     * <li>urn:oasis:names:tc:SAML:2.0:consent:unspecified</li>
+     * <li>urn:oasis:names:tc:SAML:2.0:consent:unavailable</li>
+     * <li>urn:oasis:names:tc:SAML:2.0:consent:inapplicable</li>
+     * </ul>
+     *
+     * @param consent the consent
+     * @throws ValidationException when the consent is invalid
+     */
+    private static void validateConsent(String consent) throws ValidationException {
         // Consent is optional
-        if (resp.getConsent() != null) {
+        if (consent != null) {
 
-            String consent = resp.getConsent();
-            boolean allowedValue=CONSENT_ALLOWED_VALUE_1.equals(consent);
-            allowedValue = allowedValue || CONSENT_ALLOWED_VALUE_2.equals(consent);
-            allowedValue = allowedValue || CONSENT_ALLOWED_VALUE_3.equals(consent);
-            allowedValue = allowedValue || CONSENT_ALLOWED_VALUE_4.equals(consent);
-            allowedValue = allowedValue || CONSENT_ALLOWED_VALUE_5.equals(consent);
-            if (!allowedValue) {
-                throw new ValidationException("Consent is invalid.");
-            }
+            Optional<String> consentOptional = Stream.of(CONSENT_ALLOWED_VALUES)
+                    .filter(consent::equals)
+                    .findAny();
+            validateOK(consentOptional.isPresent(), "Consent is invalid");
         }
-
-
-        if (resp.getIssuer() == null) {
-
-            throw new ValidationException("Issuer is required.");
-        }
-
-        if (resp.getStatus() == null) {
-
-            throw new ValidationException("Status is required.");
-        }
-
-
-        if (resp.getSignature() == null) {
-
-            throw new ValidationException("Signature is required.");
-        }
-
-
-        if (resp.getStatus().getStatusCode().getValue().equals(StatusCode.SUCCESS.toString()) &&
-                (resp.getAssertions() == null || resp.getAssertions().isEmpty())) {
-                throw new ValidationException("Assertion is required");
-        }
-
     }
 
 }
-

@@ -26,13 +26,15 @@ import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Utility class used to define the markers used for logging.
  * @author vanegdi
  * @since 1.2.2
  */
-public class AbstractSecurityRequest {
+public abstract class AbstractSecurityRequest {
+
     /**
      * Logger object.
      */
@@ -55,12 +57,12 @@ public class AbstractSecurityRequest {
     /**
      * Map containing the IP addresses of the citizens.
      */
-    protected transient Map<String, List<Long>> spIps = new HashMap<String, List<Long>>();
+    protected transient ConcurrentHashMap<String, List<Long>> spIps = new ConcurrentHashMap<>();
 
     /**
      * Map containing the IP addresses from the Service Providers.
      */
-    protected transient Map<String, List<Long>> spRequests = new HashMap<String, List<Long>>();
+    protected transient ConcurrentHashMap<String, List<Long>> spRequests = new ConcurrentHashMap<>();
 
     //Contains the security configuration
     private ConfigurationSecurityBean configurationSecurityBean;
@@ -80,51 +82,47 @@ public class AbstractSecurityRequest {
      */
     protected final void checkRequest(final String remoteAddr, final int maxTime,
                               final int threshold, final String pathInvoked,
-                              final Map<String, List<Long>> listIP) {
+                              final ConcurrentHashMap<String, List<Long>> listIP) {
         final String errorMsg = EidasErrors.get(EidasErrorKey.REQUESTS.errorMessage(pathInvoked));
         final String errorCode = EidasErrors.get(EidasErrorKey.REQUESTS.errorCode(pathInvoked));
 
-        synchronized (listIP) {
-            // query the table for the request address
-            List<Long> times = listIP.get(remoteAddr);
+        // query the table for the request address
+        List<Long> times = listIP.get(remoteAddr);
 
-            // if it is new ip address
-            if (times == null) {
-                times = new ArrayList<Long>();
-                times.add(System.currentTimeMillis());
-                // add it to the table
-                listIP.put(remoteAddr, times);
-            } else {
-                // if it is a known ip address
-                final long currTime = System.currentTimeMillis();
+        // if it is new ip address
+        if (times == null) {
+            times = new ArrayList<>();
+            times.add(System.currentTimeMillis());
+        } else {
+            // if it is a known ip address
+            final long currTime = System.currentTimeMillis();
 
-                // if the number of requests from remoteAddr achieves the threshold
-                if (times.size() + 1 > threshold) {
-                    final List<Long> nTimes = new ArrayList<Long>(times);
+            // if the number of requests from remoteAddr achieves the threshold
+            if (times.size() + 1 > threshold) {
+                final List<Long> nTimes = new ArrayList<>(times);
 
-                    // compute the time span currentTime is in milliseconds so we must multiply maxTime by 1000.
-                    final long limitTime = currTime - maxTime * AbstractSecurityRequest.MILLIS;
+                // compute the time span currentTime is in milliseconds so we must multiply maxTime by 1000.
+                final long limitTime = currTime - maxTime * AbstractSecurityRequest.MILLIS;
 
-                    // remove every time not within the previously computed time span
-                    for (final long t : times) {
-                        if (t < limitTime) {
-                            nTimes.remove(t);
-                        }
-                    }
-                    times = nTimes;
-
-                    // if the number of requests from remoteAddr, is still, bigger than the threshold throw exception
-                    if (times.size() + 1 > threshold) {
-                        LOG.warn(LoggingMarkerMDC.SECURITY_WARNING, "Requests/Minute reached for IP: " + remoteAddr);
-                        throw new SecurityEIDASException(errorCode, errorMsg);
+                // remove every time not within the previously computed time span
+                for (final long t : times) {
+                    if (t < limitTime) {
+                        nTimes.remove(t);
                     }
                 }
-                times.add(currTime);
+                times = nTimes;
 
-                // fill the table with this request
-                listIP.put(remoteAddr, times);
+                // if the number of requests from remoteAddr, is still, bigger than the threshold throw exception
+                if (times.size() + 1 > threshold) {
+                    LOG.warn(LoggingMarkerMDC.SECURITY_WARNING, "Requests/Minute reached for IP: {}", remoteAddr);
+                    throw new SecurityEIDASException(errorCode, errorMsg);
+                }
             }
+            times.add(currTime);
         }
+        // add it to the table
+        List<Long> previous = listIP.putIfAbsent(remoteAddr, times);
+        LOG.info("Previous value for {} in listIP was {}, replaced by {}", remoteAddr, previous, times);
     }
 
     /**
@@ -141,7 +139,7 @@ public class AbstractSecurityRequest {
         final String errorCode = EidasErrors.get(EidasErrorKey.DOMAIN.errorCode(servletClassName));
         final String errorMsg = EidasErrors.get(EidasErrorKey.DOMAIN.errorMessage(servletClassName));
 
-        final List<String> ltrustedDomains = new ArrayList<String>(Arrays.asList(configurationSecurityBean.getTrustedDomains().split(EIDASValues.ATTRIBUTE_SEP.toString())));
+        final List<String> ltrustedDomains = new ArrayList<>(Arrays.asList(configurationSecurityBean.getTrustedDomains().split(EIDASValues.ATTRIBUTE_SEP.toString())));
 
         final boolean hasNoTrustedD = ltrustedDomains.size() == 1 && ltrustedDomains.contains(EIDASValues.NONE.toString());
 

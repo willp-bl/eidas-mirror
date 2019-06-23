@@ -1,29 +1,32 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
 package eu.eidas.util;
 
+import org.apache.commons.lang.StringUtils;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
-import org.apache.commons.lang.StringUtils;
-
 /**
+ * <p>
  * Simple static methods to be called at the start of your own methods to verify correct arguments and state. This
  * allows constructs such as
  * <pre>
@@ -31,22 +34,22 @@ import org.apache.commons.lang.StringUtils;
  *       throw new IllegalArgumentException("reference cannot be null");
  *     }
  * </pre>
- * <p/>
+ * <p>
  * to be replaced with the more compact
  * <pre>
  *     checkNotNull(reference, "reference");
  * </pre>
- * <p/>
+ * <p>
  * Note that the sense of the expression is inverted; with {@code Preconditions} you declare what you expect to be
  * <i>true</i>, just as you do with an <a href="http://java.sun.com/j2se/1.5.0/docs/guide/language/assert.html"> {@code
  * assert}</a> or a JUnit {@code assertTrue} call.
- * <p/>
+ * <p>
  * Take care not to confuse precondition checking with other similar types of checks! Precondition exceptions --
  * including those provided here, but also {@link IndexOutOfBoundsException}, {@link java.util.NoSuchElementException},
  * {@link UnsupportedOperationException} and others -- are used to signal that the <i>calling method</i> has made an
  * error. This tells the caller that it should not have invoked the method when it did, with the arguments it did, or
  * perhaps ever. Postcondition or other invariant failures should not throw these types of exceptions.
- * <p/>
+ *
  * See the Guava User Guide on <a href= "http://code.google.com/p/guava-libraries/wiki/PreconditionsExplained"> using
  * {@code Preconditions}</a>.
  *
@@ -128,6 +131,8 @@ public final class Preconditions {
      * @param referenceName the {@code String} name which will appear in the exception message
      * @param minLength the minimum length allowed
      * @param maxLength the maximum length allowed
+     * @param <T> the type
+     * @param <C> the type
      * @return the non-null {@code Collection} that was validated
      * @throws IllegalArgumentException if the {@code Collection} is shorter than the given {@code minLength} or longer
      * than the given {@code maxLength}
@@ -148,6 +153,9 @@ public final class Preconditions {
      * @param referenceName the {@code String} name which will appear in the exception message
      * @param minLength the minimum length allowed
      * @param maxLength the maximum length allowed
+     * @param <K> the type
+     * @param <V> the type
+     * @param <C> the type
      * @return the non-null {@code Map} that was validated
      * @throws IllegalArgumentException if the {@code Map} is shorter than the given {@code minLength} or longer than
      * the given {@code maxLength}
@@ -168,6 +176,7 @@ public final class Preconditions {
      * @param referenceName the {@code String} name which will appear in the exception message
      * @param minLength the minimum length allowed
      * @param maxLength the maximum length allowed
+     * @param <T> the type
      * @return the non-null array that was validated
      * @throws IllegalArgumentException if the array is shorter than the given {@code minLength} or longer than the
      * given {@code maxLength}
@@ -331,6 +340,7 @@ public final class Preconditions {
      *
      * @param reference an array reference
      * @param referenceName the array name which will appear in the exception message
+     * @param <T> the type
      * @return the non-null array reference that was validated
      * @throws IllegalArgumentException if {@code reference} is null or empty
      */
@@ -348,6 +358,7 @@ public final class Preconditions {
      *
      * @param reference a Collection reference
      * @param referenceName the Collection name which will appear in the exception message
+     * @param <E> the type
      * @return the non-null Collection reference that was validated
      * @throws IllegalArgumentException if {@code reference} is null or empty
      */
@@ -366,6 +377,8 @@ public final class Preconditions {
      *
      * @param reference a Map reference
      * @param referenceName the Map name which will appear in the exception message
+     * @param <K> the type
+     * @param <V> the type
      * @return the non-null Map reference that was validated
      * @throws IllegalArgumentException if {@code reference} is null or empty
      */
@@ -402,6 +415,8 @@ public final class Preconditions {
      * @param reference a {@code Collection}
      * @param referenceName the {@code String} name which will appear in the exception message
      * @param maxLength the maximum length allowed
+     * @param <T> the type
+     * @param <C> the type
      * @return the non-null {@code Collection} that was validated
      * @throws IllegalArgumentException if the {@code Collection} is longer than the given {@code maxLength}
      */
@@ -419,6 +434,9 @@ public final class Preconditions {
      * @param reference a {@code Map}
      * @param referenceName the {@code String} name which will appear in the exception message
      * @param maxLength the maximum length allowed
+     * @param <K> the type
+     * @param <V> the type
+     * @param <C> the type
      * @return the non-null {@code Map} that was validated
      * @throws IllegalArgumentException if the {@code Map} is longer than the given {@code maxLength}
      */
@@ -435,6 +453,7 @@ public final class Preconditions {
      * @param reference an array
      * @param referenceName the {@code String} name which will appear in the exception message
      * @param maxLength the maximum length allowed
+     * @param <T> the type
      * @return the non-null array that was validated
      * @throws IllegalArgumentException if the array is longer than the given {@code maxLength}
      */
@@ -494,6 +513,7 @@ public final class Preconditions {
      *
      * @param reference an object reference
      * @param referenceName the object name which will appear in the exception message
+     * @param <T> the type
      * @return the non-null reference that was validated
      * @throws IllegalArgumentException if {@code reference} is null
      */
@@ -511,6 +531,7 @@ public final class Preconditions {
      *
      * @param reference an object reference
      * @param referenceName the object name which will appear in the exception message
+     * @param <T> the type
      * @return the non-null reference that was validated
      * @throws IllegalStateException if {@code reference} is null
      */
@@ -546,6 +567,8 @@ public final class Preconditions {
      * @param reference a {@code Collection}
      * @param referenceName the {@code String} name which will appear in the exception message
      * @param minLength the minimum length allowed
+     * @param <T> the type
+     * @param <C> the type
      * @return the non-null {@code Collection} that was validated
      * @throws IllegalArgumentException if the {@code Collection} is shorter than the given {@code minLength}
      */
@@ -563,6 +586,9 @@ public final class Preconditions {
      * @param reference a {@code Map}
      * @param referenceName the {@code String} name which will appear in the exception message
      * @param minLength the minimum length allowed
+     * @param <K> the type
+     * @param <V> the type
+     * @param <C> the type
      * @return the non-null {@code Map} that was validated
      * @throws IllegalArgumentException if the {@code Map} is shorter than the given {@code minLength}
      */
@@ -580,6 +606,7 @@ public final class Preconditions {
      * @param reference the array
      * @param referenceName the {@code String} name which will appear in the exception message
      * @param minLength the minimum length allowed
+     * @param <T> the type
      * @return the non-null {@code Collection} that was validated
      * @throws IllegalArgumentException if the {@code Collection} is shorter than the given {@code minLength}
      */
@@ -650,6 +677,8 @@ public final class Preconditions {
      *
      * @param value the value to check
      * @param referenceName the variable name which will appear in the exception message
+     * @param min the given {@code min} value
+     * @param max the given {@code max} value
      * @return the given {@code value} when valid otherwise throws an IllegalArgumentException.
      * @throws IllegalArgumentException if {@code value} is lower than the given {@code min} or is higher than the given
      * {@code max}.
@@ -667,11 +696,12 @@ public final class Preconditions {
     }
 
     /**
+     * <p>
      * Checks if the reference contains only Unicode letters or digits.
-     * <p/>
+     * <p>
      * {@code null} will throw an {@code IllegalArgumentException}. An empty reference ({@code length()=0} ) will throw
      * an {@code IllegalArgumentException}.
-     * <p/>
+     *
      * <pre>
      * Preconditions.isAlphanumeric(null)   = IllegalArgumentException
      * Preconditions.isAlphanumeric("")     = IllegalArgumentException
@@ -696,11 +726,12 @@ public final class Preconditions {
     }
 
     /**
+     * <p>
      * Checks if the reference contains only Unicode letters, digits or space ({@code ' '}).
-     * <p/>
+     * <p>
      * {@code null} will throw an {@code IllegalArgumentException}. An empty {@code reference} (length()=0) will return
      * {@code reference}.
-     * <p/>
+     *
      * <pre>
      * Preconditions.isAlphanumericSpace(null)   = IllegalArgumentException
      * Preconditions.isAlphanumericSpace("")     = true

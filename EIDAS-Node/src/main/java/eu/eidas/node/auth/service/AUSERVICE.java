@@ -1,30 +1,23 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
 package eu.eidas.node.auth.service;
 
-import java.security.InvalidParameterException;
-import java.util.Map;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.common.collect.ImmutableSet;
-
 import eu.eidas.auth.commons.EIDASStatusCode;
 import eu.eidas.auth.commons.EIDASSubStatusCode;
 import eu.eidas.auth.commons.EidasErrorKey;
@@ -45,11 +38,22 @@ import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.IResponseMessage;
 import eu.eidas.auth.commons.protocol.eidas.LevelOfAssuranceComparison;
 import eu.eidas.auth.commons.protocol.impl.AuthenticationResponse;
-import eu.eidas.auth.commons.tx.CorrelationMap;
 import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
 import eu.eidas.auth.commons.validation.NormalParameterValidator;
 import eu.eidas.auth.engine.xml.opensaml.SAMLEngineUtils;
+import eu.eidas.node.NodeBeanNames;
+import eu.eidas.node.service.ServiceControllerService;
 import eu.eidas.node.utils.EidasNodeValidationUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.cache.Cache;
+import java.security.InvalidParameterException;
+import java.util.Map;
+
+import static eu.eidas.node.BeanProvider.getBean;
 
 /**
  * The AUSERVICE class deals with the requests coming from the Connector. This class communicates with the IdP and APs
@@ -91,8 +95,7 @@ public final class AUSERVICE implements ISERVICEService {
     @Override
     public IAuthenticationRequest processAuthenticationRequest(@Nonnull WebRequest webRequest,
                                                                @Nullable String relayState,
-                                                               @Nonnull
-                                                                       CorrelationMap<StoredAuthenticationRequest> requestCorrelationMap,
+                                                               @Nonnull Cache<String, StoredAuthenticationRequest> requestCorrelationCache,
                                                                @Nonnull String remoteIpAddress) {
 
         String stringSamlToken = webRequest.getEncodedLastParameterValue(EidasParameterKeys.SAML_REQUEST);
@@ -118,13 +121,6 @@ public final class AUSERVICE implements ISERVICEService {
 
         // TODO: should we add an indirection in the returned SAML Request ID here
         // TODO: to prevent that the SAML Request ID sent to the IdP is the same as the one sent by the Connector
-
-        String updatedRequestId = authnRequest.getId();
-        StoredAuthenticationRequest updatedStoredRequest =
-                new StoredAuthenticationRequest.Builder().remoteIpAddress(webRequest.getRemoteIpAddress())
-                        .request(authnRequest)
-                        .build();
-        requestCorrelationMap.put(updatedRequestId, updatedStoredRequest);
 
         citizenService.checkMandatoryAttributes(authnRequest.getRequestedAttributes());
 
@@ -304,10 +300,20 @@ public final class AUSERVICE implements ISERVICEService {
                                                                                errorCode, null, errorMessage,
                                                                                storedRequest.getRemoteIpAddress(),
                                                                                true);
+        //puts request back in correlation cache to be used in the message logging
+        putStoredRequestInCorrelationCache(storedRequest);
+
         throw new ResponseCarryingServiceException(errorCode, errorMessage,
                                                    EidasStringUtil.encodeToBase64(samlTokenFail),
                                                    originalRequest.getAssertionConsumerServiceURL(),
                                                    storedRequest.getRequest().getRelayState());
+    }
+
+    private void putStoredRequestInCorrelationCache(StoredAuthenticationRequest storedRequest) {
+        String beanName = NodeBeanNames.EIDAS_SERVICE_CONTROLLER.toString();
+        ServiceControllerService controllerService = getBean(ServiceControllerService.class, beanName);
+        Cache<String, StoredAuthenticationRequest> requestCorrelationMap = controllerService.getProxyServiceRequestCorrelationCache();
+        requestCorrelationMap.put(storedRequest.getRequest().getId(), storedRequest);
     }
 
     /**

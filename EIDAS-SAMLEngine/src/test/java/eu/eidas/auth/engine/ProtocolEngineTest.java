@@ -83,7 +83,7 @@ public final class ProtocolEngineTest {
         Response samlResponse = (Response) OpenSamlHelper.unmarshall(responseMessage.getMessageBytes());
         assertFalse(samlResponse.getEncryptedAssertions().isEmpty());
 
-        Correlated correlated = protocolEngine.unmarshallResponse(responseMessage.getMessageBytes(),Arrays.asList("https://destination.europa.eu/metadata"), true);
+        Correlated correlated = protocolEngine.unmarshallResponse(responseMessage.getMessageBytes());
 
         IAuthenticationResponse authenticationResponse =
                 protocolEngine.validateUnmarshalledResponse(correlated, "127.0.0.1", 0L, 0L, null);

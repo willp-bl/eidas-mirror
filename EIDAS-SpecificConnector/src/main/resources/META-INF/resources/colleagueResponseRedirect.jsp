@@ -25,6 +25,7 @@
 
 <head>
     <jsp:include page="include/htmlHeadSpecific.jsp"/>
+    <title>Demo Specific Connector: Secure Identity Across Borders Linked</title>
 </head>
 <body>
 <main>

@@ -141,6 +141,6 @@ public class SyntaxTestUtil {
 
     public static IAuthenticationRequest getEidasAuthnRequestAndValidateFromToken(final byte[] tokenSaml)
             throws EIDASSAMLEngineException {
-        return getEngine(SAMLENGINE_CONF).unmarshallRequestAndValidate(tokenSaml, "BE",Arrays.asList(ISSUER_REQUEST));
+        return getEngine(SAMLENGINE_CONF).unmarshallRequestAndValidate(tokenSaml, "BE");
     }
 }

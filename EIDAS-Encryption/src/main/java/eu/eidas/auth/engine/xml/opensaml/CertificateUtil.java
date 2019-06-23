@@ -1,16 +1,19 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
 package eu.eidas.auth.engine.xml.opensaml;
 
@@ -77,10 +80,10 @@ public final class CertificateUtil {
     private static final AtomicReference<CertificateFactory> CERTIFICATE_FACTORY_REF = new AtomicReference<>();
 
     /**
-     * Performs an certification path key evaluation between the {@param x509Credential} and all the credential contained in {@param trustedCredentials}.
+     * Performs an certification path key evaluation between the param x509Credential and all the credential contained in param trustedCredentials.
      *
      * @param x509Credential the {@link X509Credential} to be evaluated
-     * @param trustedCredentials the list of credentials that the {@param x509Credential} will be evaluated against.
+     * @param trustedCredentials the list of credentials that the param x509Credential will be evaluated against.
      * @throws CertificateException if the credential is not trusted
      */
     public static void checkChainTrust(X509Credential x509Credential, Iterable<? extends Credential> trustedCredentials)
@@ -101,10 +104,10 @@ public final class CertificateUtil {
     }
 
     /**
-     * Performs an explicit key evaluation between the {@param x509Credential} and all the credential contained in {@param trustedCredentials}.
+     * Performs an explicit key evaluation between the param x509Credential and all the credential contained in param trustedCredentials.
      *
      * @param x509Credential the {@link X509Credential} to be evaluated
-     * @param trustedCredentials the list of credentials that the {@param x509Credential} will be evaluated against.
+     * @param trustedCredentials the list of credentials that the param x509Credential will be evaluated against.
      * @throws CertificateException if the credential is not trusted
      */
     public static void checkExplicitTrust(X509Credential x509Credential, Iterable<? extends Credential> trustedCredentials) throws CertificateException {
@@ -155,8 +158,8 @@ public final class CertificateUtil {
     }
 
     /**
-     * @param certificate
-     * @param privateKey
+     * @param certificate the {@link X509Credential} to be evaluated
+     * @param privateKey the private key {@link PrivateKey}
      * @return a credential based on the provided elements
      */
     public static X509Credential createCredential(X509Certificate certificate, PrivateKey privateKey) {
@@ -174,12 +177,12 @@ public final class CertificateUtil {
     }
 
     /**
-     * @param keyStore
-     * @param serialNumber
-     * @param issuer
+     * @param keyStore the keyStore
+     * @param serialNumber the serialNumber
+     * @param issuer the issuer
      * @return a certificate/alias pair from the keystore, having the given issuer and serialNumber
-     * @throws KeyStoreException
-     * @throws CertificateException
+     * @throws KeyStoreException the KeyStore exception
+     * @throws CertificateException if the credential is not trusted
      */
     @Nonnull
     public static CertificateAliasPair getCertificatePair(@Nonnull KeyStore keyStore,
@@ -243,7 +246,7 @@ public final class CertificateUtil {
     }
 
     /**
-     * @param cert
+     * @param cert the {@link X509Credential} to be evaluated
      * @return true when the certificate is self signed
      */
     public static boolean isCertificateSelfSigned(X509Certificate cert) {
@@ -273,11 +276,11 @@ public final class CertificateUtil {
     }
 
     /**
-     * Retrieves the {@link X509Certificate} which is the issuer of {@param entityX509Cred} from a {@link List<X509Certificate>}
+     * Retrieves the {@link X509Certificate} which is the issuer of param entityX509Cred from a {@link List} of {@link X509Certificate}
      *
      * @param x509Credential the credential which holds the issuer information
      * @param x509Certificates the list of {@link X509Certificate} where the issuer will be looked up and if present retrieved from
-     * @return the {@link X509Certificate} that is the issuer of {@param entityX509Cred} or null if not found in the {@param  x509Certificates}
+     * @return the {@link X509Certificate} that is the issuer of param entityX509Cred or null if not found in the param  x509Certificates
      */
     public static X509Certificate getIssuerX509Certificate(X509Credential x509Credential, List<X509Certificate> x509Certificates) {
         String issuerDN = x509Credential.getEntityCertificate().getIssuerDN().getName();

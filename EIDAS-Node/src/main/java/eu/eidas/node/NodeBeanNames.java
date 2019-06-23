@@ -1,16 +1,19 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
 
 package eu.eidas.node;
@@ -27,6 +30,28 @@ public enum NodeBeanNames {
     CONNECTOR_METADATA_GENERATOR("connectorMetadataGeneratorSP"),
 
     EIDAS_CONNECTOR_CONTROLLER("connectorController"),
+
+    EIDAS_CONNECTOR_UTIL("springManagedAUCONNECTORUtil"),
+
+    EIDAS_CONNECTOR_FLOWID_CACHE("connectorFlowIdCache"),
+
+    EIDAS_PROXYSERVICE_FLOWID_CACHE("proxyServiceFlowIdCache"),
+
+    CONNECTOR_INCOMING_LIGHT_REQUEST_LOGGER("connectorIncomingLightRequestLogger"),
+
+    PROXY_SERVICE_OUTGOING_LIGHT_REQUEST_LOGGER("proxyServiceOutgoingLightRequestLogger"),
+
+    PROXY_SERVICE_INCOMING_LIGHT_RESPONSE_LOGGER("proxyServiceIncomingLightResponseLogger"),
+
+    CONNECTOR_OUTGOING_LIGHT_RESPONSE_LOGGER("connectorOutgoingLightResponseLogger"),
+
+    CONNECTOR_OUTGOING_EIDAS_REQUEST_LOGGER("connectorOutgoingEidasRequestLogger"),
+
+    PROXY_SERVICE_INCOMING_EIDAS_REQUEST_LOGGER("proxyServiceIncomingEidasRequestLogger"),
+
+    PROXY_SERVICE_OUTGOING_SAML_RESPONSE_LOGGER("proxyServiceOutgoingEidasResponseLogger"),
+
+    CONNECTOR_INCOMING_EIDAS_RESPONSE_LOGGER("connectorIncomingEidasResponseLogger"),
 
     EIDAS_SERVICE_BINDING("serviceBinding"), // TODO unused?
 

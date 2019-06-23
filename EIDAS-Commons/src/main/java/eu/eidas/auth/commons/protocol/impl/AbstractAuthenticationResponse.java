@@ -45,13 +45,13 @@ public abstract class AbstractAuthenticationResponse implements IAuthenticationR
 
     /**
      * Abstract Builder pattern with self-bounding generics for {@link IAuthenticationResponse} subtypes.
-     * <p/>
+     * <p>
      * Effective Java, 2nd Ed. : Item 2: Builder Pattern.
-     * <p/>
+     * <p>
      * This Builder is not thread-safe but is thread-compliant, it is supposed to be used by only one thread.
-     * <p/>
-     * See Self-bounding generics:<p/> http://www.artima.com/weblogs/viewpost.jsp?thread=136394<p/>
-     * http://www.artima.com/forums/flat.jsp?forum=106&thread=136394<p/> http://en.wikipedia.org/wiki/Covariance_and_contravariance<p/>
+     * <p>
+     * See Self-bounding generics:<p> http://www.artima.com/weblogs/viewpost.jsp?thread=136394<p>
+     * http://www.artima.com/forums/flat.jsp?forum=106&amp;thread=136394<p> http://en.wikipedia.org/wiki/Covariance_and_contravariance<p>
      *
      * @param B the type of the Builder itself
      * @param T the type being built by the {@link #build()} method of this builder.
@@ -293,7 +293,7 @@ public abstract class AbstractAuthenticationResponse implements IAuthenticationR
         /**
          * Builds a new {@code T} instance based on this Builder instance (Builder pattern for {@link
          * IAuthenticationResponse}).
-         * <p/>
+         * <p>
          * The {@link #validate()} is always called before creating a new instance through a call to the {@link
          * #newInstance()} method.
          *
@@ -307,8 +307,8 @@ public abstract class AbstractAuthenticationResponse implements IAuthenticationR
 
         /**
          * Method to be implemented by subtypes to create the right type {@code T} of instances.
-         * <p/>
-         * The typical implementation simply consists in writing <br/>{@code return new MySubType(this);}
+         * <p>
+         * The typical implementation simply consists in writing <br>{@code return new MySubType(this);}
          *
          * @return a new {@code T} instance based on this Builder instance.
          */

@@ -103,7 +103,7 @@ public final class EidasStringUtil {
      * Splits a string that contains several tokens separated by a delimiter defined in {@link EidasStringUtil#STRING_SPLITTER}
      *
      * @param tokens the string containing tokens
-     * @return the {@link List <String>} containing the tokens or an empty list if no token is found.
+     * @return the {@link List} containing the tokens or an empty list if no token is found.
      */
     public static List<String> getTokens (String tokens) {
         if (StringUtils.isNotEmpty(tokens)) {

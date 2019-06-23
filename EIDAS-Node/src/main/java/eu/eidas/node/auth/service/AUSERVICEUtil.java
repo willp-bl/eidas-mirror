@@ -1,21 +1,25 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2018 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
  */
 package eu.eidas.node.auth.service;
 
 import java.util.Properties;
 
+import eu.eidas.auth.commons.cache.ConcurrentCacheService;
 import eu.eidas.auth.commons.cache.ConcurrentMapService;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -38,9 +42,9 @@ public class AUSERVICEUtil extends AUNODEUtil {
         // default constructor for use without concurrentMapService
     }
 
-    public AUSERVICEUtil(final ConcurrentMapService concurrentMapService) {
+    public AUSERVICEUtil(final ConcurrentCacheService concurrentCacheService) {
         // Obtaining the anti-replay cache service provider defined in configuration and call it for setting up cache
-        setAntiReplayCache(concurrentMapService.getConfiguredMapCache());
+        setAntiReplayCache(concurrentCacheService.getConfiguredCache());
     }
 
     /**

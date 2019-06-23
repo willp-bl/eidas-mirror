@@ -1,16 +1,19 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
 package eu.eidas.auth.engine.metadata;
 
@@ -39,7 +42,7 @@ public interface EidasMetadataParametersI extends Serializable {
 
     /**
      * Sets the EntityID see {@link #getEntityID()} for details.
-     * @param entityID
+     * @param entityID the identifier of the Metadata endpoint, also the URL where the Metadata content is located.
      */
     void setEntityID(String entityID);
 
@@ -52,7 +55,7 @@ public interface EidasMetadataParametersI extends Serializable {
 
     /**
      * Setter for signing methods. See {@link #getSigningMethods()} for details.
-     * @param signingMethods
+     * @param signingMethods a list of ISO defined URLs separated with a ";"
      */
     void setSigningMethods(String signingMethods);
 
@@ -64,7 +67,7 @@ public interface EidasMetadataParametersI extends Serializable {
 
     /**
      * Setter for digest methods. See {@link #getDigestMethods()} for details.
-     * @param signingMethods
+     * @param signingMethods a list of ISO defined URLs separated with a ";".
      */
     //TODO improve this method to handle list of strings
     void setDigestMethods(String signingMethods);
@@ -77,7 +80,7 @@ public interface EidasMetadataParametersI extends Serializable {
 
     /**
      * Sets the validity time for this Metadata, see {@link #getValidUntil()} for more information.
-     * @param validityDuration
+     * @param validityDuration the validUntil field defined to this Metadata.
      */
     void setValidUntil(DateTime validityDuration);
 
@@ -91,7 +94,7 @@ public interface EidasMetadataParametersI extends Serializable {
     /**
      * Sets the assurance level with the full URN
      *
-     * @param assuranceLevel
+     * @param assuranceLevel the level of assurance with the full URN defined
      */
     //TODO this should be a list
     void setAssuranceLevel(String assuranceLevel);
@@ -105,7 +108,7 @@ public interface EidasMetadataParametersI extends Serializable {
 
     /**
      * Sets SPType, see {@link eu.eidas.auth.commons.EIDASValues}
-     * @param spType
+     * @param spType the SPType. see {@link eu.eidas.auth.commons.EIDASValues}
      */
     //TODO EIDINT-1970 should be in sp role parameters
     void setSpType(String spType);
@@ -119,7 +122,7 @@ public interface EidasMetadataParametersI extends Serializable {
 
     /**
      * Sets the organization data
-     * @param organization
+     * @param organization the organization data information provided in the Metadata.
      */
     //TODO EIDINT-1970 should be a simple VO not a builder
     void setOrganization(OrganizationData organization);
@@ -153,7 +156,7 @@ public interface EidasMetadataParametersI extends Serializable {
     void setTechnicalContact(ContactData technicalContact);
 
     /**
-     * Returns with the RoleDescriptos defined to this Node. In eIDAS it is strongly recommended to have only one role,
+     * Returns with the RoleDescriptors defined to this Node. In eIDAS it is strongly recommended to have only one role,
      * because of the structuring of the extensions.
      * @return EidasMetadataRoleParametersI typed role descriptor what can be an SP or an IDP type
      */
@@ -161,14 +164,14 @@ public interface EidasMetadataParametersI extends Serializable {
 
     /**
      * Sets the list of role descriptors. Do not use this method directly outside the boundaries of eidas-metadata module.
-     * @param roleDescriptors
+     * @param roleDescriptors the list of RoleDescriptors defined to this Node.
      */
     void setRoleDescriptors(Set<EidasMetadataRoleParametersI> roleDescriptors);
 
     /**
      * Add a role descriptor to Metadata. Outside of the eidas-metadata module use this method. To create an instance of EidasMetadataRoleParametersI
      * invoke @see #eu.eidas.auth.engine.metadata.MetadataConfiguration.newRoleParametersInstance().
-     * @param roleDescriptor
+     * @param roleDescriptor the RoleDescriptor defined to this Node.
      */
     void addRoleDescriptor(EidasMetadataRoleParametersI roleDescriptor);
 
@@ -179,7 +182,7 @@ public interface EidasMetadataParametersI extends Serializable {
 
     /**
      * Sets the eIDAS protocol version.
-     * @param eidasProtocolVersion
+     * @param eidasProtocolVersion the eIDAS protocol version for this Node
      */
     void setEidasProtocolVersion(String eidasProtocolVersion);
 
@@ -191,7 +194,7 @@ public interface EidasMetadataParametersI extends Serializable {
 
     /**
      * Sets the eIDAS application identifier.
-     * @param eidasApplicationIdentifier
+     * @param eidasApplicationIdentifier the eIDAS protocol version for this Node
      */
     void setEidasApplicationIdentifier(String eidasApplicationIdentifier);
 

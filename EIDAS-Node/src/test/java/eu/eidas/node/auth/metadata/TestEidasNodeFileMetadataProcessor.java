@@ -1,16 +1,19 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
 
 package eu.eidas.node.auth.metadata;
@@ -28,7 +31,11 @@ import eu.eidas.engine.exceptions.EIDASMetadataProviderException;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import eu.eidas.node.auth.util.tests.FileUtils;
 import org.apache.commons.lang.StringUtils;
-import org.junit.*;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.FixMethodOrder;
+import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.opensaml.core.xml.XMLObjectBuilderFactory;
 import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
@@ -39,9 +46,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.util.FileSystemUtils;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 
 @FixMethodOrder(MethodSorters.JVM)
@@ -51,8 +63,10 @@ public class TestEidasNodeFileMetadataProcessor {
     private static final String FILEREPO_DIR_READ="src/test/resources/EntityDescriptors2/";
     private static final String FILEREPO_DIR_WRITE1="target/test/EntityDescriptors1/";
     private static final String FILEREPO_DIR_WRITE2="target/test/EntityDescriptors2/";
+    private static final String FILE_PATH_WRITE2 ="target/test/EntityDescriptors2/test.xml";
     private static final String FILEREPO_DIR_WRITE_EMPTY="target/test/EntityDescriptorsEmpty/";
     private static final String FILEREPO_DIR_READ_UPD="src/test/resources/EntityDescriptors1/";
+    private static final String FILE_PATH_READ_UPD ="src/test/resources/EntityDescriptors1/test.xml";
     private static final String FILEREPO_DIR_READ_COMBO="src/test/resources/EntityDescriptors3/";
     private static final String FILEREPO_DIR_WRITE3="target/test/EntityDescriptors3/";
     private static final String FILEREPO_DIR_READ_COMBO_4="src/test/resources/EntityDescriptors4/";
@@ -72,22 +86,23 @@ public class TestEidasNodeFileMetadataProcessor {
     }
 
     @BeforeClass
-    public static void setUp(){
+    public static void setUp() throws IOException {
         LOGGER.debug("initializing directory "+FILEREPO_DIR_WRITE1);
         initWorkFolder(FILEREPO_DIR_READ, FILEREPO_DIR_WRITE1);
         LOGGER.debug("initializing directory "+FILEREPO_DIR_WRITE2);
         initWorkFolder(FILEREPO_DIR_READ, FILEREPO_DIR_WRITE2);
-        new File(FILEREPO_DIR_WRITE_EMPTY).mkdirs();
+        Files.createDirectories(Paths.get(FILEREPO_DIR_WRITE_EMPTY));
         initWorkFolder(FILEREPO_DIR_READ_COMBO, FILEREPO_DIR_WRITE3);
         initWorkFolder(FILEREPO_DIR_READ_COMBO_4, FILEREPO_DIR_WRITE4);
         OpenSamlHelper.initialize();
     }
-    private static void initWorkFolder(String sourceFolder, String folderName){
-        File sampleNodeRepo=new File(folderName);
+    private static void initWorkFolder(String sourceFolder, String folderName) throws IOException {
+        File sampleNodeRepo = new File(folderName);
         FileSystemUtils.deleteRecursively(sampleNodeRepo);
-        sampleNodeRepo.mkdirs();
-        FileUtils.copyFile(new File(sourceFolder), sampleNodeRepo);
+        Files.createDirectories(Paths.get(folderName));
+        FileUtils.copyFolder(Paths.get(sourceFolder), Paths.get(folderName));
     }
+
     @AfterClass
     public static void removeDir(){
         FileSystemUtils.deleteRecursively(new File(FILEREPO_DIR_WRITE1));
@@ -135,7 +150,7 @@ public class TestEidasNodeFileMetadataProcessor {
     }
 
     @Test
-    public void testUpdateEntityDescriptors(){
+    public void testUpdateEntityDescriptors() throws IOException {
         FileMetadataLoader processor=new FileMetadataLoader();
         processor.setRepositoryPath(FILEREPO_DIR_WRITE2);
         List<EntityDescriptorContainer> list = null;
@@ -145,8 +160,8 @@ public class TestEidasNodeFileMetadataProcessor {
             e.printStackTrace();
         }
         Assert.assertTrue(list.size()==2);
-        File sampleNodeRepo=new File(FILEREPO_DIR_WRITE2);
-        FileUtils.copyFile(new File(FILEREPO_DIR_READ_UPD), sampleNodeRepo);
+        Files.copy(Paths.get(FILE_PATH_READ_UPD), Paths.get(FILE_PATH_WRITE2), REPLACE_EXISTING);
+
         try{
             Thread.sleep(3000);
         }catch(InterruptedException ie){

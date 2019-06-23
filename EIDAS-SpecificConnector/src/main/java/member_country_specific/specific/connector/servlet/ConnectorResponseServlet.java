@@ -57,7 +57,7 @@ public final class ConnectorResponseServlet extends AbstractSpecificConnectorSer
     private Collection<AttributeDefinition<?>> REGISTRY; 
 
     @Override
-    public void init() throws ServletException {
+    public void init() {
     	REGISTRY=retrieveAttributes();
     }
 
@@ -97,7 +97,7 @@ public final class ConnectorResponseServlet extends AbstractSpecificConnectorSer
         dispatcher.forward(httpServletRequest, httpServletResponse);
     }
 
-    private String prepareSpecificResponse(@Nonnull final HttpServletRequest httpServletRequest) throws ServletException, IOException {
+    private String prepareSpecificResponse(@Nonnull final HttpServletRequest httpServletRequest) throws ServletException {
         SpecificConnector specificConnector = (SpecificConnector) getApplicationContext()
                 .getBean(SpecificConnectorBeanNames.SPECIFIC_CONNECTOR_SERVICE.toString());
 
@@ -114,7 +114,7 @@ public final class ConnectorResponseServlet extends AbstractSpecificConnectorSer
         return specificResponse;
     }
 
-    private ILightResponse getResponseFromCommunicationCache(@Nonnull HttpServletRequest httpServletRequest,final Collection<AttributeDefinition<?>> registry) throws IOException, ServletException {
+    private ILightResponse getResponseFromCommunicationCache(@Nonnull HttpServletRequest httpServletRequest,final Collection<AttributeDefinition<?>> registry) throws ServletException {
         final String tokenBase64 = httpServletRequest.getParameter(EidasParameterKeys.TOKEN.toString());
 
         final SpecificConnectorCommunicationServiceImpl specificConnectorCommunicationService =

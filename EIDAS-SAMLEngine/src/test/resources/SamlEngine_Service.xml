@@ -5,10 +5,11 @@
 	<comment>SAML constants for AuthnRequests and Responses.</comment>
 
 	<!-- Types of consent obtained from the user for this authentication and
-		data transfer. Allow values: 'unspecified'. -->
+		data transfer. Allow values: 'obtained', 'prior', 'current-implicit', 'current-explicit',
+		'unspecified', 'unavailable', 'inapplicable'. -->
 	<entry key="consentAuthnRequest">unspecified</entry>
-	<!-- Allow values: 'obtained', 'prior', 'curent-implicit', 'curent-explicit',
-		'unspecified'. -->
+	<!-- Allow values: 'obtained', 'prior', 'current-implicit', 'current-explicit',
+		'unspecified', 'unavailable', 'inapplicable'. -->
 	<entry key="consentAuthnResponse">obtained</entry>
 
 	<!--URI representing the classification of the identifier Allow values:

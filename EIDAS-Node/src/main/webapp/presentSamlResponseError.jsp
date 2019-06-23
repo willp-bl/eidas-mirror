@@ -53,7 +53,6 @@
         </div>
     </div>
 </main>
-<jsp:include page="internal/footerScripts.jsp"/>
 <script type="text/javascript" src="js/autocompleteOff.js"></script>
 <script type="text/javascript" src="js/redirectOnload.js"></script>
 </body>

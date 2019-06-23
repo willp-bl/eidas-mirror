@@ -42,7 +42,9 @@ public enum ConfigurationKey {
 
     PROTOCOL_PROCESSOR_CONFIGURATION("ProtocolProcessorConf"),
 
-    CLOCK_CONFIGURATION("ClockConf"),
+    CLOCK_CONFIGURATION("ClockConf"), 
+    
+    METADATA_FETCHER_CONFIGURATION("MetadataFetcherConf") ,
 
     // put the ; on a separate line to make merges easier
     ;

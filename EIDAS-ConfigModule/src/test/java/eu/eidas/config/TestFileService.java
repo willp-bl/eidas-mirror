@@ -15,12 +15,12 @@
 package eu.eidas.config;
 
 import eu.eidas.FileUtils;
-import eu.eidas.config.EIDASNodeMasterConfiguration;
 import eu.eidas.samlengineconfig.impl.tools.EidasConfigManagerUtil;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
@@ -41,6 +41,7 @@ import static org.junit.Assert.*;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations="/testcontext.xml")
 @FixMethodOrder(MethodSorters.JVM)
+@Ignore
 public class TestFileService {
     private static final String FILEREPO_DIR_READ="src/test/resources/config/";
     private static final String FILEREPO_DIR_WRITE="target/test/samplenodeconfig/";

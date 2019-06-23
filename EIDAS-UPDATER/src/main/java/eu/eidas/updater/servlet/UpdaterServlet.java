@@ -15,13 +15,14 @@
 
 package eu.eidas.updater.servlet;
 
+import eu.eidas.specificcommunication.SpecificCommunicationApplicationContextProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.web.context.ContextLoader;
 
-import javax.servlet.ServletException;
+import javax.annotation.Nonnull;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -50,15 +51,26 @@ public class UpdaterServlet extends HttpServlet {
     }
 
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        getLogger().debug("Restarting node's application context...");
-        ApplicationContext applicationContext = ContextLoader.getCurrentWebApplicationContext();
-        ((ConfigurableApplicationContext) applicationContext).close();
-        ((ConfigurableApplicationContext) applicationContext).refresh();
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        final ApplicationContext applicationContext = ContextLoader.getCurrentWebApplicationContext();
+        reloadApplicationContext(applicationContext, "Restarting node's application context...");
+
+        final ApplicationContext specificCommunicationApplicationContext = SpecificCommunicationApplicationContextProvider.getApplicationContext();
+        reloadApplicationContext(specificCommunicationApplicationContext, "Restarting specific communication application context...");
 
         response.setContentType("text/html");
         PrintWriter out = response.getWriter();
         out.println("<pre>Refresh operation launched</pre>");
         out.close();
+    }
+
+    private void reloadApplicationContext(@Nonnull final ApplicationContext applicationContext, final String msg) {
+        if (applicationContext instanceof ConfigurableApplicationContext) {
+            ConfigurableApplicationContext configurableApplicationContext = ((ConfigurableApplicationContext) applicationContext);
+            configurableApplicationContext.close();
+            configurableApplicationContext.refresh();
+            getLogger().debug(msg);
+        }
+
     }
 }

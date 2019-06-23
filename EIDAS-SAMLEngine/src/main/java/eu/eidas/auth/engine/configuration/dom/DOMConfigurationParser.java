@@ -1,45 +1,27 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
- */
 /*
- * Licensed under the EUPL, Version 1.1 or - as soon they will be approved by
- * the European Commission - subsequent versions of the EUPL (the "Licence");
- * You may not use this work except in compliance with the Licence. You may
- * obtain a copy of the Licence at:
+ * Copyright (c) 2019 by European Commission
  *
- * http://www.osor.eu/eupl/european-union-public-licence-eupl-v.1.1
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the Licence is distributed on an "AS IS" basis, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * Licence for the specific language governing permissions and limitations under
- * the Licence.
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
-
 package eu.eidas.auth.engine.configuration.dom;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
-import javax.annotation.Nonnull;
-import javax.xml.parsers.ParserConfigurationException;
-
 import com.google.common.collect.ImmutableMap;
-
+import eu.eidas.auth.commons.io.ResourceLocator;
+import eu.eidas.auth.commons.xml.DocumentBuilderFactoryUtil;
+import eu.eidas.auth.engine.configuration.ProtocolEngineConfigurationException;
+import eu.eidas.util.Preconditions;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,10 +30,13 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import eu.eidas.auth.commons.io.ResourceLocator;
-import eu.eidas.auth.commons.xml.DocumentBuilderFactoryUtil;
-import eu.eidas.auth.engine.configuration.ProtocolEngineConfigurationException;
-import eu.eidas.util.Preconditions;
+import javax.annotation.Nonnull;
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * Parses the SAML engine configuration XML file using DOM.
@@ -62,31 +47,31 @@ public final class DOMConfigurationParser {
 
         static final String TAG_NAME = "instance";
 
-        private InstanceTag() {};
+        private InstanceTag() {}
 
         static final class Attribute {
 
             static final String NAME = "name";
-            private Attribute() {};
+            private Attribute() {}
         }
 
         static final class ConfigurationTag {
 
             static final String TAG_NAME = "configuration";
 
-            private ConfigurationTag() {};
+            private ConfigurationTag() {}
 
             static final class Attribute {
 
                 static final String NAME = "name";
-                private Attribute() {};
+                private Attribute() {}
             }
 
             static final class ParameterTag {
 
                 static final String TAG_NAME = "parameter";
 
-                private ParameterTag() {};
+                private ParameterTag() {}
 
                 static final class Attribute {
 
@@ -94,7 +79,7 @@ public final class DOMConfigurationParser {
 
                     static final String VALUE = "value";
 
-                    private Attribute() {};
+                    private Attribute() {}
                 }
 
             }
@@ -115,8 +100,9 @@ public final class DOMConfigurationParser {
     /**
      * Read configuration.
      *
-     * @return the map< string, instance engine>
-     * @throws SAMLEngineException the EIDASSAML engine runtime exception
+     * @return the {@link Map} collection that contains {@link String} as
+     * key and {@link InstanceEntry} as value.
+     * @throws ProtocolEngineConfigurationException the EIDASSAML engine runtime exception
      */
     @Nonnull
     public static InstanceMap parseConfiguration(@Nonnull String configurationFileName)
@@ -144,8 +130,9 @@ public final class DOMConfigurationParser {
     /**
      * Read configuration.
      *
-     * @return the map< string, instance engine>
-     * @throws SAMLEngineException the EIDASSAML engine runtime exception
+     * @return the {@link Map} collection that contains {@link String} as
+     * key and {@link InstanceEntry} as value.
+     * @throws ProtocolEngineConfigurationException the EIDASSAML engine runtime exception
      */
     @Nonnull
     @SuppressWarnings("squid:S2095")
@@ -212,8 +199,9 @@ public final class DOMConfigurationParser {
     /**
      * Read configuration.
      *
-     * @return the map< string, instance engine>
-     * @throws SAMLEngineException the EIDASSAML engine runtime exception
+     * @return the {@link Map} collection that contains {@link String} as
+     * key and {@link InstanceEntry} as value.
+     * @throws ProtocolEngineConfigurationException the EIDASSAML engine runtime exception
      */
     public static InstanceMap parseDefaultConfiguration() throws ProtocolEngineConfigurationException {
         return parseConfiguration(DEFAULT_CONFIGURATION_FILE);

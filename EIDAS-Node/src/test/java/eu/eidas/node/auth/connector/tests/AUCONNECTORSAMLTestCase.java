@@ -1,22 +1,26 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
 
 package eu.eidas.node.auth.connector.tests;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import eu.eidas.auth.cache.ConcurrentMapJcacheServiceDefaultImpl;
 import eu.eidas.auth.commons.*;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.cache.ConcurrentMapServiceDefaultImpl;
@@ -59,6 +63,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 
+import javax.cache.Cache;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.Locale;
@@ -100,7 +105,7 @@ public class AUCONNECTORSAMLTestCase {
      * @throws java.lang.Exception
      */
     @BeforeClass
-    public static void runBeforeClass() throws Exception {
+    public static void runBeforeClass() {
         setEidasUtil();
     }
 
@@ -153,9 +158,6 @@ public class AUCONNECTORSAMLTestCase {
 
         setEidasUtil();
 
-        IEIDASLogger mockLoggerBean = mock(IEIDASLogger.class);
-        auconnectorsaml.setLoggerBean(mockLoggerBean);
-
         final HttpServletRequest mockHttpServletRequest = mock(HttpServletRequest.class);
         final HttpSession mockHttpSession = mock(HttpSession.class);
         when(mockHttpServletRequest.getSession()).thenReturn(mockHttpSession);
@@ -180,9 +182,6 @@ public class AUCONNECTORSAMLTestCase {
         auconnectorsaml.setNodeProtocolEngineFactory(DefaultProtocolEngineFactory.getInstance());
 
         setEidasUtil();
-
-        IEIDASLogger mockLoggerBean = mock(IEIDASLogger.class);
-        auconnectorsaml.setLoggerBean(mockLoggerBean);
 
         final HttpServletRequest mockHttpServletRequest = mock(HttpServletRequest.class);
         final HttpSession mockHttpSession = mock(HttpSession.class);
@@ -413,14 +412,8 @@ public class AUCONNECTORSAMLTestCase {
 
         setMockMetadataProcessor(auconnectorsaml);
 
-        byte b[] = generateSAMLRequest("local-demo-cert", true);
-        String request = EidasStringUtil.toString(b);
-
-        IEIDASLogger mockLoggerBean = mock(IEIDASLogger.class);
-        auconnectorsaml.setLoggerBean(mockLoggerBean);
-
-        auconnectorutil.setConcurrentMapService(new ConcurrentMapServiceDefaultImpl());
-        auconnectorutil.setAntiReplayCache(auconnectorutil.getConcurrentMapService().getConfiguredMapCache());
+        ConcurrentMapJcacheServiceDefaultImpl concurrentMapJcacheServiceDefault = new ConcurrentMapJcacheServiceDefaultImpl();
+        auconnectorutil.setAntiReplayCache(concurrentMapJcacheServiceDefault.getConfiguredCache());
         auconnectorutil.flushReplayCache();
         //TODO use LightRequest and not saml token anymore
         auconnectorsaml.processSpRequest(null, mockParameters);
@@ -445,8 +438,9 @@ public class AUCONNECTORSAMLTestCase {
         when(mockRequestState.getSpId()).thenReturn(TestingConstants.SPID_CONS.toString());
 
         AUCONNECTORUtil auconnectorutil = new AUCONNECTORUtil();
-        auconnectorutil.setConcurrentMapService(new ConcurrentMapServiceDefaultImpl());
-        auconnectorutil.setAntiReplayCache(auconnectorutil.getConcurrentMapService().getConfiguredMapCache());
+
+        ConcurrentMapJcacheServiceDefaultImpl concurrentMapJcacheServiceDefault = new ConcurrentMapJcacheServiceDefaultImpl();
+        auconnectorutil.setAntiReplayCache(concurrentMapJcacheServiceDefault.getConfiguredCache());
         auconnectorutil.flushReplayCache();
 
         Properties configs = new Properties();
@@ -466,8 +460,6 @@ public class AUCONNECTORSAMLTestCase {
         auconnectorsaml.setNodeProtocolEngineFactory(DefaultProtocolEngineFactory.getInstance());
 
         setEidasUtil();
-
-        auconnectorsaml.setLoggerBean(mockLoggerBean);
 
         setMockMetadataProcessor(auconnectorsaml);
         //TODO use LightRequest and not saml token anymore
@@ -511,8 +503,6 @@ public class AUCONNECTORSAMLTestCase {
 
         setEidasUtil();
 
-        IEIDASLogger mockLoggerBean = mock(IEIDASLogger.class);
-        auconnectorsaml.setLoggerBean(mockLoggerBean);
         setPropertyForAllMessageFormatSupport(auconnectorsaml);
 
         EidasAuthenticationRequest.Builder eidasAuthenticationRequestBuilder = EidasAuthenticationRequest.builder();
@@ -588,13 +578,17 @@ public class AUCONNECTORSAMLTestCase {
 
         CorrelationMap<StoredLightRequest> specificSpRequestCorrelationMap =
                 new StoredLightRequestCorrelationMap(new ConcurrentMapServiceDefaultImpl());
+
         specificSpRequestCorrelationMap.put(connectorRequest.getId(), StoredLightRequest.builder()
                 .remoteIpAddress(TestingConstants.IP_ADDRESS.toString())
                 .request(spRequest)
                 .build());
 
-        auconnectorsaml.processProxyServiceResponse(newEmptyWebRequest(), connectorRequestCorrelationMap,
-                                                    specificSpRequestCorrelationMap);
+        Cache connectorRequestCorrelationCache = new ConcurrentMapJcacheServiceDefaultImpl().getConfiguredCache();
+        Cache specificSpRequestCorrelationCache = new ConcurrentMapJcacheServiceDefaultImpl().getConfiguredCache();
+
+        auconnectorsaml.processProxyServiceResponse(newEmptyWebRequest(), connectorRequestCorrelationCache,
+                specificSpRequestCorrelationCache);
     }
 
     /**
@@ -656,9 +650,6 @@ public class AUCONNECTORSAMLTestCase {
                 .request(spRequest)
                 .build());
 
-        IEIDASLogger mockLoggerBean = mock(IEIDASLogger.class);
-        auconnectorsaml.setLoggerBean(mockLoggerBean);
-
         /*auconnectorsaml.processProxyServiceResponse(
                 generateSAMLResponse(TestingConstants.SAML_ID_CONS.toString(), true), connectorRequestCorrelationMap,
                 specificSpRequestCorrelationMap);*/
@@ -676,8 +667,8 @@ public class AUCONNECTORSAMLTestCase {
         AUCONNECTORSAML auconnectorsaml = new AUCONNECTORSAML();
 
         AUCONNECTORUtil auconnectorutil = new AUCONNECTORUtil();
-        auconnectorutil.setConcurrentMapService(new ConcurrentMapServiceDefaultImpl());
-        auconnectorutil.setAntiReplayCache(auconnectorutil.getConcurrentMapService().getConfiguredMapCache());
+        ConcurrentMapJcacheServiceDefaultImpl concurrentMapJcacheServiceDefault = new ConcurrentMapJcacheServiceDefaultImpl();
+        auconnectorutil.setAntiReplayCache(concurrentMapJcacheServiceDefault.getConfiguredCache());
         auconnectorutil.flushReplayCache();
 
         auconnectorsaml.setConnectorUtil(auconnectorutil);
@@ -718,9 +709,6 @@ public class AUCONNECTORSAMLTestCase {
                 .request(spRequest)
                 .build());
 
-        IEIDASLogger mockLoggerBean = mock(IEIDASLogger.class);
-        auconnectorsaml.setLoggerBean(mockLoggerBean);
-
         MessageSource mockMessages = mock(MessageSource.class);
         when(mockMessages.getMessage(anyString(), (Object[]) any(), (Locale) any())).thenReturn(
                 "003002 - Authentication Failed.");
@@ -744,8 +732,8 @@ public class AUCONNECTORSAMLTestCase {
         AUCONNECTORSAML auconnectorsaml = new AUCONNECTORSAML();
 
         AUCONNECTORUtil auconnectorutil = new AUCONNECTORUtil();
-        auconnectorutil.setConcurrentMapService(new ConcurrentMapServiceDefaultImpl());
-        auconnectorutil.setAntiReplayCache(auconnectorutil.getConcurrentMapService().getConfiguredMapCache());
+        ConcurrentMapJcacheServiceDefaultImpl concurrentMapJcacheServiceDefault = new ConcurrentMapJcacheServiceDefaultImpl();
+        auconnectorutil.setAntiReplayCache(concurrentMapJcacheServiceDefault.getConfiguredCache());
         auconnectorutil.flushReplayCache();
         Properties configs = new Properties();
         auconnectorutil.setConfigs(configs);
@@ -787,8 +775,6 @@ public class AUCONNECTORSAMLTestCase {
                 .request(spRequest)
                 .build());
 
-        IEIDASLogger mockLoggerBean = mock(IEIDASLogger.class);
-        auconnectorsaml.setLoggerBean(mockLoggerBean);
         //auconnectorsaml.setSamlSpInstance(TestingConstants.SAML_INSTANCE_CONS.toString());
         auconnectorsaml.setNodeProtocolEngineFactory(DefaultProtocolEngineFactory.getInstance());
 
@@ -810,8 +796,8 @@ public class AUCONNECTORSAMLTestCase {
         AUCONNECTORSAML auconnectorsaml = new AUCONNECTORSAML();
 
         AUCONNECTORUtil auconnectorutil = new AUCONNECTORUtil();
-        auconnectorutil.setConcurrentMapService(new ConcurrentMapServiceDefaultImpl());
-        auconnectorutil.setAntiReplayCache(auconnectorutil.getConcurrentMapService().getConfiguredMapCache());
+        ConcurrentMapJcacheServiceDefaultImpl concurrentMapJcacheServiceDefault = new ConcurrentMapJcacheServiceDefaultImpl();
+        auconnectorutil.setAntiReplayCache(concurrentMapJcacheServiceDefault.getConfiguredCache());
         auconnectorutil.flushReplayCache();
         Properties configs = new Properties();
         auconnectorutil.setConfigs(configs);
@@ -853,8 +839,6 @@ public class AUCONNECTORSAMLTestCase {
                 .request(spRequest)
                 .build());
 
-        IEIDASLogger mockLoggerBean = mock(IEIDASLogger.class);
-        auconnectorsaml.setLoggerBean(mockLoggerBean);
 //        auconnectorsaml.setSamlSpInstance(TestingConstants.SAML_INSTANCE_CONS.toString());
         auconnectorsaml.setNodeProtocolEngineFactory(DefaultProtocolEngineFactory.getInstance());
 
@@ -883,9 +867,6 @@ public class AUCONNECTORSAMLTestCase {
         auconnectorsaml.setNodeProtocolEngineFactory(DefaultProtocolEngineFactory.getInstance());
 
         setEidasUtil();
-
-        IEIDASLogger mockLoggerBean = mock(IEIDASLogger.class);
-        auconnectorsaml.setLoggerBean(mockLoggerBean);
 
         EidasAuthenticationRequest.Builder eidasAuthenticationRequestBuilder = EidasAuthenticationRequest.builder();
         eidasAuthenticationRequestBuilder.requestedAttributes(REQUEST_IMMUTABLE_ATTR_MAP)

@@ -69,6 +69,8 @@ public abstract class AbstractNodeServlet extends HttpServlet {
      * client-side script.
      *
      * @param renewSession indicates that the session cookie will be renewed
+     * @param request the instance of {@link HttpServletRequest}
+     * @param response the instance of {@link HttpServletResponse}
      */
     @SuppressWarnings("squid:S2254")  // it is just setting param to a cookie
     protected final void setHTTPOnlyHeaderToSession(final boolean renewSession, HttpServletRequest request, HttpServletResponse response) {
@@ -136,6 +138,7 @@ response.addCookie(cookie);
      * Encodes any given URL.
      *
      * @param url The URL to be encoded.
+     * @param response the instance of {@link HttpServletResponse}
      *
      * @return The encoded URL.
      */

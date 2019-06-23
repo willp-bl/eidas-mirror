@@ -1,32 +1,21 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
-
 package eu.eidas.node.connector;
-
-import java.io.IOException;
-import java.security.InvalidParameterException;
-
-import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import eu.eidas.node.*;
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import eu.eidas.auth.commons.EIDASValues;
 import eu.eidas.auth.commons.EidasParameterKeys;
@@ -35,15 +24,31 @@ import eu.eidas.auth.commons.WebRequest;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.light.ILightResponse;
 import eu.eidas.auth.commons.light.impl.LightResponse;
+import eu.eidas.auth.commons.protocol.IAuthenticationResponse;
 import eu.eidas.auth.commons.tx.AuthenticationExchange;
 import eu.eidas.auth.commons.tx.BinaryLightToken;
 import eu.eidas.auth.commons.validation.NormalParameterValidator;
+import eu.eidas.auth.engine.xml.opensaml.SAMLEngineUtils;
+import eu.eidas.node.AbstractNodeServlet;
+import eu.eidas.node.NodeBeanNames;
+import eu.eidas.node.NodeParameterNames;
+import eu.eidas.node.NodeSpecificViewNames;
 import eu.eidas.node.utils.PropertiesUtil;
 import eu.eidas.node.utils.SessionHolder;
 import eu.eidas.specificcommunication.BinaryLightTokenHelper;
 import eu.eidas.specificcommunication.SpecificCommunicationDefinitionBeanNames;
 import eu.eidas.specificcommunication.exception.SpecificCommunicationException;
 import eu.eidas.specificcommunication.protocol.impl.SpecificConnectorCommunicationServiceImpl;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.security.InvalidParameterException;
 
 import static eu.eidas.node.BeanProvider.getBean;
 
@@ -80,13 +85,12 @@ public final class ColleagueResponseServlet extends AbstractNodeServlet {
     /**
      * This call is used for the moa/mocca get
      *
-     * @param request
-     * @param response
-     * @throws ServletException
-     * @throws IOException
+     * @param request   the instance of {@link HttpServletRequest}
+     * @param response  the instance of {@link HttpServletResponse}
+     * @throws ServletException if the request for the GET could not be handled
      */
     @Override
-    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException {
         doPost(request, response);
     }
 
@@ -94,10 +98,9 @@ public final class ColleagueResponseServlet extends AbstractNodeServlet {
      * Executes {@link eu.eidas.node.auth.connector.AUCONNECTOR#getAuthenticationResponse} and prepares the citizen to
      * be redirected back to the SP.
      *
-     * @param httpServletRequest
-     * @param httpServletResponse
-     * @return
-     * @throws Exception
+     * @param httpServletRequest    the instance of {@link HttpServletRequest}
+     * @param httpServletResponse   the instance of {@link HttpServletResponse}
+     * @throws ServletException if the request for the POST could not be handled
      */
     @Override
     public void doPost(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws ServletException {
@@ -123,18 +126,19 @@ public final class ColleagueResponseServlet extends AbstractNodeServlet {
             }
 
             // Validating the only HTTP parameter: SAMLResponse or samlArtifact.
-            if (!validateParameterAndIsNormalSAMLResponse(samlResponseFromProxyService)) {
-                LOG.info("ERROR : Cannot validate parameter or abnormal SAML response");
-            }
+            validateParameterAndIsNormalSAMLResponse(samlResponseFromProxyService);
             LOG.trace("Normal SAML response decoding");
             AuthenticationExchange
                     authenticationExchange = controllerService.getConnectorService().getAuthenticationResponse(webRequest);
-
-			ImmutableAttributeMap respAttributes = authenticationExchange.getConnectorResponse().getAttributes();
+            IAuthenticationResponse authResponse = authenticationExchange.getConnectorResponse();
+			ImmutableAttributeMap respAttributes = authResponse.getAttributes();
 
 			// Build the LightResponse
-            LightResponse lightResponse =
-                    LightResponse.builder(authenticationExchange.getConnectorResponse()).attributes(respAttributes).build();
+            LightResponse.Builder lightResponseBuilder =
+                    LightResponse.builder(authResponse)
+                            .id(SAMLEngineUtils.generateNCName())
+                            .attributes(respAttributes);
+            LightResponse lightResponse = lightResponseBuilder.build();
 
             // Call the specific module
             sendResponse(lightResponse, httpServletRequest, httpServletResponse);

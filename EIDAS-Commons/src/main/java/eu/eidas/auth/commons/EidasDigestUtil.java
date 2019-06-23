@@ -49,15 +49,12 @@ public final class EidasDigestUtil {
 
     /**
      * Performs the given hash using the given {@link MessageDigest} algorithm name and provider name (optional).
-     * <p/>
+     * <p>
      * The default algorithm {@code "SHA-512"} is used.
-     * <p/>
+     * <p>
      * The default JVM security providers are queried to perform the requested algorithm.
      *
      * @param bytes the bytes to digest (hash)
-     * @param algorithm the algorithm name e.g. {@code "SHA-512"}. If {@code null}, the default value {@code "SHA-512"}
-     * is used.
-     * @param provider the provider name (can be {@code null}).
      * @return the result of the hashing computation
      */
     @Nonnull
@@ -67,9 +64,9 @@ public final class EidasDigestUtil {
 
     /**
      * Performs the given hash using the given {@link MessageDigest} algorithm name and provider name (optional).
-     * <p/>
+     * <p>
      * If a {@code null} algorithm name is provided, the default value {@code "SHA-512"} is used.
-     * <p/>
+     * <p>
      * If a {@code null} provider name is given, the default JVM security providers are queried to perform the requested
      * algorithm.
      *
@@ -125,9 +122,12 @@ public final class EidasDigestUtil {
     }
 
     /**
+     * @param samlToken the sam token
+     * @param className the class name
      * @deprecated This implementation is bound to a concrete BouncyCastle implementation instead of using the standard
      * {@link java.security.MessageDigest} and the standardized algorithm names. Use {@link #hash(byte[], String,
      * String)} instead.
+     * @return the hash
      */
     @Nonnull
     @Deprecated

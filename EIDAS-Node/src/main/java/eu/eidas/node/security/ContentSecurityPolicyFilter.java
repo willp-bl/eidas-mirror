@@ -26,7 +26,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 /**
- * This filter set CSP policies using all HTTP headers defined into W3C specification.<br/>
+ * This filter set CSP policies using all HTTP headers defined into W3C specification.<br>
  *
  * Purposes :
  *

@@ -24,7 +24,7 @@ import eu.eidas.node.NodeParameterNames;
 
 /**
  * Fluent API to validate parameter in node service classes.
- * <p/>
+ * <p>
  * Usage:
  * <pre>
  *     NodeParameterValidator.paramName("name").paramValue("value").eidasError(error).validate();

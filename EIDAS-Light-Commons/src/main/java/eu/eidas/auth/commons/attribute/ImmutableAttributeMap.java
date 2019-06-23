@@ -1,35 +1,28 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
 package eu.eidas.auth.commons.attribute;
 
-import java.io.IOException;
-import java.io.InvalidObjectException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.ObjectStreamException;
-import java.io.Serializable;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import eu.eidas.auth.commons.io.MapSerializationHelper;
+import eu.eidas.util.Preconditions;
+import org.apache.commons.collections.CollectionUtils;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -41,15 +34,19 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlSeeAlso;
 import javax.xml.bind.annotation.XmlType;
-
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-
-import org.apache.commons.collections.CollectionUtils;
-
-import eu.eidas.auth.commons.io.MapSerializationHelper;
-import eu.eidas.util.Preconditions;
+import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectStreamException;
+import java.io.Serializable;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * An immutable Map of {@link AttributeDefinition}s to {@link AttributeValue}s.
@@ -77,12 +74,12 @@ public final class ImmutableAttributeMap implements Serializable {
     private static final long serialVersionUID = 3407315670529047180L;
 
     /**
+     * <p>
      * Builder pattern for the {@link ImmutableAttributeMap} class.
-     * <p/>
+     * <p>
      * Effective Java, 2nd Ed. : Item 2: Builder Pattern.
-     * <p/>
+     * <p>
      * This Builder is not thread-safe but is thread-compliant, it is supposed to be used by only one thread.
-     * <p/>
      */
     @SuppressWarnings("ParameterHidesMemberVariable")
     @NotThreadSafe
@@ -273,6 +270,7 @@ public final class ImmutableAttributeMap implements Serializable {
          * @param attribute the definition
          * @param primaryValue a value marshalled as a {@code String} which is to be unmarshalled first using the {@link
          * AttributeDefinition#getAttributeValueMarshaller() attribute-value marshaller}.
+         * @param <T> the type of this Builder.
          * @return this Builder
          * @see #putPrimaryValues(AttributeDefinition, String...)
          * @since 1.1.1
@@ -326,6 +324,7 @@ public final class ImmutableAttributeMap implements Serializable {
          * @param attribute the definition
          * @param primaryValues values marshalled as {@code String}s which are to be unmarshalled first using the {@link
          * AttributeDefinition#getAttributeValueMarshaller() attribute-value marshaller}.
+         * @param <T> the type of this Builder.
          * @return this Builder
          */
         @Nonnull
@@ -347,6 +346,7 @@ public final class ImmutableAttributeMap implements Serializable {
          * @param attribute the definition
          * @param primaryValues values marshalled as {@code String}s which are to be unmarshalled first using the {@link
          * AttributeDefinition#getAttributeValueMarshaller()}  attribute-value marshaller}.
+         * @param <T> the type of this Builder.
          * @return this Builder
          * @since 1.1.1
          */
@@ -402,8 +402,9 @@ public final class ImmutableAttributeMap implements Serializable {
     }
 
     /**
+     * <p>
      * Effective Java, 2nd Ed. : Item 78: Serialization Proxy pattern.
-     * <p/>
+     *
      * Defensive serialization ensuring that the validation rules defined in the Builder are always used.
      */
     private static final class SerializationProxy implements Serializable {
@@ -592,11 +593,11 @@ public final class ImmutableAttributeMap implements Serializable {
      * returns {@code null} if no attribute in this map matches the given {@link AttributeDefinition}.
      *
      * @param attributeDefinition the attribute definition to look up.
+     * @param <T> the type of the {@link AttributeValue}.
      * @return The {@link AttributeValue}s (if any) corresponding to the given {@link AttributeDefinition}.
      */
     @Nullable
-    public <T> ImmutableSet<? extends AttributeValue<T>> getAttributeValues(
-            @Nonnull AttributeDefinition<T> attributeDefinition) {
+    public <T> ImmutableSet<? extends AttributeValue<T>> getAttributeValues(@Nonnull AttributeDefinition<T> attributeDefinition) {
         //noinspection unchecked unfortunate but due to the heterogeneous container pattern
         return (ImmutableSet<? extends AttributeValue<T>>) attributeMap.get(attributeDefinition);
     }
@@ -642,6 +643,7 @@ public final class ImmutableAttributeMap implements Serializable {
      * attribute name) or returns {@code null} if no attribute in this map matches the given name URI.
      *
      * @param name the attribute name URI to look up.
+     * @param <T> the type of the {@link AttributeDefinition}.
      * @return all the {@link AttributeDefinition}s in the map matching the given attribute name URI or returns {@code
      * null} when there is no match.
      */
@@ -656,6 +658,7 @@ public final class ImmutableAttributeMap implements Serializable {
      * attribute name) or returns {@code null} if no attribute in this map matches the given name URI.
      *
      * @param name the attribute name URI to look up.
+     * @param <T> the type of the {@link AttributeDefinition}.
      * @return all the {@link AttributeDefinition}s in the map matching the given attribute name URI or returns {@code
      * null} when there is no match.
      */
@@ -697,6 +700,7 @@ public final class ImmutableAttributeMap implements Serializable {
      * attribute in this map matches the given {@link AttributeDefinition}.
      *
      * @param attributeDefinition the attribute definition to look up.
+     * @param <T> the type of the {@link AttributeValue}.
      * @return The first {@link AttributeValue} (if any) corresponding to the given {@link AttributeDefinition}.
      */
     @Nullable
@@ -713,6 +717,7 @@ public final class ImmutableAttributeMap implements Serializable {
      * in this map matches the given {@link AttributeDefinition}.
      *
      * @param attributeDefinition the attribute definition to look up.
+     * @param <T> the type of the first value (if any) corresponding to the given {@link AttributeDefinition}.
      * @return The first value (if any) corresponding to the given {@link AttributeDefinition}.
      */
     @Nullable
@@ -736,6 +741,7 @@ public final class ImmutableAttributeMap implements Serializable {
      * null} if no attribute in this map matches the given {@link AttributeDefinition}.
      *
      * @param attributeDefinition the attribute definition to look up.
+     * @param <T> the type of the values for the given {@link AttributeDefinition}.
      * @return The values (if any) corresponding to the given {@link AttributeDefinition}.
      */
     @Nullable

@@ -20,7 +20,7 @@ import javax.annotation.Nullable;
 
 /**
  * As per the eIDAS spec, 2.4.1 SAML AuthnRequest:
- * <p/>
+ * <p>
  * <em>"eIDAS-Connectors requesting a LoA MUST limit the value of the Comparison attribute of
  * &lt;saml2p:RequestedAuthnContext&gt; to &quot;minimum&quot;."</em>
  */
