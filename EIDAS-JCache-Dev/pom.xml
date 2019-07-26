@@ -15,7 +15,7 @@
     </parent>
 
     <properties>
-        <guava.version>19.0</guava.version>
+        <guava.version>23.0</guava.version>
     </properties>
 
     <dependencies>
