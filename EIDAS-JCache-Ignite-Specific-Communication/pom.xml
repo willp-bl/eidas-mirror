@@ -32,7 +32,7 @@
     </parent>
 
     <properties>
-        <ignite.version>2.7.0</ignite.version>
+        <ignite.version>2.7.5</ignite.version>
     </properties>
 
     <dependencies>
