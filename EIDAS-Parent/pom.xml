@@ -68,7 +68,7 @@
         <commons.httpcore>4.4.9</commons.httpcore>
         <commons.lang3>3.1</commons.lang3>
         <hazelcast.version>3.2</hazelcast.version>
-        <bouncycastle.version>1.60</bouncycastle.version>
+        <bouncycastle.version>1.63</bouncycastle.version>
         <owasp.version>1.1.1</owasp.version>
         <owasp.dependency-check.version>1.4.0</owasp.dependency-check.version>
         <joda.time.version>2.6</joda.time.version>
