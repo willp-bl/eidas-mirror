@@ -27,6 +27,7 @@ import eu.eidas.auth.engine.metadata.EntityDescriptorContainer;
 import eu.eidas.auth.engine.metadata.MetadataSignerI;
 import eu.eidas.auth.engine.metadata.MetadataUtil;
 import eu.eidas.auth.engine.metadata.impl.FileMetadataLoader;
+import eu.eidas.auth.engine.xml.opensaml.CertificateUtil;
 import eu.eidas.encryption.exception.MarshallException;
 import eu.eidas.engine.exceptions.EIDASMetadataException;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
@@ -48,6 +49,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.cert.CertificateException;
 import java.util.List;
 
 import static org.hamcrest.core.Is.isA;
@@ -131,6 +133,47 @@ public class TestEidasNodeMetadataTrustChain {
 
         MetadataSignerI checker = (MetadataSignerI) getEngine("METADATA_ROOT_CA_TRUST").getSigner();
         checker.validateMetadataSignature(entitiesDescriptor);
+    }
+
+    /**
+     * Test method for
+     * {@link eu.eidas.auth.engine.core.impl.AbstractProtocolSigner#validateMetadataSignature(SignableXMLObject)}
+     * when the certificates published in the metadata are the entire trust chain (metadatanode, intermediatecametadata, rootcametadata)
+     * when the trusted certificate is the intermediate issued by the root (intermediatecametadata),
+     * <p/>
+     * Must succeed.
+     */
+    @Test
+    public void testValidMetadataSignatureIntermediateCATrust() throws Exception {
+        EntityDescriptorContainer entityDescriptorContainer = MetadataUtil.deserializeEntityDescriptor(metadataTC);
+        MetadataSignerI checker = (MetadataSignerI) getEngine("METADATA_INTERMEDIATE_CA_TRUST").getSigner();
+        EntitiesDescriptor entitiesDescriptor = entityDescriptorContainer.getEntitiesDescriptor();
+
+        //there should be only three certificates: metadatanode, intermediatecametadata, rootcametadata
+        assertNumberCertificates(entitiesDescriptor, 3);
+
+        checker.validateMetadataSignature(entityDescriptorContainer.getEntitiesDescriptor());
+    }
+
+    /**
+     * Test method for
+     * {@link eu.eidas.auth.engine.core.impl.AbstractProtocolSigner#validateMetadataSignature(SignableXMLObject)}
+     * when the certificates published in the metadata are the entire trust chain (metadatanode, intermediatecametadata, rootcametadata)
+     * when the one trusted is the signing key certificate (metadatanode)
+     *
+     * <p/>
+     * Must succeed.
+     */
+    @Test
+    public void testValidMetadataSignatureMetadataNodeCertificateTrust() throws Exception {
+        EntityDescriptorContainer entityDescriptorContainer = MetadataUtil.deserializeEntityDescriptor(metadataTC);
+        MetadataSignerI checker = (MetadataSignerI) getEngine("METADATA_NODE_CERT_TRUST").getSigner();
+        EntitiesDescriptor entitiesDescriptor = entityDescriptorContainer.getEntitiesDescriptor();
+
+        //there should be only three certificates: metadatanode, intermediatecametadata, rootcametadata
+        assertNumberCertificates(entitiesDescriptor, 3);
+
+        checker.validateMetadataSignature(entityDescriptorContainer.getEntitiesDescriptor());
     }
 
     /**
@@ -291,46 +334,7 @@ public class TestEidasNodeMetadataTrustChain {
         checker.validateMetadataSignature(entityDescriptorContainer.getEntitiesDescriptor());
     }
 
-    /**
-     * Test method for
-     * {@link eu.eidas.auth.engine.core.impl.AbstractProtocolSigner#validateMetadataSignature(SignableXMLObject)}
-     * when the certificates published in the metadata are the entire trust chain (metadatanode, intermediatecametadata, rootcametadata)
-     * when the trusted certificate is the intermediate issued by the root (intermediatecametadata),
-     * <p/>
-     * Must succeed.
-     */
-    @Test
-    public void testValidMetadataSignatureIntermediateCATrust() throws Exception {
-        EntityDescriptorContainer entityDescriptorContainer = MetadataUtil.deserializeEntityDescriptor(metadataTC);
-        MetadataSignerI checker = (MetadataSignerI) getEngine("METADATA_INTERMEDIATE_CA_TRUST").getSigner();
-        EntitiesDescriptor entitiesDescriptor = entityDescriptorContainer.getEntitiesDescriptor();
 
-        //there should be only three certificates: metadatanode, intermediatecametadata, rootcametadata
-        assertNumberCertificates(entitiesDescriptor, 3);
-
-        checker.validateMetadataSignature(entityDescriptorContainer.getEntitiesDescriptor());
-    }
-
-    /**
-     * Test method for
-     * {@link eu.eidas.auth.engine.core.impl.AbstractProtocolSigner#validateMetadataSignature(SignableXMLObject)}
-     * when the certificates published in the metadata are the entire trust chain (metadatanode, intermediatecametadata, rootcametadata)
-     * when the one trusted is the signing key certificate (metadatanode)
-     *
-     * <p/>
-     * Must succeed.
-     */
-    @Test
-    public void testValidMetadataSignatureMetadataNodeCertificateTrust() throws Exception {
-        EntityDescriptorContainer entityDescriptorContainer = MetadataUtil.deserializeEntityDescriptor(metadataTC);
-        MetadataSignerI checker = (MetadataSignerI) getEngine("METADATA_NODE_CERT_TRUST").getSigner();
-        EntitiesDescriptor entitiesDescriptor = entityDescriptorContainer.getEntitiesDescriptor();
-
-        //there should be only three certificates: metadatanode, intermediatecametadata, rootcametadata
-        assertNumberCertificates(entitiesDescriptor, 3);
-
-        checker.validateMetadataSignature(entityDescriptorContainer.getEntitiesDescriptor());
-    }
 
     /**
      * Test method for
@@ -415,39 +419,19 @@ public class TestEidasNodeMetadataTrustChain {
      * @param entitiesDescriptor the instance that contains the signed metadata
      * @return true if the extra certificate is in the metadata
      */
-    private boolean isExtraCertificatePublishedInMetadata(EntitiesDescriptor entitiesDescriptor) {
-        final String metadataExtraCertificate = "MIIFyzCCA7OgAwIBAgIJAOziKm8wZaI7MA0GCSqGSIb3DQEBCwUAMHwxCzAJBgNVBAYTAkJFMREw\n" +
-                "DwYDVQQIDAhCcnVzc2VsczERMA8GA1UEBwwIQnJ1c3NlbHMxDjAMBgNVBAoMBURJR0lUMQswCQYD\n" +
-                "VQQLDAJEMzEPMA0GA1UEAwwGbXlOYW1lMRkwFwYJKoZIhvcNAQkBFgpteW5hbWVAY29tMB4XDTE4\n" +
-                "MDQyNDE1MjcyMloXDTIxMDIxMTE1MjcyMlowfDELMAkGA1UEBhMCQkUxETAPBgNVBAgMCEJydXNz\n" +
-                "ZWxzMREwDwYDVQQHDAhCcnVzc2VsczEOMAwGA1UECgwFRElHSVQxCzAJBgNVBAsMAkQzMQ8wDQYD\n" +
-                "VQQDDAZteU5hbWUxGTAXBgkqhkiG9w0BCQEWCm15bmFtZUBjb20wggIiMA0GCSqGSIb3DQEBAQUA\n" +
-                "A4ICDwAwggIKAoICAQDRtZuVxn0MqE4IwnBHImObyYAqY0/jv1J7wJm11QheaeRQmyJdXgaLQ4Hf\n" +
-                "h1Z/30alMd0Vsx7SYHXCxfACOSwpKQ2xEDmCjcOfX4Q4C9lqPc1DZwOJzm/76H13IO4bXE4N+rk9\n" +
-                "d9LdUyhPK+S5OUGOl7GjIeNBB7M6nona/Ww4xH8vMf0LbrnMcsk0IRHPWkYa0XHg0qfPhMXil9PD\n" +
-                "IlIuMz/JJtGSZDak+p4Bs+XA1IOxRgk6dAtyMQpx6mEPdz/GwXBL3bBJiB8Mr8Tk3DirXYusqPXY\n" +
-                "pqt9RKstb1LXUR0yjtg8sLPBakMuMLMv6bIXanMFPDakdvd44OZleOuY6uOc//21L7hOMZE+0HO3\n" +
-                "ZTLvzjN2//oqP61otzqX5JDLgxpE2CEzPgjz13ZerDos8TVhg1rMRQAE6rTZed6+ZeYMkKeNV90a\n" +
-                "t0FIZiuR5a6m1F3oC7yJdqLGTr9Sf+s/mAS7CgzIJNbHivAzHVZi2Ub3H4/k0vd82SSPIvGMnv1z\n" +
-                "2VwONTQ6XJtY3O5HNWXtvdiHvNHbu+kfjFArV8dkJ6t+G30WrA8C6t12JO4mNEZVvF0Jw0wHwBYC\n" +
-                "EuO7xxoIpu80BzURNyK7Ncy/gDF1sOVRwxrm3Jix7dyODC94G/ZQBi9jFkXviLaG9h847y8/Ty01\n" +
-                "jGlNnHONyyiXRZ3kYQIDAQABo1AwTjAdBgNVHQ4EFgQUHRKdSSGp0YgySPfWktrRTI+DIHQwHwYD\n" +
-                "VR0jBBgwFoAUHRKdSSGp0YgySPfWktrRTI+DIHQwDAYDVR0TBAUwAwEB/zANBgkqhkiG9w0BAQsF\n" +
-                "AAOCAgEAK0bUZ6wnt4z/Pnm9CA3TpMcK/44NzeFDjCn7gzVJgMgdShv10/yXvGPBgTwfp5u8AaOc\n" +
-                "F3FrgYHFO3B33FS9I53iIBQXmc10Czm7ktFt4JzOn2DXKh3dawbecQbAwk/H6jFnQZZYd7ktlKTC\n" +
-                "cI6pput/n0rgEMScD5AU3/CwlwOekuY5GDrhZaqcifHPMj4IGawj0r/12bhpbQ5rxAA5EP1rUfe7\n" +
-                "dpX5jzd0PmwK4ftl0FlSzOPjvTN31JifVixWTun6PvFViqhNHkMC9pCkqqrQD5J7TnCeg76n8iuz\n" +
-                "AHbBSOleXNSUcPNFFPbdSva8kdM9z56j5GflrGCSb0+zLzdZGeZR1hTZVcGZpSMC6tZ4rN7OSrxG\n" +
-                "hmVFyEBb+MpzTqLEqnvwYOeVryVosNjyGfZqHfCbAo0nbusew3zeG3VXHQ0vilGgjkW+mWu+AJHO\n" +
-                "My1hMxpKLEnMdSgRgkDviXsv3a9iFjS8x6iHM1ZH60g9/EU81A5fc3pvr2wOo6QdKQHSHhTwLNO7\n" +
-                "OthwFvrPLWHcGztTyke5Dzg6GqBbdp7adxDwUxTfwFALipLTr4EALsl6XbRL0/lkBE3lF43Ch0sL\n" +
-                "mx6NIHV2R35fjcOsIQh+dAKVnI+tCc7PFhPvmFk8fzJtEsAOJyyzZPCzeHiVwlA2WAg9kGLNX4Vv\n" +
-                "Qf8aAIw=";
+    private boolean isExtraCertificatePublishedInMetadata(EntitiesDescriptor entitiesDescriptor) throws CertificateException {
 
         List<X509Certificate> x509Certificates = entitiesDescriptor.getSignature().getKeyInfo().getX509Datas().get(0).getX509Certificates();
         for (X509Certificate x509Certificate : x509Certificates) {
             final String value = x509Certificate.getValue();
-            if (metadataExtraCertificate.contentEquals(value)) {
+            java.security.cert.X509Certificate x509CertificateJava = CertificateUtil.toCertificate(value);
+
+            String expectedSubjectDn = "CN=metadataNode, OU=Node, O=eIDAS, L=Brussels, ST=BRUSSELS, C=EU";
+            String actualSubjectDn = x509CertificateJava.getSubjectDN().toString();
+
+            String expectedSerialNumber  = "88a76a87a404cd8a";
+            String actualserialNumber = x509CertificateJava.getSerialNumber().toString();
+            if (expectedSubjectDn.equals(actualSubjectDn) || expectedSerialNumber.equals(actualserialNumber)) {
                 return true;
             }
         }

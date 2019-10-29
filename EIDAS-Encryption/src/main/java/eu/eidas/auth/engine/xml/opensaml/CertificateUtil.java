@@ -448,4 +448,27 @@ public final class CertificateUtil {
 	public static boolean isSignatureWithCertificate(Signature signature) {
 		return !signature.getKeyInfo().getX509Datas().isEmpty();
 	}
+
+    /**
+     * Gets all certificates which are in a {@link Signature} as {@link List<X509Certificate>}
+     *
+     * @param signature that contains the certificates
+     * @return the List<X509Certificate> of the signature
+     * @throws CertificateException when could not create a {@link X509Certificate}
+     */
+    public static List<X509Certificate> getAllSignatureCertificates(Signature signature) throws CertificateException {
+        List<X509Certificate> x509Certificates = new ArrayList<>();
+
+        List<X509Data> x509Datas = signature.getKeyInfo().getX509Datas();
+        for (X509Data x509Data : x509Datas) {
+            List<org.opensaml.xmlsec.signature.X509Certificate> x509OpensamlCertificates = x509Data.getX509Certificates();
+            for (org.opensaml.xmlsec.signature.X509Certificate x509OpensamlCertificate : x509OpensamlCertificates) {
+                    final X509Certificate x509Certificate = CertificateUtil.toCertificate(x509OpensamlCertificate.getValue());
+                    x509Certificates.add(x509Certificate);
+
+            }
+        }
+
+        return x509Certificates;
+    }
 }

@@ -22,10 +22,10 @@
     <comment>SWModule sign with JKS.</comment>
     <entry key="check_certificate_validity_period">false</entry>
     <entry key="disallow_self_signed_certificate">false</entry>
-    <entry key="keyStorePath">src/test/resources/keystore/eidasKeyStore_METADATA_TC_WITHOUT_ROOT_CA_CERTIFICATE.jks</entry>
+    <entry key="keyStorePath">src/test/resources/keystore/eIDASkeystores/metadata_TC_WITHOUT_ROOT_CA.jks</entry>
     <entry key="keyStorePassword">local-demo</entry>
     <entry key="keyPassword">local-demo</entry>
-    <entry key="issuer">CN=metadataNode, OU=Node, O=eIDAS, L=Brussels, ST=BRUSSELS, C=EU</entry>
-    <entry key="serialNumber">89e1841a35e10504</entry>
+    <entry key="issuer">CN=intermediateCAMetadata, OU=eID team, O=European Commission, C=EU</entry>
+    <entry key="serialNumber">b7521c23d31f576b</entry>
     <entry key="keyStoreType">JKS</entry>
 </properties>

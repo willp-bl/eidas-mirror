@@ -68,6 +68,7 @@ import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.List;
 
+import static eu.eidas.auth.engine.xml.opensaml.CertificateUtil.getAllSignatureCertificates;
 import static org.apache.commons.collections.CollectionUtils.isNotEmpty;
 import static org.apache.commons.lang.StringUtils.isNotBlank;
 
@@ -368,20 +369,37 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
             // Exist only one certificate
             entityX509Cred = CertificateUtil.toCredential(cert);
 
+            addAllSignatureCertificatesToCredential(signature, entityX509Cred);
+
             checkCertificateValidityPeriod(cert);
             checkCertificateIssuer(cert);
+            LOG.info("isSignatureWithCertificate = " + entityX509Cred.getEntityId());
         }else{
             try {
 	        	RSAKeyValue signatureRsaKeyValue = signature.getKeyInfo().getKeyValues().get(0).getRSAKeyValue();
 				entityX509Cred = getTrustedCertificateFromRSAKeyValue(signatureRsaKeyValue, trustedCredentialList);
+                LOG.info("isSignatureWithOutCertificate = " + entityX509Cred.getEntityId());
 			} catch (IndexOutOfBoundsException e) {
 				throw new EIDASSAMLEngineException(EidasErrorKey.MESSAGE_VALIDATION_ERROR.errorCode(), e);
 			}
         }
 
-        checkValidTrust(signature, trustedCredentialList, entityX509Cred);
+        checkValidTrust(trustedCredentialList, entityX509Cred);
 
         return entityX509Cred;
+    }
+
+    private void addAllSignatureCertificatesToCredential(@Nonnull Signature signature, X509Credential entityX509Cred) throws EIDASSAMLEngineException {
+        if (entityX509Cred instanceof BasicX509Credential) {
+            List<X509Certificate> signatureCertificates;
+            try {
+                signatureCertificates = getAllSignatureCertificates(signature);
+            } catch (CertificateException e) {
+                throw new EIDASSAMLEngineException(e);
+            }
+
+            ((BasicX509Credential) entityX509Cred).setEntityCertificateChain(signatureCertificates);
+        }
     }
 
     /**
@@ -390,63 +408,16 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
      * If the signature has only one certificate, explicit certificate validation is performed.
      * Otherwise, validation of the certification path is performed.
      *
-     * @param signature the {@link Signature} to be validated
      * @param trustedCredentialList that contains the trusted credentials
      * @param entityX509Cred the credential related to the key that signs
      * @throws EIDASSAMLEngineException if the either the explicit or the certification path validation fails.
      */
-    private void checkValidTrust(@Nonnull Signature signature, @Nonnull List<? extends Credential> trustedCredentialList, X509Credential entityX509Cred) throws EIDASSAMLEngineException {
+    private void checkValidTrust(@Nonnull List<? extends Credential> trustedCredentialList, X509Credential entityX509Cred) throws EIDASSAMLEngineException {
         try {
-            final List<X509Certificate> trustedCertificatesSignature = CertificateUtil.getCertificates(signature.getKeyInfo());
-            final List<X509Certificate> trustedCertificates = CertificateUtil.getCertificates(trustedCredentialList);
-            final boolean hasLeafInTrusted = hasCredential(entityX509Cred, trustedCredentialList);
-
-            if (hasLeafInTrusted) {
-                CertificateUtil.checkChainTrust(entityX509Cred, trustedCredentialList);
-            } else {
-                final X509Certificate issuerCertificate = getIssuerCertificate(entityX509Cred, trustedCertificatesSignature, trustedCertificates);
-
-                if (null == issuerCertificate) {
-                        throw new EIDASSAMLEngineException(EidasErrorKey.SAML_ENGINE_UNTRUSTED_CERTIFICATE.errorCode(),
-                                EidasErrorKey.SAML_ENGINE_UNTRUSTED_CERTIFICATE.errorMessage());
-                } else {
-                    final X509Credential issuerX509Credential = CertificateUtil.toCredential(issuerCertificate);
-                    CertificateUtil.checkChainTrust(issuerX509Credential, trustedCredentialList);
-                }
-            }
-
+            CertificateUtil.checkChainTrust(entityX509Cred, trustedCredentialList);
         } catch (CertificateException e) {
             throw new EIDASSAMLEngineException(EidasErrorKey.MESSAGE_VALIDATION_ERROR.errorCode(), e);
         }
-    }
-
-    private X509Certificate getIssuerCertificate(X509Credential entityX509Cred, List<X509Certificate> signatureCertificates, List<X509Certificate> trustedCertificates) {
-        X509Certificate issuerCertificate = CertificateUtil.getIssuerX509Certificate(entityX509Cred, trustedCertificates);
-        if (null == issuerCertificate) {
-            issuerCertificate = CertificateUtil.getIssuerX509Certificate(entityX509Cred, signatureCertificates);
-        }
-        return issuerCertificate;
-    }
-
-    /**
-     * Looks up for {@param credentialToLookUp} in {@param credentialToLookUp}
-     *
-     * @param credentialToLookUp
-     * @param credentials the list of credentials where the {@param credentialToLookUp} will be looked up
-     * @return true if credential is in {@param credentials}
-     */
-    private boolean hasCredential(X509Credential credentialToLookUp, List<? extends Credential> credentials) {
-        X509Certificate leafCertificate = credentialToLookUp.getEntityCertificate();
-        for (Credential credential : credentials) {
-            if (credential instanceof BasicX509Credential) {
-                X509Certificate trustedCertificate = ((BasicX509Credential) credential).getEntityCertificate();
-                if(trustedCertificate.equals(leafCertificate)) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
     }
 
     protected ImmutableList<X509Credential> getTrustedCredentials() {

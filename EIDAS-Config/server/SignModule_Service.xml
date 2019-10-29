@@ -68,8 +68,8 @@
 	<!--<entry key="metadata.keyStorePath">../keystore/eidasKeyStore_METADATA_TC.jks</entry>-->
 	<!--<entry key="metadata.keyStorePassword">local-demo</entry>-->
 	<!--<entry key="metadata.keyPassword">local-demo</entry>-->
-	<!--<entry key="metadata.issuer">CN=metadataNode, OU=Node, O=eIDAS, L=Brussels, ST=BRUSSELS, C=EU</entry>-->
-	<!--<entry key="metadata.serialNumber">89e1841a35e10504</entry>-->
+	<!--<entry key="metadata.issuer">CN=intermediateCAMetadata, OU=eID team, O=European Commission, C=EU</entry>-->
+	<!--<entry key="metadata.serialNumber">b7521c23d31f576b</entry>-->
 	<!--<entry key="metadata.keyStoreType">JKS</entry>-->
 
 </properties>
