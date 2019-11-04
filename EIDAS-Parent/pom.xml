@@ -96,7 +96,7 @@
         <resources.plugin.version>2.4</resources.plugin.version>
         <cobertura.plugin.version>2.7</cobertura.plugin.version>
         <remote.resources.plugin.version>1.5</remote.resources.plugin.version>
-        <source.plugin.version>2.1.2</source.plugin.version>
+        <source.plugin.version>3.2.0</source.plugin.version>
         <install.plugin.version>2.5.2</install.plugin.version>
         <clean.plugin.version>2.6.1</clean.plugin.version>
     </properties>
