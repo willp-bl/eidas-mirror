@@ -32,8 +32,8 @@ import eu.eidas.auth.engine.ProtocolEngineFactory;
 import eu.eidas.auth.engine.ProtocolEngineI;
 import eu.eidas.auth.engine.metadata.EidasMetadataParametersI;
 import eu.eidas.auth.engine.metadata.MetadataClockI;
-import eu.eidas.auth.engine.metadata.MetadataFetcherI;
 import eu.eidas.auth.engine.metadata.MetadataSignerI;
+import eu.eidas.auth.engine.metadata.impl.CachingMetadataFetcher;
 import eu.eidas.auth.engine.xml.opensaml.ResponseUtil;
 import eu.eidas.auth.engine.xml.opensaml.XmlSchemaUtil;
 import eu.eidas.encryption.exception.UnmarshallException;
@@ -56,38 +56,37 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
 
 import static eu.eidas.node.BeanProvider.getBean;
+import static eu.eidas.node.NodeBeanNames.CONNECTOR_METADATA_FETCHER;
+import static eu.eidas.node.NodeBeanNames.EIDAS_CONNECTOR_CONTROLLER;
+import static eu.eidas.node.NodeBeanNames.NODE_METADATA_FETCHER;
+import static eu.eidas.node.NodeBeanNames.NODE_PROTOCOL_ENGINE_FACTORY;
+import static eu.eidas.node.NodeBeanNames.PROXYSERVICE_METADATA_FETCHER;
+import static eu.eidas.node.logging.AbstractLogger.NOT_APPLICABLE;
 
 /**
  * Utility class for logging the incoming and outgoing requests/responses from/to of the Eidas Proxy Service and Eidas Connector.
+ *
+ * @since 2.3
  */
-public class MessageLoggerUtils {
+public final class MessageLoggerUtils {
 
     /**
      * Logger object.
      */
     private static final Logger LOGGER = LoggerFactory.getLogger(MessageLoggerUtils.class.getName());
 
-    private String countryCode;
-
     private String samlConnectorServiceInstance;
 
     private String samlEngineProxyInstanceName;
-
-    private ProtocolEngineFactory nodeProtocolEngineFactory;
-
-    private MetadataFetcherI metadataFetcher;
-
-    private ConnectorControllerService connectorControllerService;
-
-    private ServiceControllerService serviceControllerService;
 
     private boolean logMessage;
 
     /**
      * Enables the logging of eIDAS messages if saml.audit property from eidas.xml configuration file is set to true.
      *
+     * @return true/false depending of the configuration
      */
-    public boolean isLogMessages() {
+    public final boolean isLogMessages() {
         return logMessage;
     }
 
@@ -96,103 +95,52 @@ public class MessageLoggerUtils {
      *
      * @param logMessage The logMessage to set.
      */
-    public void setLogMessage(boolean logMessage) {
+    public final void setLogMessage(boolean logMessage) {
         this.logMessage = logMessage;
     }
 
     /**
-     * Setter for countryCode.
-     *
-     * @param code The countryCode to set.
-     */
-    public void setCountryCode(String code) {
-        this.countryCode = code;
-    }
-
-    /**
      * Set samlConnectorServiceInstance.
+     *
+     * @param samlConnectorServiceInstance the new samlConnectorServiceInstance value.
      */
-    public void setSamlConnectorServiceInstance(String samlConnectorServiceInstance) {
+    public final void setSamlConnectorServiceInstance(String samlConnectorServiceInstance) {
         this.samlConnectorServiceInstance = samlConnectorServiceInstance;
     }
 
     /**
      * Set samlEngineProxyInstanceName.
+     *
+     * @param samlEngineProxyInstanceName the new samlEngineProxyInstanceName value.
      */
-    public void setSamlEngineProxyInstanceName(String samlEngineProxyInstanceName) {
+    public final void setSamlEngineProxyInstanceName(String samlEngineProxyInstanceName) {
         this.samlEngineProxyInstanceName = samlEngineProxyInstanceName;
-    }
-
-    /**
-     * Set {@link ProtocolEngine} instance.
-     * @param nodeProtocolEngineFactory the instance of {@link ProtocolEngineFactory}
-     */
-    public void setNodeProtocolEngineFactory(ProtocolEngineFactory nodeProtocolEngineFactory) {
-        this.nodeProtocolEngineFactory = nodeProtocolEngineFactory;
-    }
-
-    /**
-     * Returns a default ProtocolEngine instance matching the given name retrieved from the configuration file.
-     *
-     * @return the Proxy Service ProtocolEngine instance matching the given name retrieved from the configuration file
-     */
-    public ProtocolEngineI getProxyServiceSamlEngine() {
-        return nodeProtocolEngineFactory.getProtocolEngine(samlEngineProxyInstanceName);
-    }
-
-    /**
-     *
-     * Returns a default ProtocolEngine instance matching the given name retrieved from the configuration file.
-     *
-     * @return the Connector ProtocolEngine instance matching the given name retrieved from the configuration file
-     */
-    public ProtocolEngineI getConnectorSamlEngine() {
-        return nodeProtocolEngineFactory.getProtocolEngine(samlConnectorServiceInstance);
-    }
-
-    /**
-     * Set {@link ConnectorControllerService} instance.
-     */
-    public void setConnectorControllerService(ConnectorControllerService connectorControllerService) {
-        this.connectorControllerService = connectorControllerService;
-    }
-
-    /**
-     * Set {@link ServiceControllerService} instance.
-     */
-    public void setServiceControllerService(ServiceControllerService serviceControllerService) {
-        this.serviceControllerService = serviceControllerService;
-    }
-
-    /**
-     * Set SAML2 metadata {code EntityDescriptor}s associated with a SAML Service Provider (SP) and/or Identity
-     * Provider (IDP).
-     * @param metadataFetcher the instance of {@link MetadataFetcherI}
-     */
-    public void setMetadataFetcher(MetadataFetcherI metadataFetcher) {
-        this.metadataFetcher = metadataFetcher;
     }
 
     /**
      * get entityId from Connector or Proxy Service metadata
      *
      * @param metaDataUrl the Url to metadata
+     * @param metadataFetcherBeanName the name of the metadataFetcherBean
      * @param samlEngine {@link ProtocolEngine} instance
      * @return the entityId within metadata
      */
-    public String getEntityId(String metaDataUrl, ProtocolEngineI samlEngine) {
+    private String getEntityId(String metaDataUrl, String metadataFetcherBeanName, ProtocolEngineI samlEngine) {
+        CachingMetadataFetcher metadataFetcher = getBean(CachingMetadataFetcher.class, metadataFetcherBeanName);
+        if (null == metadataFetcher) {
+            return null;
+        }
+
         String entityId = null;
         if (StringUtils.isNotBlank(metaDataUrl)){
-            if (null != metadataFetcher) {
-                try {
-                    EidasMetadataParametersI eidasMetadataParameters = metadataFetcher.getEidasMetadata(metaDataUrl,
-                            (MetadataSignerI) samlEngine.getSigner(), (MetadataClockI) samlEngine.getClock());
+            try {
+                EidasMetadataParametersI eidasMetadataParameters = metadataFetcher.getEidasMetadata(metaDataUrl,
+                        (MetadataSignerI) samlEngine.getSigner(), (MetadataClockI) samlEngine.getClock());
 
-                    entityId = eidasMetadataParameters.getEntityID();
-                }catch (EIDASMetadataException e) {
-                    LOGGER.info("EIDASMetadataException {}", e.getMessage());
-                    LOGGER.debug("EIDASMetadataException {}", e);
-                }
+                entityId = eidasMetadataParameters.getEntityID();
+            }catch (EIDASMetadataException e) {
+                LOGGER.info("EIDASMetadataException {}", e.getMessage());
+                LOGGER.debug("EIDASMetadataException ", e);
             }
         }
         return entityId;
@@ -204,9 +152,9 @@ public class MessageLoggerUtils {
      * @param metaDataUrl the Url to metadata
      * @return the entityId within metadata
      */
-    public String getConnectorEntityId(String metaDataUrl) {
-        final String entityId = getEntityId(metaDataUrl, getConnectorSamlEngine());
-        return entityId;
+    public final String getConnectorEntityId(String metaDataUrl) {
+        String metadataFetcherBeanName = CONNECTOR_METADATA_FETCHER.toString();
+        return getEntityId(metaDataUrl, metadataFetcherBeanName, getConnectorSamlEngine());
     }
 
     /**
@@ -215,31 +163,20 @@ public class MessageLoggerUtils {
      * @param metaDataUrl the Url to metadata
      * @return the entityId within metadata
      */
-    public String getProxyServiceEntityId(String metaDataUrl) {
-        final String entityId = getEntityId(metaDataUrl, getProxyServiceSamlEngine());
-        return entityId;
+    public final String getProxyServiceEntityId(String metaDataUrl) {
+        String metadataFetcherBeanName = PROXYSERVICE_METADATA_FETCHER.toString();
+        return getEntityId(metaDataUrl, metadataFetcherBeanName, getProxyServiceSamlEngine());
     }
 
     /**
      * Get all the attributes supported i.e. both standard and sector-specific attributes.
      * @return the Connector's Attributes
      */
-    public Collection<AttributeDefinition<?>> retrieveConnectorAttributes() {
+    public final Collection<AttributeDefinition<?>> retrieveConnectorAttributes() {
+        String beanName = EIDAS_CONNECTOR_CONTROLLER.toString();
+        ConnectorControllerService connectorControllerService = getBean(ConnectorControllerService.class, beanName);
         return ImmutableSortedSet.copyOf(connectorControllerService
                 .getConnectorService()
-                .getSamlService()
-                .getSamlEngine()
-                .getProtocolProcessor()
-                .getAllSupportedAttributes());
-    }
-
-    /**
-     * Get all the attributes supported i.e. both standard and sector-specific attributes.
-     * @return the Proxy-Service's Attributes
-     */
-    public Collection<AttributeDefinition<?>> retrieveProxyServiceAttributes() {
-        return ImmutableSortedSet.copyOf(serviceControllerService
-                .getProxyService()
                 .getSamlService()
                 .getSamlEngine()
                 .getProtocolProcessor()
@@ -250,7 +187,7 @@ public class MessageLoggerUtils {
      * Get the Destination Url of the outgoing LightResponse to the Specific
      * @return the Connector Redirect Url
      */
-    public String getConnectorRedirectUrl() {
+    public final String getConnectorRedirectUrl() {
         String beanName = NodeBeanNames.SPECIFIC_CONNECTOR_DEPLOYED_JAR.toString();
         final boolean isSpecificConnectorJar = getBean(Boolean.class, beanName);
         if (isSpecificConnectorJar) {
@@ -264,7 +201,7 @@ public class MessageLoggerUtils {
      * Get the Destination Url of the outgoing LightRequest to the Specific
      * @return the ProxyService Redirect Url
      */
-    public String getProxyServiceRedirectUrl() {
+    public final String getProxyServiceRedirectUrl() {
         String beanName = NodeBeanNames.SPECIFIC_PROXYSERVICE_DEPLOYED_JAR.toString();
         final boolean isSpecificProxyServiceJar = getBean(Boolean.class, beanName);
         if (isSpecificProxyServiceJar) {
@@ -282,11 +219,11 @@ public class MessageLoggerUtils {
      * @param httpServletRequest the instance of the {@link HttpServletRequest}
      * @return the issuer of that request
      */
-    public String getIssuer(String requestId, HttpServletRequest httpServletRequest) {
+    public final String getIssuer(String requestId, HttpServletRequest httpServletRequest) {
 
         final String issuer = (String) httpServletRequest.getAttribute(EidasParameterKeys.ISSUER.toString());
 
-        if (StringUtils.isEmpty(issuer)) {
+        if (StringUtils.isBlank(issuer)) {
 
             final String beanName = NodeBeanNames.EIDAS_SERVICE_CONTROLLER.toString();
             final ServiceControllerService controllerService = getBean(ServiceControllerService.class, beanName);
@@ -310,7 +247,7 @@ public class MessageLoggerUtils {
      * @return the instance of {@link IAuthenticationRequest}
      * @throws EIDASSAMLEngineException when the authentication request could not be unmarshalled or properly build
      */
-    public IAuthenticationRequest getIAuthenticationProxyRequest(byte[] samlObj) throws EIDASSAMLEngineException {
+    public final IAuthenticationRequest getIAuthenticationProxyRequest(byte[] samlObj) throws EIDASSAMLEngineException {
         Document document = XmlSchemaUtil.validateSamlSchema(samlObj);
         final IAuthenticationRequest iAuthenticationRequest;
         try {
@@ -323,19 +260,6 @@ public class MessageLoggerUtils {
         return iAuthenticationRequest;
     }
 
-    private EidasAuthenticationRequest createIAuthenticationRequest(AuthnRequest authenticationRequest) {
-
-        String issuer = authenticationRequest.getIssuer().getValue();
-
-        EidasAuthenticationRequest.Builder eidasAuthenticationRequestBuilder = EidasAuthenticationRequest.builder();
-        eidasAuthenticationRequestBuilder.id(authenticationRequest.getID())
-                .destination(authenticationRequest.getDestination())
-                .issuer(issuer)
-                .citizenCountryCode("N/A");
-
-        return eidasAuthenticationRequestBuilder.build();
-    }
-
     /**
      * Retrieves the {@link IAuthenticationResponse} from the SAML in bytes
      * which with the minimum data needed for the message logging.
@@ -344,7 +268,7 @@ public class MessageLoggerUtils {
      * @return the instance of {@link IAuthenticationRequest}
      * @throws EIDASSAMLEngineException when the authentication request could not be unmarshalled
      */
-    public IAuthenticationResponse getIAuthenticationResponse(byte[] samlObj) throws EIDASSAMLEngineException {
+    public final IAuthenticationResponse getIAuthenticationResponse(byte[] samlObj) throws EIDASSAMLEngineException {
         final Document document = createDocument(samlObj);
 
         IAuthenticationResponse iAuthenticationResponse;
@@ -356,6 +280,19 @@ public class MessageLoggerUtils {
         }
 
         return iAuthenticationResponse;
+    }
+
+    private EidasAuthenticationRequest createIAuthenticationRequest(AuthnRequest authenticationRequest) {
+
+        String issuer = authenticationRequest.getIssuer().getValue();
+
+        EidasAuthenticationRequest.Builder eidasAuthenticationRequestBuilder = EidasAuthenticationRequest.builder();
+        eidasAuthenticationRequestBuilder.id(authenticationRequest.getID())
+                .destination(authenticationRequest.getDestination())
+                .issuer(issuer)
+                .citizenCountryCode(NOT_APPLICABLE);
+
+        return eidasAuthenticationRequestBuilder.build();
     }
 
     private Document createDocument(byte[] samlObj) throws EIDASSAMLEngineException {
@@ -376,9 +313,32 @@ public class MessageLoggerUtils {
                 .inResponseTo(samlResponse.getInResponseTo())
                 .responseStatus(responseStatus)
                 .issuer(issuer)
-                .subject("N/A")
-                .subjectNameIdFormat("N/A");
+                .subject(NOT_APPLICABLE)
+                .subjectNameIdFormat(NOT_APPLICABLE);
 
         return responseBuilder.build();
+    }
+
+    /**
+     * Returns a default ProtocolEngine instance matching the given name retrieved from the configuration file.
+     *
+     * @return the Proxy Service ProtocolEngine instance matching the given name retrieved from the configuration file
+     */
+    private ProtocolEngineI getProxyServiceSamlEngine() {
+        String beanName = NODE_PROTOCOL_ENGINE_FACTORY.toString();
+        ProtocolEngineFactory protocolEngineFactory = getBean(ProtocolEngineFactory.class, beanName);
+        return protocolEngineFactory.getProtocolEngine(samlEngineProxyInstanceName);
+    }
+
+    /**
+     *
+     * Returns a default ProtocolEngine instance matching the given name retrieved from the configuration file.
+     *
+     * @return the Connector ProtocolEngine instance matching the given name retrieved from the configuration file
+     */
+    private ProtocolEngineI getConnectorSamlEngine() {
+        String beanName = NODE_PROTOCOL_ENGINE_FACTORY.toString();
+        ProtocolEngineFactory protocolEngineFactory = getBean(ProtocolEngineFactory.class, beanName);
+        return protocolEngineFactory.getProtocolEngine(samlConnectorServiceInstance);
     }
 }

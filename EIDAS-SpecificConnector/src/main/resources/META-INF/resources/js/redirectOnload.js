@@ -16,10 +16,10 @@
 function submitRedirectFormAction() {
 
     if (document.getElementById('redirectLabel') !== null)
-        document.getElementById("redirectLabel").innerHTML = document.getElementById('dummyField').value;
+        document.getElementById("redirectLabel").innerHTML = document.getElementById('redirectingMessageId').value;
 
     if (document.getElementById('eidasRedirectLabel') !== null)
-        document.getElementById('eidasRedirectLabel').innerHTML = document.getElementById('dummyField').value;
+        document.getElementById('eidasRedirectLabel').innerHTML = document.getElementById('redirectingMessageId').value;
 
     document.getElementsByName('redirectForm')[0].submit();
 

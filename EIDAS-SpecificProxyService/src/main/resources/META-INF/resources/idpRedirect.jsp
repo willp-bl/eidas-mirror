@@ -36,8 +36,7 @@
                 <div class="col-right-content">
                     <jsp:include page="include/proxyService-content-security-header-deactivated.jsp"/>
                     <fmt:message var="redirectingValue" key="idpRedirecting.text" bundle="${i18n_eng}"/>
-                    <input type="hidden" id="dummyField" value="${redirectingValue}"
-                    />
+                    <input type="hidden" id="redirectingMessageId" value="${redirectingValue}"/>
                     <h2 id="idpRedirectLabel"></h2>
                     <c:if test="${idp_number>0}">
                         <div class="form-group" id="citizenIdpDiv">

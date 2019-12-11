@@ -20,20 +20,21 @@ package eu.eidas.node.auth.service.tests;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import eu.eidas.auth.cache.ConcurrentMapJcacheServiceDefaultImpl;
-import eu.eidas.auth.commons.*;
+import eu.eidas.auth.commons.BindingMethod;
+import eu.eidas.auth.commons.EidasErrorKey;
+import eu.eidas.auth.commons.EidasParameterKeys;
+import eu.eidas.auth.commons.EidasStringUtil;
+import eu.eidas.auth.commons.IncomingRequest;
+import eu.eidas.auth.commons.WebRequest;
 import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.attribute.impl.StringAttributeValue;
-import eu.eidas.auth.commons.cache.ConcurrentMapServiceDefaultImpl;
 import eu.eidas.auth.commons.exceptions.EIDASServiceException;
 import eu.eidas.auth.commons.exceptions.InvalidParameterEIDASException;
 import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.eidas.spec.EidasSpec;
-import eu.eidas.auth.commons.tx.CorrelationMap;
 import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
-import eu.eidas.auth.commons.tx.StoredAuthenticationRequestCorrelationMap;
-import eu.eidas.auth.commons.tx.StoredLightRequestCorrelationCache;
 import eu.eidas.node.auth.service.AUSERVICE;
 import eu.eidas.node.auth.service.AUSERVICESAML;
 import eu.eidas.node.auth.service.ISERVICECitizenService;
@@ -49,8 +50,14 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Properties;
 
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -258,6 +265,29 @@ public class AUSERVICETestCase {
                      result.getFirstAttributeValue(EidasSpec.Definitions.LEGAL_PERSON_IDENTIFIER).getValue());
     }
 
+
+    /**
+     * Test method for {@link AUSERVICE#updateResponseAttributes(IAuthenticationRequest, ImmutableAttributeMap)}  to
+     * check if the attributes with AttributeDefinition equal to EidasSpec.Definitions.PERSON_IDENTIFIER and
+     * EidasSpec.Definitions.LEGAL_PERSON_IDENTIFIER have no prefix from EidasAuthenticationRequest.
+     * Must succeed.
+     */
+    @Test
+    public void testUpdateResponseAttributesNoPrefix()
+            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        final String countryCode = "ES";
+        final String originCountryCode = "PT";
+
+        ImmutableAttributeMap result = getImmutableAttributeMapUpdatedResponseAttributesNoPrefix(countryCode, originCountryCode,
+                EidasSpec.Definitions.PERSON_IDENTIFIER);
+        assertEquals("12345678",
+                result.getFirstAttributeValue(EidasSpec.Definitions.PERSON_IDENTIFIER).getValue());
+
+        result = getImmutableAttributeMapUpdatedResponseAttributesNoPrefix(countryCode, originCountryCode,
+                EidasSpec.Definitions.LEGAL_PERSON_IDENTIFIER);
+        assertEquals("12345678",
+                result.getFirstAttributeValue(EidasSpec.Definitions.LEGAL_PERSON_IDENTIFIER).getValue());
+    }
     /**
      * Test method for {@link AUSERVICE#updateResponseAttributes(IAuthenticationRequest, ImmutableAttributeMap)}  to
      * check if the attributes with AttributeDefinition equal to EidasSpec.Definitions.PERSON_IDENTIFIER and
@@ -305,6 +335,7 @@ public class AUSERVICETestCase {
         AUSERVICESAML auservicesaml = new AUSERVICESAML();
         auservicesaml.setCountryCode(countryCode);
         underTest.setSamlService(auservicesaml);
+        underTest.setIsPrefixIdentifiersCountryCode(true);
 
         Class[] parameterTypes = new Class[2];
         parameterTypes[0] = IAuthenticationRequest.class;
@@ -327,4 +358,34 @@ public class AUSERVICETestCase {
         return (ImmutableAttributeMap) m.invoke(underTest, methodParameters);
     }
 
+    private ImmutableAttributeMap getImmutableAttributeMapUpdatedResponseAttributesNoPrefix(final String countryCode,
+                                                                                    final String originCountryCode,
+                                                                                    AttributeDefinition<String> identifier)
+            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+        final AUSERVICE underTest = new AUSERVICE();
+        AUSERVICESAML auservicesaml = new AUSERVICESAML();
+        auservicesaml.setCountryCode(countryCode);
+        underTest.setSamlService(auservicesaml);
+        underTest.setIsPrefixIdentifiersCountryCode(false);
+
+        Class[] parameterTypes = new Class[2];
+        parameterTypes[0] = IAuthenticationRequest.class;
+        parameterTypes[1] = ImmutableAttributeMap.class;
+
+        Method m = underTest.getClass().getDeclaredMethod("updateResponseAttributes", parameterTypes);
+        m.setAccessible(true);
+
+        Object[] methodParameters = new Object[2];
+        methodParameters[0] = EidasAuthenticationRequest.builder()
+                .destination(TestingConstants.REQUEST_DESTINATION_CONS.toString())
+                .id(TestingConstants.REQUEST_ID_CONS.toString())
+                .issuer(TestingConstants.REQUEST_ISSUER_CONS.toString())
+                .citizenCountryCode(TestingConstants.REQUEST_CITIZEN_COUNTRY_CODE_CONS.toString())
+                .originCountryCode(originCountryCode)
+                .build();
+
+        methodParameters[1] = ImmutableAttributeMap.of(identifier, new StringAttributeValue("12345678", false));
+
+        return (ImmutableAttributeMap) m.invoke(underTest, methodParameters);
+    }
 }

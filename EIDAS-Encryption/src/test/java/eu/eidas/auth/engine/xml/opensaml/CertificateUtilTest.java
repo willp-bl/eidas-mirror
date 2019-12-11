@@ -35,7 +35,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Tests for the {@link CertificateUtil}.
@@ -47,26 +46,19 @@ public class CertificateUtilTest {
 
 
     private static BasicX509Credential leafCredential;
-    private static BasicX509Credential intermediateCACredential;
-    private static BasicX509Credential rootCACredential;
+    private static BasicX509Credential intermediateCaCredential;
+    private static BasicX509Credential rootCaCredential;
 
     private static BasicX509Credential unstrustedCredential;
     private static BasicX509Credential unstrustedSimilarToLeafCredential;
-
-    private static X509Certificate intermediateCACertificate;
-    private static X509Certificate rootCACertificate;
 
     @Before
     public void setUp() throws Exception {
         CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
 
-
-        intermediateCACertificate = loadCertificate(certificateFactory, "src/test/resources/certificates/pki/intermediate-ca.crt");
-        rootCACertificate = loadCertificate(certificateFactory, "src/test/resources/certificates/pki/root-ca.crt");
-
         leafCredential = loadCredential(certificateFactory, "src/test/resources/certificates/pki/leaf.crt");
-        intermediateCACredential = loadCredential(certificateFactory, "src/test/resources/certificates/pki/intermediate-ca.crt");
-        rootCACredential = loadCredential(certificateFactory, "src/test/resources/certificates/pki/root-ca.crt");
+        intermediateCaCredential = loadCredential(certificateFactory, "src/test/resources/certificates/pki/intermediate-ca.crt");
+        rootCaCredential = loadCredential(certificateFactory, "src/test/resources/certificates/pki/root-ca.crt");
 
         unstrustedCredential = loadCredential(certificateFactory, "src/test/resources/certificates/untrustedCertificate.crt");
         unstrustedSimilarToLeafCredential = loadCredential(certificateFactory, "src/test/resources/certificates/unstrustedSimilarToLeaf.crt");
@@ -102,7 +94,7 @@ public class CertificateUtilTest {
 
         ArrayList<Credential> trustedCredentials = new ArrayList<>();
         trustedCredentials.add(leafCredential);
-        CertificateUtil.checkChainTrust(rootCACredential, trustedCredentials);
+        CertificateUtil.checkChainTrust(rootCaCredential, trustedCredentials);
     }
 
     /**
@@ -116,39 +108,7 @@ public class CertificateUtilTest {
     @Test
     public void checkChainTrustCheckMetadataSigningCredentialTrustingIntermediateCa() throws CertificateException {
         ArrayList<Credential> trustedCredentials = new ArrayList<>();
-        trustedCredentials.add(intermediateCACredential);
-        CertificateUtil.checkChainTrust(leafCredential, trustedCredentials);
-    }
-
-    /**
-     * Test method for
-     * {@link CertificateUtil#checkChainTrust(X509Credential, Iterable)}
-     * when the credential to be checked for trust is (metadatanode)
-     * when the trusted credential is the intermediate CA (intermediateCAMetadata),
-     * <p/>
-     * Must succeed.
-     */
-    @Test
-    public void checkChainTrustCheckMetadataSigningCredentialTrustingIntermediateCaRootCACenasMaradasOussama() throws CertificateException {
-        ArrayList<Credential> trustedCredentials = new ArrayList<>();
-        trustedCredentials.add(rootCACredential);
-        trustedCredentials.add(intermediateCACredential);
-        CertificateUtil.checkChainTrust(leafCredential, trustedCredentials);
-    }
-
-    /**
-     * Test method for
-     * {@link CertificateUtil#checkChainTrust(X509Credential, Iterable)}
-     * when the credential to be checked for trust is (metadatanode)
-     * when the trusted credential is the intermediate CA (intermediateCAMetadata),
-     * <p/>
-     * Must succeed.
-     */
-    @Test
-    public void checkChainTrustCheckMetadataSigningCredentialTrustingIntermediateCaRootCACenasMaradas() throws CertificateException {
-        ArrayList<Credential> trustedCredentials = new ArrayList<>();
-        trustedCredentials.add(rootCACredential);
-        trustedCredentials.add(intermediateCACredential);
+        trustedCredentials.add(intermediateCaCredential);
         CertificateUtil.checkChainTrust(leafCredential, trustedCredentials);
     }
 
@@ -163,8 +123,8 @@ public class CertificateUtilTest {
     @Test
     public void checkChainTrustCheckMetadataSigningCredentialTrustingIntermediateCaRootCA() throws CertificateException {
         ArrayList<Credential> trustedCredentials = new ArrayList<>();
-        trustedCredentials.add(rootCACredential);
-        trustedCredentials.add(intermediateCACredential);
+        trustedCredentials.add(rootCaCredential);
+        trustedCredentials.add(intermediateCaCredential);
         CertificateUtil.checkChainTrust(leafCredential, trustedCredentials);
     }
 
@@ -179,8 +139,8 @@ public class CertificateUtilTest {
     @Test
     public void checkChainTrustCheckMetadataSigningCredentialTrustingAllChain() throws CertificateException {
         ArrayList<Credential> trustedCredentials = new ArrayList<>();
-        trustedCredentials.add(rootCACredential);
-        trustedCredentials.add(intermediateCACredential);
+        trustedCredentials.add(rootCaCredential);
+        trustedCredentials.add(intermediateCaCredential);
         trustedCredentials.add(leafCredential);
         CertificateUtil.checkChainTrust(leafCredential, trustedCredentials);
     }
@@ -196,8 +156,8 @@ public class CertificateUtilTest {
     @Test
     public void checkChainTrustCheckIntermediateCaCredentialTrustingRootCACredential() throws CertificateException {
         ArrayList<Credential> trustedCredentials = new ArrayList<>();
-        trustedCredentials.add(rootCACredential);
-        CertificateUtil.checkChainTrust(intermediateCACredential, trustedCredentials);
+        trustedCredentials.add(rootCaCredential);
+        CertificateUtil.checkChainTrust(intermediateCaCredential, trustedCredentials);
     }
 
     /**
@@ -211,8 +171,8 @@ public class CertificateUtilTest {
     @Test
     public void checkChainTrustIntermediateCaCredentialTrustingIntermediateCa() throws CertificateException {
         ArrayList<Credential> trustedCredentials = new ArrayList<>();
-        trustedCredentials.add(intermediateCACredential);
-        CertificateUtil.checkChainTrust(intermediateCACredential, trustedCredentials);
+        trustedCredentials.add(intermediateCaCredential);
+        CertificateUtil.checkChainTrust(intermediateCaCredential, trustedCredentials);
     }
 
     /**
@@ -247,8 +207,8 @@ public class CertificateUtilTest {
 
         ArrayList<Credential> trustedCredentials = new ArrayList<>();
         trustedCredentials.add(leafCredential);
-        trustedCredentials.add(intermediateCACredential);
-        trustedCredentials.add(rootCACredential);
+        trustedCredentials.add(intermediateCaCredential);
+        trustedCredentials.add(rootCaCredential);
 
         CertificateUtil.checkChainTrust(unstrustedCredential, trustedCredentials);
     }
@@ -270,13 +230,13 @@ public class CertificateUtilTest {
         thrown.expectMessage("untrusted certificate");
 
         BasicX509Credential leafCredential = CertificateUtilTest.leafCredential;
-        BasicX509Credential intermediateCACredential = CertificateUtilTest.intermediateCACredential;
+        BasicX509Credential intermediateCACredential = CertificateUtilTest.intermediateCaCredential;
         BasicX509Credential unstrustedSimilarToLeafCredential = CertificateUtilTest.unstrustedSimilarToLeafCredential;
 
         ArrayList<Credential> trustedCredentials = new ArrayList<>();
         trustedCredentials.add(leafCredential);
         trustedCredentials.add(intermediateCACredential);
-        trustedCredentials.add(rootCACredential);
+        trustedCredentials.add(rootCaCredential);
 
         X509Certificate unstrustedSimilarToLeafCertificate = unstrustedSimilarToLeafCredential.getEntityCertificate();
         X509Certificate intermediateCAEntityCertificate = intermediateCACredential.getEntityCertificate();
@@ -323,44 +283,10 @@ public class CertificateUtilTest {
 
         ArrayList<Credential> trustedCredentials = new ArrayList<>();
         trustedCredentials.add(leafCredential);
-        CertificateUtil.checkExplicitTrust(intermediateCACredential, trustedCredentials);
+        CertificateUtil.checkExplicitTrust(intermediateCaCredential, trustedCredentials);
     }
 
-    /**
-     * Test method for
-     * {@link CertificateUtil#getIssuerX509Certificate(X509Credential, List)}
-     * when the credential to be checked for trust is the one related to the signing key (metadatanode)
-     * when the list of trusted certificates contains the issuer of metadatanode (intermediateCAMetadata),
-     * <p/>
-     * Must succeed.
-     */
-    @Test
-    public void getIssuerX509Certificate() {
-        List<X509Certificate> trustedCertificates = new ArrayList<>();
-        trustedCertificates.add(intermediateCACertificate);
-        X509Certificate issuerX509Certificate = CertificateUtil.getIssuerX509Certificate(leafCredential, trustedCertificates);
-        Assert.assertNotNull(issuerX509Certificate);
-        Assert.assertEquals("issuer not the same", intermediateCACertificate,issuerX509Certificate);
-    }
-
-    /**
-     * Test method for
-     * {@link CertificateUtil#getIssuerX509Certificate(X509Credential, List)}
-     * when the credential to be checked for trust is the one related to the signing key (metadatanode)
-     * when the list of trusted certificates contains the issuer of metadatanode (intermediateCAMetadata),
-     * <p/>
-     * Must succeed.
-     */
-    @Test
-    public void getIssuerX509CertificateIssuerCertificateNotRetrieved() {
-        List<X509Certificate> trustedCertificates = new ArrayList<>();
-        trustedCertificates.add(rootCACertificate);
-        X509Certificate issuerX509Certificate = CertificateUtil.getIssuerX509Certificate(leafCredential, trustedCertificates);
-        Assert.assertNull(issuerX509Certificate);
-    }
-
-
-    /**
+   /**
      * Loads the certificate contained in the file at {@param pathname} into a {@link BasicX509Credential} instance.
      *
      * @param certificateFactory the factory used to generate the certificate instance.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 by European Commission
+ * Copyright (c) 2019 by European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be
  * approved by the European Commission - subsequent versions of the
@@ -13,15 +13,9 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
  * implied.
  * See the Licence for the specific language governing permissions and
- * limitations under the Licence.
+ * limitations under the Licence
  */
 package eu.eidas.node.auth.connector;
-
-import java.util.Map;
-
-import javax.annotation.Nonnull;
-import javax.cache.Cache;
-import javax.servlet.http.HttpServletRequest;
 
 import eu.eidas.auth.commons.WebRequest;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
@@ -35,6 +29,11 @@ import eu.eidas.auth.commons.tx.AuthenticationExchange;
 import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
 import eu.eidas.auth.commons.tx.StoredLightRequest;
 import eu.eidas.auth.engine.ProtocolEngineI;
+
+import javax.annotation.Nonnull;
+import javax.cache.Cache;
+import javax.servlet.http.HttpServletRequest;
+import java.util.Map;
 
 /**
  * Interface for working with SAMLObjects.
@@ -137,21 +136,23 @@ public interface ICONNECTORSAMLService {
      * Checks whether the attribute map contains at least one of the mandatory eIDAS attribute set (either for a natural
      * [person or for a legal person)
      *
-     * @param attributes
+     * @param attributes the instance of {@link ImmutableAttributeMap} holding the attributes
+     * @return true if the attribute map contains at least one of the mandatory eIDAS attribute set
      */
     boolean checkMandatoryAttributes(@Nonnull ImmutableAttributeMap attributes);
 
     /**
      * Checks whether the attribute map satifisfies the rule of representation
      *
-     * @param attributes
+     * @param attributes the instance of {@link ImmutableAttributeMap} holding the attributes
+     * @return true if the attribute map satifisfies the rule of representation
      */
     boolean checkRepresentativeAttributes(@Nonnull ImmutableAttributeMap attributes);
 
     /**
      * Returns used ProtocolEngine
      *
-     * @return
+     * @return instance of ProtocolEngine
      */
     ProtocolEngineI getSamlEngine();
 

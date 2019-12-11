@@ -120,6 +120,8 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
 
     private ProtocolEngineFactory nodeProtocolEngineFactory;
 
+    private boolean validatePrefixCountryCodeIdentifiers;
+
 	private static final Pattern SERVICE_METADATA_WHITELIST_PATTERN = Pattern.compile("service.+\\.metadata\\.url");
 
     private FlowIdCache getFlowIdCache() {
@@ -232,8 +234,7 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
      */
     public byte[] extractResponseSAMLToken(WebRequest webRequest) {
 
-        String strSamlToken;
-        strSamlToken = webRequest.getEncodedLastParameterValue(EidasParameterKeys.SAML_RESPONSE);
+        String strSamlToken = webRequest.getEncodedLastParameterValue(EidasParameterKeys.SAML_RESPONSE);
 
         NormalParameterValidator.paramName(EidasParameterKeys.SAML_RESPONSE)
                 .paramValue(strSamlToken)
@@ -259,10 +260,7 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
 
             String serviceMetadataURL = getConnectorUtil().loadConfigServiceMetadataURL(serviceCode);
 
-            NormalParameterValidator.paramName(EidasErrorKey.SERVICE_REDIRECT_URL.toString())
-                    .paramValue(serviceMetadataURL)
-                    .eidasError(EidasErrorKey.SPROVIDER_SELECTOR_INVALID_COUNTRY)
-                    .validate();
+            validateServiceRedirectUrlValue(serviceMetadataURL);
 
             EidasMetadataParametersI eidasMetadataParameters = null;
             try {
@@ -290,11 +288,7 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
 
             LOG.debug("Citizen Country URL " + serviceCode + " URL " + serviceUrl);
 
-            NormalParameterValidator.paramName(EidasErrorKey.SERVICE_REDIRECT_URL.toString())
-                    .paramValue(serviceUrl)
-                    .eidasError(EidasErrorKey.SPROVIDER_SELECTOR_INVALID_COUNTRY)
-                    .validate();
-
+            validateServiceRedirectUrlValue(serviceUrl);
 
             IAuthenticationRequest authnRequest = EidasAuthenticationRequest.builder()
                     .lightRequest(lightRequest)
@@ -358,21 +352,6 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
                         EidasErrors.get(EidasErrorKey.SPROVIDER_SELECTOR_INVALID_SPQAAID.errorCode()),
                         EidasErrors.get(EidasErrorKey.SPROVIDER_SELECTOR_INVALID_SPQAAID.errorMessage()));
             }
-            String metaDataUrl = webRequest.getEncodedLastParameterValue(EidasParameterKeys.SP_METADATA_URL);
-            if (null != metaDataUrl && isIssuedBySelf(authnRequest)) {
-                EidasAuthenticationRequest.Builder eIDASAuthnRequestBuilder =
-                        EidasAuthenticationRequest.builder((IEidasAuthenticationRequest) authnRequest);
-                eIDASAuthnRequestBuilder.issuer(metaDataUrl);
-                authnRequest = eIDASAuthnRequestBuilder.build();
-            }
-            // Checking for antiReplay
-            final boolean isNotPresentInCache = connectorUtil.checkNotPresentInCache(authnRequest.getId(), authnRequest.getCitizenCountryCode()).booleanValue();
-            if (!isNotPresentInCache) {
-                throw new SecurityEIDASException(
-                        EidasErrors.get(EidasErrorKey.SPROVIDER_SELECTOR_INVALID_SAML.errorCode()),
-                        EidasErrors.get(EidasErrorKey.SPROVIDER_SELECTOR_INVALID_SAML.errorMessage()));
-            }
-
             return authnRequest;
         } catch (EIDASSAMLEngineException e) {
             // Special case for propagating the error in case of xxe
@@ -382,6 +361,13 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
                     EidasErrors.get(EidasErrorKey.SAML_ENGINE_NO_METADATA.errorCode()),
                     EidasErrors.get(EidasErrorKey.SAML_ENGINE_NO_METADATA.errorMessage()), e);
         }
+    }
+
+    private void validateServiceRedirectUrlValue(String url) {
+        NormalParameterValidator.paramName(EidasErrorKey.SERVICE_REDIRECT_URL.toString())
+                .paramValue(url)
+                .eidasError(EidasErrorKey.SPROVIDER_SELECTOR_INVALID_COUNTRY)
+                .validate();
     }
 
     private boolean isIssuedBySelf(IAuthenticationRequest authnRequest) {
@@ -488,7 +474,9 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
 
             if (!authnResponse.isFailure()) {
                 checkResponseLoA(connectorAuthnRequest, authnResponse);
-                checkIdentifierFormat(authnResponse);
+                if (isValidatePrefixCountryCodeIdentifiers()) {
+                    checkIdentifierFormat(authnResponse);
+                }
             }
 
             ILightRequest serviceProviderRequest = storedServiceProviderRequest.getRequest();
@@ -804,4 +792,23 @@ public final class AUCONNECTORSAML implements ICONNECTORSAMLService {
     public ProtocolEngineI getSamlEngine() {
         return getSamlEngine(samlServiceInstance);
     }
+
+    /**
+     * Getter for validatePrefixCountryCodeIdentifiers
+     *
+     * @return The validatePrefixCountryCodeIdentifiers value
+     */
+    public boolean isValidatePrefixCountryCodeIdentifiers() {
+        return validatePrefixCountryCodeIdentifiers;
+    }
+
+    /**
+     * Setter for validatePrefixCountryCodeIdentifiers.
+     *
+     * @param validatePrefixCountryCodeIdentifiers The new validatePrefixCountryCodeIdentifiers value.
+     */
+    public void setValidatePrefixCountryCodeIdentifiers(boolean validatePrefixCountryCodeIdentifiers) {
+        this.validatePrefixCountryCodeIdentifiers = validatePrefixCountryCodeIdentifiers;
+    }
+
 }

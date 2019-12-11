@@ -71,6 +71,8 @@ public final class AssertionUtil {
         // empty constructor
     }
 
+    private static boolean enableAddressAttributeSubjectConfirmationData;
+
     /**
      * Generates the assertion for the response.
      *
@@ -164,9 +166,12 @@ public final class AssertionUtil {
         SubjectConfirmation subjectConf =
                 BuilderFactoryUtil.generateSubjectConfirmation(SubjectConfirmation.METHOD_BEARER, dataBearer);
 
+
         SubjectConfirmationData subjectConfirmationData = subjectConf.getSubjectConfirmationData();
-        if (StringUtils.isNotBlank(ipAddress) && SubjectConfirmation.METHOD_BEARER.equals(subjectConf.getMethod())) {
-            subjectConfirmationData.setAddress(ipAddress.trim());
+        if (isEnableAddressAttributeSubjectConfirmationData()) {
+            if (StringUtils.isNotBlank(ipAddress) && SubjectConfirmation.METHOD_BEARER.equals(subjectConf.getMethod())) {
+                subjectConfirmationData.setAddress(ipAddress.trim());
+            }
         }
 
         subjectConfirmationData.setRecipient(request.getAssertionConsumerServiceURL());
@@ -192,11 +197,14 @@ public final class AssertionUtil {
             format = SamlNameIdFormat.UNSPECIFIED.getNameIdFormat();
             nameIdValue = FAILURE_SUBJECT_NAME_ID;
         } else {
-            // check if the request is coming with a format policym, and if yes, then the response has the right one
-            if (StringUtils.isNotBlank(requestFormat) && !requestFormat.equals(responseFormat)) {
-                LOG.error("BUSINESS EXCEPTION : Invalid Response NameIDFormat in the Response, expected '"+requestFormat+"', got '"+responseFormat+"'");
-                throw new EIDASSAMLEngineException(EidasErrorKey.IDP_SAML_RESPONSE.errorCode(),
-                        EidasErrorKey.IDP_SAML_RESPONSE.errorCode());
+            // check if the request is coming with a format policy match with the response policy
+            if (StringUtils.isNotBlank(requestFormat) && !SamlNameIdFormat.UNSPECIFIED.getNameIdFormat().equals(requestFormat)) {
+                if (!requestFormat.equals(responseFormat)) {
+                    LOG.error("BUSINESS EXCEPTION : Invalid Response NameIDFormat in the Response, expected '"
+                            + requestFormat + "', got '" + responseFormat + "'");
+                    throw new EIDASSAMLEngineException(EidasErrorKey.IDP_SAML_RESPONSE.errorCode(),
+                            EidasErrorKey.IDP_SAML_RESPONSE.errorCode());
+                }
             }
             format = responseFormat;
             if (null == format) {
@@ -307,5 +315,23 @@ public final class AssertionUtil {
         }
 
         return authnStatement;
+    }
+
+    /**
+     * Getter for enableAddressAttributeSubjectConfirmationData
+     *
+     * @return The enableAddressAttributeSubjectConfirmationData value
+     */
+    public static boolean isEnableAddressAttributeSubjectConfirmationData() {
+        return enableAddressAttributeSubjectConfirmationData;
+    }
+
+    /**
+     * Setter for enableAddressAttributeSubjectConfirmationData.
+     *
+     * @param enableAddressAttributeSubjectConfirmationData The new enableAddressAttributeSubjectConfirmationData value.
+     */
+    public void setEnableAddressAttributeSubjectConfirmationData(boolean enableAddressAttributeSubjectConfirmationData) {
+        this.enableAddressAttributeSubjectConfirmationData = enableAddressAttributeSubjectConfirmationData;
     }
 }

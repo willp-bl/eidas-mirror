@@ -1,16 +1,19 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
 package eu.eidas.auth.commons;
 
@@ -105,17 +108,13 @@ public final class IncomingRequest implements WebRequest {
         // Get the remote address, if the address came from a reverse proxy server
         // then get the original address rather than the reverse proxy address
         final String remoteAddr;
-        String xForwardedFor = request.getHeader(EidasParameterKeys.HTTP_X_FORWARDED_FOR.toString());
+        String xForwardedFor = request.getHeader(EidasParameterKeys.X_FORWARDED_FOR.toString());
         if (null != xForwardedFor) {
             remoteAddr = xForwardedFor;
         } else {
-            xForwardedFor = request.getHeader(EidasParameterKeys.X_FORWARDED_FOR.toString());
-            if (null != xForwardedFor) {
-                remoteAddr = xForwardedFor;
-            } else {
-                remoteAddr = request.getRemoteAddr();
-            }
+            remoteAddr = request.getRemoteAddr();
         }
+
         return remoteAddr;
     }
 
@@ -123,14 +122,23 @@ public final class IncomingRequest implements WebRequest {
      * Returns RelayState if supplied in request
      *
      * @param request the current request.
-     * @return the remote address from the given request taking into account reverse proxy <em>X-FORWARDED-FOR</em>
-     * headers.
-     * @since 1.1
+     * @return the last RelayState value in the list of values associated with {link EidasParameterKeys.RELAY_STATE} Http parameter
      */
     @Nonnull
     public static String getRelayStateFromRequest(@Nonnull HttpServletRequest request) {
-        final String relayState = request.getParameter(EidasParameterKeys.RELAY_STATE.toString());
-        return relayState;
+
+        ImmutableMap<String, ImmutableList<String>> parameterMap = newParameterMap(request.getParameterMap());
+        ImmutableList<String> parameterValues = parameterMap.get(EidasParameterKeys.RELAY_STATE.toString());
+
+        if (null == parameterValues) {
+            return StringUtils.EMPTY;
+        }
+        if (parameterValues.isEmpty()) {
+            return StringUtils.EMPTY;
+        }
+        int size = parameterValues.size();
+        String relayState = parameterValues.get(size - 1);
+        return encodeForHtmlAttribute(relayState);
     }
 
 

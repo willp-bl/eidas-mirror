@@ -1,16 +1,19 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
 
 package eu.eidas.node.utils;
@@ -70,21 +73,17 @@ public class EidasNodeValidationUtil {
                                                     AUCONNECTORUtil connectorUtil,
                                                     String httpMethod,
                                                     EidasErrorKey reportedErr) {
-        if ("POST".equals(httpMethod) &&
-                !isUrlDestinationValide(connectorUtil.getConfigs().getProperty(EIDASValues.EIDAS_CONNECTOR_POST_URIDEST.toString()), authnRequest.getDestination())) {
-            LOG.info("Expected one of the auth request destination {} but got {}", connectorUtil.getConfigs().getProperty(EIDASValues.EIDAS_CONNECTOR_POST_URIDEST.toString()), authnRequest.getDestination());
-            throw new EidasNodeException(
-                    EidasErrors.get(reportedErr.errorCode()),
-                    EidasErrors.get(reportedErr.errorMessage()),
-                    new InternalErrorEIDASException(
-                            EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INVALID_DEST_URL.errorCode()),
-                            EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INVALID_DEST_URL.errorMessage())
-                    )
-            );
-        } else {
-            if (!isUrlDestinationValide(connectorUtil.getConfigs().getProperty(EIDASValues.EIDAS_CONNECTOR_REDIRECT_URIDEST.toString()), authnRequest.getDestination())) {
-                LOG.info("Expected one of the auth request destination {} but got {}", connectorUtil.getConfigs().getProperty(EIDASValues.EIDAS_CONNECTOR_REDIRECT_URIDEST.toString()), authnRequest.getDestination());
-                throw new InternalErrorEIDASException(
+
+        final String eidasConnectorPostAllowedDestinationValues = connectorUtil.getConfigs().getProperty(EIDASValues.EIDAS_CONNECTOR_POST_URI_DESTINATION_WHITELIST.toString());
+        final String eidasConnectorRedirectAllowedUriDestinationValues = connectorUtil.getConfigs().getProperty(EIDASValues.EIDAS_CONNECTOR_REDIRECT_URI_DESTINATION_WHITELIST.toString());
+
+        boolean isValidUriPostDestination = isUrlDestinationValide(eidasConnectorPostAllowedDestinationValues, authnRequest.getDestination());
+        boolean isValidUriRedirectDestination = isUrlDestinationValide(eidasConnectorRedirectAllowedUriDestinationValues, authnRequest.getDestination());
+
+        if (BindingMethod.POST.getValue().equals(httpMethod)) {
+            if (!isValidUriPostDestination) {
+                LOG.info("Expected one of the auth request destination {} but got {}", eidasConnectorPostAllowedDestinationValues, authnRequest.getDestination());
+                throw new EidasNodeException(
                         EidasErrors.get(reportedErr.errorCode()),
                         EidasErrors.get(reportedErr.errorMessage()),
                         new InternalErrorEIDASException(
@@ -93,6 +92,28 @@ public class EidasNodeValidationUtil {
                         )
                 );
             }
+        } else if (BindingMethod.GET.getValue().equals(httpMethod)) {
+            if (!isValidUriRedirectDestination) {
+                LOG.info("Expected one of the auth request destination {} but got {}", eidasConnectorRedirectAllowedUriDestinationValues, authnRequest.getDestination());
+                throw new EidasNodeException(
+                        EidasErrors.get(reportedErr.errorCode()),
+                        EidasErrors.get(reportedErr.errorMessage()),
+                        new InternalErrorEIDASException(
+                                EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INVALID_DEST_URL.errorCode()),
+                                EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INVALID_DEST_URL.errorMessage())
+                        )
+                );
+            }
+        } else {
+            LOG.info("Binding method {} not allowed.", httpMethod);
+            throw new EidasNodeException(
+                    EidasErrors.get(reportedErr.errorCode()),
+                    EidasErrors.get(reportedErr.errorMessage()),
+                    new InternalErrorEIDASException(
+                            EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INVALID_DEST_URL.errorCode()),
+                            EidasErrors.get(EidasErrorKey.COLLEAGUE_REQ_INVALID_DEST_URL.errorMessage())
+                    )
+            );
         }
     }
 

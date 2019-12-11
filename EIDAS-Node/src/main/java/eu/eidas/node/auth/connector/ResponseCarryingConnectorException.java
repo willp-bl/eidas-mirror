@@ -1,24 +1,27 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
 package eu.eidas.node.auth.connector;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import eu.eidas.auth.commons.exceptions.AbstractEIDASException;
 import eu.eidas.util.Preconditions;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Copied from {@link eu.eidas.auth.commons.exceptions.InternalErrorEIDASException} which is Anti-Pattern of using an
@@ -46,6 +49,8 @@ public final class ResponseCarryingConnectorException extends AbstractEIDASExcep
      * @param errorCode The error code value.
      * @param errorMessage The error message value.
      * @param samlTokenFail The error SAML Token.
+     * @param errorRedirectUrl URL to redirect the citizen to.
+     * @param relayState the relay state if needed to be propagated
      */
     public ResponseCarryingConnectorException(@Nonnull String errorCode,
                                               @Nonnull String errorMessage,

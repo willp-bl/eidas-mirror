@@ -71,6 +71,14 @@ public enum NodeBeanNames {
 
     SPECIFIC_PROXYSERVICE_DEPLOYED_JAR("specificProxyServiceJar"),
 
+    NODE_METADATA_FETCHER("nodeMetadataFetcher"),
+
+    CONNECTOR_METADATA_FETCHER("connectorMetadataFetcher"),
+
+    PROXYSERVICE_METADATA_FETCHER("proxyServiceMetadataFetcher"),
+
+    NODE_PROTOCOL_ENGINE_FACTORY("NodeProtocolEngineFactory")
+
     // put the ; on a separate line to make merges easier
     ;
 

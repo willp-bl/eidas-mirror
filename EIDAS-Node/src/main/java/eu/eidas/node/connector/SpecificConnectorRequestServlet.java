@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 by European Commission
+ * Copyright (c) 2019 by European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be
  * approved by the European Commission - subsequent versions of the
@@ -17,35 +17,38 @@
  */
 package eu.eidas.node.connector;
 
-import java.io.IOException;
-import java.util.Collection;
-
-import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
-import eu.eidas.auth.commons.*;
-import eu.eidas.auth.commons.exceptions.EidasNodeException;
-import eu.eidas.node.*;
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.common.collect.ImmutableSortedSet;
-
+import eu.eidas.auth.commons.EIDASValues;
+import eu.eidas.auth.commons.EidasErrorKey;
+import eu.eidas.auth.commons.EidasParameterKeys;
+import eu.eidas.auth.commons.EidasStringUtil;
+import eu.eidas.auth.commons.IncomingRequest;
+import eu.eidas.auth.commons.WebRequest;
 import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.light.ILightRequest;
 import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.IRequestMessage;
 import eu.eidas.auth.commons.protocol.impl.EidasSamlBinding;
 import eu.eidas.auth.commons.validation.NormalParameterValidator;
+import eu.eidas.node.AbstractNodeServlet;
+import eu.eidas.node.NodeBeanNames;
+import eu.eidas.node.NodeParameterNames;
+import eu.eidas.node.NodeViewNames;
 import eu.eidas.node.utils.PropertiesUtil;
 import eu.eidas.node.utils.SessionHolder;
 import eu.eidas.specificcommunication.SpecificCommunicationDefinitionBeanNames;
 import eu.eidas.specificcommunication.exception.SpecificCommunicationException;
 import eu.eidas.specificcommunication.protocol.impl.SpecificConnectorCommunicationServiceImpl;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import java.io.IOException;
+import java.util.Collection;
 
 import static eu.eidas.node.BeanProvider.getBean;
 
@@ -166,18 +169,18 @@ public class SpecificConnectorRequestServlet extends AbstractNodeServlet {
         httpServletRequest.setAttribute(NodeParameterNames.CITIZEN_COUNTRY_CODE.toString(), authData.getCitizenCountryCode());
         httpServletRequest.setAttribute(EidasParameterKeys.SAML_REQUEST.toString(), samlRequestTokenSaml);
         httpServletRequest.setAttribute(NodeParameterNames.RELAY_STATE.toString(), relayState);
-        // Redirecting where it should be
-        RequestDispatcher dispatcher = httpServletRequest.getRequestDispatcher(NodeViewNames.EIDAS_CONNECTOR_COLLEAGUE_REQUEST_REDIRECT.toString());
 
         session.setAttribute(EidasParameterKeys.SAML_PHASE.toString(), EIDASValues.EIDAS_CONNECTOR_REQUEST);
         SessionHolder.clear();
 
-        dispatcher.forward(httpServletRequest, httpServletResponse);
+        String dispatchURL = NodeViewNames.EIDAS_CONNECTOR_COLLEAGUE_REQUEST_REDIRECT.toString();
+        forwardRequest(dispatchURL, httpServletRequest, httpServletResponse);
     }
 
     private ILightRequest getiLightRequest(HttpServletRequest httpServletRequest,
-    		final Collection<AttributeDefinition<?>> registry) throws ServletException {
-        final String tokenBase64 = httpServletRequest.getParameter(EidasParameterKeys.TOKEN.toString());
+                                           final Collection<AttributeDefinition<?>> registry) throws ServletException {
+        final WebRequest webRequest = new IncomingRequest(httpServletRequest);
+        final String tokenBase64 = webRequest.getEncodedLastParameterValue(EidasParameterKeys.TOKEN.toString());
 
         final SpecificConnectorCommunicationServiceImpl springManagedSpecificConnectorCommunicationService =getBean(SpecificConnectorCommunicationServiceImpl.class, SpecificCommunicationDefinitionBeanNames.SPECIFIC_CONNECTOR_COMMUNICATION_SERVICE.toString());
 

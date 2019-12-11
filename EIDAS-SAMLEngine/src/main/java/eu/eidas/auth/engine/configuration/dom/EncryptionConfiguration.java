@@ -1,28 +1,29 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
 package eu.eidas.auth.engine.configuration.dom;
 
-import java.security.KeyStore;
-import java.security.cert.X509Certificate;
+import com.google.common.collect.ImmutableSet;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-
-import com.google.common.collect.ImmutableSet;
-
-import eu.eidas.util.Preconditions;
+import java.security.KeyStore;
+import java.security.cert.X509Certificate;
+import java.util.Objects;
 
 /**
  * EncryptionConfiguration
@@ -58,11 +59,19 @@ public final class EncryptionConfiguration {
     private final String keyEncryptionAlgorithm;
 
     @Nullable
+    private final String keyEncryptionAlgorithmForKeyAgreement;
+
+    @Nullable
     private final String jcaProviderName;
 
     @Nullable
     private final String encryptionAlgorithmWhiteList;
 
+    /**
+     * @deprecated Use {@link #EncryptionConfiguration(boolean, boolean, boolean, boolean, ImmutableSet, ImmutableSet,
+     *         String, String, String, String, String)} instead.
+     */
+    @Deprecated
     public EncryptionConfiguration(boolean checkedValidityPeriod,
                                    boolean disallowedSelfSignedCertificate,
                                    boolean responseEncryptionMandatory,
@@ -73,6 +82,23 @@ public final class EncryptionConfiguration {
                                    @Nullable String keyEncryptionAlgorithm,
                                    @Nullable String jcaProviderName,
                                    @Nullable String encryptionAlgorithmWhiteList) {
+        this(checkedValidityPeriod, disallowedSelfSignedCertificate, responseEncryptionMandatory,
+                isAssertionEncryptWithKey, decryptionKeyAndCertificates, encryptionCertificates,
+                dataEncryptionAlgorithm, keyEncryptionAlgorithm, null, jcaProviderName,
+                encryptionAlgorithmWhiteList);
+    }
+
+    public EncryptionConfiguration(boolean checkedValidityPeriod,
+                                   boolean disallowedSelfSignedCertificate,
+                                   boolean responseEncryptionMandatory,
+                                   boolean isAssertionEncryptWithKey,
+                                   @Nonnull ImmutableSet<KeyStore.PrivateKeyEntry> decryptionKeyAndCertificates,
+                                   @Nonnull ImmutableSet<X509Certificate> encryptionCertificates,
+                                   @Nullable String dataEncryptionAlgorithm,
+                                   @Nullable String keyEncryptionAlgorithm,
+                                   @Nullable String keyEncryptionAlgorithmForKeyAgreement,
+                                   @Nullable String jcaProviderName,
+                                   @Nullable String encryptionAlgorithmWhiteList) {
         this.checkedValidityPeriod = checkedValidityPeriod;
         this.disallowedSelfSignedCertificate = disallowedSelfSignedCertificate;
         this.responseEncryptionMandatory = responseEncryptionMandatory;
@@ -81,6 +107,7 @@ public final class EncryptionConfiguration {
         this.encryptionCertificates = encryptionCertificates;
         this.dataEncryptionAlgorithm = dataEncryptionAlgorithm;
         this.keyEncryptionAlgorithm = keyEncryptionAlgorithm;
+        this.keyEncryptionAlgorithmForKeyAgreement = keyEncryptionAlgorithmForKeyAgreement;
         this.jcaProviderName = jcaProviderName;
         this.encryptionAlgorithmWhiteList = encryptionAlgorithmWhiteList;
     }
@@ -92,6 +119,7 @@ public final class EncryptionConfiguration {
 
     /**
      * There can be more than one decryption private key and associated certificate because of time-validity overlaps.
+     * @return a {@link ImmutableSet} collection that contains {@link KeyStore.PrivateKeyEntry}.
      */
     @Nonnull
     public ImmutableSet<KeyStore.PrivateKeyEntry> getDecryptionKeyAndCertificates() {
@@ -116,6 +144,11 @@ public final class EncryptionConfiguration {
     @Nullable
     public String getKeyEncryptionAlgorithm() {
         return keyEncryptionAlgorithm;
+    }
+
+    @Nullable
+    public String getKeyEncryptionAlgorithmForKeyAgreement() {
+        return keyEncryptionAlgorithmForKeyAgreement;
     }
 
     public boolean isCheckedValidityPeriod() {
@@ -166,6 +199,9 @@ public final class EncryptionConfiguration {
                                            : that.keyEncryptionAlgorithm != null) {
             return false;
         }
+        if (!Objects.equals(keyEncryptionAlgorithmForKeyAgreement, that.keyEncryptionAlgorithmForKeyAgreement)) {
+            return false;
+        }
         if (jcaProviderName != null ? !jcaProviderName.equals(that.jcaProviderName) : that.jcaProviderName != null) {
             return false;
         }
@@ -183,6 +219,7 @@ public final class EncryptionConfiguration {
         result = 31 * result + (encryptionCertificates != null ? encryptionCertificates.hashCode() : 0);
         result = 31 * result + (dataEncryptionAlgorithm != null ? dataEncryptionAlgorithm.hashCode() : 0);
         result = 31 * result + (keyEncryptionAlgorithm != null ? keyEncryptionAlgorithm.hashCode() : 0);
+        result = 31 * result + (keyEncryptionAlgorithmForKeyAgreement != null ? keyEncryptionAlgorithmForKeyAgreement.hashCode() : 0);
         result = 31 * result + (jcaProviderName != null ? jcaProviderName.hashCode() : 0);
         result = 31 * result + (encryptionAlgorithmWhiteList != null ? encryptionAlgorithmWhiteList.hashCode() : 0);
         return result;
@@ -198,6 +235,7 @@ public final class EncryptionConfiguration {
                 ", encryptionCertificates=" + encryptionCertificates +
                 ", dataEncryptionAlgorithm='" + dataEncryptionAlgorithm + '\'' +
                 ", keyEncryptionAlgorithm='" + keyEncryptionAlgorithm + '\'' +
+                ", keyEncryptionAlgorithmForKeyAgreement='" + keyEncryptionAlgorithmForKeyAgreement + '\'' +
                 ", jcaProviderName='" + jcaProviderName + '\'' +
                 ", encryptionAlgorithmWhiteList='" + encryptionAlgorithmWhiteList + '\'' +
                 '}';

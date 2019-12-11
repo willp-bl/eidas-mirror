@@ -170,51 +170,46 @@
 	<bean id="messageLoggerUtils" class="eu.eidas.node.logging.MessageLoggerUtils">
 		<property name="samlConnectorServiceInstance" value="${saml.connector:Connector}"/>
 		<property name="samlEngineProxyInstanceName" value="${saml.service:Service}"/>
-		<property name="nodeProtocolEngineFactory" ref="NodeProtocolEngineFactory"/>
 		<property name="logMessage" value="${saml.audit:true}"/>
-		<property name="metadataFetcher" ref="nodeMetadataFetcher"/>
-		<property name="countryCode" value="${service.countrycode}"/>
-		<property name="connectorControllerService" ref="connectorController"/>
-		<property name="serviceControllerService" ref="serviceController"/>
 	</bean>
-	<bean id="connectorIncomingLightRequestLogger" class="eu.eidas.node.connector.messages.ConnectorIncomingLightRequestLogger">
+	<bean id="connectorIncomingLightRequestLogger" class="eu.eidas.node.logging.connector.messages.ConnectorIncomingLightRequestLogger">
 		<property name="messageLoggerUtils" ref="messageLoggerUtils"/>
 		<property name="springManagedSpecificConnectorCommunicationServiceExtension" ref="springManagedSpecificConnectorCommunicationServiceExtension"/>
 		<property name="springManagedSpecificConnectorCommunicationService" ref="springManagedSpecificConnectorCommunicationService"/>
 		<property name="flowIdCache" ref="connectorFlowIdCache"/>
 	</bean>
-	<bean id="connectorOutgoingLightResponseLogger" class="eu.eidas.node.connector.messages.ConnectorOutgoingLightResponseLogger">
+	<bean id="connectorOutgoingLightResponseLogger" class="eu.eidas.node.logging.connector.messages.ConnectorOutgoingLightResponseLogger">
 		<property name="messageLoggerUtils" ref="messageLoggerUtils"/>
 		<property name="springManagedSpecificConnectorCommunicationServiceExtension" ref="springManagedSpecificConnectorCommunicationServiceExtension"/>
 		<property name="springManagedSpecificConnectorCommunicationService" ref="springManagedSpecificConnectorCommunicationService"/>
 		<property name="flowIdCache" ref="connectorFlowIdCache"/>
 	</bean>
-	<bean id="proxyServiceOutgoingLightRequestLogger" class="eu.eidas.node.service.messages.ProxyServiceOutgoingLightRequestLogger">
+	<bean id="proxyServiceOutgoingLightRequestLogger" class="eu.eidas.node.logging.service.messages.ProxyServiceOutgoingLightRequestLogger">
 		<property name="messageLoggerUtils" ref="messageLoggerUtils"/>
 		<property name="springManagedSpecificProxyserviceCommunicationServiceExtension" ref="springManagedSpecificProxyserviceCommunicationServiceExtension"/>
 		<property name="springManagedSpecificProxyserviceCommunicationService" ref="springManagedSpecificProxyserviceCommunicationService"/>
 		<property name="flowIdCache" ref="proxyServiceFlowIdCache"/>
 	</bean>
-	<bean id="proxyServiceIncomingLightResponseLogger" class="eu.eidas.node.service.messages.ProxyServiceIncomingLightResponseLogger">
+	<bean id="proxyServiceIncomingLightResponseLogger" class="eu.eidas.node.logging.service.messages.ProxyServiceIncomingLightResponseLogger">
 		<property name="messageLoggerUtils" ref="messageLoggerUtils"/>
 		<property name="springManagedSpecificProxyserviceCommunicationServiceExtension" ref="springManagedSpecificProxyserviceCommunicationServiceExtension"/>
 		<property name="springManagedSpecificProxyserviceCommunicationService" ref="springManagedSpecificProxyserviceCommunicationService"/>
 		<property name="flowIdCache" ref="proxyServiceFlowIdCache"/>
 	</bean>
-	<bean id="connectorOutgoingEidasRequestLogger" class="eu.eidas.node.connector.messages.ConnectorOutgoingEidasRequestLogger">
+	<bean id="connectorOutgoingEidasRequestLogger" class="eu.eidas.node.logging.connector.messages.ConnectorOutgoingEidasRequestLogger">
 		<property name="messageLoggerUtils" ref="messageLoggerUtils"/>
 		<property name="springManagedAUCONNECTORUtil" ref="springManagedAUCONNECTORUtil"/>
 		<property name="flowIdCache" ref="connectorFlowIdCache"/>
 	</bean>
-	<bean id="connectorIncomingEidasResponseLogger" class="eu.eidas.node.connector.messages.ConnectorIncomingEidasResponseLogger">
+	<bean id="connectorIncomingEidasResponseLogger" class="eu.eidas.node.logging.connector.messages.ConnectorIncomingEidasResponseLogger">
 		<property name="messageLoggerUtils" ref="messageLoggerUtils"/>
 		<property name="flowIdCache" ref="connectorFlowIdCache"/>
 	</bean>
-	<bean id="proxyServiceIncomingEidasRequestLogger" class="eu.eidas.node.service.messages.ProxyServiceIncomingEidasRequestLogger">
+	<bean id="proxyServiceIncomingEidasRequestLogger" class="eu.eidas.node.logging.service.messages.ProxyServiceIncomingEidasRequestLogger">
 		<property name="messageLoggerUtils" ref="messageLoggerUtils"/>
 		<property name="flowIdCache" ref="proxyServiceFlowIdCache"/>
 	</bean>
-	<bean id="proxyServiceOutgoingEidasResponseLogger" class="eu.eidas.node.service.messages.ProxyServiceOutgoingEidasResponseLogger">
+	<bean id="proxyServiceOutgoingEidasResponseLogger" class="eu.eidas.node.logging.service.messages.ProxyServiceOutgoingEidasResponseLogger">
 		<property name="messageLoggerUtils" ref="messageLoggerUtils"/>
 		<property name="flowIdCache" ref="proxyServiceFlowIdCache"/>
 	</bean>
@@ -226,6 +221,7 @@
 		<property name="samlService" ref="springManagedAUSERVICESAML" />
 		<property name="serviceUtil" ref="springManagedAUSERVICEUtil" />
 		<property name="serviceMetadataUrl" value="${service.metadata.url}"/>
+		<property name="isPrefixIdentifiersCountryCode" value="${insert.prefix.identifiers.country.code:true}"/>
 	</bean>
 
 	<bean id="springManagedAUSERVICECitizen" class="eu.eidas.node.auth.service.AUSERVICECitizen">
@@ -262,6 +258,7 @@
 		<property name="connectorMetadataUrl" value="${connector.metadata.url}"/>
 		<property name="metadataFetcher" ref="nodeMetadataFetcher"/>
         <property name="nodeProtocolEngineFactory" ref="NodeProtocolEngineFactory"/>
+		<property name="validatePrefixCountryCodeIdentifiers" value="${validate.prefix.country.code.identifiers:true}"/>
 	</bean>
 
 	<bean id="springManagedAUCONNECTORUtil" class="eu.eidas.node.auth.connector.AUCONNECTORUtil">
@@ -277,8 +274,54 @@
 		<property name="configs" ref="nodeProps" />
 	</bean>
 
+	<bean id="springManagedAssertionUtil" class="eu.eidas.auth.engine.xml.opensaml.AssertionUtil">
+		<property name="enableAddressAttributeSubjectConfirmationData" value="${enable.address.attribute.subject.confirmation.data:false}"/>
+	</bean>
+
 	<bean id="nodeFileMetadataProcessor" class="eu.eidas.auth.engine.metadata.impl.FileMetadataLoader">
 		<property name="repositoryPath" value="${metadata.file.repository}"/>
+	</bean>
+
+	<bean id="connectorMetadataFilePath" class="java.lang.String">
+		<constructor-arg value="/metadata/MetadataFetcher_Connector.properties"/>
+	</bean>
+
+	<bean id="connectorMetadataWhitelistProps" class="eu.eidas.auth.commons.io.ReloadableProperties">
+		<constructor-arg value="#{connectorMetadataFilePath}" />
+		<constructor-arg value="#{eidasConfigRepository}" />
+	</bean>
+
+	<bean id="connectorMetadataFetcher" class="eu.eidas.auth.engine.metadata.impl.CachingMetadataFetcher" init-method="initProcessor">
+		<property name="cache" ref="metadataCacheImpl"/>
+		<property name="metadataLoaderPlugin" ref="nodeFileMetadataProcessor"/>
+		<property name="httpRetrievalEnabled" value="${metadata.http.retrieval}"/>
+		<property name="restrictHttp" value="${metadata.restrict.http}"/>
+		<property name="tlsEnabledProtocols" value="${tls.enabled.protocols}"/>
+		<property name="tlsEnabledCiphers" value="${tls.enabled.ciphers}"/>
+		<property name="validateEidasMetadataSignature" value="${metadata.check.signature}"/>
+		<property name="trustedEidasMetadataUrls" value="${node.metadata.not.signed.descriptors:}"/>
+		<property name="whitelistConfigProperties" ref="connectorMetadataWhitelistProps" />
+	</bean>
+
+	<bean id="proxyServiceMetadataFilePath" class="java.lang.String">
+		<constructor-arg value="/metadata/MetadataFetcher_Service.properties"/>
+	</bean>
+
+	<bean id="proxyServiceMetadataWhitelistProps" class="eu.eidas.auth.commons.io.ReloadableProperties">
+		<constructor-arg value="#{proxyServiceMetadataFilePath}" />
+		<constructor-arg value="#{eidasConfigRepository}" />
+	</bean>
+
+	<bean id="proxyServiceMetadataFetcher" class="eu.eidas.auth.engine.metadata.impl.CachingMetadataFetcher" init-method="initProcessor">
+		<property name="cache" ref="metadataCacheImpl"/>
+		<property name="metadataLoaderPlugin" ref="nodeFileMetadataProcessor"/>
+		<property name="httpRetrievalEnabled" value="${metadata.http.retrieval}"/>
+		<property name="restrictHttp" value="${metadata.restrict.http}"/>
+		<property name="tlsEnabledProtocols" value="${tls.enabled.protocols}"/>
+		<property name="tlsEnabledCiphers" value="${tls.enabled.ciphers}"/>
+		<property name="validateEidasMetadataSignature" value="${metadata.check.signature}"/>
+		<property name="trustedEidasMetadataUrls" value="${node.metadata.not.signed.descriptors:}"/>
+		<property name="whitelistConfigProperties" ref="proxyServiceMetadataWhitelistProps" />
 	</bean>
 
     <bean id="nodeMetadataFetcher" class="eu.eidas.auth.engine.metadata.impl.CachingMetadataFetcher" init-method="initProcessor">

@@ -1,21 +1,25 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
 package eu.eidas.auth.commons.xml.opensaml;
 
 import eu.eidas.auth.commons.EidasStringUtil;
 import eu.eidas.auth.commons.xml.DocumentBuilderFactoryUtil;
+import eu.eidas.encryption.config.EidasDefaultSecurityConfiguration;
 import eu.eidas.encryption.exception.MarshallException;
 import eu.eidas.encryption.exception.UnmarshallException;
 import eu.eidas.util.Preconditions;
@@ -28,7 +32,11 @@ import org.opensaml.core.config.InitializationException;
 import org.opensaml.core.config.InitializationService;
 import org.opensaml.core.xml.XMLObject;
 import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
-import org.opensaml.core.xml.io.*;
+import org.opensaml.core.xml.io.Marshaller;
+import org.opensaml.core.xml.io.MarshallerFactory;
+import org.opensaml.core.xml.io.Unmarshaller;
+import org.opensaml.core.xml.io.UnmarshallerFactory;
+import org.opensaml.core.xml.io.UnmarshallingException;
 import org.opensaml.saml.common.xml.SAMLSchemaBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,7 +73,10 @@ public final class OpenSamlHelper {
     static {
         LOG.info("OpenSamlHelper: Initialize OpenSAML");
         try {
-            InitializationService.initialize();
+            EidasDefaultSecurityConfiguration.preInitialize();
+            EidasDefaultSecurityConfiguration.initialize();
+            EidasDefaultSecurityConfiguration.postInitialize();
+
             SECURED_PARSER_POOL = newSecuredBasicParserPool();
 
             XMLObjectProviderRegistrySupport.setParserPool(SECURED_PARSER_POOL);
@@ -97,7 +108,12 @@ public final class OpenSamlHelper {
     private OpenSamlHelper() {
     }
 
+    /**
+     * OpenSaml in EIDAS is very dependent on the presence of BouncyCastleProvider.
+     * Therefore, we should ensure that the EidasDefaultSecurityConfiguration is pre-initialized.
+     */
     public static void initialize() {
+        EidasDefaultSecurityConfiguration.preInitialize();
         //this class has a static initializer for now, this call is to make sure JVM does not optimize
         getSecuredParserPool();
     }

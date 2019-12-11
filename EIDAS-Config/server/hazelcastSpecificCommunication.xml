@@ -126,22 +126,22 @@
 
     <map name="specificNodeConnectorRequestProviderCacheService">
         <in-memory-format>BINARY</in-memory-format>
-        <time-to-live-seconds>300</time-to-live-seconds><!-- 5 minutes -->
+        <time-to-live-seconds>420</time-to-live-seconds><!-- 7 minutes -->
         <eviction-policy>LRU</eviction-policy>
     </map>
     <map name="nodeSpecificProxyserviceRequestProviderCacheService">
         <in-memory-format>BINARY</in-memory-format>
-        <time-to-live-seconds>300</time-to-live-seconds><!-- 5 minutes -->
+        <time-to-live-seconds>420</time-to-live-seconds><!-- 7 minutes -->
         <eviction-policy>LRU</eviction-policy>
     </map>
     <map name="specificNodeProxyserviceResponseProviderCacheService">
         <in-memory-format>BINARY</in-memory-format>
-        <time-to-live-seconds>300</time-to-live-seconds><!-- 5 minutes -->
+        <time-to-live-seconds>420</time-to-live-seconds><!-- 7 minutes -->
         <eviction-policy>LRU</eviction-policy>
     </map>
     <map name="nodeSpecificConnectorResponseProviderCacheService">
         <in-memory-format>BINARY</in-memory-format>
-        <time-to-live-seconds>300</time-to-live-seconds><!-- 5 minutes -->
+        <time-to-live-seconds>420</time-to-live-seconds><!-- 7 minutes -->
         <eviction-policy>LRU</eviction-policy>
     </map>
 

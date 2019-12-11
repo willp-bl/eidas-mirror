@@ -19,26 +19,6 @@
 
 package eu.eidas.engine.test.simple.eidas;
 
-import static eu.eidas.engine.EidasAttributeTestUtil.newAttributeDefinition;
-import static eu.eidas.engine.EidasAttributeTestUtil.newEidasAttributeDefinition;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.util.HashMap;
-import java.util.Map;
-
-import org.junit.FixMethodOrder;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.runners.MethodSorters;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import eu.eidas.auth.commons.EidasErrorKey;
 import eu.eidas.auth.commons.EidasErrors;
 import eu.eidas.auth.commons.EidasStringUtil;
@@ -56,6 +36,26 @@ import eu.eidas.auth.engine.ProtocolEngineI;
 import eu.eidas.auth.engine.core.eidas.EidasProtocolProcessor;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineException;
 import eu.eidas.engine.test.simple.SSETestUtils;
+import org.junit.FixMethodOrder;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+import org.junit.runners.MethodSorters;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import static eu.eidas.engine.EidasAttributeTestUtil.newAttributeDefinition;
+import static eu.eidas.engine.EidasAttributeTestUtil.newEidasAttributeDefinition;
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * The Class EidasAuthRequestTest performs unit test for EIDAS format requests
@@ -212,7 +212,11 @@ public class EidasAuthRequestTest {
      * Test generate authentication request empty personal attribute name error.
      */
     @Test
-    public void testGenerateAuthnRequestPALsErr1() {
+    public void testGenerateAuthnRequestPALsErr1() throws EIDASSAMLEngineException {
+        thrown.expect(EIDASSAMLEngineException.class);
+        thrown.expectMessage(containsString("Error (no. 202005) processing request"));
+        thrown.expectMessage(containsString("No requested attribute (request issuer:"));
+
         ImmutableAttributeMap emptyAttributeMap = new ImmutableAttributeMap.Builder().build();
         IAuthenticationRequest request = new EidasAuthenticationRequest.Builder().destination(destination)
                 .providerName(spName)
@@ -226,12 +230,7 @@ public class EidasAuthRequestTest {
                 .nameIdFormat(SamlNameIdFormat.PERSISTENT.toString())
                 .build();
 
-        try {
-            getEngine().generateRequestMessage(request, null);
-            fail("generateRequestMessage(...) should've thrown an EIDASSAMLEngineException!");
-        } catch (EIDASSAMLEngineException e) {
-            LOG.error("Error");
-        }
+        getEngine().generateRequestMessage(request, null);
     }
 
     /**
@@ -265,7 +264,10 @@ public class EidasAuthRequestTest {
      * Test generate authentication request error provider name null.
      */
     @Test
-    public void testGenerateAuthnRequestSPNAmeErr1() {
+    public void testGenerateAuthnRequestSPNAmeErr1() throws EIDASSAMLEngineException {
+        thrown.expect(EIDASSAMLEngineException.class);
+        thrown.expectMessage(containsString("Error (no. 203007) processing request"));
+        thrown.expectMessage(containsString("Service Provider is mandatory"));
 
         IAuthenticationRequest request = new EidasAuthenticationRequest.Builder().destination(destination)
                 .levelOfAssurance(LEVEL_OF_ASSURANCE)
@@ -278,19 +280,17 @@ public class EidasAuthRequestTest {
                 .nameIdFormat(SamlNameIdFormat.PERSISTENT.toString())
                 .build();
 
-        try {
-            getEngine().generateRequestMessage(request, null);
-            fail("generateRequestMessage(...) should've thrown an EIDASSAMLEngineException!");
-        } catch (EIDASSAMLEngineException e) {
-            LOG.error("Error");
-        }
+        getEngine().generateRequestMessage(request, null);
     }
 
     /**
      * Test generate authentication request service provider application null.
      */
     @Test
-    public void testGenerateAuthnRequestApplicationErr() {
+    public void testGenerateAuthnRequestApplicationErr() throws EIDASSAMLEngineException {
+        thrown.expect(EIDASSAMLEngineException.class);
+        thrown.expectMessage(containsString("Error (no. 203007) processing request"));
+        thrown.expectMessage(containsString("Service Provider is mandatory"));
 
         IAuthenticationRequest request = new EidasAuthenticationRequest.Builder().destination(destination)
                 .providerName(null)
@@ -304,13 +304,7 @@ public class EidasAuthRequestTest {
                 .nameIdFormat(SamlNameIdFormat.PERSISTENT.toString())
                 .build();
 
-        try {
-            getEngine().generateRequestMessage(request, null);
-            fail("generateRequestMessage(...) should've thrown an EIDASSAMLEngineException!");
-        } catch (EIDASSAMLEngineException e) {
-            LOG.error("Error: " + e, e);
-            e.printStackTrace();
-        }
+        getEngine().generateRequestMessage(request, null);
     }
 
     /**
@@ -340,7 +334,7 @@ public class EidasAuthRequestTest {
      * Test generate authentication request error with quality authentication assurance level wrong.
      */
     @Test
-    public void testGenerateAuthnRequestLoAErr() {
+    public void testGenerateAuthnRequestLoAErr() throws EIDASSAMLEngineException {
         thrown.expect(EidasNodeException.class);
         thrown.expectMessage(EidasErrors.get(EidasErrorKey.INVALID_LOA_VALUE.errorMessage()));
 
@@ -356,19 +350,17 @@ public class EidasAuthRequestTest {
                 .nameIdFormat(SamlNameIdFormat.PERSISTENT.toString())
                 .build();
 
-        try {
-            getEngine().generateRequestMessage(request, null);
-            fail("generateRequestMessage(...) should've thrown an EIDASSAMLEngineException!");
-        } catch (EIDASSAMLEngineException e) {
-            LOG.error("Error");
-        }
+        getEngine().generateRequestMessage(request, null);
     }
 
     /**
      * Test generate authentication request personal attribute list null value.
      */
     @Test
-    public void testGenerateAuthnRequestPALErr1() {
+    public void testGenerateAuthnRequestPALErr1() throws EIDASSAMLEngineException {
+        thrown.expect(EIDASSAMLEngineException.class);
+        thrown.expectMessage(containsString("Error (no. 202005) processing request"));
+
         IAuthenticationRequest request = new EidasAuthenticationRequest.Builder().destination(destination)
                 .providerName(spName)
                 .levelOfAssurance(LEVEL_OF_ASSURANCE)
@@ -380,12 +372,7 @@ public class EidasAuthRequestTest {
                 .nameIdFormat(SamlNameIdFormat.PERSISTENT.toString())
                 .build();
 
-        try {
-            getEngine().generateRequestMessage(request, null);
-            fail("generateRequestMessage(...) should've thrown an EIDASSAMLEngineException!");
-        } catch (EIDASSAMLEngineException e) {
-            LOG.error("Error");
-        }
+        getEngine().generateRequestMessage(request, null);
     }
 
     /**
@@ -395,12 +382,10 @@ public class EidasAuthRequestTest {
      */
     @Test
     public void testValidateAuthnRequestNullParam() throws EIDASSAMLEngineException {
-        try {
-            getEngine().unmarshallRequestAndValidate(null, "ES"/*,null*/);
-            fail("processValidateRequestToken(...) should've thrown an EIDASSAMLEngineException!");
-        } catch (EIDASSAMLEngineException e) {
-            LOG.error("Error");
-        }
+        thrown.expect(EIDASSAMLEngineException.class);
+        thrown.expectMessage(containsString("Saml authentication request is null"));
+
+        getEngine().unmarshallRequestAndValidate(null, "ES"/*,null*/);
     }
 
     /**
@@ -410,12 +395,10 @@ public class EidasAuthRequestTest {
      */
     @Test
     public void testValidateAuthnRequestErrorEncode() throws EIDASSAMLEngineException {
-        try {
-            getEngine().unmarshallRequestAndValidate(EidasStringUtil.getBytes("messageError"), "ES"/*,null*/);
-            fail("processValidateRequestToken(...) should've thrown an EIDASSAMLEngineException!");
-        } catch (EIDASSAMLEngineException e) {
-            LOG.error("Error");
-        }
+        thrown.expect(EIDASSAMLEngineException.class);
+        thrown.expectMessage(containsString("Error (no. 203007) processing request"));
+
+        getEngine().unmarshallRequestAndValidate(EidasStringUtil.getBytes("messageError"), "ES"/*,null*/);
     }
 
     /**
@@ -469,28 +452,24 @@ public class EidasAuthRequestTest {
     @Test
     public void testValidateAuthnRequestNotTrustedErr1() throws EIDASSAMLEngineException {
 
-        try {
-            ProtocolEngineI engineNotTrusted =
-                    ProtocolEngineFactory.createProtocolEngine("CONF2", EidasProtocolProcessor.INSTANCE);
+        ProtocolEngineI engineNotTrusted =
+                ProtocolEngineFactory.createProtocolEngine("CONF2", EidasProtocolProcessor.INSTANCE);
 
-            IAuthenticationRequest request = new EidasAuthenticationRequest.Builder().destination(destination)
-                    .providerName(spName)
-                    .levelOfAssurance(LEVEL_OF_ASSURANCE)
-                    .assertionConsumerServiceURL(assertConsumerUrl)
-                    .spType(spType)
-                    .requestedAttributes(immutableAttributeMap)
-                    .id(DUMMY_SAML_ID)
-                    .issuer(DUMMY_ISSUER_URI)
-                    .citizenCountryCode("ES")
-                    .nameIdFormat(SamlNameIdFormat.PERSISTENT.toString())
-                    .build();
-            byte[] authReqNotTrust = engineNotTrusted.generateRequestMessage(request, null).getMessageBytes();
+        IAuthenticationRequest request = new EidasAuthenticationRequest.Builder().destination(destination)
+                .providerName(spName)
+                .levelOfAssurance(LEVEL_OF_ASSURANCE)
+                .assertionConsumerServiceURL(assertConsumerUrl)
+                .spType(spType)
+                .requestedAttributes(immutableAttributeMap)
+                .id(DUMMY_SAML_ID)
+                .issuer(DUMMY_ISSUER_URI)
+                .citizenCountryCode("ES")
+                .nameIdFormat(SamlNameIdFormat.PERSISTENT.toString())
+                .build();
+        byte[] authReqNotTrust = engineNotTrusted.generateRequestMessage(request, null).getMessageBytes();
 
-            getEngine().unmarshallRequestAndValidate(authReqNotTrust, "ES"/*,Arrays.asList(DUMMY_ISSUER_URI)*/);
-        } catch (EIDASSAMLEngineException e) {
-            LOG.error("Error");
-            fail("validateEIDASAuthnRequestNotTrusted(...) should not have thrown an EIDASSAMLEngineException!");
-        }
+        getEngine().unmarshallRequestAndValidate(authReqNotTrust, "ES"/*,Arrays.asList(DUMMY_ISSUER_URI)*/);
+
     }
 
     /**
@@ -527,7 +506,7 @@ public class EidasAuthRequestTest {
      * Test generate authentication request service provider application not null.
      */
     @Test
-    public void testGenerateAuthnRequestNADA() {
+    public void testGenerateAuthnRequestNADA() throws EIDASSAMLEngineException {
         IEidasAuthenticationRequest request = new EidasAuthenticationRequest.Builder().destination(destination)
                 .providerName(spName)
                 .levelOfAssurance(LEVEL_OF_ASSURANCE)
@@ -540,20 +519,16 @@ public class EidasAuthRequestTest {
                 .nameIdFormat(SamlNameIdFormat.PERSISTENT.toString())
                 .build();
 
-        try {
-            authRequest = getEngine().generateRequestMessage(request, null).getMessageBytes();
-            getEngine().unmarshallRequestAndValidate(authRequest, "ES"/*,null*/);
-            assertNotNull(request.getSpType());
-        } catch (EIDASSAMLEngineException e) {
-            LOG.error("Error");
-        }
+        authRequest = getEngine().generateRequestMessage(request, null).getMessageBytes();
+        getEngine().unmarshallRequestAndValidate(authRequest, "ES"/*,null*/);
+        assertNotNull(request.getSpType());
     }
 
     /**
      * Test generate authentication request service provider application not null.
      */
     @Test
-    public void testGenerateAuthnRequestWithVIDPAuthenticationBlockAbsent() {
+    public void testGenerateAuthnRequestWithVIDPAuthenticationBlockAbsent() throws EIDASSAMLEngineException {
         IEidasAuthenticationRequest request = new EidasAuthenticationRequest.Builder().destination(destination)
                 .providerName(spName)
                 .levelOfAssurance(LEVEL_OF_ASSURANCE)
@@ -566,13 +541,9 @@ public class EidasAuthRequestTest {
                 .spType("public")
                 .build();
 
-        try {
-            authRequest = getEngine().generateRequestMessage(request, null).getMessageBytes();
-            IAuthenticationRequest authenticationRequest = getEngine().unmarshallRequestAndValidate(authRequest, "ES");
-            assertEquals("public", authenticationRequest.getSpType());
-        } catch (EIDASSAMLEngineException e) {
-            LOG.error("Error");
-        }
+        authRequest = getEngine().generateRequestMessage(request, null).getMessageBytes();
+        IAuthenticationRequest authenticationRequest = getEngine().unmarshallRequestAndValidate(authRequest, "ES");
+        assertEquals("public", authenticationRequest.getSpType());
     }
 
     /**

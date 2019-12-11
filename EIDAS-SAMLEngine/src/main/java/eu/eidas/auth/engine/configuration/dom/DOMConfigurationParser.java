@@ -100,6 +100,7 @@ public final class DOMConfigurationParser {
     /**
      * Read configuration.
      *
+     * @param configurationFileName the default configuration file
      * @return the {@link Map} collection that contains {@link String} as
      * key and {@link InstanceEntry} as value.
      * @throws ProtocolEngineConfigurationException the EIDASSAML engine runtime exception
@@ -130,6 +131,8 @@ public final class DOMConfigurationParser {
     /**
      * Read configuration.
      *
+     * @param configurationFileName the default configuration file
+     * @param inputStream the default configuration file
      * @return the {@link Map} collection that contains {@link String} as
      * key and {@link InstanceEntry} as value.
      * @throws ProtocolEngineConfigurationException the EIDASSAML engine runtime exception
@@ -246,6 +249,8 @@ public final class DOMConfigurationParser {
     /**
      * Generate parameters.
      *
+     * @param configurationFileName the default configuration file
+     * @param instanceName the instance name
      * @param configurationTag the configuration node
      * @return the map< string, string>
      */

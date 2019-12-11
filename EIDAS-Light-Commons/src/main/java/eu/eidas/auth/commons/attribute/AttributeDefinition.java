@@ -18,6 +18,7 @@
 package eu.eidas.auth.commons.attribute;
 
 import eu.eidas.util.Preconditions;
+import org.apache.commons.lang.StringUtils;
 
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
@@ -128,10 +129,11 @@ public final class AttributeDefinition<T> implements Comparable<AttributeDefinit
         @Nonnull
         public Builder<T> attributeValueMarshaller(final String attributeValueMarshallerClassName) {
             try {
+                String trimmedClassName = StringUtils.trim(attributeValueMarshallerClassName);
                 //noinspection unchecked
                 this.attributeValueMarshaller =
                         (AttributeValueMarshaller<T>) AttributeValueMarshallerFactory.newAttributeValueMarshallerInstance(
-                                attributeValueMarshallerClassName);
+                                trimmedClassName);
             } catch (Exception ex) {
                 throw new IllegalArgumentException(
                         "Unable to configure the attributeValueMarshaller: \"" + attributeValueMarshallerClassName
@@ -148,7 +150,8 @@ public final class AttributeDefinition<T> implements Comparable<AttributeDefinit
 
         @Nonnull
         public Builder<T> friendlyName(final String friendlyName) {
-            this.friendlyName = friendlyName;
+            String trimmedFriendlyName = StringUtils.trim(friendlyName);
+            this.friendlyName = trimmedFriendlyName;
             return this;
         }
 
@@ -161,7 +164,8 @@ public final class AttributeDefinition<T> implements Comparable<AttributeDefinit
         @Nonnull
         public Builder<T> nameUri(final String nameUri) {
             try {
-                this.nameUri = new URI(nameUri);
+                String trimmedNameUri = StringUtils.trim(nameUri);
+                this.nameUri = new URI(trimmedNameUri);
             } catch (URISyntaxException use) {
                 throw new IllegalArgumentException("Invalid name URI \"" + nameUri + "\": " + use, use);
             }
@@ -226,7 +230,10 @@ public final class AttributeDefinition<T> implements Comparable<AttributeDefinit
 
         @Nonnull
         public Builder<T> xmlType(final String namespaceUri, final String localPart, final String prefix) {
-            this.xmlType = new QName(namespaceUri, localPart, prefix);
+            String trimmedNamespaceUri = StringUtils.trim(namespaceUri);
+            String trimmedLocalPart = StringUtils.trim(localPart);
+            String trimmedPrefix = StringUtils.trim(prefix);
+            this.xmlType = new QName(trimmedNamespaceUri, trimmedLocalPart, trimmedPrefix);
             return this;
         }
     }
@@ -605,6 +612,9 @@ public final class AttributeDefinition<T> implements Comparable<AttributeDefinit
 
     /**
      * Effective Java, 2nd Ed. : Item 78: Serialization Proxy pattern.
+     *
+     * @param objectInputStream an {@link ObjectInputStream}
+     * @throws InvalidObjectException the validation object is null
      */
     private void readObject(@Nonnull ObjectInputStream objectInputStream) throws InvalidObjectException {
         throw new InvalidObjectException("Serialization Proxy required");
@@ -612,6 +622,9 @@ public final class AttributeDefinition<T> implements Comparable<AttributeDefinit
 
     /**
      * Effective Java, 2nd Ed. : Item 78: Serialization Proxy pattern.
+     *
+     * @param out an {@link ObjectOutputStream}
+     * @throws InvalidObjectException the validation object is null
      */
     private void writeObject(@Nonnull ObjectOutputStream out) throws InvalidObjectException {
         throw new InvalidObjectException("Serialization Proxy required");
@@ -619,6 +632,9 @@ public final class AttributeDefinition<T> implements Comparable<AttributeDefinit
 
     /**
      * Effective Java, 2nd Ed. : Item 78: Serialization Proxy pattern.
+     *
+     * @return an Object
+     * @throws ObjectStreamException the validation object is null
      */
     Object writeReplace() throws ObjectStreamException {
         return new SerializationProxy<T>(this);

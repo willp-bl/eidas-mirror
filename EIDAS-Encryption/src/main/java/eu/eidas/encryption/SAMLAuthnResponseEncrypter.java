@@ -33,7 +33,6 @@ import org.opensaml.saml.saml2.core.Response;
 import org.opensaml.saml.saml2.encryption.Encrypter;
 import org.opensaml.security.credential.Credential;
 import org.opensaml.security.x509.BasicX509Credential;
-import org.opensaml.security.x509.X509Credential;
 import org.opensaml.xmlsec.SecurityConfigurationSupport;
 import org.opensaml.xmlsec.encryption.support.DataEncryptionParameters;
 import org.opensaml.xmlsec.encryption.support.KeyEncryptionParameters;
@@ -45,6 +44,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import se.swedenconnect.opensaml.xmlsec.config.ExtendedDefaultSecurityConfigurationBootstrap;
+import se.swedenconnect.opensaml.xmlsec.encryption.support.ECDHKeyAgreementParameters;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -53,7 +54,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import javax.annotation.concurrent.ThreadSafe;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
-import java.security.cert.X509Certificate;
+import java.security.interfaces.ECPublicKey;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -83,6 +84,8 @@ public final class SAMLAuthnResponseEncrypter {
 
         private String keyEncryptionAlgorithm;
 
+        private String keyEncryptionAlgorithmForKeyAgreement;
+
         public Builder() {
         }
 
@@ -91,6 +94,7 @@ public final class SAMLAuthnResponseEncrypter {
             dataEncryptionAlgorithm = copy.dataEncryptionAlgorithm;
             jcaProviderName = copy.jcaProviderName;
             keyEncryptionAlgorithm = copy.keyEncryptionAlgorithm;
+            keyEncryptionAlgorithmForKeyAgreement = copy.keyEncryptionAlgorithmForKeyAgreement;
         }
 
         public Builder(@Nonnull SAMLAuthnResponseEncrypter copy) {
@@ -98,6 +102,7 @@ public final class SAMLAuthnResponseEncrypter {
             dataEncryptionAlgorithm = copy.dataEncryptionAlgorithm;
             jcaProviderName = copy.jcaProviderName;
             keyEncryptionAlgorithm = copy.keyEncryptionAlgorithm;
+            keyEncryptionAlgorithmForKeyAgreement = copy.keyEncryptionAlgorithmForKeyAgreement;
         }
 
         public SAMLAuthnResponseEncrypter build() {
@@ -120,6 +125,11 @@ public final class SAMLAuthnResponseEncrypter {
             return this;
         }
 
+        public Builder keyEncryptionAlgorithmForKeyAgreement(final String keyEncAlgorithmForKA) {
+            this.keyEncryptionAlgorithmForKeyAgreement = keyEncAlgorithmForKA;
+            return this;
+        }
+
         private void validate() throws IllegalArgumentException {
             if (StringUtils.isBlank(dataEncryptionAlgorithm)) {
                 dataEncryptionAlgorithm = DefaultEncryptionAlgorithm.DEFAULT_DATA_ENCRYPTION_ALGORITHM.getValue();
@@ -128,7 +138,11 @@ public final class SAMLAuthnResponseEncrypter {
                 jcaProviderName = null;
             }
             if (StringUtils.isBlank(keyEncryptionAlgorithm)) {
-                keyEncryptionAlgorithm = DefaultEncryptionAlgorithm.DEFAULT_KEY_ENCRYPTION_ALGORITHM.getValue();
+                keyEncryptionAlgorithm = null;
+            }
+            if (StringUtils.isBlank(keyEncryptionAlgorithmForKeyAgreement)) {
+                keyEncryptionAlgorithmForKeyAgreement =
+                        DefaultEncryptionAlgorithm.DEFAULT_KEY_ENCRYPTION_ALGORITHM_FOR_KEY_AGREEMENT.getValue();
             }
         }
     }
@@ -159,14 +173,18 @@ public final class SAMLAuthnResponseEncrypter {
     @Nonnull
     private final String keyEncryptionAlgorithm;
 
+    @Nonnull
+    private final String keyEncryptionAlgorithmForKeyAgreement;
+
     private SAMLAuthnResponseEncrypter(@Nonnull Builder builder) {
         dataEncryptionAlgorithm = builder.dataEncryptionAlgorithm;
         jcaProviderName = builder.jcaProviderName;
         keyEncryptionAlgorithm = builder.keyEncryptionAlgorithm;
+        keyEncryptionAlgorithmForKeyAgreement = builder.keyEncryptionAlgorithmForKeyAgreement;
     }
 
     public Response encryptSAMLResponse(final Response samlResponse, final Credential credential
-    		, boolean encryptAssertionWithKey)
+    		, boolean isKeyInfoDisplayedAsRSAKey)
             throws EncryptionException {
 
         if (LOGGER.isDebugEnabled()) {
@@ -178,7 +196,7 @@ public final class SAMLAuthnResponseEncrypter {
                 LOGGER.trace("SAML Response XMLObject to encrypt: " + EidasStringUtil.toString(
                         OpenSamlHelper.marshall(samlResponse)));
             }
-            Response encryptedResponse = performEncryption(samlResponse, credential, encryptAssertionWithKey);
+            Response encryptedResponse = performEncryption(samlResponse, credential, isKeyInfoDisplayedAsRSAKey);
 
             if (LOGGER.isTraceEnabled()) {
                 byte[] samlResponseEncrypted = OpenSamlHelper.marshall(encryptedResponse);
@@ -219,6 +237,17 @@ public final class SAMLAuthnResponseEncrypter {
         return keyEncryptionAlgorithm;
     }
 
+    private String getKeyAgreementEncAlgorithm() {
+        return keyEncryptionAlgorithmForKeyAgreement;
+    }
+
+    private String getKeyTransportEncAlgorithm() {
+        if (StringUtils.isBlank(getKeyEncAlgorithm())) {
+            return DefaultEncryptionAlgorithm.DEFAULT_KEY_ENCRYPTION_ALGORITHM.getValue();
+        }
+        return getKeyEncAlgorithm();
+    }
+
     /**
      * Manage specific namespace (e.g.saml2:)
      *
@@ -234,24 +263,14 @@ public final class SAMLAuthnResponseEncrypter {
 
     @Nonnull
     private Response performEncryption(@Nonnull Response samlResponseEncryptee, @Nonnull Credential credential,
-    		boolean encryptAssertionWithKey)
-            throws EncryptionException {
+    		boolean isKeyInfoDisplayedAsKeyValue) throws EncryptionException {
         try {
             // Set Data Encryption parameters
             DataEncryptionParameters encParams = new DataEncryptionParameters();
             encParams.setAlgorithm(getDataEncAlgorithm());
             // Set Key Encryption parameters
-            KeyEncryptionParameters kekParams = new KeyEncryptionParameters();
-            kekParams.setEncryptionCredential(credential);
-            kekParams.setAlgorithm(getKeyEncAlgorithm());
-            KeyInfoGeneratorFactory kigf = SecurityConfigurationSupport.getGlobalEncryptionConfiguration()
-                    .getDataKeyInfoGeneratorManager()
-                    .getDefaultManager()
-                    .getFactory(credential);
-            if (encryptAssertionWithKey){
-            	kigf = createKeyInfoGeneratorFactory((X509Credential) credential);
-            }
-            kekParams.setKeyInfoGenerator(kigf.newInstance());
+            KeyEncryptionParameters kekParams = createKeyEncryptionParameters(credential, isKeyInfoDisplayedAsKeyValue);
+
             // Setup Open SAML Encrypter
             Encrypter encrypter = new Encrypter(encParams, kekParams);
             encrypter.setKeyPlacement(Encrypter.KeyPlacement.INLINE);
@@ -324,13 +343,53 @@ public final class SAMLAuthnResponseEncrypter {
             throw new EncryptionException(e);
         }
     }
-    
-	private static KeyInfoGeneratorFactory createKeyInfoGeneratorFactory(X509Credential credential) {
-		KeyInfoGeneratorFactory keyInfoGenFac;
-		X509Certificate certificate = credential.getEntityCertificate();
-		BasicX509Credential keyInfoCredential = new BasicX509Credential(certificate);
-		keyInfoCredential.setEntityCertificate(certificate);
-		keyInfoGenFac = new BasicKeyInfoGeneratorFactory();
+
+    private KeyEncryptionParameters createKeyEncryptionParameters(@Nonnull Credential credential, boolean isKeyInfoWithPublicKey) {
+        final KeyEncryptionParameters keyEncryptionParameters;
+        if (isECPublicKey(credential)) {
+            keyEncryptionParameters = createECDHKeyAgreementParameters(credential);
+        } else {
+            keyEncryptionParameters = createKeyTransportsParamaters(credential, isKeyInfoWithPublicKey);
+        }
+
+        return keyEncryptionParameters;
+    }
+
+    private boolean isECPublicKey(@Nonnull Credential credential) {
+        return ECPublicKey.class.isInstance(credential.getPublicKey());
+    }
+
+    private KeyEncryptionParameters createECDHKeyAgreementParameters(@Nonnull Credential credential) {
+        ECDHKeyAgreementParameters keyAgreementParameters = new ECDHKeyAgreementParameters();
+        keyAgreementParameters.setPeerCredential(credential);
+        keyAgreementParameters.setAlgorithm(getKeyAgreementEncAlgorithm());
+        keyAgreementParameters.setKeyInfoGenerator(
+                ExtendedDefaultSecurityConfigurationBootstrap
+                        .buildDefaultKeyAgreementKeyInfoGeneratorFactory()
+                        .newInstance());
+        return keyAgreementParameters;
+    }
+
+    private KeyEncryptionParameters createKeyTransportsParamaters(@Nonnull Credential credential, boolean isKeyInfoAsKeyValue) {
+        KeyEncryptionParameters keyEncryptionParameters= new KeyEncryptionParameters();
+        keyEncryptionParameters.setEncryptionCredential(credential);
+        keyEncryptionParameters.setAlgorithm(getKeyTransportEncAlgorithm());
+
+        final KeyInfoGeneratorFactory kigf;
+        if (isKeyInfoAsKeyValue){
+            kigf = createKeyInfoGeneratorFactory();
+        } else {
+            kigf = SecurityConfigurationSupport.getGlobalEncryptionConfiguration()
+                    .getDataKeyInfoGeneratorManager()
+                    .getDefaultManager()
+                    .getFactory(credential);
+        }
+        keyEncryptionParameters.setKeyInfoGenerator(kigf.newInstance());
+        return keyEncryptionParameters;
+    }
+
+    private static KeyInfoGeneratorFactory createKeyInfoGeneratorFactory() {
+		KeyInfoGeneratorFactory keyInfoGenFac = new BasicKeyInfoGeneratorFactory();
 		((BasicKeyInfoGeneratorFactory)keyInfoGenFac).setEmitPublicKeyValue(true);
 		((BasicKeyInfoGeneratorFactory)keyInfoGenFac).setEmitEntityIDAsKeyName(true);
 		((BasicKeyInfoGeneratorFactory)keyInfoGenFac).setEmitKeyNames(true);

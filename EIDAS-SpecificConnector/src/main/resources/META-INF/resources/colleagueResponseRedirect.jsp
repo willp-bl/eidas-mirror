@@ -38,8 +38,7 @@
                     <jsp:include page="include/content-security-header-deactivated.jsp"/>
                     <form id="redirectForm" name="redirectForm" method="post" action="${e:forHtml(spUrl)}">
                         <fmt:message var="redirectingValue" key="spRedirecting.text" bundle="${i18n_eng}"/>
-                        <input type="hidden" id="dummyField" value="${redirectingValue}"
-                        />
+                        <input type="hidden" id="redirectingMessageId" value="${redirectingValue}"/>
                         <h2 id="redirectLabel" class="sub-title"></h2>
                         <input type="hidden" id="SMSSPResponse" name="SMSSPResponse" value="${e:forHtml(smsspToken)}"/>
                         <c:if test="${not empty relayState}">

@@ -52,6 +52,7 @@ import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
@@ -275,24 +276,6 @@ public final class CertificateUtil {
                         unencodedCertificateIssuerPrincipal));
     }
 
-    /**
-     * Retrieves the {@link X509Certificate} which is the issuer of param entityX509Cred from a {@link List} of {@link X509Certificate}
-     *
-     * @param x509Credential the credential which holds the issuer information
-     * @param x509Certificates the list of {@link X509Certificate} where the issuer will be looked up and if present retrieved from
-     * @return the {@link X509Certificate} that is the issuer of param entityX509Cred or null if not found in the param  x509Certificates
-     */
-    public static X509Certificate getIssuerX509Certificate(X509Credential x509Credential, List<X509Certificate> x509Certificates) {
-        String issuerDN = x509Credential.getEntityCertificate().getIssuerDN().getName();
-
-        for(X509Certificate certificate : x509Certificates){
-            if(StringUtils.equals(certificate.getSubjectDN().getName(),issuerDN)) {
-                return certificate;
-            }
-        }
-        return null;
-    }
-
     @Nonnull
     public static X509Certificate toCertificate(@Nonnull String base64Certificate) throws CertificateException {
         Preconditions.checkNotNull(base64Certificate, "base64Certificate");
@@ -329,7 +312,7 @@ public final class CertificateUtil {
         Preconditions.checkNotNull(keyInfo,  KeyInfo.DEFAULT_ELEMENT_LOCAL_NAME);
         final List<X509Certificate> x509CertificatesOut = new ArrayList<>();
 
-        final List<X509Data> x509Datas = keyInfo.getX509Datas();
+        final List<X509Data> x509Datas = getX509Datas(keyInfo);
         if (!x509Datas.isEmpty()) {
             final List<org.opensaml.xmlsec.signature.X509Certificate> x509Certificates = x509Datas.get(0).getX509Certificates();
             for (org.opensaml.xmlsec.signature.X509Certificate x509Certificate : x509Certificates) {
@@ -339,6 +322,18 @@ public final class CertificateUtil {
         }
 
         return x509CertificatesOut;
+    }
+
+
+    @Nonnull
+    private static List<X509Data> getX509Datas(@Nonnull final KeyInfo keyInfo) {
+        Preconditions.checkNotNull(keyInfo,  KeyInfo.DEFAULT_ELEMENT_LOCAL_NAME);
+        if (!keyInfo.getX509Datas().isEmpty()) {
+            return keyInfo.getX509Datas();
+        } else if (!keyInfo.getAgreementMethods().isEmpty()) {
+            return keyInfo.getAgreementMethods().get(0).getRecipientKeyInfo().getX509Datas();
+        }
+        return Collections.emptyList();
     }
 
 
@@ -450,10 +445,10 @@ public final class CertificateUtil {
 	}
 
     /**
-     * Gets all certificates which are in a {@link Signature} as {@link List<X509Certificate>}
+     * Gets the list of {@link X509Certificate} contained in a {@link Signature}
      *
      * @param signature that contains the certificates
-     * @return the List<X509Certificate> of the signature
+     * @return the List of {@link X509Certificate} extracted from the given {@link Signature}
      * @throws CertificateException when could not create a {@link X509Certificate}
      */
     public static List<X509Certificate> getAllSignatureCertificates(Signature signature) throws CertificateException {

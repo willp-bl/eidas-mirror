@@ -1,16 +1,19 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
  */
 
 package eu.eidas.encryption;
@@ -21,24 +24,27 @@ import eu.eidas.auth.commons.xml.opensaml.OpenSamlHelper;
 import eu.eidas.encryption.exception.DecryptionException;
 import eu.eidas.encryption.exception.MarshallException;
 import eu.eidas.encryption.exception.UnmarshallException;
+import eu.eidas.encryption.utils.DecryptionUtils;
 import org.opensaml.saml.saml2.core.EncryptedAssertion;
 import org.opensaml.saml.saml2.core.Response;
 import org.opensaml.security.credential.Credential;
-import org.opensaml.security.credential.CredentialSupport;
 import org.opensaml.security.x509.X509Credential;
-import org.opensaml.xmlsec.encryption.EncryptedKey;
+import org.opensaml.xmlsec.DecryptionParameters;
 import org.opensaml.xmlsec.encryption.support.Decrypter;
-import org.opensaml.xmlsec.keyinfo.impl.StaticKeyInfoCredentialResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.w3c.dom.*;
+import org.w3c.dom.Document;
+import org.w3c.dom.DocumentFragment;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.crypto.SecretKey;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -56,7 +62,7 @@ public final class SAMLAuthnResponseDecrypter {
     }
 
     @Nonnull
-    private Response performDecryption(@Nonnull Response samlResponseDecryptee, @Nonnull X509Credential credential)
+    private Response performDecryption(@Nonnull Response samlResponseDecryptee, @Nonnull Credential... credentials)
             throws DecryptionException, MarshallException {
 
         try {
@@ -66,28 +72,15 @@ public final class SAMLAuthnResponseDecrypter {
             }
             List<DocumentFragment> decryptedAssertionFragments = new ArrayList<>();
             for (EncryptedAssertion encAssertion : samlResponseDecryptee.getEncryptedAssertions()) {
-                EncryptedKey encryptedSymmetricKey =
-                        encAssertion.getEncryptedData().getKeyInfo().getEncryptedKeys().get(0);
 
-                //KEY DECRYPTER
-                Decrypter keyDecrypter = new Decrypter(null, new StaticKeyInfoCredentialResolver(credential), null);
-                SecretKey dataDecKey = (SecretKey) keyDecrypter.decryptKey(encryptedSymmetricKey,
-                        encAssertion.getEncryptedData()
-                                .getEncryptionMethod()
-                                .getAlgorithm());
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debug("SAML Response decrypting with data encryption algorithm: '"
                             + encAssertion.getEncryptedData().getEncryptionMethod().getAlgorithm() + "'");
                 }
 
-                //DATA DECRYPTER
-                Credential dataDecCredential = CredentialSupport.getSimpleCredential(dataDecKey);
-                Decrypter dataDecrypter =
-                        new Decrypter(new StaticKeyInfoCredentialResolver(dataDecCredential), null, null);
-                dataDecrypter.setRootInNewDocument(false);
-                if (getJcaProviderName() != null) {
-                    dataDecrypter.setJCAProviderName(getJcaProviderName());
-                }
+                final List<Credential> credentialsList = Arrays.asList(credentials);
+                final Decrypter dataDecrypter = getDataDecrypter(credentialsList);
+
                 //https://jira.spring.io/browse/SES-148
                 //http://digitaliser.dk/forum/2621692
                 DocumentFragment decryptedAssertionFragment =
@@ -173,10 +166,40 @@ public final class SAMLAuthnResponseDecrypter {
         }
     }
 
+    /**
+     * Performs a decryption on every encrypted assertions of the given response with the given credential.
+     * @param samlResponseEncrypted
+     *          the response for which encrypted assertions should be decrypted.
+     * @param credential
+     *          the credential that should use to decrypt the response.
+     * @return the response with assertions corresponding to the decryption of the encrypted assertions
+     * @throws DecryptionException
+     *      if an error occurs during the decryption.
+     */
     public Response decryptSAMLResponse(Response samlResponseEncrypted, X509Credential credential)
             throws DecryptionException {
         try {
             return performDecryption(samlResponseEncrypted, credential);
+        } catch (MarshallException e) {
+            throw new DecryptionException(e);
+        }
+    }
+
+    /**
+     * Performs a decryption on every encrypted assertions of the given response with the appropriate
+     * credential from the array of credentials received in parameters.
+     * @param samlResponseEncrypted
+     *          the response for which encrypted assertions should be decrypted.
+     * @param credentials
+     *          An array of credentials that can be used for the response's decryption.
+     * @return the response with assertions corresponding to the decryption of the encrypted assertions.
+     * @throws DecryptionException
+     *      if an error occurs during the decryption.
+     */
+    public Response decryptSAMLResponse(Response samlResponseEncrypted, Credential... credentials)
+            throws DecryptionException {
+        try {
+            return performDecryption(samlResponseEncrypted, credentials);
         } catch (MarshallException e) {
             throw new DecryptionException(e);
         }
@@ -195,6 +218,16 @@ public final class SAMLAuthnResponseDecrypter {
         }
 
         return samlResponseDecrypted;
+    }
+
+    private Decrypter getDataDecrypter(final List<Credential> credentials) {
+        DecryptionParameters decryptionParameters = DecryptionUtils.createDecryptionParameters(credentials);
+        Decrypter dataDecrypter = new Decrypter(decryptionParameters);
+        dataDecrypter.setRootInNewDocument(false);
+        if (getJcaProviderName() != null) {
+            dataDecrypter.setJCAProviderName(getJcaProviderName());
+        }
+        return dataDecrypter;
     }
 
     @Nullable

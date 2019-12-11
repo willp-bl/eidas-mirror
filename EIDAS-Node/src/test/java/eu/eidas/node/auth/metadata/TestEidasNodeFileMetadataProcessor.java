@@ -113,30 +113,20 @@ public class TestEidasNodeFileMetadataProcessor {
     }
 
     @Test
-    public void testGetEntityDescriptorsEmpty(){
+    public void testGetEntityDescriptorsEmpty() throws EIDASMetadataProviderException {
         FileMetadataLoader processor=new FileMetadataLoader();
         processor.setRepositoryPath(FILEREPO_DIR_WRITE_EMPTY);
-        List<EntityDescriptorContainer> list = null;
-        try {
-            list = processor.getEntityDescriptors();
-        } catch (EIDASMetadataProviderException e) {
-            e.printStackTrace();
-        }
+        List<EntityDescriptorContainer> list = processor.getEntityDescriptors();
         Assert.assertTrue(list == null || list.isEmpty());
     }
     @Test
-    public void testGetEntityDescriptors(){
+    public void testGetEntityDescriptors() throws EIDASMetadataProviderException {
         FileMetadataLoader processor=new FileMetadataLoader();
         processor.setRepositoryPath(FILEREPO_DIR_WRITE1);
-        List<EntityDescriptorContainer> list = null;
-        try {
-            list = processor.getEntityDescriptors();
-        } catch (EIDASMetadataProviderException e) {
-            e.printStackTrace();
-        }
+        List<EntityDescriptorContainer> list = processor.getEntityDescriptors();
         Assert.assertTrue(list.size()==2);
 
-        Map<String,EntityDescriptor> entityDescriptors = new HashMap<String, EntityDescriptor>();
+        Map<String,EntityDescriptor> entityDescriptors = new HashMap<>();
         entityDescriptors.put(list.get(0).getEntityDescriptors().get(0).getEntityID(), list.get(0).getEntityDescriptors().get(0));
         entityDescriptors.put(list.get(1).getEntityDescriptors().get(0).getEntityID(), list.get(1).getEntityDescriptors().get(0));
 
@@ -150,28 +140,14 @@ public class TestEidasNodeFileMetadataProcessor {
     }
 
     @Test
-    public void testUpdateEntityDescriptors() throws IOException {
+    public void testUpdateEntityDescriptors() throws IOException, EIDASMetadataProviderException, InterruptedException {
         FileMetadataLoader processor=new FileMetadataLoader();
         processor.setRepositoryPath(FILEREPO_DIR_WRITE2);
-        List<EntityDescriptorContainer> list = null;
-        try {
-            list = processor.getEntityDescriptors();
-        } catch (EIDASMetadataProviderException e) {
-            e.printStackTrace();
-        }
+        List<EntityDescriptorContainer> list = processor.getEntityDescriptors();
         Assert.assertTrue(list.size()==2);
         Files.copy(Paths.get(FILE_PATH_READ_UPD), Paths.get(FILE_PATH_WRITE2), REPLACE_EXISTING);
-
-        try{
-            Thread.sleep(3000);
-        }catch(InterruptedException ie){
-            Assert.fail("got interrupted exception");
-        }
-        try {
-            list = processor.getEntityDescriptors();
-        } catch (EIDASMetadataProviderException e) {
-            e.printStackTrace();
-        }
+        Thread.sleep(3000);
+        list = processor.getEntityDescriptors();
         Assert.assertTrue(list.size()==3);
     }
 

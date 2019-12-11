@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 by European Commission
+ * Copyright (c) 2019 by European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be
  * approved by the European Commission - subsequent versions of the
@@ -13,7 +13,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
  * implied.
  * See the Licence for the specific language governing permissions and
- * limitations under the Licence.
+ * limitations under the Licence
  */
 package eu.eidas.node.auth.connector;
 
@@ -21,7 +21,6 @@ import eu.eidas.auth.commons.EIDASValues;
 import eu.eidas.auth.commons.EidasParameterKeys;
 import eu.eidas.auth.commons.WebRequest;
 import eu.eidas.auth.commons.cache.ConcurrentCacheService;
-import eu.eidas.auth.commons.cache.ConcurrentMapService;
 import eu.eidas.auth.commons.protocol.eidas.LevelOfAssurance;
 import eu.eidas.node.auth.AUNODEUtil;
 import org.apache.commons.lang.StringUtils;
@@ -129,6 +128,7 @@ public final class AUCONNECTORUtil extends AUNODEUtil {
      * Loads the skew time of a ProxyService, with the Id serviceId, from the properties file.
      *
      * @param serviceId the Id of the ProxyService.
+     * @param skewType the skew time
      * @return String with the URL of the ProxyService. null if no URL was found.
      */
     public Long loadConfigServiceTimeSkewInMillis(final String serviceId, CONSUMER_SKEW_TIME skewType) {

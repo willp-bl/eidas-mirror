@@ -39,8 +39,7 @@
                             <jsp:include page="/internal/content-security-header-deactivated.jsp"/>
                             <fmt:message var="redirectingValue" key="msSpecificConnectorRedirecting.text"
                                          bundle="${i18n_eng}"/>
-                            <input type="hidden" id="dummyField" value="${e:forHtml(redirectingValue)}"
-                            />
+                            <input type="hidden" id="redirectingMessageId" value="${e:forHtml(redirectingValue)}"/>
                             <h2 id="tokenConnectorRedirectLabel" class="sub-title"></h2>
                             <form id="redirectForm" name="redirectForm" action="${e:forHtml(redirectUrl)}" method="${e:forHtml(binding)}">
                                 <input type="hidden" name="token" id="token" value="${e:forHtml(token)}"/>

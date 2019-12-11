@@ -1,16 +1,19 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
 package eu.eidas.auth.commons;
 
@@ -152,11 +155,6 @@ public enum EidasParameterKeys {
     EXT_SIG_CREATOR_MOD("external-sig-module"),
 
     /**
-     * Represents the 'http-x-forwarded-for' parameter constant.
-     */
-    HTTP_X_FORWARDED_FOR("http-x-forwarded-for"),
-
-    /**
      * Represents the 'RelayState' parameter constant.
      */
     RELAY_STATE("RelayState"),
@@ -170,6 +168,11 @@ public enum EidasParameterKeys {
      * TODO: to be removed when transition period ends
      */
     INCLUDE_ASSERTION_FAIL_RESPONSE_APPLICATION_IDENTIFIERS("include.assertion.fail.response.application.identifiers"),
+    /**
+     * Represents the activation of replacement of the citizen country code by
+     * sp country code on Proxy-Service's Light Request side if set to true
+     */
+    REPLACE_CITIZEN_COUNTRY_CODE_BY_SP_COUNTRY_CODE_IN_PROXYSERVICE_LIGHT_REQUEST("replace.citizenCountryCode.by.spCountryCode.in.proxyService.lightRequest"),
     /**
      * Represents the 'internal-authentication' parameter constant.
      */
@@ -387,11 +390,13 @@ public enum EidasParameterKeys {
     EIDAS_CONNECTOR_COUNTRY("EIDASConnectorCountry"),
 
     METADATA_TIMEOUT("metadata.request.timeout"),
+    METADATA_FETCHER_WHITELIST("metadata.location.whitelist"),
+    METADATA_FETCHER_WHITELIST_FLAG("metadata.location.whitelist.use"),
+
     EIDAS_CONNECTOR_ACTIVE("active.module.connector"),
     EIDAS_SERVICE_ACTIVE("active.module.service"),
     EIDAS_CONNECTOR_TRUSTED_SP("trusted.sp.domains"),
     HASH_DIGEST_CLASS("hashDigest.className"),
-    SP_METADATA_URL("spmetadataurl"),
     EIDAS_SERVICE_LOA("saml.loa"),
     EIDAS_NAMEID_FORMAT("eidas.nameid"),
     /**
@@ -417,6 +422,7 @@ public enum EidasParameterKeys {
 
     TOKEN("token"),
 
+    BLOCK_BOUNCY_CASTLE_PROVIDER_REINSTALL("block.security.provider.reinstall")
     // put the ; on a separate line to make merges easier
     ;
 

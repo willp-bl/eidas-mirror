@@ -227,13 +227,13 @@ public abstract class AbstractProtocolSigner implements ProtocolSignerI, Metadat
             this.metadataKeystoreCertificates = null;
         }
 
-        if (privateMetadataSigningCredential instanceof BasicX509Credential) {
+        if (privateMetadataSigningCredential instanceof BasicX509Credential && null != metadataKeystoreCertificates) {
             final BasicX509Credential privateMetadataSigningCredential = (BasicX509Credential) this.privateMetadataSigningCredential;
             //TODO reverted order of certificates in the chain to allow backward compatibility with eIDAS 1.4.1. Change it when this is no longer needed
             privateMetadataSigningCredential.setEntityCertificateChain(metadataKeystoreCertificates.asList().reverse());
         }
 
-        if (publicMetadataSigningCredential instanceof BasicX509Credential) {
+        if (publicMetadataSigningCredential instanceof BasicX509Credential && null != metadataKeystoreCertificates) {
             final BasicX509Credential publicMetadataSigningCredential = (BasicX509Credential) this.publicMetadataSigningCredential;
             //TODO reverted order of certificates in the chain to allow backward compatibility with eIDAS 1.4.1. Change it when this is no longer needed
             publicMetadataSigningCredential.setEntityCertificateChain(metadataKeystoreCertificates.asList().reverse());

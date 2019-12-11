@@ -24,9 +24,11 @@ import eu.eidas.auth.commons.WebRequest;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.light.ILightResponse;
 import eu.eidas.auth.commons.light.impl.LightResponse;
+import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.IAuthenticationResponse;
 import eu.eidas.auth.commons.tx.AuthenticationExchange;
 import eu.eidas.auth.commons.tx.BinaryLightToken;
+import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
 import eu.eidas.auth.commons.validation.NormalParameterValidator;
 import eu.eidas.auth.engine.xml.opensaml.SAMLEngineUtils;
 import eu.eidas.node.AbstractNodeServlet;
@@ -105,6 +107,9 @@ public final class ColleagueResponseServlet extends AbstractNodeServlet {
     @Override
     public void doPost(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws ServletException {
         try {
+            // Should not process anything if connector module inactive
+            PropertiesUtil.checkConnectorActive();
+
             // Prevent cookies from being accessed through client-side script with renew of session.
             setHTTPOnlyHeaderToSession(false, httpServletRequest, httpServletResponse);
             SessionHolder.setId(httpServletRequest.getSession());
@@ -133,13 +138,16 @@ public final class ColleagueResponseServlet extends AbstractNodeServlet {
             IAuthenticationResponse authResponse = authenticationExchange.getConnectorResponse();
 			ImmutableAttributeMap respAttributes = authResponse.getAttributes();
 
-			// Build the LightResponse
-            LightResponse.Builder lightResponseBuilder =
+            final String eidasSamlRequestRelayState = getRelayStateStoredEidasRequest(authenticationExchange);
+
+            // Build the LightResponse
+            final LightResponse.Builder lightResponseBuilder =
                     LightResponse.builder(authResponse)
                             .id(SAMLEngineUtils.generateNCName())
-                            .attributes(respAttributes);
-            LightResponse lightResponse = lightResponseBuilder.build();
+                            .attributes(respAttributes)
+                            .relayState(eidasSamlRequestRelayState);
 
+            final LightResponse lightResponse = lightResponseBuilder.build();
             // Call the specific module
             sendResponse(lightResponse, httpServletRequest, httpServletResponse);
 
@@ -150,18 +158,31 @@ public final class ColleagueResponseServlet extends AbstractNodeServlet {
         }
     }
 
+    private String getRelayStateStoredEidasRequest(final AuthenticationExchange authenticationExchange) {
+        final StoredAuthenticationRequest storedAuthenticationRequest = authenticationExchange.getStoredRequest();
+        final IAuthenticationRequest iAuthenticationRequest = storedAuthenticationRequest.getRequest();
+        final String eIDASSamlRequestRelayState = iAuthenticationRequest.getRelayState();
+
+        return eIDASSamlRequestRelayState;
+    }
+
     private void sendResponse(ILightResponse lightResponse, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws ServletException {
         try {
             final BinaryLightToken binaryLightToken = putResponseInCommunicationCache(lightResponse);
             setTokenRedirectAttributes(httpServletRequest, binaryLightToken);
 
-            RequestDispatcher dispatcher = getServletContext().getRequestDispatcher(NodeSpecificViewNames.TOKEN_REDIRECT_MS_CONNECTOR.toString());
-            dispatcher.forward(httpServletRequest, httpServletResponse);
+            String dispatchURL = NodeSpecificViewNames.TOKEN_REDIRECT_MS_CONNECTOR.toString();
+            forwardRequest(dispatchURL, httpServletRequest, httpServletResponse);
         } catch (ServletException | IOException e) {
             getLogger().error("SpecificException" + e, e);
             // Illegal state: exception received from the specific module
             throw new ServletException("Unable to send specific response: " + e, e);
         }
+    }
+
+    @Override
+    protected RequestDispatcher getServletDispatcher(String url) {
+        return getServletContext().getRequestDispatcher(url);
     }
 
     private BinaryLightToken putResponseInCommunicationCache(final ILightResponse lightResponse) throws ServletException {

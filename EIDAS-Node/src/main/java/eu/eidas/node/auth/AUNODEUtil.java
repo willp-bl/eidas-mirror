@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 by European Commission
+ * Copyright (c) 2019 by European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be
  * approved by the European Commission - subsequent versions of the
@@ -13,26 +13,24 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
  * implied.
  * See the Licence for the specific language governing permissions and
- * limitations under the Licence.
+ * limitations under the Licence
  */
 package eu.eidas.node.auth;
 
-import eu.eidas.auth.commons.cache.ConcurrentMapService;
 import eu.eidas.engine.exceptions.EIDASSAMLEngineRuntimeException;
 import eu.eidas.node.logging.LoggingMarkerMDC;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.cache.Cache;
 import java.util.Properties;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * Abstract part used for the anti replay cache.
  */
 public abstract class AUNODEUtil {
 
-    private ConcurrentMapService concurrentMapService;
     public abstract Properties getConfigs() ;
 
     /**
@@ -53,26 +51,37 @@ public abstract class AUNODEUtil {
     }
 
     /**
-     * Method used to check if the saml request has not already been processed (replay attack)
-     * @param samlId the SAMLID (uuid) processed
+     * Method used to check if the request/response has not already been processed (replay attack).
+     * Possible checked request types are {@link eu.eidas.auth.commons.light.impl.LightRequest} and SAML Request
+     * Possible checked response types are {@link eu.eidas.auth.commons.light.impl.LightResponse} and SAML Response
+     * @param messageId the SAMLID (uuid) processed
      * @param citizenCountryCode the citizen country code
-     * @return true if the request has not yet been processed by the system
+     * @return true if the request/response has not yet been processed by the system
      */
-    public Boolean checkNotPresentInCache(final String samlId, final String citizenCountryCode){
+    public Boolean checkNotPresentInCache(final String messageId, final String citizenCountryCode){
         if (antiReplayCache==null) {
             throw new EIDASSAMLEngineRuntimeException("Bad configuration for the distributed cache, method should set the concurrentMap");
         }
-        if (null != samlId){
-            final boolean wasAbsent = antiReplayCache.putIfAbsent(citizenCountryCode + "/" + samlId, Boolean.TRUE);
+        if (null != messageId){
+            final boolean wasAbsent = antiReplayCache.putIfAbsent(citizenCountryCode + "/" + messageId, Boolean.TRUE);
             final boolean isReplayAttack = !wasAbsent;
 
             if (isReplayAttack) {
-                LOG.warn(LoggingMarkerMDC.SECURITY_WARNING, "Replay attack : Checking in Eidas Node antiReplayCache for samlId " + samlId + " ! ");
+                LOG.warn(LoggingMarkerMDC.SECURITY_WARNING, "Replay attack : Checking in Eidas Node antiReplayCache for samlId " + messageId + " ! ");
                 return Boolean.FALSE;
             }
-            LOG.debug("Checking in Eidas Node antiReplayCache for samlId " + samlId + " : ok");
+            LOG.debug("Checking in Eidas Node antiReplayCache for samlId " + messageId + " : ok");
         }
         return Boolean.TRUE;
     }
 
+    /**
+     * Method used to check if the request/response has not already been processed (replay attack).
+     * Checked response type is {@link eu.eidas.auth.commons.light.impl.LightResponse}
+     * @param messageId the SAMLID (uuid) processed
+     * @return true if the request/response has not yet been processed by the system
+     */
+    public Boolean checkNotPresentInCache(final String messageId){
+        return checkNotPresentInCache(messageId, StringUtils.EMPTY);
+    }
 }

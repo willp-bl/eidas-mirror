@@ -281,8 +281,8 @@ public enum EIDASValues {
     DISABLE_CHECK_REPRESENTATIVE_ATTRS("disable.check.representative.attributes"),
     /*TODO: remove this attribute after trasition period*/
     EIDAS_METADATA_HIDE_LOA("metadata.hide.loatype"),
-    EIDAS_CONNECTOR_REDIRECT_URIDEST("connector.url.redirect.location.whitelist"),
-    EIDAS_CONNECTOR_POST_URIDEST("connector.url.post.location.whitelist"),
+    EIDAS_CONNECTOR_REDIRECT_URI_DESTINATION_WHITELIST("connector.url.redirect.location.whitelist"),
+    EIDAS_CONNECTOR_POST_URI_DESTINATION_WHITELIST("connector.url.post.location.whitelist"),
 
     EIDAS_PROTOCOL_VERSION("eidas.protocol.version"),
     EIDAS_APPLICATION_IDENTIFIER("eidas.application.identifier"),

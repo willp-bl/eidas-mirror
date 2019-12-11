@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 by European Commission
+ * Copyright (c) 2019 by European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be
  * approved by the European Commission - subsequent versions of the
@@ -13,7 +13,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
  * implied.
  * See the Licence for the specific language governing permissions and
- * limitations under the Licence.
+ * limitations under the Licence
  */
 package eu.eidas.node.auth.connector.tests;
 
@@ -24,7 +24,6 @@ import eu.eidas.auth.commons.EIDASValues;
 import eu.eidas.auth.commons.EidasParameterKeys;
 import eu.eidas.auth.commons.RequestState;
 import eu.eidas.auth.commons.WebRequest;
-import eu.eidas.auth.commons.cache.ConcurrentMapServiceDefaultImpl;
 import eu.eidas.auth.commons.cache.ConcurrentMapServiceDistributedImpl;
 import eu.eidas.auth.commons.cache.HazelcastInstanceInitializer;
 import eu.eidas.auth.commons.exceptions.InvalidParameterEIDASException;
@@ -33,7 +32,9 @@ import eu.eidas.node.auth.util.tests.TestingConstants;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,6 +66,9 @@ public class AUCONNECTORUtilTestCase {
      */
 
     private static final String ANTIREPLAY_SAML_ID_A = "SAML_ID_A";
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     @After
     public void after() throws Exception {
@@ -211,18 +215,16 @@ public class AUCONNECTORUtilTestCase {
      * Checks the default anti-replay Cache.
      */
     @Test
-    public void testHazelcastAntiReplayMechanism() {
+    public void testHazelcastAntiReplayMechanism() throws FileNotFoundException {
         final AUCONNECTORUtil auconnectorutil = new AUCONNECTORUtil();
         ConcurrentMapServiceDistributedImpl hazelCache = new ConcurrentMapServiceDistributedImpl();
         HazelcastInstanceInitializer initializer = new HazelcastInstanceInitializer();
         final String hazecastInstanceName = "TEST";
         initializer.setHazelcastInstanceName(hazecastInstanceName);
         initializer.setHazelcastConfigfileName("src/test/resources/hazelcastTest.xml");
-        try {
-            initializer.initializeInstance();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
+
+        initializer.initializeInstance();
+
         hazelCache.setCacheName("myTestCache");
         hazelCache.setHazelcastInstanceInitializer(initializer);
         final Cache antiReplayCache = new ConcurrentMapJcacheServiceDefaultImpl().getConfiguredCache();
@@ -236,6 +238,25 @@ public class AUCONNECTORUtilTestCase {
 
         final HazelcastInstance hazelcastInstanceByName = Hazelcast.getHazelcastInstanceByName(hazecastInstanceName);
         hazelcastInstanceByName.getLifecycleService().shutdown();
+    }
+
+    /**
+     * Test method for
+     * {@link HazelcastInstanceInitializer#initializeInstance()}
+     * when the config xml does not exist
+     * <p>
+     * Must fail.
+     */
+
+    @Test
+    public void testHazelcastAntiReplayMechanismNoFile() throws FileNotFoundException {
+        expectedException.expect(FileNotFoundException.class);
+
+        HazelcastInstanceInitializer initializer = new HazelcastInstanceInitializer();
+        final String hazecastInstanceName = "TEST";
+        initializer.setHazelcastInstanceName(hazecastInstanceName);
+        initializer.setHazelcastConfigfileName("src/test/resources/nosuchfile.xml");
+        initializer.initializeInstance();
     }
 
     @Test(expected=InvalidParameterEIDASException.class)

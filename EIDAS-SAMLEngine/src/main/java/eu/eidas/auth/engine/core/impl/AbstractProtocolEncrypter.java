@@ -1,16 +1,19 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
  */
 
 package eu.eidas.auth.engine.core.impl;
@@ -57,7 +60,9 @@ public abstract class AbstractProtocolEncrypter extends AbstractProtocolCipher i
              encryptionConfiguration.isResponseEncryptionMandatory(),
              encryptionConfiguration.isAssertionEncryptWithKey(),
              encryptionConfiguration.getEncryptionCertificates(), encryptionConfiguration.getDataEncryptionAlgorithm(),
-             encryptionConfiguration.getKeyEncryptionAlgorithm(), encryptionConfiguration.getJcaProviderName(),
+             encryptionConfiguration.getKeyEncryptionAlgorithm(),
+             encryptionConfiguration.getKeyEncryptionAlgorithmForKeyAgreement(),
+             encryptionConfiguration.getJcaProviderName(),
              encryptionConfiguration.getEncryptionAlgorithmWhiteList());
     }
 
@@ -79,6 +84,11 @@ public abstract class AbstractProtocolEncrypter extends AbstractProtocolCipher i
         this.samlAuthnResponseEncrypter = samlAuthnResponseEncrypter;
     }
 
+    /**
+     * @deprecated Use {@link #AbstractProtocolEncrypter(boolean, boolean, boolean, boolean, ImmutableSet, String,
+     *      String, String, String, String)} instead.
+     */
+    @Deprecated
     protected AbstractProtocolEncrypter(boolean checkedValidityPeriod,
                                         boolean disallowedSelfSignedCertificate,
                                         boolean responseEncryptionMandatory,
@@ -86,6 +96,22 @@ public abstract class AbstractProtocolEncrypter extends AbstractProtocolCipher i
                                         @Nonnull ImmutableSet<X509Certificate> encryptionCertificates,
                                         @Nullable String dataEncryptionAlgorithm,
                                         @Nullable String keyEncryptionAlgorithm,
+                                        @Nullable String jcaProviderName,
+                                        @Nullable String encryptionAlgorithmWhiteList)
+            throws ProtocolEngineConfigurationException {
+        this(checkedValidityPeriod, disallowedSelfSignedCertificate, responseEncryptionMandatory,
+                isAssertionEncryptWithKey, encryptionCertificates, dataEncryptionAlgorithm, keyEncryptionAlgorithm,
+                null, jcaProviderName, encryptionAlgorithmWhiteList);
+    }
+    
+    protected AbstractProtocolEncrypter(boolean checkedValidityPeriod,
+                                        boolean disallowedSelfSignedCertificate,
+                                        boolean responseEncryptionMandatory,
+                                        boolean isAssertionEncryptWithKey,
+                                        @Nonnull ImmutableSet<X509Certificate> encryptionCertificates,
+                                        @Nullable String dataEncryptionAlgorithm,
+                                        @Nullable String keyEncryptionAlgorithm,
+                                        @Nullable String keyEncryptionAlgorithmForKeyAgreement,
                                         @Nullable String jcaProviderName,
                                         @Nullable String encryptionAlgorithmWhiteList)
             throws ProtocolEngineConfigurationException {
@@ -102,6 +128,7 @@ public abstract class AbstractProtocolEncrypter extends AbstractProtocolCipher i
                     .dataEncryptionAlgorithm(dataEncryptionAlgorithm)
                     .jcaProviderName(jcaProviderName)
                     .keyEncryptionAlgorithm(keyEncryptionAlgorithm)
+                    .keyEncryptionAlgorithmForKeyAgreement(keyEncryptionAlgorithmForKeyAgreement)
                     .build();
 
             LOG.debug("AbstractSamlEngineEncryption loaded.");

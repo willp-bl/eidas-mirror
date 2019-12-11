@@ -110,58 +110,58 @@
         <empty-queue-ttl>-1</empty-queue-ttl>
     </queue>
     <map name="antiReplayCacheService">
-        <time-to-live-seconds>300</time-to-live-seconds><!-- 5 minutes -->
+        <time-to-live-seconds>10800</time-to-live-seconds><!-- 3 hours -->
         <eviction-policy>LRU</eviction-policy>
         <max-size policy="PER_NODE">500</max-size>
     </map>
     <map name="antiReplayCacheConnector">
-        <time-to-live-seconds>300</time-to-live-seconds><!-- 5 minutes -->
+        <time-to-live-seconds>10800</time-to-live-seconds><!-- 3 hours -->
         <eviction-policy>LRU</eviction-policy>
         <max-size policy="PER_NODE">500</max-size>
     </map>
-    <map name="eidasmetadata">
-        <in-memory-format>BINARY</in-memory-format>
-        <time-to-live-seconds>86400</time-to-live-seconds><!-- 1 day -->
-        <eviction-policy>LRU</eviction-policy>
-    </map>
     <map name="connectorRequestCorrelationCacheService">
         <in-memory-format>BINARY</in-memory-format>
-        <time-to-live-seconds>86400</time-to-live-seconds><!-- 1 day -->
+        <time-to-live-seconds>420</time-to-live-seconds><!-- 7 minutes -->
         <eviction-policy>LRU</eviction-policy>
     </map>
     <map name="proxyServiceRequestCorrelationCacheService">
         <in-memory-format>BINARY</in-memory-format>
-        <time-to-live-seconds>86400</time-to-live-seconds><!-- 1 day -->
-        <eviction-policy>LRU</eviction-policy>
-    </map>
-    <map name="specificIdpRequestCorrelationCacheService">
-        <in-memory-format>BINARY</in-memory-format>
-        <time-to-live-seconds>86400</time-to-live-seconds><!-- 1 day -->
+        <time-to-live-seconds>420</time-to-live-seconds><!-- 7 minutes -->
         <eviction-policy>LRU</eviction-policy>
     </map>
     <map name="specificConnectorLtRequestCorrelationCacheService">
         <in-memory-format>BINARY</in-memory-format>
-        <time-to-live-seconds>86400</time-to-live-seconds><!-- 1 day -->
-        <eviction-policy>LRU</eviction-policy>
-    </map>
-    <map name="specificConsentRequestTokenCorrelationCacheService">
-        <in-memory-format>BINARY</in-memory-format>
-        <time-to-live-seconds>86400</time-to-live-seconds><!-- 1 day -->
-        <eviction-policy>LRU</eviction-policy>
-    </map>
-    <map name="specificConsentResponseTokenCorrelationCacheService">
-        <in-memory-format>BINARY</in-memory-format>
-        <time-to-live-seconds>86400</time-to-live-seconds><!-- 1 day -->
+        <time-to-live-seconds>420</time-to-live-seconds><!-- 7 minutes -->
         <eviction-policy>LRU</eviction-policy>
     </map>
     <map name="connectorFlowIdCacheService">
         <in-memory-format>BINARY</in-memory-format>
-        <time-to-live-seconds>86400</time-to-live-seconds><!-- 1 day -->
+        <time-to-live-seconds>420</time-to-live-seconds><!-- 7 minutes -->
         <eviction-policy>LRU</eviction-policy>
     </map>
     <map name="proxyServiceFlowIdCacheService">
         <in-memory-format>BINARY</in-memory-format>
-        <time-to-live-seconds>86400</time-to-live-seconds><!-- 1 day -->
+        <time-to-live-seconds>420</time-to-live-seconds><!-- 7 minutes -->
+        <eviction-policy>LRU</eviction-policy>
+    </map>
+    <map name="eidasmetadata">
+        <in-memory-format>BINARY</in-memory-format>
+        <time-to-live-seconds>86400</time-to-live-seconds><!-- 24 hours -->
+        <eviction-policy>LRU</eviction-policy>
+    </map>
+    <map name="specificIdpRequestCorrelationCacheService">
+        <in-memory-format>BINARY</in-memory-format>
+        <time-to-live-seconds>420</time-to-live-seconds><!-- 7 minutes -->
+        <eviction-policy>LRU</eviction-policy>
+    </map>
+    <map name="specificConsentRequestTokenCorrelationCacheService">
+        <in-memory-format>BINARY</in-memory-format>
+        <time-to-live-seconds>420</time-to-live-seconds><!-- 7 minutes -->
+        <eviction-policy>LRU</eviction-policy>
+    </map>
+    <map name="specificConsentResponseTokenCorrelationCacheService">
+        <in-memory-format>BINARY</in-memory-format>
+        <time-to-live-seconds>420</time-to-live-seconds><!-- 7 minutes -->
         <eviction-policy>LRU</eviction-policy>
     </map>
 

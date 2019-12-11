@@ -20,6 +20,9 @@ import eu.eidas.auth.commons.EIDASSubStatusCode;
 import eu.eidas.auth.commons.light.ILightResponse;
 import eu.eidas.auth.commons.light.impl.LightResponse;
 import eu.eidas.auth.commons.light.impl.ResponseStatus;
+import member_country_specific.specific.proxyservice.SpecificProxyServiceApplicationContextProvider;
+import member_country_specific.specific.proxyservice.SpecificProxyServiceBeanNames;
+import member_country_specific.specific.proxyservice.communication.SpecificProxyService;
 
 import java.util.UUID;
 
@@ -31,6 +34,11 @@ import java.util.UUID;
 public class LightResponseHelper {
 
     private LightResponseHelper() {
+    }
+
+    private static SpecificProxyService getSpecificProxyService() {
+        return (SpecificProxyService) SpecificProxyServiceApplicationContextProvider.getApplicationContext()
+                .getBean(SpecificProxyServiceBeanNames.SPECIFIC_PROXY_SERVICE.toString());
     }
 
     public static ILightResponse createILightResponseFailure(String inResponseTo,
@@ -48,7 +56,7 @@ public class LightResponseHelper {
         return new LightResponse.Builder()
                 .id(UUID.randomUUID().toString())
                 .inResponseToId(inResponseTo)
-                .issuer("issuerName")//TODO to be removed when the issuer if issuer is removed from light response
+                .issuer(getSpecificProxyService().getIssuerName())//TODO to be removed when the issuer if issuer is removed from light response
                 .status(responseStatus).build();
     }
 

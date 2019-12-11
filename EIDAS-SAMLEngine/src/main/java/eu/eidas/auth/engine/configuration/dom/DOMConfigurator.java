@@ -1,41 +1,24 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
 package eu.eidas.auth.engine.configuration.dom;
 
-import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Properties;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
-
 import eu.eidas.auth.commons.EidasErrorKey;
 import eu.eidas.auth.commons.EidasErrors;
 import eu.eidas.auth.commons.attribute.AttributeRegistries;
@@ -59,6 +42,21 @@ import eu.eidas.auth.engine.metadata.MetadataClockI;
 import eu.eidas.auth.engine.metadata.MetadataFetcherI;
 import eu.eidas.auth.engine.metadata.MetadataSignerI;
 import eu.eidas.util.Preconditions;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Properties;
 
 /**
  * Creates typed configuration objects (BaseConfigurations) based on parsing results (InstanceMap).
@@ -212,8 +210,10 @@ public final class DOMConfigurator {
             }
             LOG.trace("Loaded protocol processor for \"" + instanceName + "\": " + protocolProcessor);
 
-            protocolProcessor.configure();
-            LOG.trace("Configured protocol processor for \"" + instanceName + "\": " + protocolProcessor);
+            if (null != protocolProcessor) {
+                protocolProcessor.configure();
+                LOG.trace("Configured protocol processor for \"" + instanceName + "\": " + protocolProcessor);
+            }
 
             return protocolProcessor;
         } catch (NullPointerException|ClassNotFoundException | ClassCastException | NoSuchMethodException 
@@ -432,8 +432,10 @@ public final class DOMConfigurator {
      *
      * @param instanceName the instance name
      * @param instanceEntry the instance entry object
+     * @param defaultPath optional path to the configuration properties file.
      * @param overrideFile the configuration properties file name containing overriding properties if any, otherwise
      * {@code null}.
+     * @return the corresponding configuration
      * @throws ProtocolEngineConfigurationException the SAML engine configuration exception
      * @since 1.1
      */
@@ -476,6 +478,11 @@ public final class DOMConfigurator {
     }
 
     /**
+     * @param instanceMap the {@link Map} collection that contains {@link String} as
+     * key and {@link InstanceEntry} as value.
+     * @return a {@link ImmutableMap} collection that contains {@link String} as
+     * key and {@link ProtocolEngineConfiguration} as value.
+     * @throws ProtocolEngineConfigurationException the EIDASSAML engine runtime exception
      * @since 1.1
      */
     @Nonnull
@@ -485,6 +492,14 @@ public final class DOMConfigurator {
     }
 
     /**
+     * @param instanceMap the {@link Map} collection that contains {@link String} as
+     * key and {@link InstanceEntry} as value.
+     * @param defaultPath optional path to the configuration properties file.
+     * @param overrideFile the configuration properties file name containing overriding properties if any, otherwise
+     * {@code null}.
+     * @return a {@link ImmutableMap} collection that contains {@link String} as
+     * key and {@link ProtocolEngineConfiguration} as value.
+     * @throws ProtocolEngineConfigurationException the EIDASSAML engine runtime exception
      * @since 1.1
      */
     @Nonnull

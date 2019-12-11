@@ -525,7 +525,6 @@ public class AUSERVICESAML implements ISERVICESAMLService {
 
             if (responseAttributes.getValuesByNameUri(attributeDefinition.getNameUri()) == null
                     || responseAttributes.getValuesByNameUri(attributeDefinition.getNameUri()).isEmpty()) {
-
                 LOGGER.info("Missing attributes: " + attributeDefinition);
                 return false;
             }

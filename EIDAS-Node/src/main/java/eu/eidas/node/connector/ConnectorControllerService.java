@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 by European Commission
+ * Copyright (c) 2019 by European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be
  * approved by the European Commission - subsequent versions of the
@@ -13,11 +13,10 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
  * implied.
  * See the Licence for the specific language governing permissions and
- * limitations under the Licence.
+ * limitations under the Licence
  */
 package eu.eidas.node.connector;
 
-import eu.eidas.auth.commons.tx.CorrelationMap;
 import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
 import eu.eidas.auth.commons.tx.StoredLightRequest;
 import eu.eidas.node.auth.connector.ICONNECTORService;
@@ -35,7 +34,7 @@ public final class ConnectorControllerService {
 
     private Cache<String, StoredLightRequest> specificSpRequestCorrelationCache;
 
-    private CorrelationMap<StoredAuthenticationRequest> connectorRequestCorrelationCache;
+    private Cache<String, StoredAuthenticationRequest> connectorRequestCorrelationCache;
 
     public String getAssertionConsUrl() {
         return assertionConsUrl;
@@ -65,12 +64,21 @@ public final class ConnectorControllerService {
         return connectorService;
     }
 
-
+    /**
+     * Setter for {@link ConnectorControllerService#specificSpRequestCorrelationCache}.
+     *
+     * @param specificSpRequestCorrelationCache to be set to {@link ConnectorControllerService#specificSpRequestCorrelationCache}
+     */
     public void setSpecificSpRequestCorrelationCache(Cache<String, StoredLightRequest> specificSpRequestCorrelationCache) {
         this.specificSpRequestCorrelationCache = specificSpRequestCorrelationCache;
     }
 
-    public void setConnectorRequestCorrelationCache(Cache<String, StoredAuthenticationRequest> connectorRequestCorrelationMap) {
+    /**
+     * Setter for {@link ConnectorControllerService#connectorRequestCorrelationCache}.
+     *
+     * @param connectorRequestCorrelationCache to be set to {@link ConnectorControllerService#connectorRequestCorrelationCache}
+     */
+    public void setConnectorRequestCorrelationCache(Cache<String, StoredAuthenticationRequest> connectorRequestCorrelationCache) {
         this.connectorRequestCorrelationCache = connectorRequestCorrelationCache;
     }
 

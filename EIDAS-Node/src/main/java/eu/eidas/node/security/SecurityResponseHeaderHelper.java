@@ -1,22 +1,21 @@
 /* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
- */
+*   Copyright (c) 2019 European Commission
+*   Licensed under the EUPL, Version 1.2 or – as soon they will be
+*   approved by the European Commission - subsequent versions of the
+*    EUPL (the "Licence");
+*    You may not use this work except in compliance with the Licence.
+*    You may obtain a copy of the Licence at:
+*    https://joinup.ec.europa.eu/page/eupl-text-11-12
+*
+*    Unless required by applicable law or agreed to in writing, software
+*    distributed under the Licence is distributed on an "AS IS" basis,
+*    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*    See the Licence for the specific language governing permissions and limitations under the Licence.
+*/
 package eu.eidas.node.security;
 
 import eu.eidas.node.NodeBeanNames;
 import eu.eidas.node.logging.LoggingMarkerMDC;
-
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,6 +86,8 @@ public class SecurityResponseHeaderHelper {
     private static final int HEX_CONVERT_SHIFT = 4;
     public static final int INT_OXFO    = 0xF0;
     public static final int INT_OXF     = 0x0F;
+
+    private String cspRuntimeUri;
 
     //Contains the security configuration
     protected ConfigurationSecurityBean configurationSecurityBean;
@@ -218,9 +219,12 @@ public class SecurityResponseHeaderHelper {
         // --Encode it into HEXA
         String scriptNonce = encodeHexString(digest, HEX_DIGITS_LOWER);
         policiesBuilder.append(";").append("script-nonce ").append(scriptNonce);
-        
-        policiesBuilder.append(";").append("report-uri ")
-        						.append(configurationSecurityBean.getCspReportingUri());
+
+        if (checkCspReportUri(httpRequest) ) {
+            policiesBuilder.append(";").append("report-uri ")
+                    .append(configurationSecurityBean.getCspReportingUri());
+        }
+
         // --Made available script nonce in view app layer
         httpRequest.setAttribute("CSP_SCRIPT_NONCE", scriptNonce);
         
@@ -229,6 +233,29 @@ public class SecurityResponseHeaderHelper {
             httpResponse.setHeader(header, policiesBuilder.toString());
             LOGGER.trace("Adding policy to header - " + policiesBuilder);
         }
+    }
+
+    private String getCspRuntimeUri(HttpServletRequest httpServletRequest) {
+        if (null == this.cspRuntimeUri) {
+            StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.append(httpServletRequest.getScheme()).
+                    append("://").
+                    append(httpServletRequest.getServerName()).
+                    append(":").
+                    append(httpServletRequest.getServerPort()).
+                    append(httpServletRequest.getContextPath()).
+                    append("/cspReportHandler");
+            this.cspRuntimeUri = stringBuilder.toString();
+        }
+        return this.cspRuntimeUri;
+    }
+
+    public boolean checkCspReportUri(HttpServletRequest httpServletRequest) {
+        String cspReportingUri = configurationSecurityBean.getCspReportingUri();
+        String localCspRuntimeUri = getCspRuntimeUri(httpServletRequest);
+        boolean valid = StringUtils.startsWith(cspReportingUri, localCspRuntimeUri)
+                        && configurationSecurityBean.getIsContentSecurityPolicyActive();
+        return valid;
     }
 
     public boolean responseHasHeaders(ServletResponse response) {
@@ -243,9 +270,7 @@ public class SecurityResponseHeaderHelper {
     public void populateResponseHeader(ServletRequest request, ServletResponse response) throws ServletException {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpServletResponse httpResponse = (HttpServletResponse) response;
-        if (configurationSecurityBean.getIsContentSecurityPolicyActive()) {
-            processContentSecurityPolicy(httpRequest, httpResponse);
-        }
+        processContentSecurityPolicy(httpRequest, httpResponse);
 
         if (configurationSecurityBean.isIncludeXXssProtection()) {
             httpResponse.setHeader(X_XSS_PROTECTION_HEADER, X_XSS_PROTECTION_MODE_BLOCK);

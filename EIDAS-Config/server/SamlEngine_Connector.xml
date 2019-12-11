@@ -23,9 +23,6 @@
 		data transfer. Allow values: 'obtained', 'prior', 'current-implicit', 'current-explicit',
 		'unspecified', 'unavailable', 'inapplicable'. -->
 	<entry key="consentAuthnRequest">unspecified</entry>
-	<!-- Allow values: 'obtained', 'prior', 'current-implicit', 'current-explicit',
-		'unspecified', 'unavailable', 'inapplicable'. -->
-	<entry key="consentAuthnResponse">obtained</entry>
 
 	<!--URI representing the classification of the identifier Allow values:
 		'entity'. -->

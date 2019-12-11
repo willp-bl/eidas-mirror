@@ -32,8 +32,11 @@
         http://www.w3.org/2009/xmlenc11#aes192-gcm
     </entry>
 
-    <!-- Key Encryption algorithm -->
+    <!-- Key Encryption algorithm for Key Transport-->
     <entry key="key.encryption.algorithm">http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p</entry>
+
+    <!-- Key Encryption algorithm for Key Agreement wrapping algorithm -->
+    <entry key="key.encryption.algorithm.key.wrapping">http://www.w3.org/2001/04/xmlenc#kw-aes256</entry>
 
     <!-- Key store configuration -->
     <entry key="keyStorePath">../keystore/eidasKeyStore.jks</entry>

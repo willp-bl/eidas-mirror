@@ -18,15 +18,14 @@
  */
 package eu.eidas.auth.commons.protocol.impl;
 
-import java.io.ObjectStreamException;
-import java.io.Serializable;
+import eu.eidas.auth.commons.protocol.IAuthenticationResponse;
 
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
 import javax.annotation.concurrent.NotThreadSafe;
 import javax.annotation.concurrent.ThreadSafe;
-
-import eu.eidas.auth.commons.protocol.IAuthenticationResponse;
+import java.io.ObjectStreamException;
+import java.io.Serializable;
 
 /**
  * Concrete implementation of the {@link IAuthenticationResponse} interface.
@@ -97,6 +96,8 @@ public final class AuthenticationResponse extends AbstractAuthenticationResponse
      * Used upon de-serialization, not serialization.
      * <p>
      * The state of this class is transformed back into the class it represents.
+     * @return any {@link AuthenticationResponse} object
+     * @throws ObjectStreamException exception bulding the {@link AuthenticationResponse}
      */
     private Object readResolve() throws ObjectStreamException {
         return new Builder(this).build();

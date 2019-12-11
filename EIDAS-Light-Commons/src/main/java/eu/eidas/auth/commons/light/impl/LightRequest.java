@@ -114,6 +114,9 @@ public final class LightRequest extends AbstractLightRequest implements Serializ
      * Used upon de-serialization, not serialization.
      *
      * The state of this class is transformed back into the class it represents.
+     *
+     * @return any {@link LightRequest} object
+     * @throws ObjectStreamException exception bulding the {@link LightRequest}
      */
     private Object readResolve() throws ObjectStreamException {
         return new Builder(this).build();

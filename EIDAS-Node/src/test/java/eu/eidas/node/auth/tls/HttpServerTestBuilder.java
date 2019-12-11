@@ -1,7 +1,13 @@
 package eu.eidas.node.auth.tls;
 
-import com.sun.net.httpserver.*;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpsConfigurator;
+import com.sun.net.httpserver.HttpsParameters;
+import com.sun.net.httpserver.HttpsServer;
 import org.apache.commons.collections.CollectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -13,7 +19,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -43,6 +48,9 @@ class HttpServerTestBuilder {
 
     // Password used for the key store
     private final char[] KEYSTORE_PASSWORD = "changeit".toCharArray();
+
+    // Constant LOG for logger
+    private static final Logger LOG = LoggerFactory.getLogger(HttpServerTestBuilder.class.getName());
 
 
     private HttpsServer httpsServer;
@@ -107,12 +115,11 @@ class HttpServerTestBuilder {
                         }
 
                         params.setCipherSuites(engine.getEnabledCipherSuites());
-                        System.out.println("SERVER ENABLED CIPHER SUITES = " + Arrays.asList(engine.getEnabledCipherSuites()));
+                        LOG.info("SERVER ENABLED CIPHER SUITES = " + Arrays.asList(engine.getEnabledCipherSuites()));
                         params.setProtocols(engine.getEnabledProtocols());
-                        System.out.println("SERVER ENABLED PROTOCOLS = " + Arrays.asList(engine.getEnabledProtocols()));
+                        LOG.info("SERVER ENABLED PROTOCOLS = " + Arrays.asList(engine.getEnabledProtocols()));
                     } catch (Exception ex) {
-                        System.out.println("Failed to create HTTPS port");
-                        ex.printStackTrace();
+                        LOG.error("Failed to create HTTPS port", ex);
                         throw new RuntimeException(ex);
                     }
                 }
@@ -126,8 +133,7 @@ class HttpServerTestBuilder {
             httpsServer.start();
 
         } catch (Exception exception) {
-            System.out.println("Failed to create HTTPS server on port " + httpsPort + " of " + TESTHOST_DNS_NAME);
-            exception.printStackTrace();
+            LOG.info("Failed to create HTTPS server on port " + httpsPort + " of " + TESTHOST_DNS_NAME, exception);
         }
         return this;
     }

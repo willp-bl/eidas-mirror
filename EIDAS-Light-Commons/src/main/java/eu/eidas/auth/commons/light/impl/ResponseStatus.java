@@ -113,6 +113,9 @@ public final class ResponseStatus extends AbstractResponseStatus implements Seri
      * Used upon de-serialization, not serialization.
      *
      * The state of this class is transformed back into the class it represents.
+     *
+     * @return any {@link ResponseStatus} object
+     * @throws ObjectStreamException exception bulding the {@link ResponseStatus}
      */
     private Object readResolve() throws ObjectStreamException {
         return new Builder(this).build();

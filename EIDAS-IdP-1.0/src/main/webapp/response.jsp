@@ -12,11 +12,8 @@
         eidasnameid = request.getParameter("eidasnameid");
 
     String ipAddress = request.getRemoteAddr();
-    if (request.getHeader(EidasParameterKeys.HTTP_X_FORWARDED_FOR.toString()) != null) {
-        ipAddress = request.getHeader(EidasParameterKeys.HTTP_X_FORWARDED_FOR.toString());
-    } else {
-        if (request.getHeader(EidasParameterKeys.X_FORWARDED_FOR.toString()) != null)
-            ipAddress = request.getHeader(EidasParameterKeys.X_FORWARDED_FOR.toString());
+    if (request.getHeader(EidasParameterKeys.X_FORWARDED_FOR.toString()) != null) {
+        ipAddress = request.getHeader(EidasParameterKeys.X_FORWARDED_FOR.toString());
     }
 
     String doNotmodifyTheResponse = request.getParameter("doNotmodifyTheResponse");

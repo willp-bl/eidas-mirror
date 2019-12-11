@@ -26,8 +26,7 @@
                         <span><fmt:message key="eidas.title" bundle="${i18n_eng}"/></span>
                     </h1>
                     <fmt:message var="redirectingValue" key="eidas.redirecting" bundle="${i18n_eng}"/>
-                    <input type="hidden" id="dummyField" value="${e:forHtml(redirectingValue)}"
-                    />
+                    <input type="hidden" id="redirectingMessageId" value="${e:forHtml(redirectingValue)}"/>
                     <h2 id="connectorRedirectLabel" class="sub-title"></h2>
                     <form id="ColleagueResponse" name="redirectForm" action="${e:forHtml(redirectUrl)}" method="post">
                         <c:if test="${!empty samlTokenFail}" >

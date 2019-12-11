@@ -1,4 +1,142 @@
 ***********************************************
+CEF eIDAS-Node Release Version 2.4.0
+***********************************************
+• Product name: CEF eIDAS-Node
+• Purpose:  Sample Implementation of eIDAS-Node based on eIDAS Technical Specifications: v1.1
+• Produced by: CEF eID
+• Support Contact: CEF-EID-SUPPORT@ec.europa.eu
+• Public URL:  https://ec.europa.eu/cefdigital/wiki/display/CEFDIGITAL/All+releases
+• eIDAS internal ref: eIDAS eID Implementation > eIDAS-Node - Releases > eIDAS-Node v2.4.0 release
+• License: EUPL v1.2 https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/eupl_v1.2_en.pdf
+***********************************************
+
+** Documentation **
+
++ CEF eID technical documentation pertaining to this release can be found on:
+++ CEF Digital Home > eID > Services eID > eIDAS-Node Integration Package > VIEW CURRENT VERSION 2.4.0
+
+** Distribution **
+
++ EIDAS-2.4.0.zip : Distribution version 2.4.0 of the sample eIDAS-Node
+++  EIDAS-Sources-2.4.0.zip :  Source files (Maven project) of the sample eIDAS-Node including an example of implementation of a Specific Proxy Service module, Specific Connector module , a SP (Service Provider) and IdP (Identity Provider).
+++  EIDAS-Binaries-Glassfish-2.4.0.zip : Deployable war files of a preconfigured eIDAS-Node for a Glassfish server (including SpecificConnector.war, SpecificProxyService.war,IdP.war, EidasNode.war, SP.war)
+++  EIDAS-Binaries-wildfly-2.4.0.zip: Deployable war files of a preconfigured eIDAS-Node for a wildfly server (including SpecificConnector.war, SpecificProxyService.war, IdP.war, EidasNode.war, SP.war)
+++  EIDAS-Binaries-Tomcat-2.4.0.zip: Deployable war files of a preconfigured eIDAS-Node for a Tomcat server (including SpecificConnector.war, SpecificProxyService.war, IdP.war, EidasNode.war, SP.war)
+++  EIDAS-Binaries-Was-2.4.0.zip : Deployable war files of a preconfigured eIDAS-Node for a WebSphere server (including SpecificConnector.war, SpecificProxyService.war, IdP.war, EidasNode.war, SP.war) 
+++  EIDAS-Binaries-Wls-2.4.0.zip : Deployable war files of a preconfigured eIDAS-Node for a WebLogic server (including SpecificConnector.war, SpecificProxyService.war, IdP.war, EidasNode.war, SP.war)
+
+** This release contains the following improvements: (Please note that EIDINT-XXXX references are for internal use only)
+
++ Implementation of Key agreement support (EIDINT-3672, EIDINT-4006, EIDINT-4007, EIDINT-4008, EIDINT-4035,EIDINT-4069, EIDINT-4092, EIDINT-4170, EIDINT-4090), (EID-594) :
+. Add se.swedenconnect.opensaml:opensaml-security-ext dependency (EIDINT-4004)
+. Upgrade shibboleth version from 7.3.0 to 7.5.0 (EIDINT-4002)
+. Upgrade the opensaml version from 3.3.0 to 3.4.4 (EIDINT-4003)
+. Create an ecc key certificate and add it to Connector keystores (EIDINT-4005) 
+. Upgrade BouncyCastle dependency to version 1.64 (EIDINT-4047)
+. Implement support for multiple private keys in Connector's keystore (EIDINT-4011) (EID-1013)
+
++ Implementation of Support brainpool curves for SAML Signing (EID-1017):
+. Support brainpool curves for SAML Metadata Signing (EIDINT-4107) (EID-1017)
+
++ Implementing of support for http(s) forwarding proxy:
+. Eidas Node support for http(s) forwarding proxy / egress (EIDINT-2590) (EID-657) 
+
++ Conveying SPCountry in LightRequest (EID-922)
+. Design - SPCountry to LightRequest (EIDINT-3918)
+. Add external configuration property to enable/disable validation of prefixing identifier like attribute values (EIDINT-4032).
+. Add external configuration property to enable/disable prefixing identifier attribute values (EIDINT-4031).
+
++ Ignite default config with SSL 
+. Reintroduce default enabled SSL/TLS from Ignite configuration files (EIDINT-4055 )
+
++ Implementing of Enable/Disable adding Bouncy castle provider (EIDINT-3100) (EID-803) 
++ Failure when NameIDPolicy of request and response don't match : issue 2 (EIDINT-3911) (EID-975) (EID-925)
++ Change property key in idp.properties (EIDINT-2016)
++ Eidas-attributes.xml config file contains typo on 20.XmlType.NamespacePrefix eidas-reprentative-natural and eidas-reprentative-legal should be eidas-representative- (EIDINT-3954,EIDINT-4086) (EID-984)
++ Improvement in "SEC Consult - vulnerability 1" (EIDINT-3845,EIDINT-3950) (EID-1001)
+
++ Improvements of Logging of messages eIDAS Node 2.x branch (EIDINT-3003) :
+. Extract common code from the various Logger classes (EIDINT-3768)
+. Remove MessageLoggerBean from message loggers (EIDINT-3769)
+. Refactor MessageLoggerUtils class (EIDINT-3770)
+
++ Other improvements: 
+. Replace Outgoing Logger Filters to use redirect page instead of Servlet Url pattern (EIDINT-3692)
+. Remove commented code from SimpleProtocolProcess.java (EIDINT-1988 ) 
+. Replace or remove input fields with id="dummyField"   (EIDINT-3099)
+. Remove use of e.printStackTrace()  (EIDINT-3548)
+. Replace printStackTrace method call on exception by logger (EIDINT-3512)
+. Remove Config profile from EIDAS-Parent pom (EIDINT-2386)
+. Extract method for duplicate code on AUCONNECTORSAML#processSpRequest (EIDINT-3615)
+. Embedded attribute configuration data on SP, IdP (EIDINT-2404)
+. Update EIDAS Metadata VERSION 2.4.0 (EIDINT-3701)
+
+** This release contains the following bug fixes:
++ Correct of Build of tests failing due to order (EIDINT-4173)
++ Correct of Issuer in Light Response is not correct  (EIDINT-3422)
++ Correct of Failure when NameIDPolicy of request and response don't match : issue 1 (EIDINT-3910)(EID-925) (EID-975)
++ Correct of Self assignment  issue : severity HIGH (EIDINT-3997)
++ Correct of Redirect and Post location whitelists are not correctly validated (EIDINT-4022) (EID-916) 
++ Correct of LightResponse generated at Generic Connector doesn't contain RelayState (EIDINT-3926)(EID-977)
++ Correct of Unable to decrypt (v2.2) (EIDINT-2787) (EID-674)
++ Correct of Inconsistent behaviour when replaying Incoming LightRequest and Incoming LightResponse (EIDINT-3638)
++ Correct of Alllow only necessary settings of Consent attribute value from configuration files (EIDINT-3627)
++ Correct of Sonar scan: EIDAS-SAMLEngine:  11 Bugs reported (EIDINT-2648)
++ Correct of Maven Warning  EIDAS-Metadata\pom.xml (EIDINT-3326)
++ Correct of Maven Warning EIDAS-SAMLEngine\pom.xml (EIDINT-3327)
++ Correct of CR\LF character ending an antry in saml-engine-additional-attributes.xml file cause the key not recognised (EIDINT-3149)
++ Correct of Typos found in saml-engine-eidas-attributes.xml (eidas-node) (EIDINT-4087)
++ Correct of Warnings creating javadoc (java 8 more strict) (EIDINT-3588)
++ Correct of Declaration and setting of local variable strSamlToken done in different subsequent lines (EIDINT-3885)
++ Correct of DEMO SP : Referer is not correct (EIDINT-2557)
++ Correct of Profile Jboss 7 is still present in POM for Eidas-Node-Jar (EIDINT-3522)
++ Correct of 7 http sessions  are created by authentication  (EIDINT-3599)
++ Correct of Exception thrown at a random frequency when using Chrome - NullPointerException: Unable to create ILightResponse (EIDINT-3669) 
+
+** This release contains the following security fixes:
++ SEC Consult - vulnerability 1 (EIDINT-3845,EIDINT-3950) (EID-1001)
++ SEC Consult - vulnerability 3 (EIDINT-3847) (EID-958)
++ SEC Consult - vulnerability 4 (EIDINT-3958) (EID-959) 
++ SEC Consult - vulnerability 5 (EIDINT-3849) (EID-960)
++ PT 20190814 - PTES-006 (EIDINT-3944) (EIDINT-3958) (EID-1001)
++ PT 20190814 - PTES-012 (EIDINT-3947) (EIDINT-3983)
++ Property active.module.connector should also disable incoming eIDAS SAML Response (EIDINT-3941)
++ Property active.module.service should also disable Proxy-Service response's entry point (EIDINT-3940)
++ Upgrade logback-classic-1.1.2 dependency (EIDINT-2958)
++ Caches default config Expiration policy:
+. Add expiration to ignite caches igniteNode.xml and igniteSpecificCommunication.xml files (EIDINT-3948)
+. Duration for expiration caches for hazelcast update based on Ignite cache's duration expiration (EIDINT-4178)
+
+** This release has been successfully tested for interoperability with previous releases of eIDAS-Node versions v2.3.1 and v1.4.5
+** This release was successfully tested and works with Middleware version 1.2.0 except for the encryption functionality with key agreement. This is a limitation in the Middleware, that will be fixed in the Middleware 1.2.1
+
+** Known Limitations
+The up to date list can be found at https://ec.europa.eu/cefdigital/wiki/x/YwM9Cg 
+ 
+** Known Vulnerabilities
+Latest vulnerability notifications are found at https://ec.europa.eu/cefdigital/wiki/x/CwB2Ag
+
+** The eIDAS default supported Cipher suites for java8 https://ec.europa.eu/cefdigital/wiki/x/6MXuAw
+
+
+####### IMPORTANT NOTICE ########################################
+#########################################################################################################################################
+
+The eIDAS-Node logs may contain person identification data. Hence, these logs should be handled and protected appropriately, following the European privacy regulations [Dir95/46/EC] and [Reg2016/679].
+
+[Reg2016/679] REGULATION (EU) 2016/679 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 27 April 2016 on the protection of natural persons with regard to the processing of personal data and on the free 
+movement of such data, and repealing Directive 95/46/EC.
+
+[Dir95/46/EC] Directive 95/46/EC of the European Parliament and of the Council of 24 October 1995 on the protection of individuals with regard to the processing of personal data and on the free movement
+of such data.
+
+#########################################################################################################################################################################################################
+
+
+
+
+####################### previous releases #######################
+
 CEF eIDAS-Node Release Version 2.3.1
 ***********************************************
 • Product name: CEF eIDAS-Node
@@ -49,17 +187,6 @@ Latest vulnerability notifications are found at https://ec.europa.eu/cefdigital/
 ** Acknowledgements **
 CEF eID team thanks Wolfgang Ettlinger from the SEC Consult Vulnerability Lab (https://www.sec-consult.com) for responsibly reporting the identified issues.
 
-####### IMPORTANT NOTICE #################################################################################################################################################################################
-
-The eIDAS-Node logs may contain person identification data. Hence, these logs should be handled and protected appropriately, following the European privacy regulations [Dir95/46/EC] and [Reg2016/679].
-
-[Reg2016/679] REGULATION (EU) 2016/679 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 27 April 2016 on the protection of natural persons with regard to the processing of personal data and on the free 
-movement of such data, and repealing Directive 95/46/EC.
-
-[Dir95/46/EC] Directive 95/46/EC of the European Parliament and of the Council of 24 October 1995 on the protection of individuals with regard to the processing of personal data and on the free movement
-of such data.
-
-#########################################################################################################################################################################################################
 
 ***********************************************
 CEF eIDAS-Node Release Version 2.3
@@ -70,7 +197,6 @@ CEF eIDAS-Node Release Version 2.3
 • Support Contact: CEF-EID-SUPPORT@ec.europa.eu
 • URL:  https://ec.europa.eu/cefdigital/wiki/display/CEFDIGITAL/All+releases
 • License: EUPL v1.2 https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/eupl_v1.2_en.pdf
-• Release date: 20th June 2019
 ***********************************************
 
 ** Documentation **
@@ -119,21 +245,21 @@ CEF eIDAS-Node Release Version 2.3
 **This release contains the following bug fixes:
 + Correct of Unit test failure :eu.eidas.node.auth.metadata.TestEidasNodeMetadataLoader.testValidatesignature (EIDINT-3607) (EID-920)
 + Correct of EidasNode fails to start on Linux	(EIDINT-3424)
-+ Correct of (EID-652) Problem in validation of entityID of SP	(EIDINT-2539)
-+ Correct of Build failure due to Unit failure on LINUX 	(EIDINT-3429)
-+ Correct of Validate Signature flag not working for unmarshall response	(EIDINT-3177)
-+ Correct of Static metadata : including entityId (URI) containing illegal characters should not be loaded 	(EIDINT-2711)
++ Correct of (EID-652) Problem in validation of entityID of SP (EIDINT-2539)
++ Correct of Build failure due to Unit failure on LINUX (EIDINT-3429)
++ Correct of Validate Signature flag not working for unmarshall response (EIDINT-3177)
++ Correct of Static metadata : including entityId (URI) containing illegal characters should not be loaded (EIDINT-2711)
 + Add the missing values for consent attribute validation in both request and response	(EIDINT-3156)
 + Correct of Alllow setting of Consent attribute value from configuration files (EIDINT-3157)
 + Correct of Typo in the supported values for "Consent" attribute in SAML response messages	(EIDINT-3103)
-+ Correct of Duplicated Copyright headers	(EIDINT-2381)
-+ Correct of Metadata whitelist should be reloadable	(EIDINT-3110)
-+ Correct of Unexpected CSP violation logged in eIDASNodeDetail 	(EIDINT-2511)
-+ Correct of Color convention is not respected in the proxyservice consent page when building using specificjar 	(EIDINT-3174)
-+ Correct of CSP violation reported for EidasNode/AfterCitizenConsentRequest	(EIDINT-2186)
-+ Correct of CSP violation reported for  EidasNode/IdpResponse	(EIDINT-2187)
++ Correct of Duplicated Copyright headers (EIDINT-2381)
++ Correct of Metadata whitelist should be reloadable (EIDINT-3110)
++ Correct of Unexpected CSP violation logged in eIDASNodeDetail (EIDINT-2511)
++ Correct of Color convention is not respected in the proxyservice consent page when building using specificjar (EIDINT-3174)
++ Correct of CSP violation reported for EidasNode/AfterCitizenConsentRequest (EIDINT-2186)
++ Correct of CSP violation reported for  EidasNode/IdpResponse (EIDINT-2187)
 + Correct of (EID-659) Interface changes in EIDAS-SAMLEngine (EIDINT-2592)
-+ Remove extra string from weblogic.xml file	(EIDINT-3626)
++ Remove extra string from weblogic.xml file (EIDINT-3626)
 + Correct of Logging: default log directory is not created for jboss and wildfly (EIDINT-2607)
 
 **This release contains the following security fixes:
@@ -184,6 +310,7 @@ The up to date list can be found at https://ec.europa.eu/cefdigital/wiki/x/e4YnB
 Latest vulnerability notifications are found at https://ec.europa.eu/cefdigital/wiki/x/CwB2Ag
 
 ** The eIDAS default supported Cipher suites for java8 https://ec.europa.eu/cefdigital/wiki/x/6MXuAw
+
 
 ####################### previous releases #######################
 

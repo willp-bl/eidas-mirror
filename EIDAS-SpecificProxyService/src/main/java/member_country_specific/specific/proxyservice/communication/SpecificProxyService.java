@@ -496,10 +496,10 @@ public class SpecificProxyService {
         if (isValidateMandatoryFields(response)) {
             validateMandatoryFields(response);
         }
-        final String inResponseToId = response.getInResponseTo();
-        return getRemoveCorrelatediLightRequest(inResponseToId)
-                .map(iLightRequest -> createLightResponse(response, iLightRequest.getId(), iLightRequest.getRelayState()))
-                .orElseThrow(() -> new NullPointerException("Unable to create ILightResponse, iLightRequest null"));
+        Optional<String> inResponseToId = Optional.of(response.getInResponseTo());
+        Optional<ILightRequest> optionalLightRequest = getRemoveCorrelatediLightRequest(inResponseToId.get());
+        ILightRequest iLightRequest = optionalLightRequest.get();
+        return createLightResponse(response, iLightRequest.getId(), iLightRequest.getRelayState());
     }
 
     private boolean isValidateMandatoryFields(Response response) {
@@ -517,11 +517,9 @@ public class SpecificProxyService {
     }
 
     private Optional<ILightRequest> getRemoveCorrelatediLightRequest(@Nonnull final String inResponseToId) {
-        Optional<ILightRequest> iLightRequest = Optional.ofNullable(specificMSIdpRequestCorrelationMap.get(inResponseToId))
-                .map(CorrelatedRequestsHolder::getiLightRequest);
-        if (iLightRequest.isPresent()) {
-            specificMSIdpRequestCorrelationMap.remove(inResponseToId);
-        }
+        final CorrelatedRequestsHolder correlatedRequestsHolder = specificMSIdpRequestCorrelationMap.get(inResponseToId);
+        final Optional<ILightRequest> iLightRequest = Optional.of(correlatedRequestsHolder.getiLightRequest());
+        specificMSIdpRequestCorrelationMap.remove(inResponseToId);
         return iLightRequest;
     }
 

@@ -21,17 +21,32 @@ package eu.eidas.node.auth.connector.tests;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import eu.eidas.auth.cache.ConcurrentMapJcacheServiceDefaultImpl;
-import eu.eidas.auth.commons.*;
+import eu.eidas.auth.commons.BindingMethod;
+import eu.eidas.auth.commons.EIDASValues;
+import eu.eidas.auth.commons.EidasParameterKeys;
+import eu.eidas.auth.commons.EidasStringUtil;
+import eu.eidas.auth.commons.IEIDASLogger;
+import eu.eidas.auth.commons.IncomingRequest;
+import eu.eidas.auth.commons.RequestState;
+import eu.eidas.auth.commons.WebRequest;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.cache.ConcurrentMapServiceDefaultImpl;
-import eu.eidas.auth.commons.exceptions.*;
+import eu.eidas.auth.commons.exceptions.EidasNodeException;
+import eu.eidas.auth.commons.exceptions.InternalErrorEIDASException;
+import eu.eidas.auth.commons.exceptions.InvalidParameterEIDASException;
+import eu.eidas.auth.commons.exceptions.InvalidSessionEIDASException;
+import eu.eidas.auth.commons.exceptions.SecurityEIDASException;
 import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.IRequestMessage;
 import eu.eidas.auth.commons.protocol.eidas.LevelOfAssurance;
 import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.eidas.spec.EidasSpec;
 import eu.eidas.auth.commons.protocol.impl.SamlNameIdFormat;
-import eu.eidas.auth.commons.tx.*;
+import eu.eidas.auth.commons.tx.CorrelationMap;
+import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
+import eu.eidas.auth.commons.tx.StoredAuthenticationRequestCorrelationMap;
+import eu.eidas.auth.commons.tx.StoredLightRequest;
+import eu.eidas.auth.commons.tx.StoredLightRequestCorrelationMap;
 import eu.eidas.auth.engine.DefaultProtocolEngineFactory;
 import eu.eidas.auth.engine.ProtocolEngineI;
 import eu.eidas.auth.engine.core.ProtocolProcessorI;
@@ -39,16 +54,20 @@ import eu.eidas.auth.engine.core.SAMLCore;
 import eu.eidas.auth.engine.core.eidas.EidasProtocolProcessor;
 import eu.eidas.auth.engine.core.eidas.MetadataEncryptionHelper;
 import eu.eidas.auth.engine.core.eidas.MetadataSignatureHelper;
-import eu.eidas.auth.engine.metadata.*;
+import eu.eidas.auth.engine.metadata.EidasMetadataParametersI;
+import eu.eidas.auth.engine.metadata.MetadataClockI;
+import eu.eidas.auth.engine.metadata.MetadataFetcherI;
+import eu.eidas.auth.engine.metadata.MetadataSignerI;
+import eu.eidas.auth.engine.metadata.MetadataUtil;
 import eu.eidas.node.auth.connector.AUCONNECTORSAML;
 import eu.eidas.node.auth.connector.AUCONNECTORUtil;
 import eu.eidas.node.auth.connector.ICONNECTORSAMLService;
 import eu.eidas.node.auth.metadata.WrappedMetadataFetcher;
 import eu.eidas.node.auth.util.tests.TestingConstants;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.mockito.Matchers;
 import org.opensaml.core.xml.schema.XSString;
 import org.opensaml.core.xml.schema.impl.XSStringBuilder;
 import org.opensaml.saml.ext.saml2mdattr.EntityAttributes;
@@ -69,9 +88,12 @@ import javax.servlet.http.HttpSession;
 import java.util.Locale;
 import java.util.Properties;
 
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -240,6 +262,37 @@ public class AUCONNECTORSAMLTestCase {
     }
 
     /**
+     * Test method for {@link AUCONNECTORSAML#isValidatePrefixCountryCodeIdentifiers()}.
+     * when {@link AUCONNECTORSAML#setValidatePrefixCountryCodeIdentifiers(boolean)} was called with true as parameter
+     *
+     * Must succeed.
+     */
+    @Test
+    public void setValidatePrefixCountryCodeIdentifiersEnabled() {
+        AUCONNECTORSAML auconnectorSaml = new AUCONNECTORSAML();
+        auconnectorSaml.setValidatePrefixCountryCodeIdentifiers(Boolean.TRUE);
+
+        boolean actualValidatePrefixCountryCodeIdentifiers = auconnectorSaml.isValidatePrefixCountryCodeIdentifiers();
+        Assert.assertTrue(actualValidatePrefixCountryCodeIdentifiers);
+    }
+
+    /**
+     * Test method for {@link AUCONNECTORSAML#isValidatePrefixCountryCodeIdentifiers()}.
+     *
+     * when {@link AUCONNECTORSAML#setValidatePrefixCountryCodeIdentifiers(boolean)} was called with false as parameter
+     *
+     * Must succeed.
+     */
+    @Test
+    public void setValidatePrefixCountryCodeIdentifiersDisabled() {
+        AUCONNECTORSAML auconnectorSaml = new AUCONNECTORSAML();
+        auconnectorSaml.setValidatePrefixCountryCodeIdentifiers(Boolean.FALSE);
+        boolean actualValidatePrefixCountryCodeIdentifiers = auconnectorSaml.isValidatePrefixCountryCodeIdentifiers();
+
+        Assert.assertFalse(actualValidatePrefixCountryCodeIdentifiers);
+    }
+
+    /**
      * Test method for processSpRequest(byte[], WebRequest)}. Testing a null saml token. Must throw a {@link
      * InternalErrorEIDASException}.
      */
@@ -351,7 +404,7 @@ public class AUCONNECTORSAMLTestCase {
         entityDescriptor.setExtensions(extensions);
         EidasMetadataParametersI metadataParameters = MetadataUtil.convertEntityDescriptor(entityDescriptor);
 
-        when(mockMetadataProcessor.getEidasMetadata(anyString(), Matchers.<MetadataSignerI>any(), Matchers.<MetadataClockI>any() )).thenReturn(
+        when(mockMetadataProcessor.getEidasMetadata(anyString(), any(MetadataSignerI.class), any(MetadataClockI.class) )).thenReturn(
                 metadataParameters);
 
         //ProtocolEngineI spSamlEngine = auconnectorsaml.getSamlEngine(auconnectorsaml.getSamlSpInstance());

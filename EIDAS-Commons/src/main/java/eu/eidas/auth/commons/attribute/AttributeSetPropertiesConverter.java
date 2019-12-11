@@ -183,9 +183,10 @@ public enum AttributeSetPropertiesConverter implements PropertiesConverter<Immut
     private static boolean getOptionalFlag(@Nonnull Map<?, ?> properties, @Nonnull Suffix suffix, @Nonnull String id) {
         String key = suffix.computeEntry(id);
         String value = (String) properties.get(key);
-        if (StringUtils.isNotBlank(value)) {
-            boolean flag = "true".equalsIgnoreCase(value);
-            if (!flag && !"false".equalsIgnoreCase(value)) {
+        String trimmedValue = StringUtils.trim(value);
+        if (StringUtils.isNotBlank(trimmedValue)) {
+            boolean flag = "true".equalsIgnoreCase(trimmedValue);
+            if (!flag && !"false".equalsIgnoreCase(trimmedValue)) {
                 throw new IllegalArgumentException("Entry \"" + key + "\" has an illegal value \"" + value + "\"");
             }
             return flag;

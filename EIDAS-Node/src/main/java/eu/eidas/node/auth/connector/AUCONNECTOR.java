@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018 by European Commission
+ * Copyright (c) 2019 by European Commission
+ *
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be
  * approved by the European Commission - subsequent versions of the
@@ -7,6 +8,7 @@
  * You may not use this work except in compliance with the Licence.
  * You may obtain a copy of the Licence at:
  * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the Licence is distributed on an "AS IS" basis,
@@ -23,6 +25,7 @@ import eu.eidas.auth.commons.EidasErrors;
 import eu.eidas.auth.commons.WebRequest;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.exceptions.EidasNodeException;
+import eu.eidas.auth.commons.exceptions.SecurityEIDASException;
 import eu.eidas.auth.commons.light.ILightRequest;
 import eu.eidas.auth.commons.protocol.IAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.IAuthenticationResponse;
@@ -82,6 +85,8 @@ public final class AUCONNECTOR implements ICONNECTORService {
     @Override
     public IRequestMessage getAuthenticationRequest(@Nonnull WebRequest webRequest, ILightRequest lightRequest) {
 
+        checkLightRequestAntiReplay(lightRequest);
+
         IAuthenticationRequest serviceProviderRequest = samlService.processSpRequest(lightRequest, webRequest);
 
         String citizenIpAddress = webRequest.getRemoteIpAddress();
@@ -108,6 +113,20 @@ public final class AUCONNECTOR implements ICONNECTORService {
                 .build());
 
         return connectorRequest;
+    }
+
+    /**
+     * Prevents multiple submission of the same {@link eu.eidas.auth.commons.light.impl.LightRequest}
+     * @param lightRequest the {@link eu.eidas.auth.commons.light.impl.LightRequest} under anti replay check
+     */
+    private void checkLightRequestAntiReplay(ILightRequest lightRequest) {
+        String lightRequestId = lightRequest.getId();
+        String citizenCountryCode = lightRequest.getCitizenCountryCode();
+        final boolean isNotPresentInCache = connectorUtil.checkNotPresentInCache(lightRequestId, citizenCountryCode).booleanValue();
+        if (!isNotPresentInCache) {
+            // There is no (code, message) defined for Light Request error handling in the Connector
+            throw new SecurityEIDASException(StringUtils.EMPTY, StringUtils.EMPTY);
+        }
     }
 
     private IEidasAuthenticationRequest prepareEidasRequest(IEidasAuthenticationRequest authData) {

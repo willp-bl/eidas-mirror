@@ -53,24 +53,28 @@
                     <property name="name" value="specificNodeConnectorRequestCache"/>
                     <property name="atomicityMode" value="ATOMIC"/>
                     <property name="backups" value="1"/>
+                    <property name="expiryPolicyFactory" ref="7_minutes_duration"/>
                 </bean>
                 <!-- Partitioned cache example configuration (Atomic mode). -->
                 <bean class="org.apache.ignite.configuration.CacheConfiguration">
                     <property name="name" value="nodeSpecificProxyserviceRequestCache"/>
                     <property name="atomicityMode" value="ATOMIC"/>
                     <property name="backups" value="1"/>
+                    <property name="expiryPolicyFactory" ref="7_minutes_duration"/>
                 </bean>
                 <!-- Partitioned cache example configuration (Atomic mode). -->
                 <bean class="org.apache.ignite.configuration.CacheConfiguration">
                     <property name="name" value="specificNodeProxyserviceResponseCache"/>
                     <property name="atomicityMode" value="ATOMIC"/>
                     <property name="backups" value="1"/>
+                    <property name="expiryPolicyFactory" ref="7_minutes_duration"/>
                 </bean>
                 <!-- Partitioned cache example configuration (Atomic mode). -->
                 <bean class="org.apache.ignite.configuration.CacheConfiguration">
                     <property name="name" value="nodeSpecificConnectorResponseCache"/>
                     <property name="atomicityMode" value="ATOMIC"/>
                     <property name="backups" value="1"/>
+                    <property name="expiryPolicyFactory" ref="7_minutes_duration"/>
                 </bean>
 
             </list>
@@ -87,6 +91,20 @@
             </bean>
         </property>
 
+        <!-- Ssl/Tls context. -->
+        <!--IMPORTANT: THIS IS A DEMO CONFIGURATION AND DEMO KEYSTORES, IT NEEDS TO BE CHANGED FOR PRODUCTION ALSO THE KEYS IN THE KEYSTORES NEED TO BE CREATED AS WELL-->
+        <property name="sslContextFactory">
+            <bean class="org.apache.ignite.ssl.SslContextFactory">
+                <!--uncomment the below keyAlgorithm when IBM JRE is used e.g. websphere 8.5.5-->
+                <!--<property name="keyAlgorithm" value="IBMX509" />-->
+                <property name="keyStoreFilePath" value="${EIDAS_CONFIG_REPOSITORY}/ignite/KeyStore/server.jks"/>
+                <property name="keyStorePassword" value="123456"/>
+                <property name="trustStoreFilePath" value="${EIDAS_CONFIG_REPOSITORY}/ignite/KeyStore/trust.jks"/>
+                <property name="trustStorePassword" value="123456"/>
+                <property name="protocol" value="TLSv1.2"/>
+            </bean>
+        </property>
+
         <!-- how frequently Ignite will output basic node metrics into the log-->
         <property name="metricsLogFrequency" value="#{60 * 10 * 1000}"/>
 
@@ -99,5 +117,18 @@
         <property name="systemPropertiesModeName" value="SYSTEM_PROPERTIES_MODE_FALLBACK"/>
         <property name="searchSystemEnvironment" value="true"/>
     </bean>
+
+    <!--
+        Defines expiry policy based on moment of creation for ignite cache.
+    -->
+    <bean id="7_minutes_duration" class="javax.cache.expiry.CreatedExpiryPolicy" factory-method="factoryOf" scope="prototype">
+        <constructor-arg>
+            <bean class="javax.cache.expiry.Duration">
+                <constructor-arg value="MINUTES"/>
+                <constructor-arg value="7"/>
+            </bean>
+        </constructor-arg>
+    </bean>
+
 
 </beans>

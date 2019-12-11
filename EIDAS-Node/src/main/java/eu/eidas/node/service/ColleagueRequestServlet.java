@@ -45,7 +45,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.cache.Cache;
-import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -136,16 +135,19 @@ public class ColleagueRequestServlet extends AbstractNodeServlet {
 
         updateRequestCorrelationCache(iAuthenticationRequest, lightRequest.getId(), webRequest.getRemoteIpAddress());
 
-        final String flowId = getFlowIdCache().get(iAuthenticationRequest.getId());
-        if (StringUtils.isNotEmpty(flowId))
-            getFlowIdCache().put(lightRequest.getId(), flowId);
+        String iAuthenticationRequestId = iAuthenticationRequest.getId();
+        final String flowId = getFlowIdCache().get(iAuthenticationRequestId);
+        if (StringUtils.isNotEmpty(flowId)) {
+            String lightRequestId = lightRequest.getId();
+            getFlowIdCache().put(lightRequestId, flowId);
+        }
 
         final String tokenBase64 = putRequestInCommunicationCache(lightRequest);
 
         setTokenRedirectAttributes(httpServletRequest, tokenBase64);
 
-        RequestDispatcher dispatcher = getServletContext().getRequestDispatcher(NodeSpecificViewNames.TOKEN_REDIRECT_MS_PROXY_SERVICE.toString());
-        dispatcher.forward(httpServletRequest, httpServletResponse);
+        String dispatchURL = NodeSpecificViewNames.TOKEN_REDIRECT_MS_PROXY_SERVICE.toString();
+        forwardRequest(dispatchURL, httpServletRequest, httpServletResponse);
 
     }
 
@@ -203,10 +205,32 @@ public class ColleagueRequestServlet extends AbstractNodeServlet {
             LightRequest.Builder builder = LightRequest.builder(authenticationRequest);
             builder.id(SAMLEngineUtils.generateNCName());
 
+            String originCountryCode = authenticationRequest.getOriginCountryCode();
+            updateCitizenCountryCodeValue(originCountryCode, builder);
+
             return builder.build();
         } catch (AbstractEIDASException e) {
             LOG.info("BUSINESS EXCEPTION : " + e, e);
             throw e;
+        }
+    }
+
+    /**
+     * Updates the citizen country code of outgoing light request
+     * if the {@link PropertiesUtil#isReplaceCitizenCountryCodeBySpCountryCode()} returns true
+     *
+     *
+     * Related to EID-922.
+     *
+     * TODO this is a temporary implementation for conveying the SP country code and not breaking the Light Request interface
+     *
+     * @param originCountryCode the origin country code
+     * @param builder the Light request builder
+     */
+    private void updateCitizenCountryCodeValue(String originCountryCode, LightRequest.Builder builder) {
+        final boolean isReplaceCitizenCountryBySpCountryCode = PropertiesUtil.isReplaceCitizenCountryCodeBySpCountryCode();
+        if (isReplaceCitizenCountryBySpCountryCode) {
+            builder.citizenCountryCode(originCountryCode);
         }
     }
 }

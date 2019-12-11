@@ -15,12 +15,14 @@
 
 package eu.eidas.node.logging;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.MDC;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import static eu.eidas.node.logging.AbstractLogger.NOT_APPLICABLE;
 
 /**
  * Central class used to associate logging marker to the functionality.
@@ -30,7 +32,7 @@ public class LoggingUtil {
     private LoggingUtil(){
     }
     public static void logServletCall(HttpServletRequest request, final String className, final Logger logger){
-        String sessionId = "N/A";
+        String sessionId = NOT_APPLICABLE;
         HttpSession session = request.getSession(false);
         if (null != session) {
             sessionId = session.getId();

@@ -122,11 +122,15 @@ public class PropertiesUtil extends PropertyPlaceholderConfigurer implements IEI
     }
 
     public static boolean isMetadataEnabled(){
-        return isMetadataEnabled(EIDASValues.METADATA_ACTIVE.toString());
+        return getConfigParameterBooleanValue(EIDASValues.METADATA_ACTIVE.toString());
     }
-    private static boolean isMetadataEnabled(String paramName){
+    private static boolean getConfigParameterBooleanValue(String paramName){
         String active = getConfigParameter(paramName);
         return Boolean.parseBoolean(active);
+    }
+
+    public static boolean isReplaceCitizenCountryCodeBySpCountryCode(){
+        return getConfigParameterBooleanValue(EidasParameterKeys.REPLACE_CITIZEN_COUNTRY_CODE_BY_SP_COUNTRY_CODE_IN_PROXYSERVICE_LIGHT_REQUEST.toString());
     }
 
     public static String getEidasXmlLocation(){

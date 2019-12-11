@@ -114,6 +114,10 @@ public final class LightResponse extends AbstractLightResponse implements Serial
      * Used upon de-serialization, not serialization.
      *
      * The state of this class is transformed back into the class it represents.
+     *
+     *
+     * @return any {@link LightResponse} object
+     * @throws ObjectStreamException exception bulding the {@link LightResponse}
      */
     private Object readResolve() throws ObjectStreamException {
         return new Builder(this).build();

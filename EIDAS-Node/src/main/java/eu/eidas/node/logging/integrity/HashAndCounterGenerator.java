@@ -13,92 +13,94 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
  * implied.
  * See the Licence for the specific language governing permissions and
- * limitations under the Licence
+ * limitations under the Licence.
+ *
  */
 
 package eu.eidas.node.logging.integrity;
 
+import javax.xml.bind.DatatypeConverter;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.atomic.AtomicLong;
 
-import javax.xml.bind.DatatypeConverter;
-
-import eu.eidas.auth.commons.EidasStringUtil;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * Class used to generate hash in front of line in log files
- * The output generated will have the form of (log-output counter [hashValue] (for example : this is my log content #1# [ydBMlWX8ZlyAaB+x2CmTgCaHH2bhT1AeCFMd9mk4p4k=])
- *
- * @author vanegdi
+ * Generator for generating the hash for a log line, either with or without usage of a counter.
+ * This class makes only sense if used by the {@link HashPatternLayoutEncoder}.
+ * To avoid concurrency issue, while different log event are handled by different threads, all writing performed on
+ * the internal output stream MUST BE synchronized.
  */
-public class HashAndCounterGenerator extends OutputStream {
+public final class HashAndCounterGenerator {
 
     private static final byte SEPARATOR = '#';
     private static final byte SPACE_SEPARATOR = ' ';
-    public static final byte NEWLINE = '\n';
+    private static final byte NEWLINE = '\n';
     private static final byte CARRIAGE = '\r';
     private static final byte BEGIN_SEPARATOR = '[';
     private static final byte END_SEPARATOR = ']';
     private final MessageDigest messageDigest;
-    private final OutputStream outputStream;
+
+    /**
+     * To prevent concurrent writing of different log event at the same time, all writing performed on
+     * the used output stream MUST BE synchronized.
+     */
+    private final ByteArrayOutputStream outputStream;
     private AtomicLong counter;
-    private String lastDigest;
 
     /**
      * Base constructor without initialisation salting.
      *
-     * @param outputStream  the outputStream
      * @param isCounterUsed indicates if a counter is used
      * @param hashAlgorithm give the hash algorithm used
      */
-    @SuppressWarnings("squid:S00112")
-    public HashAndCounterGenerator(OutputStream outputStream, final boolean isCounterUsed, final String hashAlgorithm) {
+    public HashAndCounterGenerator(final boolean isCounterUsed, final String hashAlgorithm) {
+        this(isCounterUsed, hashAlgorithm, new ByteArrayOutputStream());
+    }
+
+    /**
+     * Base constructor, visible for testing purposes only.
+     *
+     * @param isCounterUsed indicates if a counter is used
+     * @param hashAlgorithm give the hash algorithm used
+     * @param outputStream a byte array output stream to be used internally, visible for testing.
+     */
+    protected HashAndCounterGenerator(final boolean isCounterUsed, final String hashAlgorithm, ByteArrayOutputStream outputStream) {
         this.outputStream = outputStream;
-        if (isCounterUsed) {
-            counter = new AtomicLong(0);
-        } else {
-            counter = null;
-        }
+        counter = isCounterUsed ? new AtomicLong(0) : null;
+
         try {
             messageDigest = MessageDigest.getInstance(hashAlgorithm);
-        } catch (NoSuchAlgorithmException e) {
-            //TODO throw a specific exception instead of a generic one
-            throw new RuntimeException(e);
+        } catch (NoSuchAlgorithmException exception) {
+            throw new RuntimeException(exception);
         }
     }
 
     /**
-     * Constructor with initialisation salting.
+     * Retrieves the altered log message, with the hash and optional counter.<br>
+     * As an example, configured with a SHA-256 hash algorithm and with counter, the log message: <br>
+     *     TestA should lead to: TestA #1# [kQYTvzcedONYovA2OkEpDihUOl1PyapPioklXt04RgE=]
      *
-     * @param outputStream  the outputStream
-     * @param isCounterUsed indicates if a counter is used
-     * @param hashAlgorithm give the hash algorithm used
+     * @param originalLoggedBytes the original data to log, as a char array
+     * @return the modified logged data, with hash and optional counter
      */
-    @SuppressWarnings("squid:S00112")
-    public HashAndCounterGenerator(OutputStream outputStream, final String initSalting, final boolean isCounterUsed, final String hashAlgorithm) {
-        this.outputStream = outputStream;
-        if (isCounterUsed) {
-            counter = new AtomicLong(0);
-        } else {
-            counter = null;
+    public final byte[] getModifiedLoggedBytes(byte[] originalLoggedBytes) {
+        synchronized (outputStream) {
+            try {
+                for (byte originalByte : originalLoggedBytes) {
+                    write(originalByte);
+                }
+                outputStream.flush();
+                return outputStream.toByteArray();
+            } catch (IOException exception) {
+                throw new RuntimeException(exception);
+            } finally {
+                outputStream.reset();
+            }
         }
-        try {
-            messageDigest = MessageDigest.getInstance(hashAlgorithm);
-            messageDigest.update(initSalting.getBytes(Charset.forName("UTF-8")));
-            messageDigest.update(NEWLINE);
-        } catch (NoSuchAlgorithmException e) {
-            //TODO throw a specific exception instead of a generic one
-            throw new RuntimeException(e);
-        }
-    }
-
-    private synchronized void writeAndUpdateMessageDigest(byte myValue) throws IOException {
-        messageDigest.update(myValue);
-        outputStream.write(myValue);
     }
 
     /**
@@ -106,15 +108,13 @@ public class HashAndCounterGenerator extends OutputStream {
      * where xx is the counter of the log line and hashValue is the SHA256 of the log line content
      *
      * @param byteToWrite bytes to write
-     * @throws IOException error
+     * @throws IOException when writing to the internally used output stream fails
      */
-    @Override
-    public void write(int byteToWrite) throws IOException {
+    private void write(int byteToWrite) throws IOException {
         // New line
         if (byteToWrite == NEWLINE) {
             // increment the counter and add it to the hash
             byte[] base64HashBytes = computeHashBeforeLog();
-            this.lastDigest = EidasStringUtil.toString(base64HashBytes);
             outputStream.write(BEGIN_SEPARATOR);
             outputStream.write(base64HashBytes);
             outputStream.write(END_SEPARATOR);
@@ -126,28 +126,36 @@ public class HashAndCounterGenerator extends OutputStream {
         }
     }
 
-    public String getLastDigest() {
-        return lastDigest;
+    /**
+     * Writes a single byte value to the stream and updates the message digest.
+     *
+     * @param byteValue  single byte value
+     */
+    private void writeAndUpdateMessageDigest(byte byteValue) {
+        messageDigest.update(byteValue);
+        outputStream.write(byteValue);
     }
 
     /**
-     * Compute the hash with the counter and salting next hash
+     * Compute the hash with the counter and salting next hash/
      *
-     * @return hashbyte
+     * @return base64HashBytes the base 64 hash bytes
+     * @throws IOException when writing to the internally used output stream fails
      */
-    private synchronized byte[] computeHashBeforeLog() throws IOException {
+    private byte[] computeHashBeforeLog() throws IOException {
         writeAndUpdateMessageDigest(SPACE_SEPARATOR);
-        // increment the counter, write it in the outputstream and add it to the hash
+//        // increment the counter, write it in the outputstream and add it to the hash
         if (counter != null) {
             writeAndUpdateMessageDigest(SEPARATOR);
             counter.getAndIncrement();
-            outputStream.write(counter.toString().getBytes(Charset.forName("UTF-8")));
-            messageDigest.update(counter.toString().getBytes(Charset.forName("UTF-8")));
+            byte[] counterAsUTF8Bytes = counter.toString().getBytes(UTF_8);
+            outputStream.write(counterAsUTF8Bytes);
+            messageDigest.update(counterAsUTF8Bytes);
             writeAndUpdateMessageDigest(SEPARATOR);
             writeAndUpdateMessageDigest(SPACE_SEPARATOR);
         }
         // computing the hash and convert it in Base64
-        byte[] base64HashBytes = DatatypeConverter.printBase64Binary(messageDigest.digest()).getBytes(Charset.forName("UTF-8"));
+        byte[] base64HashBytes = DatatypeConverter.printBase64Binary(messageDigest.digest()).getBytes(UTF_8);
         messageDigest.reset();
         // adding previous hash for next hash salting
         messageDigest.update(base64HashBytes);

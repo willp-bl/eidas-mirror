@@ -812,6 +812,9 @@ public final class ImmutableAttributeMap implements Serializable {
 
     /**
      * Effective Java, 2nd Ed. : Item 78: Serialization Proxy pattern.
+     *
+     * @param objectInputStream an {@link ObjectInputStream}
+     * @throws InvalidObjectException the validation object is null
      */
     private void readObject(@Nonnull ObjectInputStream objectInputStream) throws InvalidObjectException {
         throw new InvalidObjectException("Serialization Proxy required");
@@ -819,6 +822,9 @@ public final class ImmutableAttributeMap implements Serializable {
 
     /**
      * Effective Java, 2nd Ed. : Item 78: Serialization Proxy pattern.
+     *
+     * @param out an {@link ObjectOutputStream}
+     * @throws InvalidObjectException the validation object is null
      */
     private void writeObject(@Nonnull ObjectOutputStream out) throws InvalidObjectException {
         throw new InvalidObjectException("Serialization Proxy required");
@@ -826,6 +832,9 @@ public final class ImmutableAttributeMap implements Serializable {
 
     /**
      * Effective Java, 2nd Ed. : Item 78: Serialization Proxy pattern.
+     *
+     * @return an Object
+     * @throws ObjectStreamException the validation object is null
      */
     private Object writeReplace() throws ObjectStreamException {
         return new SerializationProxy(this);

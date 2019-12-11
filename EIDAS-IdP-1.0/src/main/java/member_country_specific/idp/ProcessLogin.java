@@ -17,12 +17,27 @@ package member_country_specific.idp;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.opensymphony.xwork2.ActionSupport;
-import eu.eidas.SimpleProtocol.*;
+import eu.eidas.SimpleProtocol.AddressAttribute;
+import eu.eidas.SimpleProtocol.Attribute;
+import eu.eidas.SimpleProtocol.AuthenticationRequest;
+import eu.eidas.SimpleProtocol.ComplexAddressAttribute;
+import eu.eidas.SimpleProtocol.DateAttribute;
+import eu.eidas.SimpleProtocol.Response;
+import eu.eidas.SimpleProtocol.ResponseStatus;
+import eu.eidas.SimpleProtocol.StringListAttribute;
+import eu.eidas.SimpleProtocol.StringListValue;
 import eu.eidas.SimpleProtocol.adapter.DateAdapter;
 import eu.eidas.SimpleProtocol.utils.SimpleProtocolProcess;
 import eu.eidas.SimpleProtocol.utils.StatusCodeTranslator;
 import eu.eidas.auth.commons.EidasStringUtil;
-import eu.eidas.auth.commons.attribute.*;
+import eu.eidas.auth.commons.attribute.AttributeDefinition;
+import eu.eidas.auth.commons.attribute.AttributeRegistries;
+import eu.eidas.auth.commons.attribute.AttributeRegistry;
+import eu.eidas.auth.commons.attribute.AttributeValue;
+import eu.eidas.auth.commons.attribute.AttributeValueMarshaller;
+import eu.eidas.auth.commons.attribute.AttributeValueMarshallingException;
+import eu.eidas.auth.commons.attribute.AttributeValueTransliterator;
+import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.exceptions.InternalErrorEIDASException;
 import eu.eidas.auth.commons.lang.Charsets;
 import org.apache.log4j.Logger;
@@ -38,15 +53,24 @@ import java.io.StringReader;
 import java.lang.reflect.Field;
 import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.UUID;
 
 public class ProcessLogin extends ActionSupport implements ServletRequestAware, ServletResponseAware {
 
     public static final String AUTHN_FAILED = "AuthnFailed";
     public static final String AUTHENTICATION_FAILED = "authenticationFailed";
     private static final Logger logger = Logger.getLogger(ProcessLogin.class.getName());
-    private static final String ATTRIBUTES_FILENAME = "eidasAttributes.xml";
-    private static final AttributeRegistry coreAttributeRegistry = AttributeRegistries.fromFile(ATTRIBUTES_FILENAME, null);
+    private static final String ATTRIBUTES_FILENAME = "eidas-attributes.xml";
+    private static final AttributeRegistry coreAttributeRegistry = AttributeRegistries.fromFile(ATTRIBUTES_FILENAME, IDPUtil.getConfigFilePath());
     private static final String ADDITIONAL_ATTRIBUTES_FILENAME = "additional-attributes.xml";
     private static final AttributeRegistry coreAdditionalAttributeRegistry = AttributeRegistries.fromFile(ADDITIONAL_ATTRIBUTES_FILENAME, IDPUtil.getConfigFilePath());
     public static final String UTF_8 = "UTF-8";
@@ -264,7 +288,6 @@ public class ProcessLogin extends ActionSupport implements ServletRequestAware, 
             responseJson = new SimpleProtocolProcess().convert2Json(responseObj);
             return EidasStringUtil.encodeToBase64(responseJson.getBytes(Charset.forName(UTF_8)));
         } catch (JAXBException e) {
-            e.printStackTrace();
             logger.debug(e.getMessage());
         }
         return null;
@@ -338,8 +361,7 @@ public class ProcessLogin extends ActionSupport implements ServletRequestAware, 
                 DateAdapter dateAdapter = new DateAdapter();
                 dateAttribute.setValue(dateAdapter.unmarshal(valueString));
             } catch (Exception e) {
-                e.printStackTrace();
-                logger.debug(e.getMessage());
+                logger.error("Exception {}", e);
             }
         }
         return dateAttribute;

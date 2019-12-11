@@ -49,6 +49,7 @@ public interface SpecificCommunicationService {
      * using as id/key the one obtained from the {@link BinaryLightToken}.
      *
      * @param tokenBase64 the {@link BinaryLightToken} in Base64 that holds the id to remove the {@link ILightRequest}
+     * @param registry the collection of attributeDefinitions
      * @return the {@link ILightRequest} corresponding to the id
      * @throws SpecificCommunicationException if the id could not be obtained
      */
@@ -70,6 +71,7 @@ public interface SpecificCommunicationService {
      * using as id/key the one obtained from the {@link BinaryLightToken}.
      *
      * @param tokenBase64 the {@link BinaryLightToken} in Base64 that holds the id to remove the {@link ILightResponse}
+     * @param registry the collection of attributeDefinitions
      * @return the {@link ILightResponse} corresponding to the id
      * @throws SpecificCommunicationException if the id could not be obtained
      */

@@ -16,10 +16,10 @@
 function submitRedirectFormAction() {
 
     if (document.getElementById('idpRedirectLabel') !== null)
-        document.getElementById('idpRedirectLabel').innerHTML = document.getElementById('dummyField').value;
+        document.getElementById('idpRedirectLabel').innerHTML = document.getElementById('redirectingMessageId').value;
 
     if (document.getElementById('tokenRedirectLabel') !== null)
-        document.getElementById('tokenRedirectLabel').innerHTML = document.getElementById('dummyField').value;
+        document.getElementById('tokenRedirectLabel').innerHTML = document.getElementById('redirectingMessageId').value;
 
     document.getElementsByName('redirectForm')[0].submit();
 }

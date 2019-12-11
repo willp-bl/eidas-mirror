@@ -1,27 +1,36 @@
-/* 
-#   Copyright (c) 2017 European Commission  
-#   Licensed under the EUPL, Version 1.2 or – as soon they will be 
-#   approved by the European Commission - subsequent versions of the 
-#    EUPL (the "Licence"); 
-#    You may not use this work except in compliance with the Licence. 
-#    You may obtain a copy of the Licence at: 
-#    * https://joinup.ec.europa.eu/page/eupl-text-11-12  
-#    *
-#    Unless required by applicable law or agreed to in writing, software 
-#    distributed under the Licence is distributed on an "AS IS" basis, 
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-#    See the Licence for the specific language governing permissions and limitations under the Licence.
+/*
+ * Copyright (c) 2019 by European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be
+ * approved by the European Commission - subsequent versions of the
+ * EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/page/eupl-text-11-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence
  */
-
 package eu.eidas.auth.engine.metadata.impl;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import eu.eidas.auth.commons.EidasErrorKey;
+import eu.eidas.auth.commons.EidasParameterKeys;
+import eu.eidas.auth.commons.io.ReloadableProperties;
 import eu.eidas.auth.commons.xml.opensaml.OpenSamlHelper;
-import eu.eidas.auth.engine.metadata.*;
+import eu.eidas.auth.engine.metadata.EidasMetadataParametersI;
+import eu.eidas.auth.engine.metadata.MetadataClockI;
+import eu.eidas.auth.engine.metadata.MetadataFetcherI;
+import eu.eidas.auth.engine.metadata.MetadataSignerI;
+import eu.eidas.auth.engine.metadata.MetadataUtil;
 import eu.eidas.engine.exceptions.EIDASMetadataException;
 import eu.eidas.engine.exceptions.EIDASMetadataProviderException;
+import eu.eidas.util.WhitelistUtil;
 import net.shibboleth.utilities.java.support.httpclient.HttpClientBuilder;
 import net.shibboleth.utilities.java.support.httpclient.TLSSocketFactory;
 import net.shibboleth.utilities.java.support.httpclient.TLSSocketFactoryBuilder;
@@ -36,9 +45,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
@@ -61,21 +73,14 @@ public abstract class BaseMetadataFetcher implements MetadataFetcherI {
 
     private static final Pattern TLS_SPLITTER = Pattern.compile("[,;]");
 
-    protected EntityDescriptor fetchEntityDescriptor(@Nonnull String url) throws EIDASMetadataProviderException {
-        EntityDescriptor entityDescriptor;
-        if (!isAllowedMetadataUrl(url)) {
-            throw new EIDASMetadataProviderException(EidasErrorKey.SAML_ENGINE_INVALID_METADATA_SOURCE.errorCode(),
-                    EidasErrorKey.SAML_ENGINE_INVALID_METADATA_SOURCE.errorMessage(),
-                    "Metadata URL is not secure: \"" + url + "\"");
-        }
+    private ReloadableProperties whitelistConfigProperties;
 
-        try {
-        	@SuppressWarnings("unused")
-			URL metadataUrl = new URL(url);
-        } catch (MalformedURLException e) {
-            throw new EIDASMetadataProviderException("Invalid URL : " + url);
-        }
+    protected EntityDescriptor fetchEntityDescriptor(@Nonnull String url) throws EIDASMetadataProviderException {
+        validateUrl(url);
+        EntityDescriptor entityDescriptor;
         HttpClientBuilder httpClientBuilder = new HttpClientBuilder();
+        // EIDINT-2590 - Support for proxy configuration by using system properties
+        httpClientBuilder.setUseSystemProperties(true);
 
         DomCachingHttpMetadataProvider provider = null;
 
@@ -121,6 +126,24 @@ public abstract class BaseMetadataFetcher implements MetadataFetcherI {
         return entityDescriptor;
     }
 
+    private void validateUrl(@Nonnull String url) throws EIDASMetadataProviderException {
+        if (!isAllowedMetadataUrl(url)) {
+            throw new EIDASMetadataProviderException(EidasErrorKey.SAML_ENGINE_INVALID_METADATA_SOURCE.errorCode(),
+                    EidasErrorKey.SAML_ENGINE_INVALID_METADATA_SOURCE.errorMessage(),
+                    "Metadata URL is not secure: \"" + url + "\"");
+        }
+        if (!isMetadataUrlWhitelisted(url)) {
+            throw new EIDASMetadataProviderException(EidasErrorKey.SAML_ENGINE_INVALID_METADATA_SOURCE.errorCode(),
+                    EidasErrorKey.SAML_ENGINE_INVALID_METADATA_SOURCE.errorMessage(),
+                    "Metadata URL is not whitelisted: \"" + url + "\"");
+        }
+        try {
+            new URL(url);
+        } catch (MalformedURLException e) {
+            throw new EIDASMetadataProviderException("Invalid URL : " + url);
+        }
+    }
+
     @Nonnull
     @Override
     public EidasMetadataParametersI getEidasMetadata(@Nonnull String url, @Nonnull MetadataSignerI metadataSigner, MetadataClockI metadataClock)
@@ -147,6 +170,13 @@ public abstract class BaseMetadataFetcher implements MetadataFetcherI {
             }
         }
         return false;
+    }
+
+    protected boolean isMetadataUrlWhitelisted(@Nonnull String url) {
+        if (!useWhitelist()) {
+            return true;
+        }
+        return StringUtils.isNotBlank(url) && WhitelistUtil.isWhitelisted(url, getWhitelistURLs());
     }
 
     protected boolean mustUseHttps() {
@@ -237,9 +267,9 @@ public abstract class BaseMetadataFetcher implements MetadataFetcherI {
     /**
      * Validate "validUntil" field of Metadata (EidasMetadataParametersI form) against saml engine clock
      *
-     * @param eidasMetadataParameters
-     * @param metadataClock
-     * @return
+     * @param eidasMetadataParameters the instance of {@link EidasMetadataParametersI}
+     * @param metadataClock used to validate
+     * @return {@code true} if the field validUntil is not set
      */
     protected boolean isValidUntilNow(EidasMetadataParametersI eidasMetadataParameters, MetadataClockI metadataClock) {
         final DateTime validUntil = eidasMetadataParameters.getValidUntil();
@@ -248,6 +278,35 @@ public abstract class BaseMetadataFetcher implements MetadataFetcherI {
         } else {
             return metadataClock.getCurrentTime().isBefore(validUntil);
         }
+    }
+
+    public void setWhitelistConfigProperties(ReloadableProperties whitelistConfigProperties) {
+        this.whitelistConfigProperties = whitelistConfigProperties;
+    }
+
+    private boolean useWhitelist() {
+        String useWhitelist = getWhitelistProperty(EidasParameterKeys.METADATA_FETCHER_WHITELIST_FLAG.getValue());
+        return Boolean.valueOf(useWhitelist);
+    }
+
+    private Collection<String> getWhitelistURLs() {
+        String whitelistUrls = getWhitelistProperty(EidasParameterKeys.METADATA_FETCHER_WHITELIST.getValue());
+        if (null == whitelistUrls) {
+            return Collections.emptyList();
+        } else {
+            return WhitelistUtil.metadataWhitelist(whitelistUrls);
+        }
+    }
+
+    private String getWhitelistProperty(String key) {
+        if (null != this.whitelistConfigProperties) {
+            try {
+                return this.whitelistConfigProperties.getProperties().getProperty(key);
+            } catch (IOException e) {
+                LOG.warn("whilelist property file couldn't be found", e);
+            }
+        }
+        return null;
     }
 
 }

@@ -54,7 +54,7 @@ public abstract class AbstractCachingMetadataFetcher extends BaseMetadataFetcher
             LOG.info("Clearing expired metadata from cache for the url " + url);
         }
 
-        if (metadataParameters == null && isHttpRetrievalEnabled() && isAllowedMetadataUrl(url)) {
+        if (metadataParameters == null && isHttpRetrievalEnabled()) {
 
             EidasMetadataParametersI fetchedMetadataParameters = super.getEidasMetadata(url, metadataSigner, metadataClock);
 

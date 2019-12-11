@@ -301,7 +301,7 @@ public final class ResponseUtil {
                     EidasErrorKey.MESSAGE_VALIDATION_ERROR.errorCode(),
                     "NotBefore must be present");
         }
-        if (notBefore.isAfter(now)) {
+        if (notBefore.isAfter(now.plusMinutes(1))) {
             LOG.error(AbstractProtocolEngine.SAML_EXCHANGE,
                     "BUSINESS EXCEPTION : Current time is before NotBefore condition");
             throw new EIDASSAMLEngineException(EidasErrorKey.MESSAGE_VALIDATION_ERROR.errorCode(),

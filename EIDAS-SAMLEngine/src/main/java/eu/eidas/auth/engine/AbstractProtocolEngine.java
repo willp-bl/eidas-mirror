@@ -57,6 +57,7 @@ import org.w3c.dom.Document;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.security.cert.X509Certificate;
+import java.util.Optional;
 
 /**
  * Base class for the ProtocolEngine.
@@ -160,7 +161,8 @@ public abstract class AbstractProtocolEngine {
     }
 
     public X509Certificate getDecryptionCertificate() throws EIDASSAMLEngineException {
-        return null == getProtocolDecrypter() ? null : getProtocolDecrypter().getDecryptionCertificate();
+        final ProtocolDecrypterI protocolDecrypter = getProtocolDecrypter();
+        return null == protocolDecrypter ? null : protocolDecrypter.getDecryptionCertificate();
     }
 
     /**

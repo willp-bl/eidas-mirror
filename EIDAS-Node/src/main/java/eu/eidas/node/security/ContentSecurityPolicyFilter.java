@@ -15,15 +15,17 @@
 package eu.eidas.node.security;
 
 import eu.eidas.node.logging.LoggingMarkerMDC;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.*;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import java.io.IOException;
 
 /**
  * This filter set CSP policies using all HTTP headers defined into W3C specification.<br>
@@ -59,7 +61,7 @@ public class ContentSecurityPolicyFilter implements Filter {
      * @see javax.servlet.Filter#init(javax.servlet.FilterConfig)
      */
     @Override
-    public void init(FilterConfig fConfig) throws ServletException {
+    public void init(FilterConfig fConfig) {
         LOGGER.info(LoggingMarkerMDC.SYSTEM_EVENT, "Init of CSP filter");
         securityResponseHeaderHelper = new SecurityResponseHeaderHelper();
     }
@@ -70,7 +72,7 @@ public class ContentSecurityPolicyFilter implements Filter {
      * @see javax.servlet.Filter#doFilter(javax.servlet.ServletRequest, javax.servlet.ServletResponse, javax.servlet.FilterChain)
      */
     @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain fchain) throws IOException, ServletException {
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain fchain) throws ServletException {
         try {
             HttpServletRequest httpRequest = (HttpServletRequest) request;
             ExtendedServletResponseWrapper httpResponse = new ExtendedServletResponseWrapper((HttpServletResponse)response);

@@ -14,27 +14,26 @@
  * implied.
  * See the Licence for the specific language governing permissions and
  * limitations under the Licence.
- *
  */
 package eu.eidas.node.connector;
 
-import java.io.IOException;
-
-import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import eu.eidas.node.*;
+import eu.eidas.auth.commons.EidasParameterKeys;
+import eu.eidas.auth.commons.exceptions.AbstractEIDASException;
+import eu.eidas.node.AbstractNodeServlet;
+import eu.eidas.node.NodeBeanNames;
+import eu.eidas.node.NodeParameterNames;
+import eu.eidas.node.NodeViewNames;
+import eu.eidas.node.auth.connector.ResponseCarryingConnectorException;
+import eu.eidas.node.utils.EidasNodeErrorUtil;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ResourceBundleMessageSource;
 
-import eu.eidas.auth.commons.EidasParameterKeys;
-import eu.eidas.auth.commons.exceptions.AbstractEIDASException;
-import eu.eidas.node.auth.connector.ResponseCarryingConnectorException;
-import eu.eidas.node.utils.EidasNodeErrorUtil;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 import static eu.eidas.node.BeanProvider.getBean;
 
@@ -114,9 +113,8 @@ public final class ConnectorExceptionHandlerServlet extends AbstractNodeServlet 
             LOG.info("BUSINESS EXCEPTION: in exception handler: " + e, e);
         }
         //Forward to error page
-        RequestDispatcher dispatcher = getServletContext().getRequestDispatcher(retVal);
         response.setStatus(HttpServletResponse.SC_OK);
-        dispatcher.forward(request, response);
+        forwardRequest(retVal, request, response);
     }
 
     private void prepareErrorMessage(AbstractEIDASException exception, HttpServletRequest request) {

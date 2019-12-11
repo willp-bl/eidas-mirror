@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 by European Commission
+ * Copyright (c) 2019 by European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be
  * approved by the European Commission - subsequent versions of the
@@ -13,7 +13,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
  * implied.
  * See the Licence for the specific language governing permissions and
- * limitations under the Licence.
+ * limitations under the Licence
  */
 package eu.eidas.node.service;
 
@@ -21,13 +21,19 @@ import java.io.IOException;
 import java.util.Collection;
 
 import javax.cache.Cache;
-import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import eu.eidas.node.*;
+import eu.eidas.auth.commons.exceptions.SecurityEIDASException;
+
+import eu.eidas.node.AbstractNodeServlet;
+import eu.eidas.node.NodeBeanNames;
+import eu.eidas.node.NodeParameterNames;
+import eu.eidas.node.NodeViewNames;
+import eu.eidas.node.auth.service.AUSERVICEUtil;
+import eu.eidas.node.utils.PropertiesUtil;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -118,21 +124,17 @@ public final class SpecificProxyServiceResponse extends AbstractNodeServlet {
     private void execute(HttpServletRequest request, HttpServletResponse response)
             throws IOException, ServletException {
         try {
+            PropertiesUtil.checkProxyServiceActive();
             String beanName = SpecificCommunicationDefinitionBeanNames.SPECIFIC_PROXYSERVICE_COMMUNICATION_SERVICE.toString();
             final SpecificProxyserviceCommunicationServiceImpl specificProxyserviceCommunicationService = getBean(
                                                           SpecificProxyserviceCommunicationServiceImpl.class, beanName);
 
-            final String token = request.getParameter(EidasParameterKeys.TOKEN.toString());
+            final WebRequest webRequest = new IncomingRequest(request);
+            final String token = webRequest.getEncodedLastParameterValue(EidasParameterKeys.TOKEN.toString());
             final ILightResponse iLightResponse = specificProxyserviceCommunicationService.getAndRemoveResponse(token, retrieveAttributes());
 
             final String url = handleExecute(request, response, iLightResponse);
-            RequestDispatcher dispatcher = getServletContext().getRequestDispatcher(url);
-            dispatcher.forward(request, response);
-            HttpSession session = request.getSession(false);
-            if (null != session
-                    && session.getAttribute(EidasParameterKeys.EIDAS_CONNECTOR_SESSION.toString()) == null) {
-                session.invalidate();
-            }
+            forwardRequest(url, request, response);
         } catch (ServletException e) {
             getLogger().info("ERROR : ServletException {}", e.getMessage());
             getLogger().debug("ERROR : ServletException {}", e);
@@ -147,8 +149,9 @@ public final class SpecificProxyServiceResponse extends AbstractNodeServlet {
 
     }
 
-
     private String handleExecute(HttpServletRequest request, HttpServletResponse response, final ILightResponse lightResponse) throws ServletException {
+
+        checkLightResponseAntiReplay(lightResponse);
 
         String beanName = NodeBeanNames.EIDAS_SERVICE_CONTROLLER.toString();
         ServiceControllerService controllerService = getBean(ServiceControllerService.class, beanName);
@@ -260,5 +263,19 @@ public final class SpecificProxyServiceResponse extends AbstractNodeServlet {
         }
 
         return retVal;
+    }
+
+    /**
+     * Prevents multiple submission of the same {@link eu.eidas.auth.commons.light.impl.LightResponse}
+     * @param lightResponse the {@link eu.eidas.auth.commons.light.impl.LightResponse} under anti replay check
+     */
+    private void checkLightResponseAntiReplay(ILightResponse lightResponse) {
+        AUSERVICEUtil serviceUtil = getBean(AUSERVICEUtil.class);
+        String messageId = lightResponse.getId() + lightResponse.getInResponseToId();
+        final boolean isNotPresentInCache = serviceUtil.checkNotPresentInCache(messageId).booleanValue();
+        if (!isNotPresentInCache) {
+            // There is no (code, message) defined for Light Response error handling in the Proxy Service
+            throw new SecurityEIDASException(StringUtils.EMPTY, StringUtils.EMPTY);
+        }
     }
 }

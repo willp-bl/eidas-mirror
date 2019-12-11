@@ -89,6 +89,8 @@ public final class AUSERVICE implements ISERVICEService {
 
     private String serviceMetadataUrl;
 
+    private boolean isPrefixIdentifiersCountryCode;
+
     /**
      * {@inheritDoc}
      */
@@ -229,10 +231,7 @@ public final class AUSERVICE implements ISERVICEService {
         // any discernible correspondence with the subject's actual identifier (for example, username, fiscal number etc)
         // Example: ES/AT/02635542Y (Spanish eIDNumber for an Austrian SP)
 
-        String originCountryCode = request.getOriginCountryCode();
-        String proxyServiceCountryCode = samlService.getCountryCode();
-
-        String identifierPrefix = proxyServiceCountryCode + "/" + originCountryCode + "/";
+        String identifierPrefix = getIdentifierPrefix(request);
 
         boolean modified = false;
 
@@ -283,6 +282,23 @@ public final class AUSERVICE implements ISERVICEService {
         }
 
         return responseAttributes;
+    }
+
+    private String getIdentifierPrefix(@Nonnull IAuthenticationRequest request) {
+        String identifierPrefix;
+        if (!isPrefixIdentifiersCountryCode()) {
+            identifierPrefix = "";
+        } else {
+            identifierPrefix = getCountryPrefix(request);
+        }
+        return identifierPrefix;
+    }
+
+    private String getCountryPrefix(@Nonnull IAuthenticationRequest request) {
+        String originCountryCode = request.getOriginCountryCode();
+        String proxyServiceCountryCode = samlService.getCountryCode();
+
+        return proxyServiceCountryCode + "/" + originCountryCode + "/";
     }
 
     private IResponseMessage sendFailure(StoredAuthenticationRequest storedRequest, EidasErrorKey error) {
@@ -436,4 +452,21 @@ public final class AUSERVICE implements ISERVICEService {
         this.serviceUtil = serviceUtil;
     }
 
+    /**
+     * Getter for isPrefixIdentifiersCountryCode
+     *
+     * @return The isPrefixIdentifiersCountryCode value
+     */
+    public boolean isPrefixIdentifiersCountryCode() {
+        return isPrefixIdentifiersCountryCode;
+    }
+
+    /**
+     * Setter for isPrefixIdentifiersCountryCode.
+     *
+     * @param isPrefixIdentifiersCountryCode The new isPrefixIdentifiersCountryCode value.
+     */
+    public void setIsPrefixIdentifiersCountryCode(boolean isPrefixIdentifiersCountryCode) {
+        this.isPrefixIdentifiersCountryCode = isPrefixIdentifiersCountryCode;
+    }
 }

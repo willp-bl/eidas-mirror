@@ -93,6 +93,9 @@ public final class LightToken extends AbstractLightToken implements Serializable
      * Used upon de-serialization, not serialization.
      *
      * The state of this class is transformed back into the class it represents.
+     *
+     * @return any {@link LightToken} object
+     * @throws ObjectStreamException exception bulding the {@link LightToken}
      */
     private Object readResolve() throws ObjectStreamException {
         return new Builder(this).build();

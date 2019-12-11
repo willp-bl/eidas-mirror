@@ -27,7 +27,11 @@ import eu.eidas.auth.commons.protocol.eidas.impl.EidasAuthenticationRequest;
 import eu.eidas.auth.commons.protocol.eidas.spec.NaturalPersonSpec;
 import eu.eidas.auth.commons.tx.StoredAuthenticationRequest;
 import eu.eidas.auth.engine.DefaultProtocolEngineFactory;
-import eu.eidas.node.auth.service.*;
+import eu.eidas.node.auth.service.AUSERVICECitizen;
+import eu.eidas.node.auth.service.AUSERVICESAML;
+import eu.eidas.node.auth.service.AUSERVICEUtil;
+import eu.eidas.node.auth.service.ISERVICECitizenService;
+import eu.eidas.node.auth.service.ISERVICESAMLService;
 import eu.eidas.node.auth.util.tests.TestingConstants;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
@@ -36,7 +40,9 @@ import org.junit.runners.MethodSorters;
 
 import java.util.Properties;
 
-import static org.mockito.Matchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 

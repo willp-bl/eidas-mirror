@@ -47,9 +47,9 @@ public class ReturnAction extends ActionSupport implements ServletRequestAware, 
 
     public static final String ACTION_POPULATE = "populate";
     private static final long serialVersionUID = 3660074009157921579L;
-    private static final String ATTRIBUTES_FILENAME = "eidasAttributes.xml";
+    private static final String ATTRIBUTES_FILENAME = "eidas-attributes.xml";
 
-    private static final AttributeRegistry coreAttributeRegistry = AttributeRegistries.fromFile(ATTRIBUTES_FILENAME, null);
+    private static final AttributeRegistry coreAttributeRegistry = AttributeRegistries.fromFile(ATTRIBUTES_FILENAME, SPUtil.getConfigFilePath());
 
     private static final String ADDITIONAL_ATTRIBUTES_FILENAME = "additional-attributes.xml";
 
@@ -66,7 +66,7 @@ public class ReturnAction extends ActionSupport implements ServletRequestAware, 
     /**
      * Translates the samlResponse to XML format in order to be shown in the JSP
      *
-     * @return
+     * @return Action.SUCCESS
      */
 
     @Override
@@ -88,7 +88,8 @@ public class ReturnAction extends ActionSupport implements ServletRequestAware, 
     /**
      * Validates the request and displays the value of the requested attributes
      *
-     * @return
+     * @return ACTION_POPULATE
+     * @throws JAXBException if the MS Specific Request could not be unmarshalled
      */
     public String populate() throws JAXBException {
 
