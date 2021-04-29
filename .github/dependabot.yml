@@ -1,0 +1,81 @@
+version: 2
+updates:
+- package-ecosystem: maven
+  directory: "/EIDAS-Parent"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 99
+  ignore:
+  - dependency-name: org.springframework:spring-test
+    versions:
+    - 5.3.3
+    - 5.3.4
+    - 5.3.5
+  - dependency-name: org.springframework:spring-web
+    versions:
+    - 5.3.3
+    - 5.3.4
+    - 5.3.5
+  - dependency-name: org.springframework:spring-context-support
+    versions:
+    - 5.3.3
+    - 5.3.4
+    - 5.3.5
+  - dependency-name: org.springframework:spring-context
+    versions:
+    - 5.3.3
+    - 5.3.4
+    - 5.3.5
+  - dependency-name: org.springframework:spring-beans
+    versions:
+    - 5.3.3
+    - 5.3.4
+    - 5.3.5
+  - dependency-name: org.springframework:spring-core
+    versions:
+    - 5.3.3
+    - 5.3.4
+    - 5.3.5
+  - dependency-name: org.mockito:mockito-core
+    versions:
+    - 3.7.7
+    - 3.8.0
+  - dependency-name: se.swedenconnect.opensaml:opensaml-security-ext
+    versions:
+    - 2.0.0
+  - dependency-name: joda-time:joda-time
+    versions:
+    - 2.10.9
+  - dependency-name: org.apache.ignite:ignite-slf4j
+    versions:
+    - 2.9.1
+  - dependency-name: org.apache.ignite:ignite-spring
+    versions:
+    - 2.9.1
+  - dependency-name: org.apache.ignite:ignite-core
+    versions:
+    - 2.9.1
+  - dependency-name: com.ibm.icu:icu4j
+    versions:
+    - "68.2"
+  - dependency-name: org.eclipse.persistence:org.eclipse.persistence.moxy
+    versions:
+    - 3.0.0
+  - dependency-name: net.shibboleth.utilities:java-support
+    versions:
+    - 7.5.1
+  - dependency-name: org.opensaml:opensaml-xmlsec-impl
+    versions:
+    - 3.4.5
+  - dependency-name: org.opensaml:opensaml-xmlsec-api
+    versions:
+    - 3.4.5
+  - dependency-name: org.opensaml:opensaml-saml-impl
+    versions:
+    - 3.4.5
+  - dependency-name: org.opensaml:opensaml-saml-api
+    versions:
+    - 3.4.5
+  - dependency-name: org.opensaml:opensaml-core
+    versions:
+    - 3.4.5
